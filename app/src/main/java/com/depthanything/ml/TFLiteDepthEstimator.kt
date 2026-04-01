@@ -45,8 +45,14 @@ class TFLiteDepthEstimator(
         }
 
         when (mode) {
-            InferenceMode.NHWC_GPU, InferenceMode.QUALCOMM_GPU ->
+            InferenceMode.NHWC_GPU_FP32, InferenceMode.FP16W_GPU_FP32,
+            InferenceMode.QUALCOMM_GPU ->
                 setupGpu(options, fp16 = false)
+
+            InferenceMode.NHWC_GPU_FP16, InferenceMode.CLAMPED_GPU_FP16,
+            InferenceMode.CLAMPED_FP16W_GPU_FP16 ->
+                setupGpu(options, fp16 = true)
+
             else -> throw IllegalArgumentException("Unsupported TFLite mode: $mode")
         }
 
