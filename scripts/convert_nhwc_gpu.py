@@ -19,6 +19,7 @@ Tested with: torch 2.9.1, transformers 5.4.0, onnx2tf 1.28.8, tensorflow 2.21.0
 
 Usage:
   python convert_nhwc_gpu.py --output_dir ../app/src/main/assets/
+  python convert_nhwc_gpu.py --output_dir ../app/src/main/assets/ --input_height 392 --input_width 518
 """
 
 import argparse
@@ -96,20 +97,37 @@ def load_and_patch_model():
     print(f"  Replaced {gelu_count} GELU -> GELU(tanh)")
 
     # Patch 2: CLS token concat in 4D (GPU delegate requires 4D CONCATENATION)
+    #          + position embedding interpolation for non-square inputs
     emb = model.backbone.embeddings
+    patch_size = emb.patch_embeddings.patch_size[0]  # 14
 
     def patched_forward(self, pixel_values, **kwargs):
         B = pixel_values.shape[0]
         patch_emb = self.patch_embeddings(pixel_values)
+        num_patches = patch_emb.shape[1]
         cls = self.cls_token.expand(B, -1, -1)
         # 4D concat: [B,1,1,D] + [B,1,N,D] -> squeeze -> [B,1+N,D]
         combined = torch.cat(
             [cls.unsqueeze(1), patch_emb.unsqueeze(1)], dim=2
         ).squeeze(1)
-        return combined + self.position_embeddings
+        # Interpolate position embeddings if patch count doesn't match
+        pos_emb = self.position_embeddings
+        if pos_emb.shape[1] != num_patches + 1:
+            cls_pos = pos_emb[:, :1, :]
+            patch_pos = pos_emb[:, 1:, :]
+            orig_size = int(patch_pos.shape[1] ** 0.5)
+            h_patches = pixel_values.shape[2] // patch_size
+            w_patches = pixel_values.shape[3] // patch_size
+            patch_pos = patch_pos.reshape(1, orig_size, orig_size, -1).permute(0, 3, 1, 2)
+            patch_pos = nn.functional.interpolate(
+                patch_pos, size=(h_patches, w_patches), mode="bicubic", align_corners=False
+            )
+            patch_pos = patch_pos.permute(0, 2, 3, 1).reshape(1, -1, pos_emb.shape[2])
+            pos_emb = torch.cat([cls_pos, patch_pos], dim=1)
+        return combined + pos_emb
 
     emb.forward = types.MethodType(patched_forward, emb)
-    print("  Patched CLS token concat to 4D")
+    print("  Patched CLS token concat to 4D + position embedding interpolation")
 
     return model
 
@@ -344,9 +362,14 @@ def main():
     parser = argparse.ArgumentParser(description="Convert DepthAnything V2 for Android GPU")
     parser.add_argument("--output_dir", default="./output",
                         help="Output directory for model files")
-    parser.add_argument("--input_size", type=int, default=518,
-                        help="Input image size (must be multiple of 14)")
+    parser.add_argument("--input_height", type=int, default=392,
+                        help="Input height (must be multiple of 14)")
+    parser.add_argument("--input_width", type=int, default=518,
+                        help="Input width (must be multiple of 14)")
     args = parser.parse_args()
+
+    assert args.input_height % 14 == 0, f"Height {args.input_height} must be multiple of 14"
+    assert args.input_width % 14 == 0, f"Width {args.input_width} must be multiple of 14"
 
     os.makedirs(args.output_dir, exist_ok=True)
     tmp = os.path.join(args.output_dir, "_tmp")
@@ -360,11 +383,16 @@ def main():
 
     # Step 2: Export ONNX
     onnx_path = os.path.join(tmp, "model.onnx")
-    export_onnx(model, onnx_path, args.input_size, args.input_size)
+    export_onnx(model, onnx_path, args.input_height, args.input_width)
 
     # Step 3: Fix ONNX
     fixed_path = os.path.join(tmp, "model_fixed.onnx")
     fix_onnx(onnx_path, fixed_path)
+
+    # Copy ONNX for ONNX Runtime mode
+    onnx_out = os.path.join(args.output_dir, "depth_anything_v2.onnx")
+    shutil.copy2(onnx_path, onnx_out)
+    print(f"\n  ONNX Runtime model: {os.path.getsize(onnx_out) / 1e6:.0f} MB")
 
     # Step 4a: Convert plain (no clamp) -> FP32 GPU + FP16w GPU
     convert_tflite(fixed_path, args.output_dir, "depth_anything_v2_nhwc")
