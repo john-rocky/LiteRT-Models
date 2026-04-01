@@ -1,0 +1,20 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Model files (too large for git)
+*.tflite
+*.onnx
+*.ort
+
+# Python venv
+scripts/.venv/
+__pycache__/

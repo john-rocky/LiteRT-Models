@@ -1,0 +1,8 @@
+torch>=2.0
+torchvision
+onnx
+onnxruntime
+onnxconverter-common
+tensorflow>=2.15
+transformers
+huggingface_hub
