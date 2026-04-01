@@ -11,19 +11,15 @@ enum class InferenceMode(val label: String, val description: String) {
     ),
     FP16W_GPU_FP32(
         "GPU FP16w",
-        "FP16 weight model, GPU FP32 compute (50MB)"
+        "FP16 weight model, GPU FP32 compute"
     ),
     CLAMPED_GPU_FP16(
         "GPU clamp+FP16",
         "Clamped model, GPU FP16 compute"
     ),
     CLAMPED_FP16W_GPU_FP16(
-        "GPU clamp+FP16w+FP16",
-        "Clamped FP16 weight, GPU FP16 compute (50MB)"
-    ),
-    QUALCOMM_GPU(
-        "Qualcomm GPU",
-        "Qualcomm NHWC model + GPU FP32"
+        "GPU clamp+FP16w",
+        "Clamped FP16 weight, GPU FP16 compute"
     ),
     ONNX_RUNTIME(
         "ONNX Runtime",

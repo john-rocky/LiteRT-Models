@@ -45,8 +45,7 @@ class TFLiteDepthEstimator(
         }
 
         when (mode) {
-            InferenceMode.NHWC_GPU_FP32, InferenceMode.FP16W_GPU_FP32,
-            InferenceMode.QUALCOMM_GPU ->
+            InferenceMode.NHWC_GPU_FP32, InferenceMode.FP16W_GPU_FP32 ->
                 setupGpu(options, fp16 = false)
 
             InferenceMode.NHWC_GPU_FP16, InferenceMode.CLAMPED_GPU_FP16,
@@ -124,8 +123,7 @@ class TFLiteDepthEstimator(
     override fun predict(bitmap: Bitmap): DepthResult {
         val interp = interpreter ?: throw IllegalStateException("Interpreter not initialized")
 
-        // Qualcomm model has ImageNet normalization baked in; others need it applied
-        val needsNormalization = mode != InferenceMode.QUALCOMM_GPU
+        val needsNormalization = true
 
         val inputBuffer: ByteBuffer = if (inputDataType == DataType.UINT8) {
             bitmapToUint8Buffer(bitmap)
