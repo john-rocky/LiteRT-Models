@@ -4,16 +4,14 @@ import android.content.Context
 
 object DepthEstimatorFactory {
 
-    private const val MODEL_NHWC = "depth_anything_v2_nhwc.tflite"
-    private const val MODEL_C60K_FP32 = "depth_anything_v2_c60k_fp32.tflite"
-    private const val MODEL_C60K_FP16W = "depth_anything_v2_c60k_fp16w.tflite"
+    private const val MODEL_ATTN = "depth_anything_v2_attn.tflite"
+    private const val MODEL_ALL = "depth_anything_v2_c60k_fp32.tflite"
     private const val MODEL_ONNX = "depth_anything_v2.onnx"
 
     fun create(context: Context, mode: InferenceMode): DepthEstimator {
         return when (mode) {
-            InferenceMode.GPU_FP32 -> TFLiteDepthEstimator(context, mode, MODEL_NHWC)
-            InferenceMode.GPU_C60K_FP32W -> TFLiteDepthEstimator(context, mode, MODEL_C60K_FP32)
-            InferenceMode.GPU_C60K_FP16W -> TFLiteDepthEstimator(context, mode, MODEL_C60K_FP16W)
+            InferenceMode.CLAMP_ATTN -> TFLiteDepthEstimator(context, mode, MODEL_ATTN)
+            InferenceMode.CLAMP_ALL -> TFLiteDepthEstimator(context, mode, MODEL_ALL)
             InferenceMode.ONNX_RUNTIME -> OnnxDepthEstimator(context, MODEL_ONNX, optimized = false)
         }
     }
@@ -22,9 +20,8 @@ object DepthEstimatorFactory {
         val assetFiles = context.assets.list("")?.toSet() ?: emptySet()
         return InferenceMode.entries.filter { mode ->
             when (mode) {
-                InferenceMode.GPU_FP32 -> MODEL_NHWC in assetFiles
-                InferenceMode.GPU_C60K_FP32W -> MODEL_C60K_FP32 in assetFiles
-                InferenceMode.GPU_C60K_FP16W -> MODEL_C60K_FP16W in assetFiles
+                InferenceMode.CLAMP_ATTN -> MODEL_ATTN in assetFiles
+                InferenceMode.CLAMP_ALL -> MODEL_ALL in assetFiles
                 InferenceMode.ONNX_RUNTIME -> MODEL_ONNX in assetFiles
             }
         }
