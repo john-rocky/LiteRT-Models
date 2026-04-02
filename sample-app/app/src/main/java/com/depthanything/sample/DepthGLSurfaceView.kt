@@ -113,6 +113,7 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
         private var lastFpsTime = System.currentTimeMillis()
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+          try {
             Log.i(TAG, "Surface created — initializing pipeline")
 
             // 1. Init GL resources (on GL thread)
@@ -159,6 +160,10 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
 
             isZeroCopy = pipeline.nativeIsZeroCopy()
             Log.i(TAG, "Pipeline ready (zero-copy: $isZeroCopy)")
+          } catch (e: Throwable) {
+            Log.e(TAG, "onSurfaceCreated CRASHED", e)
+            initError = e.message
+          }
         }
 
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {}
