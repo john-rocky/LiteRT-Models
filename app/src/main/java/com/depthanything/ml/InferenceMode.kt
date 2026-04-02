@@ -18,14 +18,10 @@ enum class InferenceMode(val label: String, val description: String) {
         "litert-torch NHWC, corr=1.0"
     ),
 
-    // Native Keras model (corr=0.999998, no conversion artifacts)
+    // Native Keras model (corr=0.9995, no conversion artifacts)
     KERAS_NATIVE(
         "Keras Native (corr=1.0)",
-        "Native TF/Keras NHWC, ML Drift GPU"
-    ),
-    KERAS_NATIVE_FP16W(
-        "Keras Native FP16w",
-        "Native TF/Keras NHWC, FP16 weights, ML Drift GPU"
+        "Native TF/Keras NHWC, ML Drift GPU FP32"
     ),
 
     // onnx2tf 1.29 variant (same quality as 1.28, kept for comparison)
