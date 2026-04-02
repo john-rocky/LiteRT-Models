@@ -384,19 +384,19 @@ static bool initLiteRT(const uint8_t* modelData, size_t modelSize) {
     envOpts[1].value.type = kLiteRtAnyTypeVoidPtr;
     envOpts[1].value.ptr_value = (const void*)curContext;
 
-    int numOpts = (curDisplay != EGL_NO_DISPLAY && curContext != EGL_NO_CONTEXT) ? 2 : 0;
-
-    LiteRtStatus status = api.CreateEnvironment(numOpts, numOpts ? envOpts : nullptr, &p.env);
+    // Create environment WITHOUT EGL options first
+    LiteRtStatus status = api.CreateEnvironment(0, nullptr, &p.env);
     if (status != kLiteRtStatusOk) {
         LOGE("CreateEnvironment failed: %d", status);
         return false;
     }
-    LOGI("CreateEnvironment: status=%d (with %d EGL options)", status, numOpts);
 
-    // GPU environment — LiteRT uses our shared context, no new context created
+    // Pass EGL options to GpuEnvironmentCreate (not CreateEnvironment!)
+    // Kotlin log shows: "Reusing provided EGL environment" when passed here
+    int numOpts = (curDisplay != EGL_NO_DISPLAY && curContext != EGL_NO_CONTEXT) ? 2 : 0;
     if (api.GpuEnvironmentCreate) {
-        status = api.GpuEnvironmentCreate(p.env, 0, nullptr);
-        LOGI("GpuEnvironmentCreate: status=%d", status);
+        status = api.GpuEnvironmentCreate(p.env, numOpts, numOpts ? envOpts : nullptr);
+        LOGI("GpuEnvironmentCreate: status=%d (with %d EGL options)", status, numOpts);
     }
 
     // Load model from buffer
