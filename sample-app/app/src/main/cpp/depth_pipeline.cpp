@@ -18,6 +18,7 @@
 #include <thread>
 #include <mutex>
 #include <algorithm>
+#include <chrono>
 
 #include "litert_c_api.h"
 
@@ -1014,6 +1015,90 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeIsZeroCopy(
     JNIEnv* env, jobject thiz) {
 
     return g_pipeline.useGlBuffers ? JNI_TRUE : JNI_FALSE;
+}
+
+// Bypass Kotlin readFloat(): lock TensorBuffer directly, apply colormap, write ARGB pixels
+JNIEXPORT jlong JNICALL
+Java_com_depthanything_sample_NativeDepthPipeline_nativeLockAndColormap(
+    JNIEnv* env, jobject thiz,
+    jlong tensorBufferHandle, jintArray outputPixels,
+    jint width, jint height) {
+
+    auto& api = g_pipeline.api;
+    if (!api.handle) {
+        // Load API if not already loaded
+        api.load();
+    }
+    if (!api.LockTensorBuffer || !api.UnlockTensorBuffer) {
+        LOGE("LockTensorBuffer not available");
+        return -1;
+    }
+
+    LiteRtTensorBuffer tb = (LiteRtTensorBuffer)(intptr_t)tensorBufferHandle;
+    int n = width * height;
+
+    // Lock — this is where the GPU stall happens
+    auto t0 = std::chrono::high_resolution_clock::now();
+
+    void* ptr = nullptr;
+    LiteRtStatus status = api.LockTensorBuffer(tb, &ptr, kLiteRtTensorBufferLockModeRead);
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    long lockMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+    if (status != kLiteRtStatusOk || !ptr) {
+        LOGE("LockTensorBuffer failed: status=%d", status);
+        return -1;
+    }
+
+    float* depth = (float*)ptr;
+
+    // Min-max normalization (2nd/98th percentile)
+    constexpr int STRIDE = 16;
+    int sc = 0;
+    float samples[16384];
+    for (int i = 0; i < n; i += STRIDE) {
+        if (sc < 16384) samples[sc++] = depth[i];
+    }
+    float dmin = depth[0], dmax = depth[0];
+    if (sc > 100) {
+        int lo = sc * 2 / 100, hi = sc * 98 / 100;
+        std::nth_element(samples, samples + lo, samples + sc);
+        dmin = samples[lo];
+        std::nth_element(samples, samples + hi, samples + sc);
+        dmax = samples[hi];
+    } else {
+        for (int i = 0; i < n; i++) {
+            if (depth[i] < dmin) dmin = depth[i];
+            if (depth[i] > dmax) dmax = depth[i];
+        }
+    }
+    float range = dmax - dmin;
+    if (range < 1e-6f) range = 1.0f;
+    float scale = 254.0f / range;
+
+    // Colormap → ARGB pixels (directly into JNI array)
+    jint* pixels = env->GetIntArrayElements(outputPixels, nullptr);
+    for (int i = 0; i < n; i++) {
+        int idx = (int)((depth[i] - dmin) * scale);
+        if (idx < 0) idx = 0;
+        if (idx > 254) idx = 254;
+        pixels[i] = (0xFF << 24) | (INFERNO_R[idx] << 16) | (INFERNO_G[idx] << 8) | INFERNO_B[idx];
+    }
+    env->ReleaseIntArrayElements(outputPixels, pixels, 0);
+
+    api.UnlockTensorBuffer(tb);
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    long totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count();
+
+    static int logCount = 0;
+    if (logCount++ < 20) {
+        LOGI("nativeLockAndColormap: lock=%ldms total=%ldms min=%.2f max=%.2f",
+             lockMs, totalMs, dmin, dmax);
+    }
+
+    return lockMs;
 }
 
 } // extern "C"

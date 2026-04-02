@@ -43,6 +43,9 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
     // Pre-baked Inferno LUT as packed ARGB ints
     private val infernoLut = IntArray(256) { Colormap.inferno(255 - it) }
 
+    // C++ pipeline for direct TensorBuffer lock + colormap
+    private val nativePipeline = NativeDepthPipeline()
+
     init {
         Log.i(TAG, "Loading model: $modelFileName")
         val options = CompiledModel.Options(Accelerator.GPU)
@@ -110,28 +113,13 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         compiledModel.run(inputBuffers, outputBuffers)
         val infMs = (System.nanoTime() - t) / 1_000_000
 
-        // Postprocess
+        // Postprocess — C++ direct Lock + colormap (bypass Kotlin readFloat)
         t = System.nanoTime()
-        val depth = outputBuffers[0].readFloat()
+        val tbHandle = NativeDepthPipeline.getNativeHandle(outputBuffers[0])
+        val lockMs = nativePipeline.nativeLockAndColormap(
+            tbHandle, outputPixels, outputWidth, outputHeight
+        )
         val t1 = System.nanoTime()
-
-        // Check for NaN/Inf in output
-        var min = Float.MAX_VALUE; var max = Float.MIN_VALUE
-        var nanCount = 0; var infCount = 0
-        for (v in depth) {
-            if (v.isNaN()) nanCount++
-            else if (v.isInfinite()) infCount++
-            else { if (v < min) min = v; if (v > max) max = v }
-        }
-        if (nanCount > 0 || infCount > 0 || min == max) {
-            Log.w(TAG, "BAD OUTPUT: nan=$nanCount inf=$infCount min=$min max=$max range=${max-min}")
-        }
-        val scale = 255f / (max - min).coerceAtLeast(1e-6f)
-
-        for (i in depth.indices) {
-            outputPixels[i] = infernoLut[((depth[i] - min) * scale).toInt().coerceIn(0, 255)]
-        }
-        val t2 = System.nanoTime()
 
         depthBitmap.setPixels(outputPixels, 0, outputWidth, 0, 0, outputWidth, outputHeight)
 
@@ -141,14 +129,13 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
             outputBitmap.height.toFloat() / outputHeight
         )
         outCanvas.drawBitmap(depthBitmap, scaleMatrix, paint)
-        val t3 = System.nanoTime()
+        val t2 = System.nanoTime()
 
-        val readMs = (t1 - t) / 1_000_000
-        val cmapMs = (t2 - t1) / 1_000_000
-        val drawMs = (t3 - t2) / 1_000_000
-        val postMs = (t3 - t) / 1_000_000
+        val postMs = (t2 - t) / 1_000_000
+        val colormapMs = (t1 - t) / 1_000_000
+        val drawMs = (t2 - t1) / 1_000_000
 
-        Log.i(TAG, "pre=${preMs}ms inf=${infMs}ms post=${postMs}ms (read=${readMs} cmap=${cmapMs} draw=${drawMs})")
+        Log.i(TAG, "pre=${preMs}ms inf=${infMs}ms post=${postMs}ms (lock=${lockMs} cmap=${colormapMs} draw=${drawMs})")
 
         return preMs + infMs + postMs
     }

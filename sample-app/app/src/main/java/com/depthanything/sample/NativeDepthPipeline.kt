@@ -9,16 +9,21 @@ import android.util.Log
  */
 class NativeDepthPipeline : AutoCloseable {
 
-    // Init GL resources only (LiteRT handled by Kotlin)
+    /**
+     * Read output TensorBuffer via C++ LiteRtLockTensorBuffer (bypass Kotlin readFloat),
+     * apply Inferno colormap, write ARGB pixels to outputPixels array.
+     * Returns lock time in ms (to compare with Kotlin readFloat's 340ms).
+     */
+    external fun nativeLockAndColormap(
+        tensorBufferHandle: Long,
+        outputPixels: IntArray,
+        width: Int, height: Int
+    ): Long
+
+    // Keep old methods for compatibility
     external fun nativeInitGl(inputW: Int, inputH: Int, outputW: Int, outputH: Int): Boolean
-
-    // Set native handles from Kotlin CompiledModel (FP32)
     external fun nativeSetHandles(envHandle: Long, compiledModelHandle: Long): Boolean
-
-    external fun nativeProcessFrame(
-        pixels: IntArray, width: Int, height: Int, rotation: Int
-    )
-
+    external fun nativeProcessFrame(pixels: IntArray, width: Int, height: Int, rotation: Int)
     external fun nativeRender(viewWidth: Int, viewHeight: Int)
     external fun nativeDestroy()
     external fun nativeIsInitialized(): Boolean
