@@ -147,7 +147,9 @@ fun CameraDepthScreen() {
 
                     @Suppress("DEPRECATION")
                     val imageAnalysis = ImageAnalysis.Builder()
-                        .setTargetResolution(android.util.Size(640, 480))
+                        .setTargetResolution(android.util.Size(
+                            estimator!!.inputWidth, estimator.inputHeight
+                        ))
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                         .build()
@@ -155,44 +157,47 @@ fun CameraDepthScreen() {
                     var frameCount = 0
                     var lastFpsTime = System.currentTimeMillis()
 
-                    // Pre-allocate camera frame bitmap
                     var cameraBitmap: Bitmap? = null
+                    var isProcessing = false
 
                     imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                        if (estimator != null && depthDisplayBitmap != null) {
-                            // Reuse or create camera bitmap
-                            val w = imageProxy.width
-                            val h = imageProxy.height
-                            val rotation = imageProxy.imageInfo.rotationDegrees
-                            val rotW = if (rotation == 90 || rotation == 270) h else w
-                            val rotH = if (rotation == 90 || rotation == 270) w else h
-
-                            if (cameraBitmap == null || cameraBitmap!!.width != rotW || cameraBitmap!!.height != rotH) {
-                                cameraBitmap?.recycle()
-                                cameraBitmap = Bitmap.createBitmap(rotW, rotH, Bitmap.Config.ARGB_8888)
-                            }
-
-                            val camT = System.nanoTime()
-                            fillBitmapFromImageProxy(imageProxy, cameraBitmap!!)
-                            val camMs = (System.nanoTime() - camT) / 1_000_000
-                            Log.i(TAG, "camera->bitmap: ${camMs}ms")
-
-                            val ms = estimator.predict(cameraBitmap!!, depthDisplayBitmap)
-
-                            imageView.post {
-                                imageView.setImageBitmap(depthDisplayBitmap)
-                            }
-
-                            frameCount++
-                            val now = System.currentTimeMillis()
-                            if (now - lastFpsTime >= 1000) {
-                                val currentFps = frameCount
-                                frameCount = 0
-                                lastFpsTime = now
-                                imageView.post { fps = currentFps }
-                            }
+                        // Skip frame if previous inference still running
+                        if (isProcessing || estimator == null || depthDisplayBitmap == null) {
+                            imageProxy.close()
+                            return@setAnalyzer
                         }
+                        isProcessing = true
+
+                        val w = imageProxy.width
+                        val h = imageProxy.height
+                        val rotation = imageProxy.imageInfo.rotationDegrees
+                        val rotW = if (rotation == 90 || rotation == 270) h else w
+                        val rotH = if (rotation == 90 || rotation == 270) w else h
+
+                        if (cameraBitmap == null || cameraBitmap!!.width != rotW || cameraBitmap!!.height != rotH) {
+                            cameraBitmap?.recycle()
+                            cameraBitmap = Bitmap.createBitmap(rotW, rotH, Bitmap.Config.ARGB_8888)
+                        }
+
+                        fillBitmapFromImageProxy(imageProxy, cameraBitmap!!)
                         imageProxy.close()
+
+                        estimator.predict(cameraBitmap!!, depthDisplayBitmap)
+
+                        imageView.post {
+                            imageView.setImageBitmap(depthDisplayBitmap)
+                        }
+
+                        frameCount++
+                        val now = System.currentTimeMillis()
+                        if (now - lastFpsTime >= 1000) {
+                            val currentFps = frameCount
+                            frameCount = 0
+                            lastFpsTime = now
+                            imageView.post { fps = currentFps }
+                        }
+
+                        isProcessing = false
                     }
 
                     cameraProvider.unbindAll()
