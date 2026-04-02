@@ -8,261 +8,182 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.util.concurrent.Executors
 
 private const val TAG = "DepthAnything"
 private const val MODEL_FILE = "depth_anything_v2_keras.tflite"
+private const val REQUEST_CAMERA = 100
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var depthImageView: ImageView
+    private lateinit var fpsText: TextView
+    private val cameraExecutor = Executors.newSingleThreadExecutor()
+    private var estimator: DepthEstimator? = null
+    private var depthDisplayBitmap: Bitmap? = null
+    private var isProcessing = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { DepthCameraApp() }
-    }
-}
 
-@Composable
-fun DepthCameraApp() {
-    val context = LocalContext.current
-    var hasCameraPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                    PackageManager.PERMISSION_GRANTED
-        )
-    }
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted -> hasCameraPermission = granted }
+        val frame = FrameLayout(this)
 
-    LaunchedEffect(Unit) {
-        if (!hasCameraPermission) launcher.launch(Manifest.permission.CAMERA)
-    }
-
-    if (hasCameraPermission) {
-        CameraDepthScreen()
-    } else {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Camera permission required")
-        }
-    }
-}
-
-@Composable
-fun CameraDepthScreen() {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    var fps by remember { mutableIntStateOf(0) }
-    var initError by remember { mutableStateOf<String?>(null) }
-
-    val estimator = remember {
-        try {
-            DepthEstimator(context, MODEL_FILE)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to init model", e)
-            initError = e.message
-            null
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose { estimator?.close() }
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        if (initError != null) {
-            Text(
-                "Model load failed: $initError",
-                modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                color = MaterialTheme.colorScheme.error
+        depthImageView = ImageView(this).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+        frame.addView(depthImageView)
+
+        fpsText = TextView(this).apply {
+            textSize = 24f
+            setTextColor(0xFFFFFFFF.toInt())
+            setShadowLayer(4f, 2f, 2f, 0xFF000000.toInt())
+            text = "Loading..."
+        }
+        frame.addView(fpsText, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP or Gravity.START
+        ).apply { setMargins(32, 48, 0, 0) })
+
+        setContentView(frame)
+
+        try {
+            estimator = DepthEstimator(this, MODEL_FILE)
+            depthDisplayBitmap = Bitmap.createBitmap(
+                estimator!!.inputWidth, estimator!!.inputHeight,
+                Bitmap.Config.ARGB_8888
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Model init failed", e)
+            fpsText.text = "Model load failed: ${e.message}"
             return
         }
 
-        val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        } else {
+            ActivityCompat.requestPermissions(this,
+                arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA)
+        }
+    }
 
-        // Use ImageView for zero-copy depth rendering (no Compose recomposition)
-        var depthImageView: ImageView? = null
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CAMERA &&
+            grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        }
+    }
 
-        // Pre-allocate reusable bitmaps
-        val depthDisplayBitmap = remember(estimator) {
-            estimator?.let {
-                Bitmap.createBitmap(it.inputWidth, it.inputHeight, Bitmap.Config.ARGB_8888)
+    private fun startCamera() {
+        val est = estimator ?: return
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+
+            @Suppress("DEPRECATION")
+            val imageAnalysis = ImageAnalysis.Builder()
+                .setTargetResolution(android.util.Size(est.inputWidth, est.inputHeight))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                .build()
+
+            var frameCount = 0
+            var lastFpsTime = System.currentTimeMillis()
+
+            imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
+                if (isProcessing || depthDisplayBitmap == null) {
+                    imageProxy.close()
+                    return@setAnalyzer
+                }
+                isProcessing = true
+
+                val cameraBitmap = imageProxyToBitmap(imageProxy, est.inputWidth, est.inputHeight)
+                imageProxy.close()
+
+                est.predict(cameraBitmap, depthDisplayBitmap!!)
+                cameraBitmap.recycle()
+
+                depthImageView.post {
+                    depthImageView.setImageBitmap(depthDisplayBitmap)
+                }
+
+                frameCount++
+                val now = System.currentTimeMillis()
+                if (now - lastFpsTime >= 1000) {
+                    val fps = frameCount
+                    frameCount = 0
+                    lastFpsTime = now
+                    fpsText.post { fpsText.text = "$fps FPS" }
+                }
+                isProcessing = false
             }
+
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(
+                this, CameraSelector.DEFAULT_BACK_CAMERA, imageAnalysis
+            )
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    private val tempMatrix = Matrix()
+    private val tempPaint = Paint(Paint.FILTER_BITMAP_FLAG)
+
+    private fun imageProxyToBitmap(imageProxy: ImageProxy, targetW: Int, targetH: Int): Bitmap {
+        val plane = imageProxy.planes[0]
+        val buffer = plane.buffer
+        val pixelStride = plane.pixelStride
+        val rowStride = plane.rowStride
+        val rowPadding = rowStride - pixelStride * imageProxy.width
+        val srcW = imageProxy.width + rowPadding / pixelStride
+
+        val src = Bitmap.createBitmap(srcW, imageProxy.height, Bitmap.Config.ARGB_8888)
+        buffer.rewind()
+        src.copyPixelsFromBuffer(buffer)
+
+        val rotation = imageProxy.imageInfo.rotationDegrees.toFloat()
+        val dst = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(dst)
+        tempMatrix.reset()
+
+        if (rotation != 0f) {
+            val rotW = if (rotation == 90f || rotation == 270f) imageProxy.height else imageProxy.width
+            val rotH = if (rotation == 90f || rotation == 270f) imageProxy.width else imageProxy.height
+            tempMatrix.postRotate(rotation, imageProxy.width / 2f, imageProxy.height / 2f)
+            tempMatrix.postTranslate((rotW - imageProxy.width) / 2f, (rotH - imageProxy.height) / 2f)
+            tempMatrix.postScale(targetW.toFloat() / rotW, targetH.toFloat() / rotH)
+        } else {
+            tempMatrix.setScale(targetW.toFloat() / imageProxy.width, targetH.toFloat() / imageProxy.height)
         }
 
-        AndroidView(
-            factory = { ctx ->
-                // FrameLayout with camera preview + depth overlay
-                val frame = android.widget.FrameLayout(ctx)
-
-                val previewView = PreviewView(ctx).apply {
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                }
-                frame.addView(previewView)
-
-                val imageView = ImageView(ctx).apply {
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    imageAlpha = 255  // Full opacity (no camera preview behind)
-                }
-                frame.addView(imageView)
-                depthImageView = imageView
-
-                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-
-                    // Preview disabled to avoid GPU contention with ML Drift inference
-                    // val preview = Preview.Builder().build().also {
-                    //     it.surfaceProvider = previewView.surfaceProvider
-                    // }
-
-                    @Suppress("DEPRECATION")
-                    val imageAnalysis = ImageAnalysis.Builder()
-                        .setTargetResolution(android.util.Size(
-                            estimator!!.inputWidth, estimator.inputHeight
-                        ))
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                        .build()
-
-                    var frameCount = 0
-                    var lastFpsTime = System.currentTimeMillis()
-
-                    var cameraBitmap: Bitmap? = null
-                    var isProcessing = false
-
-                    imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                        // Skip frame if previous inference still running
-                        if (isProcessing || estimator == null || depthDisplayBitmap == null) {
-                            imageProxy.close()
-                            return@setAnalyzer
-                        }
-                        isProcessing = true
-
-                        val w = imageProxy.width
-                        val h = imageProxy.height
-                        val rotation = imageProxy.imageInfo.rotationDegrees
-                        val rotW = if (rotation == 90 || rotation == 270) h else w
-                        val rotH = if (rotation == 90 || rotation == 270) w else h
-
-                        if (cameraBitmap == null || cameraBitmap!!.width != rotW || cameraBitmap!!.height != rotH) {
-                            cameraBitmap?.recycle()
-                            cameraBitmap = Bitmap.createBitmap(rotW, rotH, Bitmap.Config.ARGB_8888)
-                        }
-
-                        fillBitmapFromImageProxy(imageProxy, cameraBitmap!!)
-                        imageProxy.close()
-
-                        estimator.predict(cameraBitmap!!, depthDisplayBitmap)
-
-                        imageView.post {
-                            imageView.setImageBitmap(depthDisplayBitmap)
-                        }
-
-                        frameCount++
-                        val now = System.currentTimeMillis()
-                        if (now - lastFpsTime >= 1000) {
-                            val currentFps = frameCount
-                            frameCount = 0
-                            lastFpsTime = now
-                            imageView.post { fps = currentFps }
-                        }
-
-                        isProcessing = false
-                    }
-
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA,
-                        imageAnalysis  // No preview — depth overlay is the display
-                    )
-                }, ContextCompat.getMainExecutor(ctx))
-
-                frame
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // FPS counter
-        Text(
-            text = "${fps} FPS",
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp),
-            fontSize = 24.sp,
-            color = androidx.compose.ui.graphics.Color.White
-        )
-    }
-}
-
-/** Fill pre-allocated bitmap from ImageProxy (RGBA_8888) with rotation. */
-private val tempMatrix = Matrix()
-private val tempPaint = Paint(Paint.FILTER_BITMAP_FLAG)
-
-private fun fillBitmapFromImageProxy(imageProxy: ImageProxy, dst: Bitmap) {
-    val plane = imageProxy.planes[0]
-    val buffer = plane.buffer
-    val pixelStride = plane.pixelStride
-    val rowStride = plane.rowStride
-    val rowPadding = rowStride - pixelStride * imageProxy.width
-    val srcW = imageProxy.width + rowPadding / pixelStride
-
-    // Decode into a temp bitmap (unavoidable for copyPixelsFromBuffer)
-    val src = Bitmap.createBitmap(srcW, imageProxy.height, Bitmap.Config.ARGB_8888)
-    buffer.rewind()
-    src.copyPixelsFromBuffer(buffer)
-
-    val rotation = imageProxy.imageInfo.rotationDegrees.toFloat()
-    val canvas = Canvas(dst)
-    tempMatrix.reset()
-
-    if (rotation != 0f) {
-        // Rotate around center, then scale to fill dst
-        val rotW = if (rotation == 90f || rotation == 270f) imageProxy.height else imageProxy.width
-        val rotH = if (rotation == 90f || rotation == 270f) imageProxy.width else imageProxy.height
-        tempMatrix.postRotate(rotation, imageProxy.width / 2f, imageProxy.height / 2f)
-        tempMatrix.postTranslate(
-            (rotW - imageProxy.width) / 2f,
-            (rotH - imageProxy.height) / 2f
-        )
-        tempMatrix.postScale(dst.width.toFloat() / rotW, dst.height.toFloat() / rotH)
-    } else {
-        tempMatrix.setScale(
-            dst.width.toFloat() / imageProxy.width,
-            dst.height.toFloat() / imageProxy.height
-        )
+        canvas.drawBitmap(src, tempMatrix, tempPaint)
+        src.recycle()
+        return dst
     }
 
-    canvas.drawBitmap(src, tempMatrix, tempPaint)
-    src.recycle()
+    override fun onDestroy() {
+        super.onDestroy()
+        estimator?.close()
+        cameraExecutor.shutdown()
+    }
 }
