@@ -82,10 +82,20 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
 
         // Check supported output buffer types
         try {
-            val outReqs = compiledModel.getOutputBufferRequirements()
-            Log.i(TAG, "Output buffer requirements: types=${outReqs.supportedTypes}, size=${outReqs.bufferSize}")
+            val outReqs = compiledModel.getOutputBufferRequirements(
+                signatureName = "serving_default", outputName = "output_0")
+            Log.i(TAG, "Output buffer reqs: types=${outReqs.supportedTypes}, size=${outReqs.bufferSize}")
         } catch (e: Exception) {
-            Log.w(TAG, "Could not get buffer requirements: ${e.message}")
+            // Try without names
+            try {
+                // Use reflection to call with default params
+                val method = compiledModel.javaClass.getMethod(
+                    "getOutputBufferRequirements", String::class.java, String::class.java)
+                val outReqs = method.invoke(compiledModel, "", "") as? Any
+                Log.i(TAG, "Output buffer reqs (reflect): $outReqs")
+            } catch (e2: Exception) {
+                Log.w(TAG, "Could not get buffer requirements: ${e.message} / ${e2.message}")
+            }
         }
     }
 
