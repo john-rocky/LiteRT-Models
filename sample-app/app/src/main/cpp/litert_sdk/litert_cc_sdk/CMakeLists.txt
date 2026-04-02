@@ -47,10 +47,15 @@ find_package(absl REQUIRED)
 find_package(FlatBuffers REQUIRED)
 find_package(opencl_headers REQUIRED)
 
-# C API library
+# C API library — use per-ABI path for Android cross-compilation
 add_library(litert_c_api SHARED IMPORTED)
+if(ANDROID_ABI)
+  set(_LITERT_SO "${CMAKE_CURRENT_SOURCE_DIR}/lib/${ANDROID_ABI}/libLiteRt.so")
+else()
+  set(_LITERT_SO "${CMAKE_CURRENT_SOURCE_DIR}/libLiteRt.so")
+endif()
 set_target_properties(litert_c_api PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/libLiteRt.so"
+  IMPORTED_LOCATION "${_LITERT_SO}"
 )
 
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/litert_cc_sdk_hdrs.txt FILE_CONTENTS)
