@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
@@ -154,26 +155,38 @@ fun CameraDepthScreen() {
                     var frameCount = 0
                     var lastFpsTime = System.currentTimeMillis()
 
+                    // Pre-allocate camera frame bitmap
+                    var cameraBitmap: Bitmap? = null
+
                     imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
                         if (estimator != null && depthDisplayBitmap != null) {
-                            val inputBitmap = imageProxyToBitmap(imageProxy)
-                            if (inputBitmap != null) {
-                                estimator.predict(inputBitmap, depthDisplayBitmap)
-                                inputBitmap.recycle()
+                            // Reuse or create camera bitmap
+                            val w = imageProxy.width
+                            val h = imageProxy.height
+                            val rotation = imageProxy.imageInfo.rotationDegrees
+                            val rotW = if (rotation == 90 || rotation == 270) h else w
+                            val rotH = if (rotation == 90 || rotation == 270) w else h
 
-                                // Post to UI thread — just setImageBitmap, no allocation
-                                imageView.post {
-                                    imageView.setImageBitmap(depthDisplayBitmap)
-                                }
+                            if (cameraBitmap == null || cameraBitmap!!.width != rotW || cameraBitmap!!.height != rotH) {
+                                cameraBitmap?.recycle()
+                                cameraBitmap = Bitmap.createBitmap(rotW, rotH, Bitmap.Config.ARGB_8888)
+                            }
 
-                                frameCount++
-                                val now = System.currentTimeMillis()
-                                if (now - lastFpsTime >= 1000) {
-                                    val currentFps = frameCount
-                                    frameCount = 0
-                                    lastFpsTime = now
-                                    imageView.post { fps = currentFps }
-                                }
+                            fillBitmapFromImageProxy(imageProxy, cameraBitmap!!)
+
+                            val ms = estimator.predict(cameraBitmap!!, depthDisplayBitmap)
+
+                            imageView.post {
+                                imageView.setImageBitmap(depthDisplayBitmap)
+                            }
+
+                            frameCount++
+                            val now = System.currentTimeMillis()
+                            if (now - lastFpsTime >= 1000) {
+                                val currentFps = frameCount
+                                frameCount = 0
+                                lastFpsTime = now
+                                imageView.post { fps = currentFps }
                             }
                         }
                         imageProxy.close()
@@ -203,35 +216,44 @@ fun CameraDepthScreen() {
     }
 }
 
-/** Convert ImageProxy (RGBA_8888) to Bitmap with rotation. */
-private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
+/** Fill pre-allocated bitmap from ImageProxy (RGBA_8888) with rotation. */
+private val tempMatrix = Matrix()
+private val tempPaint = Paint(Paint.FILTER_BITMAP_FLAG)
+
+private fun fillBitmapFromImageProxy(imageProxy: ImageProxy, dst: Bitmap) {
     val plane = imageProxy.planes[0]
     val buffer = plane.buffer
     val pixelStride = plane.pixelStride
     val rowStride = plane.rowStride
     val rowPadding = rowStride - pixelStride * imageProxy.width
+    val srcW = imageProxy.width + rowPadding / pixelStride
 
-    val bitmap = Bitmap.createBitmap(
-        imageProxy.width + rowPadding / pixelStride,
-        imageProxy.height,
-        Bitmap.Config.ARGB_8888
-    )
+    // Decode into a temp bitmap (unavoidable for copyPixelsFromBuffer)
+    val src = Bitmap.createBitmap(srcW, imageProxy.height, Bitmap.Config.ARGB_8888)
     buffer.rewind()
-    bitmap.copyPixelsFromBuffer(buffer)
+    src.copyPixelsFromBuffer(buffer)
 
-    val cropped = if (rowPadding > 0) {
-        val c = Bitmap.createBitmap(bitmap, 0, 0, imageProxy.width, imageProxy.height)
-        bitmap.recycle()
-        c
+    val rotation = imageProxy.imageInfo.rotationDegrees.toFloat()
+    val canvas = Canvas(dst)
+    tempMatrix.reset()
+
+    if (rotation != 0f) {
+        // Rotate around center, then scale to fill dst
+        val rotW = if (rotation == 90f || rotation == 270f) imageProxy.height else imageProxy.width
+        val rotH = if (rotation == 90f || rotation == 270f) imageProxy.width else imageProxy.height
+        tempMatrix.postRotate(rotation, imageProxy.width / 2f, imageProxy.height / 2f)
+        tempMatrix.postTranslate(
+            (rotW - imageProxy.width) / 2f,
+            (rotH - imageProxy.height) / 2f
+        )
+        tempMatrix.postScale(dst.width.toFloat() / rotW, dst.height.toFloat() / rotH)
     } else {
-        bitmap
+        tempMatrix.setScale(
+            dst.width.toFloat() / imageProxy.width,
+            dst.height.toFloat() / imageProxy.height
+        )
     }
 
-    val rotation = imageProxy.imageInfo.rotationDegrees
-    if (rotation == 0) return cropped
-
-    val matrix = Matrix().apply { postRotate(rotation.toFloat()) }
-    val rotated = Bitmap.createBitmap(cropped, 0, 0, cropped.width, cropped.height, matrix, true)
-    if (rotated !== cropped) cropped.recycle()
-    return rotated
+    canvas.drawBitmap(src, tempMatrix, tempPaint)
+    src.recycle()
 }
