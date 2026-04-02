@@ -106,21 +106,42 @@ typedef enum {
 // Environment options
 // ---------------------------------------------------------------------------
 typedef enum {
+    kLiteRtEnvOptionTagCompilerPluginLibraryDir = 0,
+    kLiteRtEnvOptionTagDispatchLibraryDir = 1,
+    kLiteRtEnvOptionTagOpenClDeviceId = 2,
+    kLiteRtEnvOptionTagOpenClPlatformId = 3,
+    kLiteRtEnvOptionTagOpenClContext = 4,
+    kLiteRtEnvOptionTagOpenClCommandQueue = 5,
+    kLiteRtEnvOptionTagEglDisplay = 6,
+    kLiteRtEnvOptionTagEglContext = 7,
     kLiteRtEnvOptionTagNull = 255,
-    kLiteRtEnvOptionTagOpenClDeviceId = 10,
-    kLiteRtEnvOptionTagOpenClPlatformId = 11,
-    kLiteRtEnvOptionTagOpenClContext = 12,
-    kLiteRtEnvOptionTagOpenClCommandQueue = 13,
-    kLiteRtEnvOptionTagEglDisplay = 14,
-    kLiteRtEnvOptionTagEglContext = 15,
 } LiteRtEnvOptionTag;
 
+// LiteRtAny: discriminated union (16 bytes on 64-bit)
+typedef enum {
+    kLiteRtAnyTypeNone = 0,
+    kLiteRtAnyTypeBool = 1,
+    kLiteRtAnyTypeInt = 2,
+    kLiteRtAnyTypeReal = 3,
+    kLiteRtAnyTypeString = 8,
+    kLiteRtAnyTypeVoidPtr = 9,
+} LiteRtAnyType;
+
+typedef struct {
+    LiteRtAnyType type;
+    union {
+        bool bool_value;
+        int64_t int_value;
+        double real_value;
+        const char* str_value;
+        const void* ptr_value;
+    };
+} LiteRtAny;
+
+// LiteRtEnvOption: 24 bytes on 64-bit (tag=8 + LiteRtAny=16)
 typedef struct {
     LiteRtEnvOptionTag tag;
-    union {
-        void* ptr;
-        uint64_t u64;
-    } value;
+    LiteRtAny value;
 } LiteRtEnvOption;
 
 // GPU options opaque handle

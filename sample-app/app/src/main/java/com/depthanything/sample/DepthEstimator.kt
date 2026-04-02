@@ -115,9 +115,17 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         val depth = outputBuffers[0].readFloat()
         val t1 = System.nanoTime()
 
-        // Min-max in single pass + colormap via pre-baked LUT
+        // Check for NaN/Inf in output
         var min = Float.MAX_VALUE; var max = Float.MIN_VALUE
-        for (v in depth) { if (v < min) min = v; if (v > max) max = v }
+        var nanCount = 0; var infCount = 0
+        for (v in depth) {
+            if (v.isNaN()) nanCount++
+            else if (v.isInfinite()) infCount++
+            else { if (v < min) min = v; if (v > max) max = v }
+        }
+        if (nanCount > 0 || infCount > 0 || min == max) {
+            Log.w(TAG, "BAD OUTPUT: nan=$nanCount inf=$infCount min=$min max=$max range=${max-min}")
+        }
         val scale = 255f / (max - min).coerceAtLeast(1e-6f)
 
         for (i in depth.indices) {

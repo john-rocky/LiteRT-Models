@@ -369,20 +369,29 @@ static bool initLiteRT(const uint8_t* modelData, size_t modelSize) {
 
     if (!api.load()) return false;
 
-    // Save GLSurfaceView's EGL state before LiteRT touches it
-    EGLDisplay savedDisplay = eglGetCurrentDisplay();
-    EGLSurface savedDraw = eglGetCurrentSurface(EGL_DRAW);
-    EGLSurface savedRead = eglGetCurrentSurface(EGL_READ);
-    EGLContext savedCtx = eglGetCurrentContext();
+    // Pass OUR EGL display+context so LiteRT shares it (no separate context)
+    EGLDisplay curDisplay = eglGetCurrentDisplay();
+    EGLContext curContext = eglGetCurrentContext();
+    LOGI("Passing EGL context to LiteRT: display=%p ctx=%p", curDisplay, curContext);
 
-    // Create environment
-    LiteRtStatus status = api.CreateEnvironment(0, nullptr, &p.env);
+    LiteRtEnvOption envOpts[2];
+    envOpts[0].tag = kLiteRtEnvOptionTagEglDisplay;
+    envOpts[0].value.type = kLiteRtAnyTypeVoidPtr;
+    envOpts[0].value.ptr_value = (const void*)curDisplay;
+    envOpts[1].tag = kLiteRtEnvOptionTagEglContext;
+    envOpts[1].value.type = kLiteRtAnyTypeVoidPtr;
+    envOpts[1].value.ptr_value = (const void*)curContext;
+
+    int numOpts = (curDisplay != EGL_NO_DISPLAY && curContext != EGL_NO_CONTEXT) ? 2 : 0;
+
+    LiteRtStatus status = api.CreateEnvironment(numOpts, numOpts ? envOpts : nullptr, &p.env);
     if (status != kLiteRtStatusOk) {
         LOGE("CreateEnvironment failed: %d", status);
         return false;
     }
+    LOGI("CreateEnvironment: status=%d (with %d EGL options)", status, numOpts);
 
-    // Create GPU environment (let LiteRT create its own context)
+    // GPU environment — LiteRT uses our shared context, no new context created
     if (api.GpuEnvironmentCreate) {
         status = api.GpuEnvironmentCreate(p.env, 0, nullptr);
         LOGI("GpuEnvironmentCreate: status=%d", status);
@@ -449,9 +458,6 @@ static bool initLiteRT(const uint8_t* modelData, size_t modelSize) {
         return false;
     }
 
-    // Restore GLSurfaceView's EGL context after all LiteRT init
-    eglMakeCurrent(savedDisplay, savedDraw, savedRead, savedCtx);
-    LOGI("EGL context restored after LiteRT init");
     return true;
 }
 
@@ -849,19 +855,25 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInit(
     memcpy(p.modelData.data(), AAsset_getBuffer(asset), modelSize);
     AAsset_close(asset);
 
-    // Init GL resources on GL thread (GLSurfaceView context, never touched by LiteRT)
+    // ALL init on GL thread — LiteRT shares our EGL context (no corruption)
+    bool ok = initLiteRT(p.modelData.data(), p.modelData.size());
+    if (!ok) {
+        LOGE("LiteRT init failed");
+        return JNI_FALSE;
+    }
+
     if (!initGlResources()) {
         LOGE("Failed to init GL resources");
         return JNI_FALSE;
     }
 
     p.initialized = true;
-    p.inferenceReady = false;
+    p.inferenceReady = true;
+    LOGI("Pipeline ready: %dx%d -> %dx%d", p.inputW, p.inputH, p.outputW, p.outputH);
+    return JNI_TRUE;
 
-    // LiteRT init + inference on bg thread with its OWN independent EGL context.
-    // Does NOT touch GLSurfaceView's EGL state at all.
+    // --- dead code below (old bg thread approach) ---
     std::thread([&p]() {
-        // Create a completely independent EGL context on this thread
         EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         eglInitialize(display, nullptr, nullptr);
         EGLConfig config;
@@ -905,14 +917,39 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     auto& p = g_pipeline;
     if (!p.initialized || !p.inferenceReady) return;
 
-    // Preprocess on GL thread, signal inference thread (NO LiteRT calls here)
+    // ALL on GL thread: preprocess → inference → output ready for render
     jint* data = env->GetIntArrayElements(pixels, nullptr);
-    {
-        std::lock_guard<std::mutex> lock(p.mtx);
-        preprocessFrame((const uint32_t*)data, width, height, rotation);
-        p.hasInputReady = true;
-    }
+    preprocessFrame((const uint32_t*)data, width, height, rotation);
     env->ReleaseIntArrayElements(pixels, data, JNI_ABORT);
+
+    if (!p.inputTensorBuffer || !p.outputTensorBuffer ||
+        !p.api.LockTensorBuffer) return;
+
+    LiteRtStatus status;
+    void* inPtr = nullptr;
+    status = p.api.LockTensorBuffer(p.inputTensorBuffer, &inPtr,
+            kLiteRtTensorBufferLockModeWriteReplace);
+    if (status == kLiteRtStatusOk && inPtr) {
+        memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
+        p.api.UnlockTensorBuffer(p.inputTensorBuffer);
+
+        status = p.api.RunCompiledModel(p.compiledModel, 0,
+            1, &p.inputTensorBuffer, 1, &p.outputTensorBuffer);
+
+        if (status == kLiteRtStatusOk) {
+            void* outPtr = nullptr;
+            status = p.api.LockTensorBuffer(p.outputTensorBuffer, &outPtr,
+                    kLiteRtTensorBufferLockModeRead);
+            if (status == kLiteRtStatusOk && outPtr) {
+                memcpy(p.outputFloats.data(), outPtr,
+                       p.outputW * p.outputH * sizeof(float));
+                p.api.UnlockTensorBuffer(p.outputTensorBuffer);
+                p.hasOutputReady = true;
+            }
+        }
+        static int infLog = 0;
+        if (infLog++ < 5) LOGI("Inference status=%d", status);
+    }
 }
 
 JNIEXPORT void JNICALL
@@ -921,14 +958,6 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeRender(
 
     auto& p = g_pipeline;
     if (!p.initialized) return;
-
-    static int renderLog = 0;
-    if (renderLog++ < 10) {
-        EGLContext ctx = eglGetCurrentContext();
-        GLenum err = glGetError();
-        LOGI("render: ctx=%p quadProg=%u tex=%u err=0x%x",
-             ctx, p.quadProgram, p.depthTexture, err);
-    }
 
     if (!p.inferenceReady) {
         glViewport(0, 0, viewWidth, viewHeight);
@@ -941,8 +970,10 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeRender(
     updateDepthTexture();
 
 
-    // Render fullscreen quad with depth texture
+    // Render fullscreen quad
     glViewport(0, 0, viewWidth, viewHeight);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(g_pipeline.quadProgram);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_pipeline.depthTexture);
