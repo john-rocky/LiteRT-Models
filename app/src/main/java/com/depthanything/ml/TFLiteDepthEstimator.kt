@@ -34,9 +34,22 @@ class TFLiteDepthEstimator(
     }
 
     private fun initialize() {
-        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label})")
+        val useFP32 = mode == InferenceMode.NHWC_518 || mode == InferenceMode.DIRECT_NHWC
+        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label}, FP32=$useFP32)")
 
         val options = CompiledModel.Options(Accelerator.GPU)
+        if (useFP32) {
+            try {
+                options.gpuOptions = CompiledModel.GpuOptions(
+                    null, null, null,
+                    CompiledModel.GpuOptions.Precision.FP32,
+                    null, null, null, null, null, null, null, null, null, null, null
+                )
+                Log.i(TAG, "[LiteRT] GPU Precision.FP32 set")
+            } catch (e: Exception) {
+                Log.w(TAG, "[LiteRT] Failed to set FP32: ${e.message}")
+            }
+        }
         try {
             compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)
         } catch (e: Exception) {

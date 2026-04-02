@@ -14,6 +14,7 @@ object DepthEstimatorFactory {
             InferenceMode.CLAMPED_FP16W -> TFLiteDepthEstimator(context, mode, MODEL_CLAMPED_FP16W)
             InferenceMode.CLAMPED_FP32W -> TFLiteDepthEstimator(context, mode, MODEL_CLAMPED_FP32W)
             InferenceMode.NHWC_518 -> TFLiteDepthEstimator(context, mode, MODEL_NHWC_518)
+            InferenceMode.DIRECT_NHWC -> TFLiteDepthEstimator(context, mode, "depth_anything_v2_nhwc_direct.tflite")
             InferenceMode.ONNX_CPU -> OnnxDepthEstimator(context, MODEL_ONNX, optimized = false)
         }
     }
@@ -25,6 +26,7 @@ object DepthEstimatorFactory {
                 InferenceMode.CLAMPED_FP16W -> MODEL_CLAMPED_FP16W in assetFiles
                 InferenceMode.CLAMPED_FP32W -> MODEL_CLAMPED_FP32W in assetFiles
                 InferenceMode.NHWC_518 -> MODEL_NHWC_518 in assetFiles
+                InferenceMode.DIRECT_NHWC -> "depth_anything_v2_nhwc_direct.tflite" in assetFiles
                 InferenceMode.ONNX_CPU -> MODEL_ONNX in assetFiles
             }
         }

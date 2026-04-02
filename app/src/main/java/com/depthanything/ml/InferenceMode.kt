@@ -13,6 +13,10 @@ enum class InferenceMode(val label: String, val description: String) {
         "NHWC 518 no-clamp",
         "518x518, onnx2tf, no clamp, ML Drift"
     ),
+    DIRECT_NHWC(
+        "Direct NHWC (corr=1.0)",
+        "litert-torch NHWC, corr=1.0"
+    ),
     ONNX_CPU(
         "ONNX CPU (truth)",
         "ONNX FP32 CPU = PyTorch"

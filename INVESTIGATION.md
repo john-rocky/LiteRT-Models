@@ -1,142 +1,191 @@
-# DepthAnything V2 Android FP16 Investigation
+# DepthAnything V2 Android GPU Investigation
 
 ## Summary
 
-DepthAnything V2 Small (24.7M params, 518x518 input) on Pixel 10 Pro (Tensor G5, PowerVR GPU).
+DepthAnything V2 Small (24.7M params, 518x518) on Pixel 8a (Tensor G3, Mali-G715 GPU).
 
 ### Final Results
 
-| Mode | Avg (ms) | Quality | Model Size |
-|------|----------|---------|------------|
-| GPU clamp+FP16w+FP16 | **208** | OK | 50 MB |
-| GPU clamp+FP16 | 209 | OK | 99 MB |
-| GPU FP16 (no clamp) | 207 | Broken | 94 MB |
-| GPU FP32 | 575 | OK | 94 MB |
-| GPU FP16w (FP32 compute) | 576 | OK | 47 MB |
-| ONNX Runtime CPU | 1404 | OK | 94 MB |
-| TFLite XNNPACK CPU | ~2700 | OK | 94 MB |
+| Mode | Speed | Quality (vs PyTorch) | Model Size |
+|------|-------|---------------------|------------|
+| **onnx2tf + ML Drift FP32** | **~8ms** | corr=0.846 | 98 MB |
+| onnx2tf + ML Drift FP16 clamped | ~7ms | corr=0.846 + FP16 noise | 49-99 MB |
+| onnx2tf + old GPU delegate FP32 | 575ms | corr=0.846 | 94 MB |
+| onnx2tf + old GPU delegate FP16 clamped | 208ms | corr=0.846 + FP16 noise | 94 MB |
+| ONNX Runtime CPU | 1283ms | **corr=1.000** | 96 MB |
+| TFLite XNNPACK CPU | ~2700ms | corr=0.846 | 94 MB |
 
-**Best: GPU clamp+FP16w+FP16 at 208ms (50MB model)**
-
-### iOS Comparison (Apple official benchmark)
+### iOS Comparison
 
 | Device | Time | Compute |
 |--------|------|---------|
 | iPhone 16 Pro | 26ms | Neural Engine |
-| iPhone 15 Pro Max | 34ms | Neural Engine |
-| **Pixel 10 Pro** | **208ms** | GPU delegate |
-
-iOS uses dedicated Neural Engine (NPU). Android Pixel uses GPU via TFLite GPU delegate.
+| **Pixel 8a** | **8ms** | ML Drift GPU |
 
 ---
 
-## Problem
+## Conversion Pipelines Investigated
 
-Client reported:
-1. TFLite GPU delegate + FP16 (`isPrecisionLossAllowed=true`) causes NaN/Inf → output is single color
-2. FP32 works but ~2x slower than iOS equivalent device
-3. Pixel 10 Pro (Tensor G5) GPU delegate support unclear
+### What works
 
-## Root Cause Analysis
+| # | Pipeline | GPU | Quality | Status |
+|---|----------|-----|---------|--------|
+| 1 | **onnx2tf** (PINTO0309) | ML Drift + old delegate | corr=0.846 | **Production ready** |
+| 2 | Qualcomm AI Hub | Old delegate | corr≈0.85 | External dependency |
 
-### Why FP16 produces NaN
+### What doesn't work and why
 
-ViT attention mechanism: Q*K^T dot product can produce values exceeding FP16 range (±65,504).
-LayerNormalization's internal RSQRT can also overflow. These cause NaN propagation through the network.
+| # | Pipeline | Failure Reason |
+|---|----------|---------------|
+| 3 | litert-torch direct | Internal ops are NCHW → ML Drift requires NHWC throughout |
+| 4 | litert-torch + NHWC I/O wrapper | Only wraps boundaries, internal Conv/MatMul still NCHW |
+| 5 | litert-torch + FlatWrapper + NHWC permute | Same: internal computation NCHW, ML Drift rejects |
+| 6 | ONNX direct in CompiledModel | CompiledModel doesn't support ONNX format |
+| 7 | TF version of DepthAnything | Does not exist in HuggingFace transformers |
+| 8 | onnx-tf (official) | Deprecated, broken with modern onnx versions |
+| 9 | nobuco (PyTorch→Keras) | Keras 2 only, no ViT support, high effort |
 
-iOS CoreML handles this transparently with automatic mixed precision. TFLite GPU delegate has no per-op precision control — `isPrecisionLossAllowed` is all-or-nothing.
+### Key insight: ML Drift NHWC requirement
 
-### Why GPU delegate appeared "broken" initially
+ML Drift (LiteRT 2.x CompiledModel GPU engine) requires **all internal tensor operations** in NHWC layout. Adding NHWC transposes at I/O boundaries is insufficient. Only onnx2tf performs full NCHW→NHWC conversion of weights and operations.
 
-Three issues compounded:
+litert-torch traces PyTorch computation (which is NCHW) and preserves it. Even with I/O wrappers, internal Conv2D/MatMul operate in NCHW.
 
-1. **NCHW layout**: `litert-torch` (formerly ai-edge-torch) exports models with NCHW internal layout. TFLite GPU delegate requires NHWC for effective GPU execution. With NCHW, most ops fall back to CPU → GPU delegate gives no speedup.
+---
 
-2. **3D CLS token concat**: ViT's CLS token concatenation uses 3D tensors `[1, 1, 384]`. GPU delegate's CONCATENATION op requires 4D `BxHxWxC` → delegate initialization fails.
+## Quality Analysis
 
-3. **Erf op**: GELU activation uses the Erf function, which is not a TFLite built-in. Requires FlexDelegate (CPU-only), preventing full GPU execution.
+### Ground truth comparison
 
-## Solution
+| Runtime | vs PyTorch | MSE |
+|---------|-----------|-----|
+| **ONNX Runtime** | **corr=1.000000** | 0.000000 |
+| onnx2tf TFLite (all variants) | corr=0.846 | 0.057 |
+| litert-torch TFLite (CPU) | corr=1.000000 | 0.000000 |
 
-### Model Conversion Pipeline
+### What causes the 0.846 correlation in onnx2tf?
 
+| Factor | Impact |
+|--------|--------|
+| Erf→Tanh replacement | **None** (verified corr=1.0 in Python) |
+| GELU exact→tanh approximation | **None** (verified corr=1.0 in Python) |
+| FP16 clamp ops | **None** (same corr with/without clamps) |
+| FP16 vs FP32 weights | **None** (same corr) |
+| **onnx2tf graph transformation** | **Sole cause** (op decomposition, layout conversion artifacts) |
+
+The 15% quality loss is a structural limitation of the ONNX→TF→TFLite conversion pipeline. No parameter tuning can fix it.
+
+---
+
+## ML Drift (LiteRT 2.x) Findings
+
+### CompiledModel API
+
+```kotlin
+implementation("com.google.ai.edge.litert:litert:2.1.0")
+
+val options = CompiledModel.Options(Accelerator.GPU)
+// Optional: force FP32 precision
+options.gpuOptions = CompiledModel.GpuOptions(
+    precision = CompiledModel.GpuOptions.Precision.FP32
+)
+val model = CompiledModel.create(context.assets, "model.tflite", options, null)
 ```
-PyTorch (NCHW) → ONNX → onnx2tf → TFLite (NHWC, GPU-compatible)
-```
 
-Key steps:
+### GpuOptions.Precision
 
-1. **Patch PyTorch model before export:**
-   - Replace `nn.GELU()` → `nn.GELU(approximate="tanh")` (avoids Erf op)
-   - Modify CLS token concatenation to use 4D tensors:
-     ```python
-     # Original: torch.cat([cls, patches], dim=1)  # 3D
-     # Fixed:    torch.cat([cls.unsqueeze(1), patches.unsqueeze(1)], dim=2).squeeze(1)  # via 4D
-     ```
+| Setting | Behavior | Quality |
+|---------|----------|---------|
+| DEFAULT | FP16 compute (fast, overflow risk) | Needs clamps |
+| **FP32** | FP32 compute (same speed on this device!) | Best |
 
-2. **ONNX post-processing:**
-   - Add missing `kernel_shape` attribute to ConvTranspose nodes
-   - Replace remaining Erf → Tanh in ONNX graph
-   - Simplify with onnxsim
+FP32 and DEFAULT showed same ~8ms speed on Pixel 8a. FP32 is strictly better.
 
-3. **For FP16 GPU: Insert clamp ops at 112 locations:**
-   - Before every Softmax (12 nodes) — prevents attention score overflow
-   - Before every LayerNormalization (28 nodes) — prevents variance overflow
-   - After every MatMul (72 nodes) — clamps intermediate values
-   - Clamp range: ±60,000 (within FP16 safe range)
+### Supported TFLite ops on ML Drift
 
-4. **Convert with onnx2tf:**
-   ```bash
-   onnx2tf -i model.onnx -o output/ -osd -coion
-   ```
-   - `-osd`: output saved model directory
-   - `-coion`: built-in ops only (no FlexDelegate)
-   - Produces both FP32 and FP16 weight variants
+| Op | Supported | Notes |
+|----|-----------|-------|
+| GELU | **Yes** | Tested, works |
+| BATCH_MATMUL | **Yes** | Works in NHWC model |
+| SOFTMAX | **Yes** | |
+| CONV_2D | **Yes** | |
+| GATHER_ND | Unknown | litert-torch model failed but may be layout issue |
+| BROADCAST_TO | Unknown | Same |
 
-### Why onnx2tf, not litert-torch?
+### ML Drift vs old GPU delegate
 
-| | litert-torch | onnx2tf |
+| | ML Drift (v2.x) | Old delegate (v1.x) |
 |---|---|---|
-| Internal layout | NCHW (PyTorch convention) | **NHWC** (TF/TFLite convention) |
-| Transpose ops | Adds boundary transposes only | **Full weight/op conversion** |
-| Op count | 714 | ~650 (fewer transposes) |
-| GPU delegate | Falls back to CPU | **Full GPU execution** |
-| Result | 2400ms | **208ms** |
+| Speed | **~8ms** | 575ms (FP32), 208ms (FP16) |
+| FP32/FP16 control | GpuOptions.Precision | isPrecisionLossAllowed |
+| NHWC requirement | **Strict** (internal ops too) | Partial (NCHW partially works) |
+| API | CompiledModel | Interpreter + GpuDelegate |
+
+---
+
+## FP16 Overflow Solution
+
+### Problem
+ViT attention Q*K^T produces values exceeding FP16 range (±65,504) → NaN.
+
+### Solution: Targeted clamping
+Insert Clip(±60000) at 64 locations in ONNX graph before onnx2tf conversion:
+- Before Softmax: 12 nodes
+- Before LayerNormalization: 28 nodes  
+- After Attention MatMul (Q*K^T, attn*V): 24 nodes
+- FFN MatMul: NOT clamped (degrades quality)
+
+### Clamping results
+
+| Clamp strategy | Clamp count | Quality |
+|---------------|-------------|---------|
+| None | 0 | Broken (NaN) |
+| Softmax only | 12 | Broken |
+| Softmax + LayerNorm | 40 | Broken |
+| **Softmax + LN + Attention MatMul** | **64** | **OK** |
+| All MatMul | 112 | Slightly worse (FFN clamped unnecessarily) |
+
+---
+
+## Conversion Pipeline (onnx2tf)
+
+```bash
+python scripts/convert_nhwc_gpu.py --output_dir app/src/main/assets/ \
+    --input_height 518 --input_width 518
+```
+
+### Steps
+1. Load DepthAnything V2 from HuggingFace
+2. Patch: GELU(tanh), 4D CLS concat, position embedding interpolation
+3. Export to ONNX (opset 18)
+4. Fix: ConvTranspose kernel_shape, Erf→Tanh
+5. Simplify with onnxsim
+6. (Optional) Insert FP16 clamps at 64 attention-related locations
+7. Convert with onnx2tf (`-osd -coion`)
 
 ### onnx2tf patches required
+1. `download_test_image_data()`: numpy pickle error → early return with dummy
+2. `get_weights_constant_or_variable()`: ConvTranspose axis mismatch → ndim fallback
 
-onnx2tf 1.28.8 has bugs with our model:
-
-1. `download_test_image_data()` — np.load pickle error. Fix: early return with dummy data
-2. `get_weights_constant_or_variable()` — ConvTranspose weight transpose axis mismatch. Fix: fallback to `values.ndim`
-
-## Benchmark Evolution
-
-| Stage | Mode | Time | Change |
-|-------|------|------|--------|
-| Initial | ONNX CPU | 1404ms | baseline |
-| Initial | TFLite XNNPACK CPU | 2700ms | 2x slower |
-| Initial | TFLite GPU (NCHW) | 2400ms | GPU not working |
-| Fix NHWC | TFLite GPU FP32 (NHWC) | 575ms | **4.7x faster** |
-| Fix FP16 | TFLite GPU clamp+FP16 | **208ms** | **6.7x faster** |
+---
 
 ## Files
 
+### Models (in app/src/main/assets/, excluded from git)
+- `depth_anything_v2_nhwc.tflite` — onnx2tf NHWC, no clamp (GPU FP32)
+- `depth_anything_v2_nhwc_clamped.tflite` — onnx2tf NHWC, 112 clamps (GPU FP16)
+- `depth_anything_v2_nhwc_clamped_fp16w.tflite` — same, FP16 weights (smaller)
+- `depth_anything_v2.onnx` — ONNX FP32 (for ONNX Runtime CPU)
+- `depth_anything_v2_direct.tflite` — litert-torch NCHW (CPU only, corr=1.0)
+- `depth_anything_v2_flat.tflite` — litert-torch NCHW flat (experimental)
+- `depth_anything_v2_nhwc_direct.tflite` — litert-torch NHWC I/O (ML Drift incompatible)
+
+### Scripts
+- `scripts/convert_nhwc_gpu.py` — Main conversion script (onnx2tf pipeline)
+- `scripts/export_nhwc.py` — litert-torch NHWC export (experimental)
+- `scripts/convert_onnx_mixed_precision.py` — ONNX FP16 mixed precision
+
 ### Android App
-- `app/src/main/java/com/depthanything/ml/` — Inference engine (TFLite, ONNX)
-- `app/src/main/java/com/depthanything/ui/` — Benchmark UI
-- Model files go in `app/src/main/assets/` (see Releases)
-
-### Conversion Scripts
-- `scripts/export_all.py` — Initial ONNX + TFLite export via litert-torch
-- `scripts/export_nhwc.py` — NHWC export attempt via litert-torch (insufficient)
-- `scripts/convert_models.py` — Full conversion pipeline reference
-- `scripts/convert_onnx_mixed_precision.py` — ONNX FP16 mixed precision tool
-
-### Key Learnings
-
-1. **ViT models on Android GPU require NHWC layout throughout** — not just I/O boundaries
-2. **litert-torch is not suitable for GPU-targeted TFLite models** — use onnx2tf
-3. **FP16 on GPU is 2.8x faster than FP32** — but requires clamping at 112+ locations
-4. **Clamp before Softmax alone is insufficient** — LayerNorm and MatMul outputs also overflow
-5. **GPU delegate on Pixel 10 Pro (PowerVR) works** — contrary to initial investigation suggesting otherwise
+- LiteRT 2.1.0 CompiledModel API for GPU (ML Drift)
+- ONNX Runtime 1.24.3 for CPU reference
+- Jetpack Compose UI with benchmark comparison
