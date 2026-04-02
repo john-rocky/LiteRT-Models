@@ -9,6 +9,7 @@ object DepthEstimatorFactory {
     private const val MODEL_NHWC_518 = "depth_anything_v2_nhwc_518.tflite"
     private const val MODEL_ONNX = "depth_anything_v2.onnx"
     private const val MODEL_KERAS = "depth_anything_v2_keras.tflite"
+    private const val MODEL_KERAS_392 = "depth_anything_v2_keras_392x518.tflite"
     private const val MODEL_V129 = "depth_anything_v2_v129.tflite"
     private const val MODEL_V129_CLAMPED = "depth_anything_v2_v129_clamped.tflite"
 
@@ -18,6 +19,7 @@ object DepthEstimatorFactory {
         InferenceMode.NHWC_518 -> MODEL_NHWC_518
         InferenceMode.DIRECT_NHWC -> "depth_anything_v2_nhwc_direct.tflite"
         InferenceMode.KERAS_NATIVE -> MODEL_KERAS
+        InferenceMode.KERAS_392 -> MODEL_KERAS_392
         InferenceMode.V129 -> MODEL_V129
         InferenceMode.V129_CLAMPED -> MODEL_V129_CLAMPED
         InferenceMode.ONNX_CPU, InferenceMode.ONNX_XNNPACK -> MODEL_ONNX

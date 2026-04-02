@@ -446,20 +446,24 @@ def load_pytorch_weights(model, input_h=518, input_w=518):
     model.cls_token.assign(get("backbone.embeddings.cls_token"))
 
     # Position embedding interpolation if needed
+    # Use PyTorch's interpolation to match exactly (bicubic, align_corners=False)
     pos_emb = get("backbone.embeddings.position_embeddings")  # [1, 1370, 384]
     if pos_emb.shape[1] != model.num_patches + 1:
-        # Interpolate patch position embeddings
-        cls_pos = pos_emb[:, :1, :]  # [1, 1, 384]
-        patch_pos = pos_emb[:, 1:, :]  # [1, N_orig, 384]
+        cls_pos = pos_emb[:, :1, :]
+        patch_pos = pos_emb[:, 1:, :]
         orig_size = int(patch_pos.shape[1] ** 0.5)
         patch_h = input_h // PATCH_SIZE
         patch_w = input_w // PATCH_SIZE
-        # Reshape to spatial, resize, flatten
-        patch_pos = patch_pos.reshape(1, orig_size, orig_size, HIDDEN_SIZE)
-        patch_pos_tf = tf.image.resize(
-            patch_pos, [patch_h, patch_w], method="bicubic"
-        ).numpy()
-        patch_pos = patch_pos_tf.reshape(1, -1, HIDDEN_SIZE)
+        # Use PyTorch bicubic (matches HuggingFace runtime interpolation exactly)
+        patch_pos_pt = torch.from_numpy(
+            patch_pos.reshape(1, orig_size, orig_size, HIDDEN_SIZE)
+        ).permute(0, 3, 1, 2)  # NHWC -> NCHW
+        patch_pos_pt = torch.nn.functional.interpolate(
+            patch_pos_pt, size=(patch_h, patch_w),
+            mode="bicubic", align_corners=False
+        )
+        patch_pos = patch_pos_pt.permute(0, 2, 3, 1).numpy()  # NCHW -> NHWC
+        patch_pos = patch_pos.reshape(1, -1, HIDDEN_SIZE)
         pos_emb = np.concatenate([cls_pos, patch_pos], axis=1)
 
     model.position_embeddings.assign(pos_emb)
@@ -688,8 +692,9 @@ def main():
         print("  Continuing with export anyway...")
 
     # Step 4: Export TFLite
+    suffix = f"_{args.input_height}x{args.input_width}" if (args.input_height != 518 or args.input_width != 518) else ""
     output_path = os.path.join(
-        args.output_dir, "depth_anything_v2_keras.tflite"
+        args.output_dir, f"depth_anything_v2_keras{suffix}.tflite"
     )
     export_tflite(model, output_path, args.input_height, args.input_width)
 

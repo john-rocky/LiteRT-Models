@@ -37,7 +37,8 @@ class TFLiteDepthEstimator(
         // Use FP32 for non-clamped models to avoid FP16 overflow
         val useFP32 = mode in setOf(
             InferenceMode.NHWC_518, InferenceMode.DIRECT_NHWC,
-            InferenceMode.V129, InferenceMode.KERAS_NATIVE
+            InferenceMode.V129, InferenceMode.KERAS_NATIVE,
+            InferenceMode.KERAS_392
         )
         Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label}, FP32=$useFP32)")
 
