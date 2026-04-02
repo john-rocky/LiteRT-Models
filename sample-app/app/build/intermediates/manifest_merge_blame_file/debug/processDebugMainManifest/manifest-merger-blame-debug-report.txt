@@ -1,0 +1,618 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.depthanything.sample"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="26"
+9        android:targetSdkVersion="35" />
+10
+11    <uses-feature
+11-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:4:5-84
+12        android:name="android.hardware.camera"
+12-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:4:19-57
+13        android:required="true" />
+13-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:4:58-81
+14
+15    <uses-permission android:name="android.permission.CAMERA" />
+15-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:5:5-65
+15-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:5:22-62
+16    <!-- NOTE: Developers need to copy permission declarations to their app's manifest. -->
+17    <!-- Required for downloading AiPack models. -->
+18    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+18-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:23:5-76
+18-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:23:22-74
+19    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+19-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:24:5-86
+19-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:24:22-84
+20    <uses-permission android:name="android.permission.WAKE_LOCK" />
+20-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:23:5-68
+20-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:23:22-65
+21    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+21-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:24:5-79
+21-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:24:22-76
+22    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+22-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:25:5-81
+22-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:25:22-78
+23
+24    <permission
+24-->[androidx.core:core:1.15.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/fde70f0c61ab7a3829bd9e7f167cec96/transformed/core-1.15.0/AndroidManifest.xml:22:5-24:47
+25        android:name="com.depthanything.sample.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+25-->[androidx.core:core:1.15.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/fde70f0c61ab7a3829bd9e7f167cec96/transformed/core-1.15.0/AndroidManifest.xml:23:9-81
+26        android:protectionLevel="signature" />
+26-->[androidx.core:core:1.15.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/fde70f0c61ab7a3829bd9e7f167cec96/transformed/core-1.15.0/AndroidManifest.xml:24:9-44
+27
+28    <uses-permission android:name="com.depthanything.sample.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+28-->[androidx.core:core:1.15.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/fde70f0c61ab7a3829bd9e7f167cec96/transformed/core-1.15.0/AndroidManifest.xml:26:5-97
+28-->[androidx.core:core:1.15.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/fde70f0c61ab7a3829bd9e7f167cec96/transformed/core-1.15.0/AndroidManifest.xml:26:22-94
+29
+30    <application
+30-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:7:5-24:19
+31        android:allowBackup="false"
+31-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:8:9-36
+32        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+32-->[androidx.core:core:1.15.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/fde70f0c61ab7a3829bd9e7f167cec96/transformed/core-1.15.0/AndroidManifest.xml:28:18-86
+33        android:debuggable="true"
+34        android:extractNativeLibs="false"
+35        android:label="DepthAnything"
+35-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:9:9-38
+36        android:largeHeap="true"
+36-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:12:9-33
+37        android:supportsRtl="true"
+37-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:10:9-35
+38        android:theme="@android:style/Theme.Material.Light.NoActionBar" >
+38-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:11:9-72
+39        <activity
+39-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:14:9-23:20
+40            android:name="com.depthanything.sample.MainActivity"
+40-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:15:13-41
+41            android:exported="true"
+41-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:16:13-36
+42            android:screenOrientation="portrait"
+42-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:17:13-49
+43            android:windowSoftInputMode="adjustResize" >
+43-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:18:13-55
+44            <intent-filter>
+44-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:19:13-22:29
+45                <action android:name="android.intent.action.MAIN" />
+45-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:20:17-69
+45-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:20:25-66
+46
+47                <category android:name="android.intent.category.LAUNCHER" />
+47-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:21:17-77
+47-->/Users/majimadaisuke/Downloads/depthanything-android/sample-app/app/src/main/AndroidManifest.xml:21:27-74
+48            </intent-filter>
+49        </activity>
+50
+51        <service
+51-->[androidx.camera:camera-camera2:1.4.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/875c97863e88e69e322bfe9afeceeabf/transformed/camera-camera2-1.4.1/AndroidManifest.xml:24:9-33:19
+52            android:name="androidx.camera.core.impl.MetadataHolderService"
+52-->[androidx.camera:camera-camera2:1.4.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/875c97863e88e69e322bfe9afeceeabf/transformed/camera-camera2-1.4.1/AndroidManifest.xml:25:13-75
+53            android:enabled="false"
+53-->[androidx.camera:camera-camera2:1.4.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/875c97863e88e69e322bfe9afeceeabf/transformed/camera-camera2-1.4.1/AndroidManifest.xml:26:13-36
+54            android:exported="false" >
+54-->[androidx.camera:camera-camera2:1.4.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/875c97863e88e69e322bfe9afeceeabf/transformed/camera-camera2-1.4.1/AndroidManifest.xml:27:13-37
+55            <meta-data
+55-->[androidx.camera:camera-camera2:1.4.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/875c97863e88e69e322bfe9afeceeabf/transformed/camera-camera2-1.4.1/AndroidManifest.xml:30:13-32:89
+56                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
+56-->[androidx.camera:camera-camera2:1.4.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/875c97863e88e69e322bfe9afeceeabf/transformed/camera-camera2-1.4.1/AndroidManifest.xml:31:17-103
+57                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
+57-->[androidx.camera:camera-camera2:1.4.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/875c97863e88e69e322bfe9afeceeabf/transformed/camera-camera2-1.4.1/AndroidManifest.xml:32:17-86
+58        </service>
+59        <!--
+60 Applications that target Android S+ require explicit declaration of
+61             any referenced vendor-provided libraries.
+62        -->
+63        <uses-native-library
+63-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+64            android:name="libOpenCL.so"
+64-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+65            android:required="false" />
+65-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+66        <uses-native-library
+66-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+67            android:name="libOpenCL-car.so"
+67-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+68            android:required="false" />
+68-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+69        <uses-native-library
+69-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+70            android:name="libOpenCL-pixel.so"
+70-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+71            android:required="false" />
+71-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+72        <uses-native-library
+72-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+73            android:name="libvndksupport.so"
+73-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+74            android:required="false" /> <!-- Qualcomm NPU -->
+74-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+75        <uses-native-library
+75-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+76            android:name="libcdsprpc.so"
+76-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+77            android:required="false" /> <!-- Google Tensor NPU -->
+77-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+78        <uses-native-library
+78-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+79            android:name="libedgetpu_util.so"
+79-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+80            android:required="false" />
+80-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+81        <uses-native-library
+81-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+82            android:name="libedgetpu_litert.so"
+82-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+83            android:required="false" /> <!-- MTK NPU -->
+83-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+84        <!-- Utils -->
+85        <uses-native-library
+85-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+86            android:name="libneuron_sys_util.mtk.so"
+86-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+87            android:required="false" /> <!-- Libs needed if using the runtime from the system. -->
+87-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+88        <uses-native-library
+88-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+89            android:name="libneuronusdk_adapter.mtk.so"
+89-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+90            android:required="false" />
+90-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+91        <uses-native-library
+91-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+92            android:name="libneuronusdk_adapter.9.mtk.so"
+92-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+93            android:required="false" />
+93-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+94        <uses-native-library
+94-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+95            android:name="libneuron_adapter_mgvi.so"
+95-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+96            android:required="false" /> <!-- Libs needed if bundling the runtime with the app. -->
+96-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+97        <!-- AIDL Service -->
+98        <uses-native-library
+98-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+99            android:name="libapuwareutils_v2.mtk.so"
+99-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+100            android:required="false" />
+100-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+101        <uses-native-library
+101-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+102            android:name="libapuwareutils.mtk.so"
+102-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+103            android:required="false" />
+103-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+104        <uses-native-library
+104-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+105            android:name="libapuwareapusys_v2.mtk.so"
+105-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+106            android:required="false" /> <!-- DSP -->
+106-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+107        <uses-native-library
+107-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+108            android:name="libmvpuop_mtk_nn.mtk.so"
+108-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+109            android:required="false" />
+109-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+110        <uses-native-library
+110-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+111            android:name="libmvpuop_mtk_cv.mtk.so"
+111-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+112            android:required="false" />
+112-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+113        <uses-native-library
+113-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+114            android:name="libmvpu_runtime_pub.mtk.so"
+114-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+115            android:required="false" />
+115-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+116        <uses-native-library
+116-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+117            android:name="libmvpu_engine_pub.mtk.so"
+117-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+118            android:required="false" />
+118-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+119        <uses-native-library
+119-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+120            android:name="libmvpu_pattern_pub.mtk.so"
+120-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+121            android:required="false" />
+121-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+122        <uses-native-library
+122-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+123            android:name="libmvpuop25_mtk_nn.mtk.so"
+123-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+124            android:required="false" />
+124-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+125        <uses-native-library
+125-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+126            android:name="libmvpuop25_mtk_cv.mtk.so"
+126-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+127            android:required="false" />
+127-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+128        <uses-native-library
+128-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+129            android:name="libmvpu_runtime_25_pub.mtk.so"
+129-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+130            android:required="false" />
+130-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+131        <uses-native-library
+131-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+132            android:name="libmvpu_engine_25_pub.mtk.so"
+132-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+133            android:required="false" />
+133-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+134        <uses-native-library
+134-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+135            android:name="libmvpu_pattern_25_pub.mtk.so"
+135-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+136            android:required="false" />
+136-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+137        <uses-native-library
+137-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+138            android:name="libmvpu_config.mtk.so"
+138-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+139            android:required="false" />
+139-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+140        <uses-native-library
+140-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+141            android:name="libmvpup30_mtk_nn.mtk.so"
+141-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+142            android:required="false" />
+142-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+143        <uses-native-library
+143-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+144            android:name="libmvpup30_mtk_cv.mtk.so"
+144-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+145            android:required="false" />
+145-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+146        <uses-native-library
+146-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+147            android:name="libmvpu_runtime_30.mtk.so"
+147-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+148            android:required="false" />
+148-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+149        <uses-native-library
+149-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+150            android:name="libmvpu_engine_30.mtk.so"
+150-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+151            android:required="false" />
+151-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+152        <uses-native-library
+152-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+153            android:name="libmvpu_pattern_30.mtk.so"
+153-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+154            android:required="false" />
+154-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+155        <uses-native-library
+155-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:9-84
+156            android:name="libmvpuop30_mtk_nn.mtk.so"
+156-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:30-57
+157            android:required="false" /> <!-- The services will be merged into the manifest of the hosting app. -->
+157-->[com.google.ai.edge.litert:litert:2.1.3] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/c0fb771d412ac1c37776eb5c7703aac5/transformed/litert-2.1.3/AndroidManifest.xml:29:58-82
+158        <service
+158-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:21:9-28:19
+159            android:name="com.google.android.play.core.assetpacks.AssetPackExtractionService"
+159-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:22:13-94
+160            android:enabled="false"
+160-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:23:13-36
+161            android:exported="true" >
+161-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:24:13-36
+162            <meta-data
+162-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:25:13-27:41
+163                android:name="com.google.android.play.core.assetpacks.versionCode"
+163-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:26:17-83
+164                android:value="20300" />
+164-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:27:17-38
+165        </service>
+166        <service
+166-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:29:9-33:56
+167            android:name="com.google.android.play.core.assetpacks.ExtractionForegroundService"
+167-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:30:13-95
+168            android:enabled="false"
+168-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:31:13-36
+169            android:exported="false"
+169-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:32:13-37
+170            android:foregroundServiceType="dataSync" />
+170-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:33:13-53
+171
+172        <receiver
+172-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:35:9-43:20
+173            android:name="com.google.android.play.core.assetpacks.SessionStateBroadcastReceiver"
+173-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:36:13-97
+174            android:enabled="true"
+174-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:37:13-35
+175            android:exported="true"
+175-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:38:13-36
+176            android:permission="android.permission.INSTALL_PACKAGES" >
+176-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:39:13-69
+177            <intent-filter>
+177-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:40:13-42:29
+178                <action android:name="com.google.android.play.core.assetpacks.receiver.ACTION_SESSION_UPDATE" />
+178-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:41:17-113
+178-->[com.google.android.play:asset-delivery:2.3.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ee73d7e0b2c8f82c223fe1eae1739647/transformed/asset-delivery-2.3.0/AndroidManifest.xml:41:25-110
+179            </intent-filter>
+180        </receiver>
+181
+182        <meta-data
+182-->[com.google.android.gms:play-services-basement:18.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/d0a377666622ed62194ce84a31049b7f/transformed/play-services-basement-18.4.0/AndroidManifest.xml:6:9-122
+183            android:name="com.google.android.gms.version"
+183-->[com.google.android.gms:play-services-basement:18.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/d0a377666622ed62194ce84a31049b7f/transformed/play-services-basement-18.4.0/AndroidManifest.xml:6:20-65
+184            android:value="@integer/google_play_services_version" />
+184-->[com.google.android.gms:play-services-basement:18.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/d0a377666622ed62194ce84a31049b7f/transformed/play-services-basement-18.4.0/AndroidManifest.xml:6:66-119
+185
+186        <provider
+186-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:29:9-37:20
+187            android:name="androidx.startup.InitializationProvider"
+187-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:30:13-67
+188            android:authorities="com.depthanything.sample.androidx-startup"
+188-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:31:13-68
+189            android:exported="false" >
+189-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:32:13-37
+190            <meta-data
+190-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:34:13-36:52
+191                android:name="androidx.work.WorkManagerInitializer"
+191-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:35:17-68
+192                android:value="androidx.startup" />
+192-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:36:17-49
+193            <meta-data
+193-->[androidx.emoji2:emoji2:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/f22d95f902ae6082588d26932e47b832/transformed/emoji2-1.4.0/AndroidManifest.xml:29:13-31:52
+194                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+194-->[androidx.emoji2:emoji2:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/f22d95f902ae6082588d26932e47b832/transformed/emoji2-1.4.0/AndroidManifest.xml:30:17-75
+195                android:value="androidx.startup" />
+195-->[androidx.emoji2:emoji2:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/f22d95f902ae6082588d26932e47b832/transformed/emoji2-1.4.0/AndroidManifest.xml:31:17-49
+196            <meta-data
+196-->[androidx.lifecycle:lifecycle-process:2.10.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/4b5142fbb01c4ff9966d099bf89a010e/transformed/lifecycle-process-2.10.0/AndroidManifest.xml:29:13-31:52
+197                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+197-->[androidx.lifecycle:lifecycle-process:2.10.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/4b5142fbb01c4ff9966d099bf89a010e/transformed/lifecycle-process-2.10.0/AndroidManifest.xml:30:17-78
+198                android:value="androidx.startup" />
+198-->[androidx.lifecycle:lifecycle-process:2.10.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/4b5142fbb01c4ff9966d099bf89a010e/transformed/lifecycle-process-2.10.0/AndroidManifest.xml:31:17-49
+199            <meta-data
+199-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:29:13-31:52
+200                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+200-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:30:17-85
+201                android:value="androidx.startup" />
+201-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:31:17-49
+202        </provider>
+203
+204        <service
+204-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:39:9-45:35
+205            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+205-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:40:13-88
+206            android:directBootAware="false"
+206-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:41:13-44
+207            android:enabled="@bool/enable_system_alarm_service_default"
+207-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:42:13-72
+208            android:exported="false" />
+208-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:43:13-37
+209        <service
+209-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:46:9-52:35
+210            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+210-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:47:13-84
+211            android:directBootAware="false"
+211-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:48:13-44
+212            android:enabled="@bool/enable_system_job_service_default"
+212-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:49:13-70
+213            android:exported="true"
+213-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:50:13-36
+214            android:permission="android.permission.BIND_JOB_SERVICE" />
+214-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:51:13-69
+215        <service
+215-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:53:9-59:35
+216            android:name="androidx.work.impl.foreground.SystemForegroundService"
+216-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:54:13-81
+217            android:directBootAware="false"
+217-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:55:13-44
+218            android:enabled="@bool/enable_system_foreground_service_default"
+218-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:56:13-77
+219            android:exported="false" />
+219-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:57:13-37
+220
+221        <receiver
+221-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:61:9-66:35
+222            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+222-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:62:13-88
+223            android:directBootAware="false"
+223-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:63:13-44
+224            android:enabled="true"
+224-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:64:13-35
+225            android:exported="false" />
+225-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:65:13-37
+226        <receiver
+226-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:67:9-77:20
+227            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+227-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:68:13-106
+228            android:directBootAware="false"
+228-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:69:13-44
+229            android:enabled="false"
+229-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:70:13-36
+230            android:exported="false" >
+230-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:71:13-37
+231            <intent-filter>
+231-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:73:13-76:29
+232                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+232-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:74:17-87
+232-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:74:25-84
+233                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+233-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:75:17-90
+233-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:75:25-87
+234            </intent-filter>
+235        </receiver>
+236        <receiver
+236-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:78:9-88:20
+237            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+237-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:79:13-104
+238            android:directBootAware="false"
+238-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:80:13-44
+239            android:enabled="false"
+239-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:81:13-36
+240            android:exported="false" >
+240-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:82:13-37
+241            <intent-filter>
+241-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:84:13-87:29
+242                <action android:name="android.intent.action.BATTERY_OKAY" />
+242-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:85:17-77
+242-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:85:25-74
+243                <action android:name="android.intent.action.BATTERY_LOW" />
+243-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:86:17-76
+243-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:86:25-73
+244            </intent-filter>
+245        </receiver>
+246        <receiver
+246-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:89:9-99:20
+247            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+247-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:90:13-104
+248            android:directBootAware="false"
+248-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:91:13-44
+249            android:enabled="false"
+249-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:92:13-36
+250            android:exported="false" >
+250-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:93:13-37
+251            <intent-filter>
+251-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:95:13-98:29
+252                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+252-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:96:17-83
+252-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:96:25-80
+253                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+253-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:97:17-82
+253-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:97:25-79
+254            </intent-filter>
+255        </receiver>
+256        <receiver
+256-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:100:9-109:20
+257            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+257-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:101:13-103
+258            android:directBootAware="false"
+258-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:102:13-44
+259            android:enabled="false"
+259-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:103:13-36
+260            android:exported="false" >
+260-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:104:13-37
+261            <intent-filter>
+261-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:106:13-108:29
+262                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+262-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:107:17-79
+262-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:107:25-76
+263            </intent-filter>
+264        </receiver>
+265        <receiver
+265-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:110:9-121:20
+266            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+266-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:111:13-88
+267            android:directBootAware="false"
+267-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:112:13-44
+268            android:enabled="false"
+268-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:113:13-36
+269            android:exported="false" >
+269-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:114:13-37
+270            <intent-filter>
+270-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:116:13-120:29
+271                <action android:name="android.intent.action.BOOT_COMPLETED" />
+271-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:117:17-79
+271-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:117:25-76
+272                <action android:name="android.intent.action.TIME_SET" />
+272-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:118:17-73
+272-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:118:25-70
+273                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+273-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:119:17-81
+273-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:119:25-78
+274            </intent-filter>
+275        </receiver>
+276        <receiver
+276-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:122:9-131:20
+277            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+277-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:123:13-99
+278            android:directBootAware="false"
+278-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:124:13-44
+279            android:enabled="@bool/enable_system_alarm_service_default"
+279-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:125:13-72
+280            android:exported="false" >
+280-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:126:13-37
+281            <intent-filter>
+281-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:128:13-130:29
+282                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+282-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:129:17-98
+282-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:129:25-95
+283            </intent-filter>
+284        </receiver>
+285        <receiver
+285-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:132:9-142:20
+286            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+286-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:133:13-78
+287            android:directBootAware="false"
+287-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:134:13-44
+288            android:enabled="true"
+288-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:135:13-35
+289            android:exported="true"
+289-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:136:13-36
+290            android:permission="android.permission.DUMP" >
+290-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:137:13-57
+291            <intent-filter>
+291-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:139:13-141:29
+292                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+292-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:140:17-88
+292-->[androidx.work:work-runtime:2.9.1] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ebccf0084f517b8ab5e926e02e127fa2/transformed/work-runtime-2.9.1/AndroidManifest.xml:140:25-85
+293            </intent-filter>
+294        </receiver>
+295
+296        <service
+296-->[androidx.room:room-runtime:2.5.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/33877d3f2b21bfc967b08eea2b76d9c5/transformed/room-runtime-2.5.0/AndroidManifest.xml:24:9-28:63
+297            android:name="androidx.room.MultiInstanceInvalidationService"
+297-->[androidx.room:room-runtime:2.5.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/33877d3f2b21bfc967b08eea2b76d9c5/transformed/room-runtime-2.5.0/AndroidManifest.xml:25:13-74
+298            android:directBootAware="true"
+298-->[androidx.room:room-runtime:2.5.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/33877d3f2b21bfc967b08eea2b76d9c5/transformed/room-runtime-2.5.0/AndroidManifest.xml:26:13-43
+299            android:exported="false" />
+299-->[androidx.room:room-runtime:2.5.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/33877d3f2b21bfc967b08eea2b76d9c5/transformed/room-runtime-2.5.0/AndroidManifest.xml:27:13-37
+300
+301        <receiver
+301-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:34:9-52:20
+302            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+302-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:35:13-76
+303            android:directBootAware="false"
+303-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:36:13-44
+304            android:enabled="true"
+304-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:37:13-35
+305            android:exported="true"
+305-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:38:13-36
+306            android:permission="android.permission.DUMP" >
+306-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:39:13-57
+307            <intent-filter>
+307-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:40:13-42:29
+308                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+308-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:17-91
+308-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:25-88
+309            </intent-filter>
+310            <intent-filter>
+310-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:43:13-45:29
+311                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+311-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:17-85
+311-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:25-82
+312            </intent-filter>
+313            <intent-filter>
+313-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:46:13-48:29
+314                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+314-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:17-88
+314-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:25-85
+315            </intent-filter>
+316            <intent-filter>
+316-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:49:13-51:29
+317                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+317-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:17-95
+317-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/003f7cd565e843a15dbf7edb565333bc/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:25-92
+318            </intent-filter>
+319        </receiver> <!-- The activities will be merged into the manifest of the hosting app. -->
+320        <activity
+320-->[com.google.android.play:core-common:2.0.4] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ea41d693403b0c2d3cb7c67799ef5c94/transformed/core-common-2.0.4/AndroidManifest.xml:14:9-18:65
+321            android:name="com.google.android.play.core.common.PlayCoreDialogWrapperActivity"
+321-->[com.google.android.play:core-common:2.0.4] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ea41d693403b0c2d3cb7c67799ef5c94/transformed/core-common-2.0.4/AndroidManifest.xml:15:13-93
+322            android:exported="false"
+322-->[com.google.android.play:core-common:2.0.4] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ea41d693403b0c2d3cb7c67799ef5c94/transformed/core-common-2.0.4/AndroidManifest.xml:16:13-37
+323            android:stateNotNeeded="true"
+323-->[com.google.android.play:core-common:2.0.4] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ea41d693403b0c2d3cb7c67799ef5c94/transformed/core-common-2.0.4/AndroidManifest.xml:17:13-42
+324            android:theme="@style/Theme.PlayCore.Transparent" />
+324-->[com.google.android.play:core-common:2.0.4] /Users/majimadaisuke/.gradle/caches/8.11.1/transforms/ea41d693403b0c2d3cb7c67799ef5c94/transformed/core-common-2.0.4/AndroidManifest.xml:18:13-62
+325    </application>
+326
+327</manifest>

@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.depthanything.sample.app-mergeDebugResources-50:/values-watch-v20/values-watch-v20.xml",
+            "map": [
+                {
+                    "source": "/Users/majimadaisuke/.gradle/caches/8.11.1/transforms/45107205f2bfbd3757086f5d652b7a03/transformed/appcompat-1.1.0/res/values-watch-v20/values-watch-v20.xml",
+                    "from": {
+                        "startLines": "2,5,8",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,214,385",
+                        "endLines": "4,7,10",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "209,380,553"
+                    }
+                }
+            ]
+        }
+    ]
+}

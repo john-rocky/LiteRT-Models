@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.depthanything.sample.app-mergeDebugResources-50:/values-land/values-land.xml",
+            "map": [
+                {
+                    "source": "/Users/majimadaisuke/.gradle/caches/8.11.1/transforms/45107205f2bfbd3757086f5d652b7a03/transformed/appcompat-1.1.0/res/values-land/values-land.xml",
+                    "from": {
+                        "startLines": "2,3,4",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,125,196",
+                        "endColumns": "69,70,67",
+                        "endOffsets": "120,191,259"
+                    }
+                }
+            ]
+        }
+    ]
+}
