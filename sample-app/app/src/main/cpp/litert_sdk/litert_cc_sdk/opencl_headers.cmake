@@ -38,3 +38,9 @@ include_directories(
   AFTER
    "${opencl_headers_SOURCE_DIR}/"
 )
+
+# Create an interface target so consumers get the include path
+if(NOT TARGET opencl_headers)
+  add_library(opencl_headers INTERFACE)
+  target_include_directories(opencl_headers INTERFACE "${opencl_headers_SOURCE_DIR}/")
+endif()
