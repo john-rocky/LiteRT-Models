@@ -3,9 +3,12 @@ package com.depthanything.sample
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Matrix
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -16,14 +19,11 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,11 +73,9 @@ fun CameraDepthScreen() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var depthBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var fps by remember { mutableIntStateOf(0) }
     var initError by remember { mutableStateOf<String?>(null) }
 
-    // Initialize depth estimator
     val estimator = remember {
         try {
             DepthEstimator(context, MODEL_FILE)
@@ -92,13 +90,6 @@ fun CameraDepthScreen() {
         onDispose { estimator?.close() }
     }
 
-    // Output bitmap (reused)
-    val outputBitmap = remember(estimator) {
-        estimator?.let {
-            Bitmap.createBitmap(it.inputWidth, it.inputHeight, Bitmap.Config.ARGB_8888)
-        }
-    }
-
     Box(Modifier.fillMaxSize()) {
         if (initError != null) {
             Text(
@@ -109,12 +100,42 @@ fun CameraDepthScreen() {
             return
         }
 
-        // Camera preview (background)
         val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+
+        // Use ImageView for zero-copy depth rendering (no Compose recomposition)
+        var depthImageView: ImageView? = null
+
+        // Pre-allocate reusable bitmaps
+        val depthDisplayBitmap = remember(estimator) {
+            estimator?.let {
+                Bitmap.createBitmap(it.inputWidth, it.inputHeight, Bitmap.Config.ARGB_8888)
+            }
+        }
 
         AndroidView(
             factory = { ctx ->
-                val previewView = PreviewView(ctx)
+                // FrameLayout with camera preview + depth overlay
+                val frame = android.widget.FrameLayout(ctx)
+
+                val previewView = PreviewView(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                }
+                frame.addView(previewView)
+
+                val imageView = ImageView(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    imageAlpha = 180  // ~70% opacity
+                }
+                frame.addView(imageView)
+                depthImageView = imageView
+
                 val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
                 cameraProviderFuture.addListener({
                     val cameraProvider = cameraProviderFuture.get()
@@ -134,18 +155,25 @@ fun CameraDepthScreen() {
                     var lastFpsTime = System.currentTimeMillis()
 
                     imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                        val bitmap = imageProxyToBitmap(imageProxy)
-                        if (bitmap != null && estimator != null && outputBitmap != null) {
-                            val ms = estimator.predict(bitmap, outputBitmap)
-                            bitmap.recycle()
-                            depthBitmap = outputBitmap.copy(Bitmap.Config.ARGB_8888, false)
+                        if (estimator != null && depthDisplayBitmap != null) {
+                            val inputBitmap = imageProxyToBitmap(imageProxy)
+                            if (inputBitmap != null) {
+                                estimator.predict(inputBitmap, depthDisplayBitmap)
+                                inputBitmap.recycle()
 
-                            frameCount++
-                            val now = System.currentTimeMillis()
-                            if (now - lastFpsTime >= 1000) {
-                                fps = frameCount
-                                frameCount = 0
-                                lastFpsTime = now
+                                // Post to UI thread — just setImageBitmap, no allocation
+                                imageView.post {
+                                    imageView.setImageBitmap(depthDisplayBitmap)
+                                }
+
+                                frameCount++
+                                val now = System.currentTimeMillis()
+                                if (now - lastFpsTime >= 1000) {
+                                    val currentFps = frameCount
+                                    frameCount = 0
+                                    lastFpsTime = now
+                                    imageView.post { fps = currentFps }
+                                }
                             }
                         }
                         imageProxy.close()
@@ -157,21 +185,11 @@ fun CameraDepthScreen() {
                         preview, imageAnalysis
                     )
                 }, ContextCompat.getMainExecutor(ctx))
-                previewView
+
+                frame
             },
             modifier = Modifier.fillMaxSize()
         )
-
-        // Depth overlay
-        depthBitmap?.let { bmp ->
-            Image(
-                bitmap = bmp.asImageBitmap(),
-                contentDescription = "Depth map",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                alpha = 0.7f
-            )
-        }
 
         // FPS counter
         Text(
@@ -185,6 +203,7 @@ fun CameraDepthScreen() {
     }
 }
 
+/** Convert ImageProxy (RGBA_8888) to Bitmap with rotation. */
 private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
     val plane = imageProxy.planes[0]
     val buffer = plane.buffer
@@ -197,11 +216,16 @@ private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
         imageProxy.height,
         Bitmap.Config.ARGB_8888
     )
+    buffer.rewind()
     bitmap.copyPixelsFromBuffer(buffer)
 
-    // Crop padding and apply rotation
-    val cropped = Bitmap.createBitmap(bitmap, 0, 0, imageProxy.width, imageProxy.height)
-    if (cropped !== bitmap) bitmap.recycle()
+    val cropped = if (rowPadding > 0) {
+        val c = Bitmap.createBitmap(bitmap, 0, 0, imageProxy.width, imageProxy.height)
+        bitmap.recycle()
+        c
+    } else {
+        bitmap
+    }
 
     val rotation = imageProxy.imageInfo.rotationDegrees
     if (rotation == 0) return cropped
