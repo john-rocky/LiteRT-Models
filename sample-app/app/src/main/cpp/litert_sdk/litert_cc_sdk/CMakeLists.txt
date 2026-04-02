@@ -93,6 +93,7 @@ target_link_libraries(litert_cc_api
         absl::log
         absl::die_if_null
         flatbuffers::flatbuffers
+        opencl_headers
     PRIVATE
         litert_c_api
 )
