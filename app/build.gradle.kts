@@ -74,10 +74,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
     implementation("androidx.camera:camera-view:$cameraVersion")
 
-    // TFLite (LiteRT)
-    implementation("com.google.ai.edge.litert:litert:1.4.0")
-    implementation("com.google.ai.edge.litert:litert-gpu:1.4.0")
-    implementation("com.google.ai.edge.litert:litert-support:1.4.0")
+    // LiteRT v2 (CompiledModel API, ML Drift GPU built-in)
+    implementation("com.google.ai.edge.litert:litert:2.1.0")
 
     // ONNX Runtime
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.24.3")
