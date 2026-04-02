@@ -61,6 +61,42 @@ NECK_CHANNELS = 64
 # Custom Layers
 # ============================================================
 
+class _PaddedConv2D(tf.keras.layers.Layer):
+    """Conv2D with explicit symmetric padding (matching PyTorch padding=N).
+
+    TF's padding="same" is asymmetric for even dimensions with stride>1,
+    while PyTorch's padding=1 is always symmetric. This wrapper applies
+    symmetric padding manually then uses padding="valid".
+    """
+    def __init__(self, filters, kernel_size, strides=1, padding=1,
+                 data_format="channels_last", name=None, **kwargs):
+        super().__init__(name=name, **kwargs)
+        self._pad = padding
+        self.conv = tf.keras.layers.Conv2D(
+            filters, kernel_size, strides=strides, padding="valid",
+            data_format=data_format, name="conv"
+        )
+
+    def build(self, input_shape):
+        padded_shape = list(input_shape)
+        padded_shape[1] = (input_shape[1] or 0) + 2 * self._pad
+        padded_shape[2] = (input_shape[2] or 0) + 2 * self._pad
+        self.conv.build(padded_shape)
+        super().build(input_shape)
+
+    @property
+    def kernel(self):
+        return self.conv.kernel
+
+    @property
+    def bias(self):
+        return self.conv.bias
+
+    def call(self, x):
+        x = tf.pad(x, [[0, 0], [self._pad, self._pad], [self._pad, self._pad], [0, 0]])
+        return self.conv(x)
+
+
 class PatchEmbedding(tf.keras.layers.Layer):
     def __init__(self, patch_h, patch_w, **kwargs):
         super().__init__(**kwargs)
@@ -203,22 +239,22 @@ class FusionLayer(tf.keras.layers.Layer):
             # Use static shapes from hidden_state
             h = hidden_state.shape[1]
             w = hidden_state.shape[2]
-            residual_up = tf.image.resize(residual, [h, w], method="bilinear")
+            residual_up = tf.compat.v1.image.resize(residual, [h, w], method="bilinear", align_corners=False)
             hidden_state = hidden_state + self.residual_layer1(residual_up)
 
         hidden_state = self.residual_layer2(hidden_state)
 
         # Upsample — PyTorch uses align_corners=True
         if target_size is not None:
-            hidden_state = tf.image.resize(
-                hidden_state, list(target_size), method="bilinear"
+            hidden_state = tf.compat.v1.image.resize(
+                hidden_state, list(target_size), method="bilinear", align_corners=True
             )
         else:
             # Last layer: scale_factor=2
             h = hidden_state.shape[1]
             w = hidden_state.shape[2]
-            hidden_state = tf.image.resize(
-                hidden_state, [h * 2, w * 2], method="bilinear"
+            hidden_state = tf.compat.v1.image.resize(
+                hidden_state, [h * 2, w * 2], method="bilinear", align_corners=True
             )
         hidden_state = self.projection(hidden_state)
         return hidden_state
@@ -287,10 +323,10 @@ class DepthAnythingV2(tf.keras.Model):
                 )
             elif i == 2:
                 self.reassemble_resizes.append(None)  # Identity
-            else:  # i == 3
+            else:  # i == 3: Conv2d(stride=2, padding=1) — must use explicit symmetric padding
                 self.reassemble_resizes.append(
-                    tf.keras.layers.Conv2D(
-                        ch, 3, strides=2, padding="same",
+                    _PaddedConv2D(
+                        ch, 3, strides=2, padding=1,
                         data_format="channels_last",
                         name=f"reassemble_resize_{i}"
                     )
@@ -393,8 +429,8 @@ class DepthAnythingV2(tf.keras.Model):
         # ---- Head ---- (head_in_index=-1: uses LAST fusion output, 296x296)
         out = self.head_conv1(fused_outputs[-1])
         # Upsample to original resolution — PyTorch uses align_corners=True
-        out = tf.image.resize(
-            out, [self.input_h, self.input_w], method="bilinear"
+        out = tf.compat.v1.image.resize(
+            out, [self.input_h, self.input_w], method="bilinear", align_corners=True
         )
         # Activation AFTER conv (not before): conv → relu
         out = self.head_conv2(out)
