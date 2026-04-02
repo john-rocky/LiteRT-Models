@@ -864,7 +864,16 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeSetHandles(
     p.compiledModel = (LiteRtCompiledModel)(intptr_t)compiledModelHandle;
     LOGI("Using Kotlin handles: env=%p model=%p", p.env, p.compiledModel);
 
-    // Create SSBO tensor buffers using the compiled model's requirements
+    if (!p.env || !p.compiledModel) {
+        LOGE("Invalid handles!");
+        return JNI_FALSE;
+    }
+    if (!p.api.GetInputBufferRequirements || !p.api.GetOutputBufferRequirements) {
+        LOGE("Buffer requirements functions not loaded!");
+        return JNI_FALSE;
+    }
+
+    LOGI("Calling GetInputBufferRequirements...");
     LiteRtTensorBufferRequirements inReqs = nullptr, outReqs = nullptr;
     LiteRtStatus s;
 
