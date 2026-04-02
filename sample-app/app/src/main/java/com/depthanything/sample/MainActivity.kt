@@ -23,7 +23,7 @@ import androidx.core.content.ContextCompat
 import java.util.concurrent.Executors
 
 private const val TAG = "DepthAnything"
-private const val MODEL_FILE = "depth_anything_v2_keras_392x518.tflite"
+private const val MODEL_FILE = "depth_anything_v2_keras.tflite"
 private const val REQUEST_CAMERA = 100
 
 class MainActivity : ComponentActivity() {
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var depthImageView: ImageView
     private lateinit var fpsText: TextView
     private val cameraExecutor = Executors.newSingleThreadExecutor()
-    private var estimator: InterpreterDepthEstimator? = null
+    private var estimator: DepthEstimator? = null
     private var depthDisplayBitmap: Bitmap? = null
     private var isProcessing = false
 
@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
         setContentView(frame)
 
         try {
-            estimator = InterpreterDepthEstimator(this, MODEL_FILE)
+            estimator = DepthEstimator(this, MODEL_FILE)
             depthDisplayBitmap = Bitmap.createBitmap(
                 estimator!!.inputWidth, estimator!!.inputHeight, Bitmap.Config.ARGB_8888)
         } catch (e: Exception) {
