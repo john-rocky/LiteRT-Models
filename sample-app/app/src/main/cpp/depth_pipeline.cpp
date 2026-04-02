@@ -985,9 +985,17 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
     p.api.UnlockTensorBuffer(p.inputTensorBuffer);
 
-    // Run inference using C++ CompiledModel (EGL context shared with GLSurfaceView)
-    status = p.api.RunCompiledModel(p.compiledModel, 0,
+    // Try Kotlin CompiledModel (FP32) first, fall back to C++ model
+    LiteRtCompiledModel modelToUse = p.kotlinModelHandle
+        ? (LiteRtCompiledModel)(intptr_t)p.kotlinModelHandle
+        : p.compiledModel;
+    status = p.api.RunCompiledModel(modelToUse, 0,
         1, &p.inputTensorBuffer, 1, &p.outputTensorBuffer);
+    static bool loggedModel = false;
+    if (!loggedModel) {
+        LOGI("Using %s model handle", p.kotlinModelHandle ? "Kotlin FP32" : "C++");
+        loggedModel = true;
+    }
 
     if (status == kLiteRtStatusOk) {
         void* outPtr = nullptr;
