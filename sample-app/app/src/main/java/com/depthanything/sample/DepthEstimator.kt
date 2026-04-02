@@ -40,6 +40,9 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
     private val scaleMatrix = Matrix()
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
+    // Pre-baked Inferno LUT as packed ARGB ints
+    private val infernoLut = IntArray(256) { Colormap.inferno(255 - it) }
+
     init {
         Log.i(TAG, "Loading model: $modelFileName")
         val options = CompiledModel.Options(Accelerator.GPU)
@@ -110,14 +113,18 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         // Postprocess
         t = System.nanoTime()
         val depth = outputBuffers[0].readFloat()
+        val t1 = System.nanoTime()
+
+        // Min-max in single pass + colormap via pre-baked LUT
         var min = Float.MAX_VALUE; var max = Float.MIN_VALUE
         for (v in depth) { if (v < min) min = v; if (v > max) max = v }
-        val range = (max - min).coerceAtLeast(1e-6f)
+        val scale = 255f / (max - min).coerceAtLeast(1e-6f)
 
         for (i in depth.indices) {
-            val inv = 255 - ((depth[i] - min) / range * 255f).toInt().coerceIn(0, 255)
-            outputPixels[i] = Colormap.inferno(inv)
+            outputPixels[i] = infernoLut[((depth[i] - min) * scale).toInt().coerceIn(0, 255)]
         }
+        val t2 = System.nanoTime()
+
         depthBitmap.setPixels(outputPixels, 0, outputWidth, 0, 0, outputWidth, outputHeight)
 
         val outCanvas = Canvas(outputBitmap)
@@ -126,9 +133,14 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
             outputBitmap.height.toFloat() / outputHeight
         )
         outCanvas.drawBitmap(depthBitmap, scaleMatrix, paint)
-        val postMs = (System.nanoTime() - t) / 1_000_000
+        val t3 = System.nanoTime()
 
-        Log.i(TAG, "pre=${preMs}ms inf=${infMs}ms post=${postMs}ms total=${preMs+infMs+postMs}ms")
+        val readMs = (t1 - t) / 1_000_000
+        val cmapMs = (t2 - t1) / 1_000_000
+        val drawMs = (t3 - t2) / 1_000_000
+        val postMs = (t3 - t) / 1_000_000
+
+        Log.i(TAG, "pre=${preMs}ms inf=${infMs}ms post=${postMs}ms (read=${readMs} cmap=${cmapMs} draw=${drawMs})")
 
         return preMs + infMs + postMs
     }
