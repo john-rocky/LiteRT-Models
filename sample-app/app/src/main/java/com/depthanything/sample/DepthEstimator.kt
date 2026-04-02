@@ -128,7 +128,7 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         outCanvas.drawBitmap(depthBitmap, scaleMatrix, paint)
         val postMs = (System.nanoTime() - t) / 1_000_000
 
-        Log.d(TAG, "pre=${preMs}ms inf=${infMs}ms post=${postMs}ms total=${preMs+infMs+postMs}ms")
+        Log.i(TAG, "pre=${preMs}ms inf=${infMs}ms post=${postMs}ms total=${preMs+infMs+postMs}ms")
 
         return preMs + infMs + postMs
     }
