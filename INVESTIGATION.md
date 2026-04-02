@@ -186,6 +186,110 @@ python scripts/convert_nhwc_gpu.py --output_dir app/src/main/assets/ \
 - `scripts/convert_onnx_mixed_precision.py` — ONNX FP16 mixed precision
 
 ### Android App
-- LiteRT 2.1.0 CompiledModel API for GPU (ML Drift)
-- ONNX Runtime 1.24.3 for CPU reference
+- LiteRT 2.1.3 CompiledModel API for GPU (ML Drift) — upgraded from 2.1.0 for GPU buffer sync fix
+- ONNX Runtime 1.24.3 for CPU reference (+ XNNPACK EP mode)
 - Jetpack Compose UI with benchmark comparison
+
+---
+
+## Phase 2 Investigation (2026-04-02)
+
+### Goal
+Improve quality (corr=0.846 → higher) while maintaining GPU speed, or find alternative fast+accurate paths.
+
+### Approaches Tested
+
+#### 1. litert-torch + CompiledModel — Confirmed impossible
+- litert-torch v0.8.0 (Jan 2026): Still no internal NHWC layout conversion
+- `to_channel_last_io()` only wraps I/O boundaries, internal Conv2D/MatMul remain NCHW
+- ML Drift requires NHWC for ALL internal ops — no workaround exists
+- Google acknowledged issue (ai-edge-torch#179) but no fix planned
+
+#### 2. ONNX Runtime GPU on Android — Does not exist
+- OpenCL/Vulkan EP: experimental branch only, never released
+- NNAPI EP: deprecated in Android 15, broken for ViT models
+- QNN EP: Snapdragon-only, incompatible with Tensor G3/G5
+- **XNNPACK EP**: CPU-only, available in onnxruntime-android. Added to app for testing.
+
+#### 3. ExecuTorch Vulkan — Not viable
+- ViT inference reported at 200 seconds (GitHub #6961)
+- Vulkan delegate "under active development", immature op coverage
+
+#### 4. onnx2tf 1.29.24 Upgrade
+Upgraded from 1.28.8 to 1.29.24. Key fixes in 1.29.x:
+- **1.29.12**: MatMul/BatchMatMul squeeze/transpose rank-mismatch fix
+- **1.29.14**: Flatten brute-force alignment + explicit_broadcast fix
+- **1.29.17**: Concat brute-force NCHW/NHWC axis alignment (2304 attempts)
+- **1.29.24**: 100% ONNX op coverage
+
+Conversion variants tested:
+| Variant | Flags | Expected Impact |
+|---------|-------|-----------------|
+| v129 | (default) | MatMul/Concat fixes |
+| cotof | -cotof -cotoa 0.1 | Per-op accuracy check |
+| ebu | -ebu | BatchMatMul unfold to primitive MatMul |
+| dsft | -dsft | Disable FlexTranspose suppression |
+| cotof_agje | -cotof -cotoa 0.01 -agje | Auto JSON error fix |
+
+#### 5. LiteRT 2.1.3 Upgrade
+- Fixed GPU buffer syncing bug from second inference onward
+- Experimental multi-threaded CompiledModel creation
+- No new GPU options or backend selection exposed
+
+#### 6. ONNX Runtime XNNPACK EP
+- Added `opts.addXnnpack()` to OnnxDepthEstimator
+- XNNPACK uses optimized ARM NEON/FP16 kernels for MatMul/Conv
+- Expected: 10-30% CPU speedup (1283ms → ~900-1000ms)
+
+### Phase 2 Scripts
+- `scripts/convert_v129.py` — onnx2tf 1.29 multi-variant conversion
+
+### Phase 2 Quality Results (CPU comparison via TF Interpreter)
+
+| Model | Correlation | MSE |
+|-------|-------------|-----|
+| **ONNX Runtime (truth)** | **1.000** | 0.000 |
+| litert-torch direct (NCHW) | 0.884 | 1.572 |
+| onnx2tf 1.28.8 NHWC | 0.845 | 0.155 |
+| onnx2tf 1.29.24 NHWC | 0.845 | 0.155 |
+| onnx2tf 1.29 + cotof | 0.845 | 0.155 |
+| onnx2tf 1.29 + cotof + agje | 0.845 | 0.155 |
+| onnx2tf 1.29 + ebu | 0.845 | 0.155 |
+| onnx2tf 1.29 + dsft | 0.845 | 0.155 |
+
+**Key finding: All onnx2tf variants produce identical quality (corr=0.845).**
+The 15% quality degradation is a fundamental property of the ONNX→TF→TFLite
+conversion pipeline's NCHW→NHWC transformation. No onnx2tf flags can fix it.
+
+### Phase 2 Conclusions
+
+1. **onnx2tf quality is unfixable via flags** — corr=0.845 is inherent to the conversion
+2. **litert-torch NCHW cannot run on ML Drift GPU** — confirmed, no workaround
+3. **ONNX Runtime has no GPU EP on Android** — only CPU (XNNPACK for minor speedup)
+4. **ExecuTorch Vulkan is immature** — 200sec for ViT, not viable
+5. **LiteRT 2.1.3** — GPU buffer sync fix, recommended upgrade
+
+### Phase 3: Native Keras Reimplementation (2026-04-02) — SUCCESS
+
+**Approach**: Rewrite DepthAnything V2 architecture natively in TF/Keras with NHWC layout.
+Load PyTorch weights with proper transposition. No ONNX intermediate step.
+
+**Result: corr=0.999998** (vs corr=0.845 for onnx2tf)
+
+Key implementation details:
+- DINOv2 ViT-S/14 encoder + DPT decoder, all in NHWC
+- `apply_layernorm=True`: Backbone applies LayerNorm to ALL feature maps before neck
+- Fusion stage reverses features internally (smallest→largest)
+- Fusion passes `(fused_state, current_feature)` as `(hidden_state, residual)`
+- Fusion upsample uses target_size from next feature (not fixed 2x)
+- Head uses `head_in_index=-1` (LAST fusion output, largest resolution)
+- Head activation order: `conv → relu` (not `relu → conv`)
+- `tf.compat.v1.image.resize(align_corners=True)` matches PyTorch exactly
+
+Models produced:
+- `depth_anything_v2_keras.tflite` — 99 MB FP32, corr=0.999998
+- `depth_anything_v2_keras_fp16w.tflite` — 50 MB FP16 weights
+
+Script: `scripts/convert_keras_native.py`
+
+**To be tested on device**: ML Drift GPU speed and FP16 overflow behavior

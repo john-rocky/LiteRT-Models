@@ -75,7 +75,8 @@ dependencies {
     implementation("androidx.camera:camera-view:$cameraVersion")
 
     // LiteRT v2 (CompiledModel API, ML Drift GPU)
-    implementation("com.google.ai.edge.litert:litert:2.1.0")
+    // Upgraded from 2.1.0 -> 2.1.3: GPU buffer sync fix, multi-threaded CompiledModel
+    implementation("com.google.ai.edge.litert:litert:2.1.3")
 
     // ONNX Runtime
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.24.3")
