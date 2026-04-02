@@ -34,9 +34,18 @@ class TFLiteDepthEstimator(
     }
 
     private fun initialize() {
-        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label})")
+        val isFP32 = mode == InferenceMode.GPU_FP32_TRUTH
+        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label}, precision=${if (isFP32) "FP32" else "DEFAULT"})")
 
         val options = CompiledModel.Options(Accelerator.GPU)
+        options.gpuOptions = CompiledModel.GpuOptions(
+            null, // constantTensorSharing
+            true, // infiniteFloatCapping
+            null, // allowSrcQuantizedFcConvOps
+            if (isFP32) CompiledModel.GpuOptions.Precision.FP32
+            else CompiledModel.GpuOptions.Precision.DEFAULT,
+            null, null, null, null, null, null, null, null, null, null, null
+        )
         compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)
 
         // Pre-allocate reusable buffers
