@@ -852,7 +852,44 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitGl(
     return JNI_TRUE;
 }
 
-// Receive native handles from Kotlin CompiledModel (FP32 GPU)
+// Init LiteRT with ABI-corrected EGL context sharing (called on GL thread)
+JNIEXPORT jboolean JNICALL
+Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
+    JNIEnv* jenv, jobject thiz,
+    jobject assetManager, jstring modelPath,
+    jint inputW, jint inputH, jint outputW, jint outputH) {
+
+    auto& p = g_pipeline;
+
+    AAssetManager* mgr = AAssetManager_fromJava(jenv, assetManager);
+    const char* path = jenv->GetStringUTFChars(modelPath, nullptr);
+    AAsset* asset = AAssetManager_open(mgr, path, AASSET_MODE_BUFFER);
+    jenv->ReleaseStringUTFChars(modelPath, path);
+
+    if (!asset) { LOGE("Failed to open model asset"); return JNI_FALSE; }
+
+    size_t modelSize = AAsset_getLength(asset);
+    p.modelData.resize(modelSize);
+    memcpy(p.modelData.data(), AAsset_getBuffer(asset), modelSize);
+    AAsset_close(asset);
+
+    if (!initLiteRT(p.modelData.data(), modelSize)) {
+        LOGE("initLiteRT failed");
+        return JNI_FALSE;
+    }
+
+    // Check if GLSurfaceView context is still valid after LiteRT init
+    EGLContext ctx = eglGetCurrentContext();
+    GLenum err = glGetError();
+    LOGI("After initLiteRT: EGL ctx=%p glError=0x%x", ctx, err);
+
+    p.initialized = true;
+    p.inferenceReady = true;
+    LOGI("C++ pipeline ready: %dx%d (zeroCopy=%d)", inputW, inputH, p.useGlBuffers);
+    return JNI_TRUE;
+}
+
+// (Legacy) Receive native handles from Kotlin CompiledModel
 JNIEXPORT jboolean JNICALL
 Java_com_depthanything_sample_NativeDepthPipeline_nativeSetHandles(
     JNIEnv* env, jobject thiz,
