@@ -443,15 +443,39 @@ static bool initLiteRT(const uint8_t* modelData, size_t modelSize) {
     outputType.layout.dimensions[2] = p.outputW;
     outputType.layout.dimensions[3] = 1;
 
-    // Create buffers from requirements (GPU env is now properly shared)
-    if (inReqs && outReqs && api.CreateManagedTensorBufferFromRequirements) {
+    // Try SSBO zero-copy buffers first (EGL context now properly shared)
+    size_t inSize = p.inputW * p.inputH * 3 * sizeof(float);
+    size_t outSize = p.outputW * p.outputH * sizeof(float);
+    bool ssboOk = false;
+
+    if (api.CreateTensorBufferFromGlBuffer && p.inputSsbo && p.outputSsbo) {
+        LiteRtStatus s1 = api.CreateTensorBufferFromGlBuffer(
+            p.env, &inputType, GL_SHADER_STORAGE_BUFFER, p.inputSsbo,
+            inSize, 0, nullptr, &p.inputTensorBuffer);
+        LiteRtStatus s2 = api.CreateTensorBufferFromGlBuffer(
+            p.env, &outputType, GL_SHADER_STORAGE_BUFFER, p.outputSsbo,
+            outSize, 0, nullptr, &p.outputTensorBuffer);
+        LOGI("SSBO TensorBuffer: in=%d out=%d", s1, s2);
+        if (s1 == kLiteRtStatusOk && s2 == kLiteRtStatusOk) {
+            ssboOk = true;
+            p.useGlBuffers = true;
+        } else {
+            if (p.inputTensorBuffer) { api.DestroyTensorBuffer(p.inputTensorBuffer); p.inputTensorBuffer = nullptr; }
+            if (p.outputTensorBuffer) { api.DestroyTensorBuffer(p.outputTensorBuffer); p.outputTensorBuffer = nullptr; }
+        }
+    }
+
+    // Fallback to managed buffers
+    if (!ssboOk && inReqs && outReqs && api.CreateManagedTensorBufferFromRequirements) {
         status = api.CreateManagedTensorBufferFromRequirements(
             p.env, &inputType, inReqs, &p.inputTensorBuffer);
-        LOGI("CreateInputBuffer (from reqs): status=%d", status);
+        LOGI("CreateInputBuffer (managed): status=%d", status);
         status = api.CreateManagedTensorBufferFromRequirements(
             p.env, &outputType, outReqs, &p.outputTensorBuffer);
-        LOGI("CreateOutputBuffer (from reqs): status=%d", status);
-    } else {
+        LOGI("CreateOutputBuffer (managed): status=%d", status);
+    }
+
+    if (!p.inputTensorBuffer || !p.outputTensorBuffer) {
         LOGE("Cannot create tensor buffers");
         return false;
     }
