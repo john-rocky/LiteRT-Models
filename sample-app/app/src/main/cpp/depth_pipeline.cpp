@@ -384,20 +384,15 @@ static bool initLiteRT(const uint8_t* modelData, size_t modelSize) {
     envOpts[1].value.type = kLiteRtAnyTypeVoidPtr;
     envOpts[1].value.ptr_value = (const void*)curContext;
 
-    // Create environment WITHOUT EGL options first
+    // Create environment — skip explicit GpuEnvironmentCreate.
+    // Let CreateCompiledModel handle GPU setup internally (like Kotlin does).
+    // Kotlin: Environment.create() → CompiledModel.create() internally sets up GPU+EGL.
     LiteRtStatus status = api.CreateEnvironment(0, nullptr, &p.env);
     if (status != kLiteRtStatusOk) {
         LOGE("CreateEnvironment failed: %d", status);
         return false;
     }
-
-    // Pass EGL options to GpuEnvironmentCreate (not CreateEnvironment!)
-    // Kotlin log shows: "Reusing provided EGL environment" when passed here
-    int numOpts = (curDisplay != EGL_NO_DISPLAY && curContext != EGL_NO_CONTEXT) ? 2 : 0;
-    if (api.GpuEnvironmentCreate) {
-        status = api.GpuEnvironmentCreate(p.env, numOpts, numOpts ? envOpts : nullptr);
-        LOGI("GpuEnvironmentCreate: status=%d (with %d EGL options)", status, numOpts);
-    }
+    LOGI("CreateEnvironment: status=%d (no explicit GpuEnv — let CompiledModel handle it)", status);
 
     // Load model from buffer
     status = api.CreateModelFromBuffer(modelData, modelSize, &p.model);
