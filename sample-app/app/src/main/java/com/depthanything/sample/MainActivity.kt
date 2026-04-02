@@ -132,7 +132,7 @@ fun CameraDepthScreen() {
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                     scaleType = ImageView.ScaleType.CENTER_CROP
-                    imageAlpha = 180  // ~70% opacity
+                    imageAlpha = 255  // Full opacity (no camera preview behind)
                 }
                 frame.addView(imageView)
                 depthImageView = imageView
@@ -141,9 +141,10 @@ fun CameraDepthScreen() {
                 cameraProviderFuture.addListener({
                     val cameraProvider = cameraProviderFuture.get()
 
-                    val preview = Preview.Builder().build().also {
-                        it.surfaceProvider = previewView.surfaceProvider
-                    }
+                    // Preview disabled to avoid GPU contention with ML Drift inference
+                    // val preview = Preview.Builder().build().also {
+                    //     it.surfaceProvider = previewView.surfaceProvider
+                    // }
 
                     @Suppress("DEPRECATION")
                     val imageAnalysis = ImageAnalysis.Builder()
@@ -203,7 +204,7 @@ fun CameraDepthScreen() {
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview, imageAnalysis
+                        imageAnalysis  // No preview — depth overlay is the display
                     )
                 }, ContextCompat.getMainExecutor(ctx))
 
