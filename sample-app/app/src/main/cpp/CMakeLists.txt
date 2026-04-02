@@ -18,6 +18,8 @@ target_include_directories(depth_pipeline PRIVATE
 
 target_link_libraries(depth_pipeline
     litert_cc_api
+    absl::log_internal_check_op
+    absl::raw_hash_set
     ${log-lib}
     ${android-lib}
     EGL

@@ -173,9 +173,11 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
     }
     options.SetHardwareAccelerators(litert::HwAccelerators::kGpu);
 
-    // 3. Compile model
+    // 3. Compile model from buffer
     auto modelResult = litert::CompiledModel::Create(
-        *g.env, g.modelData.data(), g.modelData.size(), options);
+        *g.env,
+        litert::BufferRef<uint8_t>(g.modelData.data(), g.modelData.size()),
+        options);
     if (!modelResult) { LOGE("CompiledModel::Create failed"); return JNI_FALSE; }
     g.model = std::make_unique<litert::CompiledModel>(std::move(*modelResult));
     LOGI("CompiledModel created with FP32 GPU");
@@ -248,7 +250,7 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     // Write input
     auto writeResult = g.inputBuffers[0].Write<float>(
         absl::MakeConstSpan(g.inputFloats));
-    if (!writeResult.ok()) {
+    if (!writeResult) {
         LOGE("Write input failed");
         return;
     }
@@ -256,7 +258,7 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     // Run async inference
     bool async = false;
     auto runResult = g.model->RunAsync(0, g.inputBuffers, g.outputBuffers, async);
-    if (!runResult.ok()) {
+    if (!runResult) {
         LOGE("RunAsync failed");
         return;
     }
