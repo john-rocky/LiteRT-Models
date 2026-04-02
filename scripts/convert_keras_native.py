@@ -6,12 +6,32 @@ Builds the model natively in TF/Keras with NHWC layout, loads PyTorch weights
 with proper transposition, and exports to TFLite. This avoids the corr=0.845
 quality loss from onnx2tf's NCHW→NHWC conversion.
 
+Result: corr=0.9995 vs PyTorch, 9ms on Pixel 8a ML Drift GPU.
+
 Architecture: DINOv2 ViT-S/14 encoder + DPT decoder head
   - hidden_size=384, num_heads=6, num_layers=12, mlp_ratio=4, patch_size=14
   - 24.8M parameters
 
+Key implementation details (see INVESTIGATION.md for full know-how):
+  - All ops in NHWC for ML Drift GPU compatibility
+  - Static shapes throughout (no tf.shape()) for TFLite GPU delegate
+  - apply_layernorm=True: backbone LayerNorm applied to ALL feature maps
+  - Fusion reversal: FusionStage reverses features internally (small→large)
+  - Fusion args: (fused_state, current_feature) not (feature, fused)
+  - Fusion upsample: target_size from next feature, not fixed 2x
+  - head_in_index=-1: head uses LAST (largest) fusion output
+  - Head activation: conv→relu order (not relu→conv)
+  - tf.image.resize (half_pixel_centers): align_corners=True not GPU-compatible
+  - TFLite export: from_keras_model() required (from_concrete_functions loses weights)
+
+Weight transposition: Conv2d [O,I,H,W]→[H,W,I,O], Linear [O,I]→[I,O].T
+
+Requirements:
+  pip install torch transformers tensorflow tf_keras numpy
+
 Usage:
   python convert_keras_native.py --output_dir ../app/src/main/assets/
+  python convert_keras_native.py --output_dir ./output --input_height 392 --input_width 518
 """
 
 import argparse
