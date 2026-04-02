@@ -11,13 +11,17 @@ object DepthEstimatorFactory {
     private fun modelFile(mode: InferenceMode): String = when (mode) {
         InferenceMode.KERAS_NATIVE -> MODEL_KERAS
         InferenceMode.KERAS_392 -> MODEL_KERAS_392
+        InferenceMode.INTERPRETER_GPU -> MODEL_KERAS_392
         InferenceMode.ONNX_CPU -> MODEL_ONNX
     }
 
     fun create(context: Context, mode: InferenceMode): DepthEstimator {
         return when (mode) {
             InferenceMode.ONNX_CPU -> OnnxDepthEstimator(context, MODEL_ONNX)
-            else -> TFLiteDepthEstimator(context, mode, modelFile(mode))
+            // All GPU modes now use InterpreterDepthEstimator for fast ByteBuffer readback.
+            // CompiledModel (TFLiteDepthEstimator) requires litert:2.1.3 which lacks
+            // addDelegate() — switch deps in build.gradle.kts to re-enable.
+            else -> InterpreterDepthEstimator(context, mode, modelFile(mode))
         }
     }
 

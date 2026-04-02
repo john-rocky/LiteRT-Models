@@ -11,6 +11,12 @@ enum class InferenceMode(val label: String, val description: String) {
         "392x518, Native Keras, ML Drift GPU FP32"
     ),
 
+    // Interpreter API + GpuDelegate (fast ByteBuffer readback)
+    INTERPRETER_GPU(
+        "Interp GPU (fast)",
+        "392x518, Interpreter+GpuDelegate, FP32, ~1-5ms readback"
+    ),
+
     // CPU reference
     ONNX_CPU(
         "ONNX CPU (truth)",

@@ -1,0 +1,223 @@
+// Copyright 2025 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// Copyright (c) Qualcomm Innovation Center, Inc. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef THIRD_PARTY_ODML_LITERT_LITERT_CC_OPTIONS_LITERT_QUALCOMM_OPTIONS_H_
+#define THIRD_PARTY_ODML_LITERT_LITERT_CC_OPTIONS_LITERT_QUALCOMM_OPTIONS_H_
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "absl/strings/string_view.h"  // from @com_google_absl
+#include "litert/c/options/litert_qualcomm_options.h"
+#include "litert/cc/litert_expected.h"
+
+namespace litert::qualcomm {
+
+/// @brief Defines the C++ wrapper for Qualcomm-specific LiteRT options.
+class QualcommOptions {
+ public:
+  QualcommOptions() : options_(nullptr) {}
+  explicit QualcommOptions(LrtQualcommOptions options) : options_(options) {}
+  ~QualcommOptions() {
+    if (options_) {
+      LrtDestroyQualcommOptions(options_);
+    }
+  }
+
+  QualcommOptions(QualcommOptions&& other) noexcept : options_(other.options_) {
+    other.options_ = nullptr;
+  }
+  QualcommOptions& operator=(QualcommOptions&& other) noexcept {
+    if (this != &other) {
+      if (options_) LrtDestroyQualcommOptions(options_);
+      options_ = other.options_;
+      other.options_ = nullptr;
+    }
+    return *this;
+  }
+
+  // Delete copy constructor and assignment
+  QualcommOptions(const QualcommOptions&) = delete;
+  QualcommOptions& operator=(const QualcommOptions&) = delete;
+
+  LrtQualcommOptions Get() const { return options_; }
+  LrtQualcommOptions Release() {
+    auto* res = options_;
+    options_ = nullptr;
+    return res;
+  }
+
+  static const char* Discriminator() {
+    return LrtQualcommOptionsGetIdentifier();
+  }
+
+  static Expected<QualcommOptions> Create();
+
+  /// @brief Determines the logging level of all underlying Qualcomm SDK
+  /// libraries.
+  ///
+  /// This does not affect LiteRT logging. Defaults to `kInfo`.
+  enum class LogLevel : int {
+    kOff = kLiteRtQualcommLogOff,
+    kError = kLiteRtQualcommLogLevelError,
+    kWarn = kLiteRtQualcommLogLevelWarn,
+    kInfo = kLiteRtQualcommLogLevelInfo,
+    kVerbose = kLiteRtQualcommLogLevelVerbose,
+    kDebug = kLiteRtQualcommLogLevelDebug,
+  };
+
+  void SetLogLevel(LogLevel log_level);
+  LogLevel GetLogLevel();
+
+  /// @brief This option controls whether to convert a LiteRT operation to QNN
+  /// operations that are preferred by the HTP backend. Defaults to `false`.
+  enum class HtpPerformanceMode : int {
+    kDefault = kLiteRtQualcommHtpPerformanceModeDefault,
+    kSustainedHighPerformance =
+        kLiteRtQualcommHtpPerformanceModeSustainedHighPerformance,
+    kBurst = kLiteRtQualcommHtpPerformanceModeBurst,
+    kHighPerformance = kLiteRtQualcommHtpPerformanceModeHighPerformance,
+    kPowerSaver = kLiteRtQualcommHtpPerformanceModePowerSaver,
+    kLowPowerSaver = kLiteRtQualcommHtpPerformanceModeLowPowerSaver,
+    kHighPowerSaver = kLiteRtQualcommHtpPerformanceModeHighPowerSaver,
+    kLowBalanced = kLiteRtQualcommHtpPerformanceModeLowBalanced,
+    kBalanced = kLiteRtQualcommHtpPerformanceModeBalanced,
+    kExtremePowerSaver = kLiteRtQualcommHtpPerformanceModeExtremePowerSaver,
+  };
+
+  void SetHtpPerformanceMode(HtpPerformanceMode htp_performance_mode);
+  HtpPerformanceMode GetHtpPerformanceMode();
+
+  enum class DspPerformanceMode : int {
+    kDefault = kLiteRtQualcommDspPerformanceModeDefault,
+    kSustainedHighPerformance =
+        kLiteRtQualcommDspPerformanceModeSustainedHighPerformance,
+    kBurst = kLiteRtQualcommDspPerformanceModeBurst,
+    kHighPerformance = kLiteRtQualcommDspPerformanceModeHighPerformance,
+    kPowerSaver = kLiteRtQualcommDspPerformanceModePowerSaver,
+    kLowPowerSaver = kLiteRtQualcommDspPerformanceModeLowPowerSaver,
+    kHighPowerSaver = kLiteRtQualcommDspPerformanceModeHighPowerSaver,
+    kLowBalanced = kLiteRtQualcommDspPerformanceModeLowBalanced,
+    kBalanced = kLiteRtQualcommDspPerformanceModeBalanced,
+  };
+
+  void SetDspPerformanceMode(DspPerformanceMode dsp_performance_mode);
+  DspPerformanceMode GetDspPerformanceMode();
+
+  void SetUseHtpPreference(bool use_htp_preference);
+  bool GetUseHtpPreference();
+
+  /// @brief This option controls whether to convert a quantized int16 model to
+  /// a quantized uint16 model. Defaults to `false`.
+  void SetUseQint16AsQuint16(bool use_qin16_as_quint16);
+  bool GetUseQint16AsQuint16();
+
+  /// @brief This option controls whether to convert bias tensors of
+  /// FullyConnected and Conv2D Ops from int64 to int32. Defaults to `true`.
+  void SetUseInt64BiasAsInt32(bool use_int64_bias_as_int32);
+  bool GetUseInt64BiasAsInt32();
+
+  /// @brief Indicates whether different subgraphs may share weight tensors.
+  ///
+  /// This is only supported on x86 AOT. Defaults to `false`.
+  void SetEnableWeightSharing(bool weight_sharing_enabled);
+  bool GetEnableWeightSharing();
+
+  /// @brief When using short conv hmx, one might have better performance, but
+  /// convolutions with short depth and/or non-symmetric weights could exhibit
+  /// inaccurate results.
+  void SetUseConvHMX(bool use_conv_hmx);
+  bool GetUseConvHMX();
+
+  /// @brief When using fold relu, one might have better performance.
+  ///
+  /// This optimization is correct when quantization ranges for convolution are
+  /// equal to or are a subset of the Relu operation.
+  void SetUseFoldReLU(bool use_fold_relu);
+  bool GetUseFoldReLU();
+
+  /// @brief This option controls the profiling level.
+  ///
+  /// A higher level results in a more detailed report after execution.
+  /// Defaults to `kOff`.
+  enum class Profiling : int {
+    kOff = kLiteRtQualcommProfilingOff,
+    kBasic = kLiteRtQualcommProfilingBasic,
+    kDetailed = kLiteRtQualcommProfilingDetailed,
+    kLinting = kLiteRtQualcommProfilingLinting,
+    kOptrace = kLiteRtQualcommProfilingOptrace,
+  };
+
+  void SetProfiling(Profiling profiling);
+  Profiling GetProfiling();
+
+  void SetDumpTensorIds(const std::vector<std::int32_t>& ids);
+  std::vector<std::int32_t> GetDumpTensorIds();
+
+  void SetIrJsonDir(const std::string& ir_json_dir);
+  absl::string_view GetIrJsonDir();
+
+  void SetDlcDir(const std::string& dlc_dir);
+  absl::string_view GetDlcDir();
+
+  void SetVtcmSize(std::uint32_t vtcm_size);
+  std::uint32_t GetVtcmSize();
+
+  void SetNumHvxThreads(std::uint32_t num_hvx_threads);
+  std::uint32_t GetNumHvxThreads();
+
+  enum class OptimizationLevel : int {
+    kOptimizeForInference = kHtpOptimizeForInference,
+    kOptimizeForPrepare = kHtpOptimizeForPrepare,
+    kOptimizeForInferenceO3 = kHtpOptimizeForInferenceO3,
+  };
+
+  void SetOptimizationLevel(OptimizationLevel optimization_level);
+  OptimizationLevel GetOptimizationLevel();
+
+  enum class GraphPriority : int {
+    kDefault = kLiteRTQualcommGraphPriorityDefault,
+    kLow = kLiteRTQualcommGraphPriorityLow,
+    kNormal = kLiteRTQualcommGraphPriorityNormal,
+    kNormalHigh = kLiteRTQualcommGraphPriorityNormalHigh,
+    kHigh = kLiteRTQualcommGraphPriorityHigh,
+  };
+
+  void SetGraphPriority(GraphPriority graph_priority);
+  GraphPriority GetGraphPriority();
+
+  enum class Backend : int {
+    kUndefined = kLiteRtQualcommBackendUndefined,
+    kGpu = kLiteRtQualcommBackendGpu,
+    kHtp = kLiteRtQualcommBackendHtp,
+    kDsp = kLiteRtQualcommBackendDsp,
+    kIr = kLiteRtQualcommBackendIr,
+  };
+
+  void SetBackend(Backend qnn_backend);
+  Backend GetBackend();
+
+  void SetSaverOutputDir(const std::string& saver_output_dir);
+  absl::string_view GetSaverOutputDir();
+
+ private:
+  LrtQualcommOptions options_;
+};
+
+}  // namespace litert::qualcomm
+
+#endif  // THIRD_PARTY_ODML_LITERT_LITERT_CC_OPTIONS_LITERT_QUALCOMM_OPTIONS_H_

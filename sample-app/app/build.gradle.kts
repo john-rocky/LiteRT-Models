@@ -85,7 +85,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
     implementation("androidx.camera:camera-view:$cameraVersion")
 
-    // LiteRT (CompiledModel API, ML Drift GPU)
+    // LiteRT V2 (CompiledModel API - for Kotlin shape detection)
+    // C++ SDK handles actual GPU inference via litert_cc_api
     implementation("com.google.ai.edge.litert:litert:2.1.3")
 
     implementation("androidx.core:core-ktx:1.15.0")

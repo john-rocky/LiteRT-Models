@@ -74,9 +74,15 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
     implementation("androidx.camera:camera-view:$cameraVersion")
 
-    // LiteRT v2 (CompiledModel API, ML Drift GPU)
-    // Upgraded from 2.1.0 -> 2.1.3: GPU buffer sync fix, multi-threaded CompiledModel
-    implementation("com.google.ai.edge.litert:litert:2.1.3")
+    // === LiteRT V1 (Interpreter API + GpuDelegate) — FAST output readback ===
+    // V1 has addDelegate(), direct ByteBuffer run(), ~1-5ms GPU readback.
+    // V2 CompiledModel's readFloat() takes 230-340ms -- unusable for real-time.
+    implementation("com.google.ai.edge.litert:litert:1.4.0")
+    implementation("com.google.ai.edge.litert:litert-gpu:1.4.1")
+    implementation("com.google.ai.edge.litert:litert-gpu-api:1.4.1")
+    // NOTE: CompiledModel (litert:2.1.3) is NOT compatible with GpuDelegate V1.
+    // To use CompiledModel modes, uncomment below and comment out the 3 lines above:
+    // implementation("com.google.ai.edge.litert:litert:2.1.3")
 
     // ONNX Runtime
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.24.3")
