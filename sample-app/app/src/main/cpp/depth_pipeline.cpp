@@ -825,10 +825,10 @@ static void destroyPipeline() {
 
 extern "C" {
 
+// Init GL resources only (called from onSurfaceCreated on GL thread)
 JNIEXPORT jboolean JNICALL
-Java_com_depthanything_sample_NativeDepthPipeline_nativeInit(
+Java_com_depthanything_sample_NativeDepthPipeline_nativeInitGl(
     JNIEnv* env, jobject thiz,
-    jobject assetManager, jstring modelPath,
     jint inputW, jint inputH, jint outputW, jint outputH) {
 
     auto& p = g_pipeline;
@@ -837,28 +837,8 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInit(
     p.outputW = outputW;
     p.outputH = outputH;
 
-    // Read model from assets
-    AAssetManager* mgr = AAssetManager_fromJava(env, assetManager);
-    const char* path = env->GetStringUTFChars(modelPath, nullptr);
-    AAsset* asset = AAssetManager_open(mgr, path, AASSET_MODE_BUFFER);
-    env->ReleaseStringUTFChars(modelPath, path);
-
-    if (!asset) {
-        LOGE("Failed to open model asset");
-        return JNI_FALSE;
-    }
-
-    // Copy model to persistent buffer (asset will be closed)
-    size_t modelSize = AAsset_getLength(asset);
-    p.inputFloats.resize(0);  // clear to prevent crash before init done
-    p.modelData.resize(modelSize);
-    memcpy(p.modelData.data(), AAsset_getBuffer(asset), modelSize);
-    AAsset_close(asset);
-
-    // ALL init on GL thread — LiteRT shares our EGL context (no corruption)
-    bool ok = initLiteRT(p.modelData.data(), p.modelData.size());
-    if (!ok) {
-        LOGE("LiteRT init failed");
+    if (!p.api.load()) {
+        LOGE("Failed to load libLiteRt.so");
         return JNI_FALSE;
     }
 
@@ -867,47 +847,70 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInit(
         return JNI_FALSE;
     }
 
-    p.initialized = true;
-    p.inferenceReady = true;
-    LOGI("Pipeline ready: %dx%d -> %dx%d", p.inputW, p.inputH, p.outputW, p.outputH);
-    return JNI_TRUE;
-
-    // --- dead code below (old bg thread approach) ---
-    std::thread([&p]() {
-        EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        eglInitialize(display, nullptr, nullptr);
-        EGLConfig config;
-        EGLint numConfigs;
-        EGLint cfgAttribs[] = {
-            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR,
-            EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-            EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
-            EGL_NONE
-        };
-        eglChooseConfig(display, cfgAttribs, &config, 1, &numConfigs);
-        EGLint ctxAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
-        EGLContext ctx = eglCreateContext(display, config, EGL_NO_CONTEXT, ctxAttribs);
-        EGLint pbufAttribs[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
-        EGLSurface surface = eglCreatePbufferSurface(display, config, pbufAttribs);
-        eglMakeCurrent(display, surface, surface, ctx);
-        LOGI("BG thread: independent EGL context created (ctx=%p)", ctx);
-
-        if (initLiteRT(p.modelData.data(), p.modelData.size())) {
-            p.inferenceReady = true;
-            LOGI("LiteRT ready — starting inference loop");
-            inferenceLoop();
-        } else {
-            LOGE("LiteRT init failed on bg thread");
-        }
-
-        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroyContext(display, ctx);
-        eglDestroySurface(display, surface);
-    }).detach();
-
-    LOGI("Pipeline initialized: %dx%d", p.inputW, p.inputH);
+    LOGI("GL resources ready: %dx%d", inputW, inputH);
     return JNI_TRUE;
 }
+
+// Receive native handles from Kotlin CompiledModel (FP32 GPU)
+JNIEXPORT jboolean JNICALL
+Java_com_depthanything_sample_NativeDepthPipeline_nativeSetHandles(
+    JNIEnv* env, jobject thiz,
+    jlong envHandle, jlong compiledModelHandle) {
+
+    auto& p = g_pipeline;
+
+    // Cast Kotlin native handles to LiteRT C API types
+    p.env = (LiteRtEnvironment)(intptr_t)envHandle;
+    p.compiledModel = (LiteRtCompiledModel)(intptr_t)compiledModelHandle;
+    LOGI("Using Kotlin handles: env=%p model=%p", p.env, p.compiledModel);
+
+    // Create SSBO tensor buffers using the compiled model's requirements
+    LiteRtTensorBufferRequirements inReqs = nullptr, outReqs = nullptr;
+    LiteRtStatus s;
+
+    s = p.api.GetInputBufferRequirements(p.compiledModel, 0, 0, &inReqs);
+    LOGI("GetInputBufferRequirements: status=%d", s);
+    s = p.api.GetOutputBufferRequirements(p.compiledModel, 0, 0, &outReqs);
+    LOGI("GetOutputBufferRequirements: status=%d", s);
+
+    // Create managed buffers from requirements (FP32, correct format)
+    LiteRtRankedTensorType inputType{};
+    inputType.element_type = kLiteRtElementTypeFloat32;
+    inputType.layout.rank = 4;
+    inputType.layout.dimensions[0] = 1;
+    inputType.layout.dimensions[1] = p.inputH;
+    inputType.layout.dimensions[2] = p.inputW;
+    inputType.layout.dimensions[3] = 3;
+
+    LiteRtRankedTensorType outputType{};
+    outputType.element_type = kLiteRtElementTypeFloat32;
+    outputType.layout.rank = 4;
+    outputType.layout.dimensions[0] = 1;
+    outputType.layout.dimensions[1] = p.outputH;
+    outputType.layout.dimensions[2] = p.outputW;
+    outputType.layout.dimensions[3] = 1;
+
+    if (inReqs && outReqs && p.api.CreateManagedTensorBufferFromRequirements) {
+        s = p.api.CreateManagedTensorBufferFromRequirements(
+            p.env, &inputType, inReqs, &p.inputTensorBuffer);
+        LOGI("CreateInputBuffer: status=%d", s);
+        s = p.api.CreateManagedTensorBufferFromRequirements(
+            p.env, &outputType, outReqs, &p.outputTensorBuffer);
+        LOGI("CreateOutputBuffer: status=%d", s);
+    }
+
+    if (!p.inputTensorBuffer || !p.outputTensorBuffer) {
+        LOGE("Failed to create tensor buffers");
+        return JNI_FALSE;
+    }
+
+    p.initialized = true;
+    p.inferenceReady = true;
+    p.useGlBuffers = false;
+    LOGI("Pipeline ready with Kotlin FP32 CompiledModel");
+    return JNI_TRUE;
+}
+
 
 JNIEXPORT void JNICALL
 Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
