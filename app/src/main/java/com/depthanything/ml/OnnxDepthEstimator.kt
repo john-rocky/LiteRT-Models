@@ -11,15 +11,14 @@ import java.nio.FloatBuffer
 
 class OnnxDepthEstimator(
     private val context: Context,
-    private val modelFileName: String,
-    private val useXnnpack: Boolean = false
+    private val modelFileName: String
 ) : DepthEstimator {
 
     companion object {
         private const val TAG = "DepthAnything"
     }
 
-    override val mode = if (useXnnpack) InferenceMode.ONNX_XNNPACK else InferenceMode.ONNX_CPU
+    override val mode = InferenceMode.ONNX_CPU
 
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var session: OrtSession? = null
@@ -35,7 +34,7 @@ class OnnxDepthEstimator(
     }
 
     private fun initialize() {
-        Log.i(TAG, "[ONNX] Loading model: $modelFileName (xnnpack=$useXnnpack)")
+        Log.i(TAG, "[ONNX] Loading model: $modelFileName")
         val cacheFile = java.io.File(context.cacheDir, modelFileName)
         if (!cacheFile.exists()) {
             Log.i(TAG, "[ONNX] Copying model to cache...")
@@ -46,22 +45,7 @@ class OnnxDepthEstimator(
 
         val opts = OrtSession.SessionOptions()
         opts.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
-
-        val numCores = Runtime.getRuntime().availableProcessors()
-        Log.i(TAG, "[ONNX] CPU cores: $numCores, xnnpack=$useXnnpack")
-
-        if (useXnnpack) {
-            opts.setIntraOpNumThreads(numCores.coerceAtMost(6))
-            try {
-                opts.addXnnpack(mapOf("intra_op_num_threads" to numCores.coerceAtMost(6).toString()))
-                Log.i(TAG, "[ONNX] XNNPACK EP enabled, threads=${numCores.coerceAtMost(6)}")
-            } catch (e: Exception) {
-                Log.w(TAG, "[ONNX] XNNPACK EP not available: ${e.message}")
-            }
-        } else {
-            opts.setIntraOpNumThreads(4)
-            Log.i(TAG, "[ONNX] Threads: 4")
-        }
+        opts.setIntraOpNumThreads(4)
 
         session = env.createSession(cacheFile.absolutePath, opts)
 

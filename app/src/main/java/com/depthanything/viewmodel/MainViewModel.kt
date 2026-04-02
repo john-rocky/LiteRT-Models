@@ -50,7 +50,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val modes = DepthEstimatorFactory.availableModes(application)
         Log.i(TAG, "Available modes: ${modes.map { it.label }}")
         val defaultMode = when {
-            InferenceMode.ONNX_CPU in modes -> InferenceMode.ONNX_CPU
+            InferenceMode.KERAS_NATIVE in modes -> InferenceMode.KERAS_NATIVE
             modes.isNotEmpty() -> modes.first()
             else -> InferenceMode.ONNX_CPU
         }

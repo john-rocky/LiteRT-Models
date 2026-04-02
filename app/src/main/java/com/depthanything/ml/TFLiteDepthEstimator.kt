@@ -34,12 +34,8 @@ class TFLiteDepthEstimator(
     }
 
     private fun initialize() {
-        // Use FP32 for non-clamped models to avoid FP16 overflow
-        val useFP32 = mode in setOf(
-            InferenceMode.NHWC_518, InferenceMode.DIRECT_NHWC,
-            InferenceMode.V129, InferenceMode.KERAS_NATIVE,
-            InferenceMode.KERAS_392
-        )
+        // FP32 compute: same speed as FP16 on Tensor G3, avoids ViT attention overflow
+        val useFP32 = true
         Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label}, FP32=$useFP32)")
 
         val options = CompiledModel.Options(Accelerator.GPU)
