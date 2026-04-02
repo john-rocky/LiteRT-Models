@@ -221,6 +221,8 @@ typedef LiteRtStatus (*pfn_LiteRtLockTensorBuffer)(
     LiteRtTensorBufferLockMode lock_mode);
 typedef LiteRtStatus (*pfn_LiteRtUnlockTensorBuffer)(
     LiteRtTensorBuffer buffer);
+typedef LiteRtStatus (*pfn_LiteRtClearTensorBufferEvent)(
+    LiteRtTensorBuffer buffer);
 
 // Create managed buffer from requirements (lets compiled model decide the format)
 typedef LiteRtStatus (*pfn_LiteRtCreateManagedTensorBufferFromRequirements)(
@@ -272,6 +274,7 @@ struct LiteRtApi {
     pfn_LiteRtDestroyTensorBuffer DestroyTensorBuffer = nullptr;
     pfn_LiteRtLockTensorBuffer LockTensorBuffer = nullptr;
     pfn_LiteRtUnlockTensorBuffer UnlockTensorBuffer = nullptr;
+    pfn_LiteRtClearTensorBufferEvent ClearTensorBufferEvent = nullptr;
 
     bool load() {
         handle = dlopen("libLiteRt.so", RTLD_NOW);
@@ -314,6 +317,7 @@ struct LiteRtApi {
         LOAD(DestroyTensorBuffer, LiteRtDestroyTensorBuffer);
         LOAD(LockTensorBuffer, LiteRtLockTensorBuffer);
         LOAD(UnlockTensorBuffer, LiteRtUnlockTensorBuffer);
+        LOAD(ClearTensorBufferEvent, LiteRtClearTensorBufferEvent);
 
         #undef LOAD
 

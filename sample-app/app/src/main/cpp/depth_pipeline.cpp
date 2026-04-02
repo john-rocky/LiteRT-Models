@@ -989,8 +989,13 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
     p.api.UnlockTensorBuffer(p.inputTensorBuffer);
 
+    // Clear events on both buffers (nativeRun rejects buffers with events)
+    if (p.api.ClearTensorBufferEvent) {
+        p.api.ClearTensorBufferEvent(p.inputTensorBuffer);
+        p.api.ClearTensorBufferEvent(p.outputTensorBuffer);
+    }
+
     // Call Kotlin CompiledModel (FP32) via JNI callback
-    // Pass our C++ tensor buffer handles as long[]
     jlong inHandle = (jlong)(intptr_t)p.inputTensorBuffer;
     jlong outHandle = (jlong)(intptr_t)p.outputTensorBuffer;
 
