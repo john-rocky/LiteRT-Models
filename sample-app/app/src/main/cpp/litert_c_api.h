@@ -92,8 +92,16 @@ typedef enum {
 typedef uint32_t LiteRtGLenum;
 typedef uint32_t LiteRtGLuint;
 
-// Deallocator callback (can be nullptr for no-op)
+// Deallocator callbacks (can be nullptr for no-op)
 typedef void (*LiteRtGlBufferDeallocator)(LiteRtGLuint);
+typedef void (*LiteRtAhwbDeallocator)(void*);  // AHardwareBuffer*
+
+// AHardwareBuffer tensor buffer creation
+typedef struct AHardwareBuffer AHardwareBuffer;
+typedef LiteRtStatus (*pfn_LiteRtCreateTensorBufferFromAhwb)(
+    LiteRtEnvironment env, const LiteRtRankedTensorType* tensor_type,
+    AHardwareBuffer* ahwb, size_t ahwb_offset,
+    LiteRtAhwbDeallocator deallocator, LiteRtTensorBuffer* buffer);
 
 // Delegate precision
 typedef enum {
@@ -269,6 +277,7 @@ struct LiteRtApi {
 
     // TensorBuffer
     pfn_LiteRtCreateTensorBufferFromGlBuffer CreateTensorBufferFromGlBuffer = nullptr;
+    pfn_LiteRtCreateTensorBufferFromAhwb CreateTensorBufferFromAhwb = nullptr;
     pfn_LiteRtCreateManagedTensorBuffer CreateManagedTensorBuffer = nullptr;
     pfn_LiteRtCreateManagedTensorBufferFromRequirements CreateManagedTensorBufferFromRequirements = nullptr;
     pfn_LiteRtDestroyTensorBuffer DestroyTensorBuffer = nullptr;
@@ -312,6 +321,7 @@ struct LiteRtApi {
         LOAD(GetOutputBufferRequirements, LiteRtGetCompiledModelOutputBufferRequirements);
         LOAD(GetBufferRequirementsSize, LiteRtGetTensorBufferRequirementsBufferSize);
         LOAD(CreateTensorBufferFromGlBuffer, LiteRtCreateTensorBufferFromGlBuffer);
+        LOAD(CreateTensorBufferFromAhwb, LiteRtCreateTensorBufferFromAhwb);
         LOAD(CreateManagedTensorBuffer, LiteRtCreateManagedTensorBuffer);
         LOAD(CreateManagedTensorBufferFromRequirements, LiteRtCreateManagedTensorBufferFromRequirements);
         LOAD(DestroyTensorBuffer, LiteRtDestroyTensorBuffer);

@@ -12,6 +12,7 @@
 #include <GLES2/gl2ext.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include <android/hardware_buffer.h>
 
 #include <cstring>
 #include <vector>
@@ -317,6 +318,10 @@ struct DepthPipeline {
     int inputW = 518, inputH = 518;
     int outputW = 518, outputH = 518;
 
+    // AHardwareBuffers for zero-copy
+    AHardwareBuffer* ahbInput = nullptr;
+    AHardwareBuffer* ahbOutput = nullptr;
+
     // GL resources
     GLuint inputSsbo = 0;     // input floats [H*W*3]
     GLuint outputSsbo = 0;    // output floats [H*W]
@@ -445,9 +450,51 @@ static bool initLiteRT(const uint8_t* modelData, size_t modelSize) {
 
     size_t inSize = p.inputW * p.inputH * 3 * sizeof(float);
     size_t outSize = p.outputW * p.outputH * sizeof(float);
+    bool ahbOk = false;
 
-    // Fallback to managed buffers (SSBO RunCompiledModel returns status=3)
-    if (inReqs && outReqs && api.CreateManagedTensorBufferFromRequirements) {
+    // Try AHardwareBuffer zero-copy
+    if (api.CreateTensorBufferFromAhwb) {
+        AHardwareBuffer_Desc inDesc = {};
+        inDesc.width = inSize;
+        inDesc.height = 1;
+        inDesc.layers = 1;
+        inDesc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+        inDesc.usage = AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN |
+                       AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
+                       AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
+
+        AHardwareBuffer_Desc outDesc = inDesc;
+        outDesc.width = outSize;
+
+        int r1 = AHardwareBuffer_allocate(&inDesc, &p.ahbInput);
+        int r2 = AHardwareBuffer_allocate(&outDesc, &p.ahbOutput);
+        LOGI("AHB allocate: in=%d out=%d", r1, r2);
+
+        if (r1 == 0 && r2 == 0) {
+            LiteRtStatus s1 = api.CreateTensorBufferFromAhwb(
+                p.env, &inputType, p.ahbInput, 0, nullptr, &p.inputTensorBuffer);
+            LiteRtStatus s2 = api.CreateTensorBufferFromAhwb(
+                p.env, &outputType, p.ahbOutput, 0, nullptr, &p.outputTensorBuffer);
+            LOGI("AHB TensorBuffer: in=%d out=%d", s1, s2);
+
+            if (s1 == kLiteRtStatusOk && s2 == kLiteRtStatusOk) {
+                ahbOk = true;
+                p.useGlBuffers = false;  // not GL, but zero-copy via AHB
+                LOGI("AHardwareBuffer zero-copy enabled!");
+            } else {
+                if (p.inputTensorBuffer) { api.DestroyTensorBuffer(p.inputTensorBuffer); p.inputTensorBuffer = nullptr; }
+                if (p.outputTensorBuffer) { api.DestroyTensorBuffer(p.outputTensorBuffer); p.outputTensorBuffer = nullptr; }
+                AHardwareBuffer_release(p.ahbInput); p.ahbInput = nullptr;
+                AHardwareBuffer_release(p.ahbOutput); p.ahbOutput = nullptr;
+            }
+        } else {
+            if (p.ahbInput) { AHardwareBuffer_release(p.ahbInput); p.ahbInput = nullptr; }
+            if (p.ahbOutput) { AHardwareBuffer_release(p.ahbOutput); p.ahbOutput = nullptr; }
+        }
+    }
+
+    // Fallback to managed buffers
+    if (!ahbOk && inReqs && outReqs && api.CreateManagedTensorBufferFromRequirements) {
         status = api.CreateManagedTensorBufferFromRequirements(
             p.env, &inputType, inReqs, &p.inputTensorBuffer);
         LOGI("CreateInputBuffer (managed): status=%d", status);
@@ -982,25 +1029,43 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
 
     LiteRtStatus status;
 
-    // Write preprocessed input to tensor buffer
-    void* inPtr = nullptr;
-    status = p.api.LockTensorBuffer(p.inputTensorBuffer, &inPtr,
-            kLiteRtTensorBufferLockModeWriteReplace);
-    if (status != kLiteRtStatusOk || !inPtr) return;
-    memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
-    p.api.UnlockTensorBuffer(p.inputTensorBuffer);
+    // Write input: AHB direct or Lock/Unlock
+    if (p.ahbInput) {
+        void* inPtr = nullptr;
+        AHardwareBuffer_lock(p.ahbInput, AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
+                             -1, nullptr, &inPtr);
+        if (inPtr) {
+            memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
+            AHardwareBuffer_unlock(p.ahbInput, nullptr);
+        }
+    } else {
+        void* inPtr = nullptr;
+        status = p.api.LockTensorBuffer(p.inputTensorBuffer, &inPtr,
+                kLiteRtTensorBufferLockModeWriteReplace);
+        if (status != kLiteRtStatusOk || !inPtr) return;
+        memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
+        p.api.UnlockTensorBuffer(p.inputTensorBuffer);
+    }
 
-    // C++ CompiledModel (shared EGL context)
+    // Run inference
     status = p.api.RunCompiledModel(p.compiledModel, 0,
         1, &p.inputTensorBuffer, 1, &p.outputTensorBuffer);
+    static int infLog = 0;
+    if (infLog++ < 5) LOGI("Inference status=%d (ahb=%d)", status, p.ahbOutput != nullptr);
 
     if (status == kLiteRtStatusOk) {
+        // Read output: AHB direct or Lock/Unlock
         void* outPtr = nullptr;
-        status = p.api.LockTensorBuffer(p.outputTensorBuffer, &outPtr,
-                kLiteRtTensorBufferLockModeRead);
-        if (status == kLiteRtStatusOk && outPtr) {
+        if (p.ahbOutput) {
+            AHardwareBuffer_lock(p.ahbOutput, AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN,
+                                 -1, nullptr, &outPtr);
+        } else {
+            p.api.LockTensorBuffer(p.outputTensorBuffer, &outPtr,
+                    kLiteRtTensorBufferLockModeRead);
+        }
+
+        if (outPtr) {
             float* f = (float*)outPtr;
-            // Detect FP16 garbage: all values identical = overflow
             bool isGarbage = (f[0] == f[1] && f[1] == f[2] &&
                               f[0] == f[100] && f[0] == f[1000]);
             if (!isGarbage) {
@@ -1008,15 +1073,17 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
                        p.outputW * p.outputH * sizeof(float));
                 p.hasOutputReady = true;
             }
-            p.api.UnlockTensorBuffer(p.outputTensorBuffer);
             static int outLog = 0;
             if (outLog++ < 10)
                 LOGI("Output[0..2]=%f %f %f %s", f[0], f[1], f[2],
                      isGarbage ? "SKIPPED" : "OK");
+
+            if (p.ahbOutput)
+                AHardwareBuffer_unlock(p.ahbOutput, nullptr);
+            else
+                p.api.UnlockTensorBuffer(p.outputTensorBuffer);
         }
     }
-    static int infLog = 0;
-    if (infLog++ < 5) LOGI("Inference status=%d", status);
 }
 
 JNIEXPORT void JNICALL
