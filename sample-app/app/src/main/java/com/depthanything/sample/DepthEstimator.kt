@@ -79,6 +79,14 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         depthBitmap = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
 
         Log.i(TAG, "Model ready: ${inputWidth}x${inputHeight} -> ${outputWidth}x${outputHeight}")
+
+        // Check supported output buffer types
+        try {
+            val outReqs = compiledModel.getOutputBufferRequirements()
+            Log.i(TAG, "Output buffer requirements: types=${outReqs.supportedTypes}, size=${outReqs.bufferSize}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not get buffer requirements: ${e.message}")
+        }
     }
 
     /**
@@ -106,14 +114,14 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         inputBuffers[0].writeFloat(inputFloats)
         val preMs = (System.nanoTime() - t) / 1_000_000
 
-        // Inference
+        // Inference — try run(input) which returns optimized output buffers
         t = System.nanoTime()
-        compiledModel.run(inputBuffers, outputBuffers)
+        val resultBuffers = compiledModel.run(inputBuffers)
         val infMs = (System.nanoTime() - t) / 1_000_000
 
-        // Postprocess
+        // Postprocess — read from returned buffers (might be faster than pre-allocated)
         t = System.nanoTime()
-        val depth = outputBuffers[0].readFloat()
+        val depth = resultBuffers[0].readFloat()
         val t1 = System.nanoTime()
 
         // Min-max + colormap
