@@ -448,15 +448,21 @@ static bool initLiteRT(const uint8_t* modelData, size_t modelSize) {
     outputType.layout.dimensions[2] = p.outputW;
     outputType.layout.dimensions[3] = 1;
 
-    if (inReqs && outReqs && api.CreateManagedTensorBufferFromRequirements) {
-        status = api.CreateManagedTensorBufferFromRequirements(
-            p.env, &inputType, inReqs, &p.inputTensorBuffer);
-        LOGI("CreateInputBuffer: status=%d", status);
-        status = api.CreateManagedTensorBufferFromRequirements(
-            p.env, &outputType, outReqs, &p.outputTensorBuffer);
-        LOGI("CreateOutputBuffer: status=%d", status);
+    // Create HOST_MEMORY buffers (no GPU events — compatible with Kotlin nativeRun)
+    size_t inSize = p.inputW * p.inputH * 3 * sizeof(float);
+    size_t outSize = p.outputW * p.outputH * sizeof(float);
+
+    if (api.CreateManagedTensorBuffer) {
+        status = api.CreateManagedTensorBuffer(
+            p.env, kLiteRtTensorBufferTypeHostMemory, &inputType, inSize,
+            &p.inputTensorBuffer);
+        LOGI("CreateInputBuffer (host): status=%d", status);
+        status = api.CreateManagedTensorBuffer(
+            p.env, kLiteRtTensorBufferTypeHostMemory, &outputType, outSize,
+            &p.outputTensorBuffer);
+        LOGI("CreateOutputBuffer (host): status=%d", status);
     } else {
-        LOGE("Cannot create tensor buffers");
+        LOGE("CreateManagedTensorBuffer not available");
         return false;
     }
 
