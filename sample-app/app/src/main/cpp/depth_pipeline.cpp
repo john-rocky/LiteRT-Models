@@ -354,6 +354,7 @@ struct DepthPipeline {
 
     bool initialized = false;
     volatile bool inferenceReady = false;
+    jlong kotlinModelHandle = 0;  // Kotlin CompiledModel native handle (for FP32 inference)
 };
 constexpr float DepthPipeline::MEAN[];
 constexpr float DepthPipeline::STD[];
@@ -857,7 +858,8 @@ JNIEXPORT jboolean JNICALL
 Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
     JNIEnv* jenv, jobject thiz,
     jobject assetManager, jstring modelPath,
-    jint inputW, jint inputH, jint outputW, jint outputH) {
+    jint inputW, jint inputH, jint outputW, jint outputH,
+    jlong kotlinModelHandle) {
 
     auto& p = g_pipeline;
 
@@ -885,7 +887,9 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
 
     p.initialized = true;
     p.inferenceReady = true;
-    LOGI("C++ pipeline ready: %dx%d (zeroCopy=%d)", inputW, inputH, p.useGlBuffers);
+    p.kotlinModelHandle = kotlinModelHandle;
+    LOGI("C++ pipeline ready: %dx%d (zeroCopy=%d, kotlinModel=%lld)",
+         inputW, inputH, p.useGlBuffers, (long long)kotlinModelHandle);
     return JNI_TRUE;
 }
 
@@ -976,30 +980,68 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
         !p.api.LockTensorBuffer) return;
 
     LiteRtStatus status;
+
+    // Write preprocessed input to tensor buffer
     void* inPtr = nullptr;
     status = p.api.LockTensorBuffer(p.inputTensorBuffer, &inPtr,
             kLiteRtTensorBufferLockModeWriteReplace);
-    if (status == kLiteRtStatusOk && inPtr) {
-        memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
-        p.api.UnlockTensorBuffer(p.inputTensorBuffer);
+    if (status != kLiteRtStatusOk || !inPtr) return;
+    memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
+    p.api.UnlockTensorBuffer(p.inputTensorBuffer);
 
-        status = p.api.RunCompiledModel(p.compiledModel, 0,
-            1, &p.inputTensorBuffer, 1, &p.outputTensorBuffer);
+    // Call Kotlin CompiledModel (FP32) via JNI callback
+    // Pass our C++ tensor buffer handles as long[]
+    jlong inHandle = (jlong)(intptr_t)p.inputTensorBuffer;
+    jlong outHandle = (jlong)(intptr_t)p.outputTensorBuffer;
 
-        if (status == kLiteRtStatusOk) {
-            void* outPtr = nullptr;
-            status = p.api.LockTensorBuffer(p.outputTensorBuffer, &outPtr,
-                    kLiteRtTensorBufferLockModeRead);
-            if (status == kLiteRtStatusOk && outPtr) {
-                memcpy(p.outputFloats.data(), outPtr,
-                       p.outputW * p.outputH * sizeof(float));
-                p.api.UnlockTensorBuffer(p.outputTensorBuffer);
-                p.hasOutputReady = true;
+    jlongArray inArr = env->NewLongArray(1);
+    jlongArray outArr = env->NewLongArray(1);
+    env->SetLongArrayRegion(inArr, 0, 1, &inHandle);
+    env->SetLongArrayRegion(outArr, 0, 1, &outHandle);
+
+    // Find DepthGLSurfaceView and call runKotlinInference
+    jclass viewClass = env->FindClass("com/depthanything/sample/DepthGLSurfaceView");
+    if (viewClass) {
+        // Get the GLSurfaceView instance from the thiz (NativeDepthPipeline) — need the view reference
+        // Alternative: call the static nativeRun directly on CompiledModel class
+        jclass cmClass = env->FindClass("com/google/ai/edge/litert/CompiledModel");
+        if (cmClass) {
+            jmethodID runMethod = env->GetStaticMethodID(cmClass,
+                "access$nativeRun", "(JI[J[J)V");
+            if (runMethod && p.kotlinModelHandle != 0) {
+                env->CallStaticVoidMethod(cmClass, runMethod,
+                    p.kotlinModelHandle, (jint)0, inArr, outArr);
+
+                jthrowable exc = env->ExceptionOccurred();
+                if (exc) {
+                    env->ExceptionDescribe();
+                    env->ExceptionClear();
+                    LOGE("Kotlin nativeRun threw exception");
+                } else {
+                    // Read output
+                    void* outPtr = nullptr;
+                    status = p.api.LockTensorBuffer(p.outputTensorBuffer, &outPtr,
+                            kLiteRtTensorBufferLockModeRead);
+                    if (status == kLiteRtStatusOk && outPtr) {
+                        memcpy(p.outputFloats.data(), outPtr,
+                               p.outputW * p.outputH * sizeof(float));
+                        p.api.UnlockTensorBuffer(p.outputTensorBuffer);
+                        p.hasOutputReady = true;
+                        static int outLog = 0;
+                        if (outLog++ < 5) {
+                            float* f = p.outputFloats.data();
+                            LOGI("KotlinRun output[0..2]=%f %f %f", f[0], f[1], f[2]);
+                        }
+                    }
+                }
+            } else {
+                LOGE("access$nativeRun not found or no model handle");
             }
         }
-        static int infLog = 0;
-        if (infLog++ < 5) LOGI("Inference status=%d", status);
     }
+
+    env->DeleteLocalRef(inArr);
+    env->DeleteLocalRef(outArr);
 }
 
 JNIEXPORT void JNICALL

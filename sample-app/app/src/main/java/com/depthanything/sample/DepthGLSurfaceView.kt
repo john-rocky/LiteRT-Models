@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.util.Log
 import androidx.camera.core.ImageProxy
+import com.google.ai.edge.litert.Accelerator
+import com.google.ai.edge.litert.CompiledModel
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import javax.microedition.khronos.egl.EGLConfig
@@ -29,11 +31,13 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
 
     var inputWidth = 518; private set
     var inputHeight = 518; private set
-
     var fps = 0; private set
     var isZeroCopy = false; private set
     var initError: String? = null; private set
     var onFpsUpdate: ((Int, Boolean) -> Unit)? = null
+
+    private var compiledModel: CompiledModel? = null
+    private var environment: com.google.ai.edge.litert.Environment? = null
 
     init {
         setEGLContextClientVersion(3)
@@ -51,9 +55,7 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
             val inShape = interp.getInputTensor(0).shape()
             interp.close()
             inputHeight = inShape[1]; inputWidth = inShape[2]
-        } catch (e: Exception) {
-            Log.e(TAG, "Shape detection failed", e)
-        }
+        } catch (e: Exception) { Log.e(TAG, "Shape detection failed", e) }
     }
 
     fun submitFrame(imageProxy: ImageProxy) {
@@ -65,23 +67,46 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
         val pixelStride = plane.pixelStride
         val rowStride = plane.rowStride
         val srcW = w + (rowStride - pixelStride * w) / pixelStride
-
         val src = Bitmap.createBitmap(srcW, h, Bitmap.Config.ARGB_8888)
-        buffer.rewind()
-        src.copyPixelsFromBuffer(buffer)
-        imageProxy.close()
-
+        buffer.rewind(); src.copyPixelsFromBuffer(buffer); imageProxy.close()
         val pixels = IntArray(w * h)
-        src.getPixels(pixels, 0, w, 0, 0, w, h)
-        src.recycle()
-
+        src.getPixels(pixels, 0, w, 0, 0, w, h); src.recycle()
         frameLock.withLock {
             pendingPixels = pixels; pendingWidth = w; pendingHeight = h
             pendingRotation = rotation; hasNewFrame = true
         }
     }
 
-    fun destroy() { pipeline.close() }
+    fun destroy() {
+        pipeline.close()
+        compiledModel?.close()
+        environment?.close()
+    }
+
+    /**
+     * Called from C++ via JNI to run inference using Kotlin CompiledModel (FP32).
+     * This is the bridge: C++ prepares input buffer handle, Kotlin runs with FP32,
+     * C++ reads output buffer handle.
+     */
+    fun runKotlinInference(inputBufferHandles: LongArray, outputBufferHandles: LongArray): Boolean {
+        val model = compiledModel ?: return false
+        try {
+            // Call Kotlin CompiledModel's internal nativeRun via reflection
+            val cls = model.javaClass
+            val method = cls.getDeclaredMethod("nativeRun",
+                Long::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType,
+                LongArray::class.java,
+                LongArray::class.java)
+            method.isAccessible = true
+            val handle = NativeDepthPipeline.getNativeHandle(model)
+            method.invoke(null, handle, 0, inputBufferHandles, outputBufferHandles)
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "runKotlinInference failed", e)
+            return false
+        }
+    }
 
     private inner class DepthRenderer : Renderer {
         private var frameCount = 0
@@ -89,18 +114,39 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
             try {
-                Log.i(TAG, "onSurfaceCreated — C++ init on GL thread")
-                val ok = pipeline.nativeInitGl(inputWidth, inputHeight, inputWidth, inputHeight)
-                if (!ok) { initError = "nativeInitGl failed"; return }
+                Log.i(TAG, "onSurfaceCreated")
 
-                // initLiteRT with ABI-corrected EGL context sharing
-                val ok2 = pipeline.nativeInitLiteRT(
+                // 1. Init GL resources
+                if (!pipeline.nativeInitGl(inputWidth, inputHeight, inputWidth, inputHeight)) {
+                    initError = "GL init failed"; return
+                }
+
+                // 2. Create Kotlin CompiledModel with FP32
+                environment = com.google.ai.edge.litert.Environment.create()
+                val options = CompiledModel.Options(Accelerator.GPU)
+                try {
+                    options.gpuOptions = CompiledModel.GpuOptions(
+                        null, null, null,
+                        CompiledModel.GpuOptions.Precision.FP32,
+                        null, null, null, null, null, null, null, null, null, null, null
+                    )
+                } catch (_: Exception) {}
+                compiledModel = CompiledModel.create(
+                    context.assets, MODEL_FILE, options, environment
+                )
+                Log.i(TAG, "Kotlin FP32 CompiledModel created")
+
+                // 3. Init LiteRT in C++ + pass Kotlin model handle for FP32 inference
+                val modelHandle = NativeDepthPipeline.getNativeHandle(compiledModel!!)
+                Log.i(TAG, "Kotlin model handle: $modelHandle")
+                if (!pipeline.nativeInitLiteRT(
                     context.assets, MODEL_FILE,
-                    inputWidth, inputHeight, inputWidth, inputHeight)
-                if (!ok2) { initError = "nativeInitLiteRT failed"; return }
+                    inputWidth, inputHeight, inputWidth, inputHeight, modelHandle)) {
+                    initError = "C++ LiteRT init failed"; return
+                }
 
                 isZeroCopy = pipeline.nativeIsZeroCopy()
-                Log.i(TAG, "Pipeline ready (zero-copy: $isZeroCopy)")
+                Log.i(TAG, "Pipeline ready")
             } catch (e: Throwable) {
                 Log.e(TAG, "onSurfaceCreated CRASHED", e)
                 initError = e.message

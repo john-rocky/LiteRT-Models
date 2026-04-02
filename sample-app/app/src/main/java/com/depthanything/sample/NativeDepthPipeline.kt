@@ -8,7 +8,8 @@ class NativeDepthPipeline : AutoCloseable {
     external fun nativeInitGl(inputW: Int, inputH: Int, outputW: Int, outputH: Int): Boolean
     external fun nativeInitLiteRT(
         assetManager: AssetManager, modelPath: String,
-        inputW: Int, inputH: Int, outputW: Int, outputH: Int
+        inputW: Int, inputH: Int, outputW: Int, outputH: Int,
+        kotlinModelHandle: Long
     ): Boolean
     external fun nativeProcessFrame(pixels: IntArray, width: Int, height: Int, rotation: Int)
     external fun nativeRender(viewWidth: Int, viewHeight: Int)
