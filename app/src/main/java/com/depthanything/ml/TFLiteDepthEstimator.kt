@@ -34,71 +34,53 @@ class TFLiteDepthEstimator(
     }
 
     private fun initialize() {
-        val isFP32 = mode == InferenceMode.GPU_FP32_TRUTH
-        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label}, precision=${if (isFP32) "FP32" else "DEFAULT"})")
+        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label})")
 
         val options = CompiledModel.Options(Accelerator.GPU)
-        options.gpuOptions = CompiledModel.GpuOptions(
-            null, // constantTensorSharing
-            true, // infiniteFloatCapping
-            null, // allowSrcQuantizedFcConvOps
-            if (isFP32) CompiledModel.GpuOptions.Precision.FP32
-            else CompiledModel.GpuOptions.Precision.DEFAULT,
-            null, null, null, null, null, null, null, null, null, null, null
-        )
-        compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)
+        try {
+            compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "[LiteRT] CompiledModel.create failed: ${e.message}", e)
+            throw e
+        }
 
-        // Pre-allocate reusable buffers
         inputBuffers = compiledModel!!.createInputBuffers()
         outputBuffers = compiledModel!!.createOutputBuffers()
 
-        // Use legacy Interpreter briefly just for shape detection
-        val fd = context.assets.openFd(modelFileName)
-        val inputStream = java.io.FileInputStream(fd.fileDescriptor)
-        val channel = inputStream.channel
-        val modelBuffer = channel.map(
-            java.nio.channels.FileChannel.MapMode.READ_ONLY,
-            fd.startOffset, fd.declaredLength
-        )
-
-        // Quick shape detection via legacy Interpreter
-        val legacyInterp = org.tensorflow.lite.Interpreter(modelBuffer)
-        val inputShape = legacyInterp.getInputTensor(0).shape()
-        val outputShape = legacyInterp.getOutputTensor(0).shape()
-        legacyInterp.close()
-
-        if (inputShape.size == 4 && inputShape[1] == 3) {
+        // Detect shape from model file (ONNX=NCHW, TFLite=NHWC)
+        if (modelFileName.endsWith(".onnx")) {
             isNchw = true
-            inputHeight = inputShape[2]
-            inputWidth = inputShape[3]
+            // ONNX model: [1, 3, 392, 518] -> [1, 392, 518]
+            inputHeight = 392; inputWidth = 518
+            outputHeight = 392; outputWidth = 518
         } else {
-            isNchw = false
-            inputHeight = inputShape[1]
-            inputWidth = inputShape[2]
+            // TFLite: use legacy Interpreter for shape detection
+            val fd = context.assets.openFd(modelFileName)
+            val inputStream = java.io.FileInputStream(fd.fileDescriptor)
+            val channel = inputStream.channel
+            val modelBuffer = channel.map(
+                java.nio.channels.FileChannel.MapMode.READ_ONLY,
+                fd.startOffset, fd.declaredLength
+            )
+            val legacyInterp = org.tensorflow.lite.Interpreter(modelBuffer)
+            val inputShape = legacyInterp.getInputTensor(0).shape()
+            val outputShape = legacyInterp.getOutputTensor(0).shape()
+            legacyInterp.close()
+
+            if (inputShape.size == 4 && inputShape[1] == 3) {
+                isNchw = true; inputHeight = inputShape[2]; inputWidth = inputShape[3]
+            } else {
+                isNchw = false; inputHeight = inputShape[1]; inputWidth = inputShape[2]
+            }
+            when {
+                outputShape.size == 3 -> { outputHeight = outputShape[1]; outputWidth = outputShape[2] }
+                outputShape.size == 4 && outputShape[3] == 1 -> { outputHeight = outputShape[1]; outputWidth = outputShape[2] }
+                outputShape.size == 4 && outputShape[1] == 1 -> { outputHeight = outputShape[2]; outputWidth = outputShape[3] }
+                else -> { outputHeight = outputShape[1]; outputWidth = outputShape[2] }
+            }
         }
 
-        when {
-            outputShape.size == 3 -> {
-                outputHeight = outputShape[1]
-                outputWidth = outputShape[2]
-            }
-            outputShape.size == 4 && outputShape[3] == 1 -> {
-                outputHeight = outputShape[1]
-                outputWidth = outputShape[2]
-            }
-            outputShape.size == 4 && outputShape[1] == 1 -> {
-                outputHeight = outputShape[2]
-                outputWidth = outputShape[3]
-            }
-            else -> {
-                outputHeight = outputShape[1]
-                outputWidth = outputShape[2]
-            }
-        }
-
-        Log.i(TAG, "[LiteRT] Input: ${inputShape.contentToString()} (${if (isNchw) "NCHW" else "NHWC"})")
-        Log.i(TAG, "[LiteRT] Output: ${outputShape.contentToString()}")
-        Log.i(TAG, "[LiteRT] -> ${inputWidth}x${inputHeight} -> ${outputWidth}x${outputHeight}")
+        Log.i(TAG, "[LiteRT] ${if (isNchw) "NCHW" else "NHWC"} ${inputWidth}x${inputHeight} -> ${outputWidth}x${outputHeight}")
     }
 
     override fun predict(bitmap: Bitmap): DepthResult {

@@ -19,7 +19,7 @@ class OnnxDepthEstimator(
         private const val TAG = "DepthAnything"
     }
 
-    override val mode = InferenceMode.ONNX_RUNTIME
+    override val mode = InferenceMode.ONNX_CPU
 
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var session: OrtSession? = null

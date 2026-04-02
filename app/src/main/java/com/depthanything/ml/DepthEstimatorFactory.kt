@@ -4,21 +4,17 @@ import android.content.Context
 
 object DepthEstimatorFactory {
 
-    private const val MODEL_NHWC = "depth_anything_v2_nhwc.tflite"
-    private const val MODEL_ATTN = "depth_anything_v2_attn.tflite"
-    private const val MODEL_ALL = "depth_anything_v2_c60k_fp32.tflite"
+    private const val MODEL_CLAMPED_FP16W = "depth_anything_v2_nhwc_clamped_fp16w.tflite"
+    private const val MODEL_CLAMPED_FP32W = "depth_anything_v2_nhwc_clamped.tflite"
+    private const val MODEL_NHWC_518 = "depth_anything_v2_nhwc_518.tflite"
     private const val MODEL_ONNX = "depth_anything_v2.onnx"
 
     fun create(context: Context, mode: InferenceMode): DepthEstimator {
         return when (mode) {
-            // CompiledModel GPU FP32 (ground truth)
-            InferenceMode.GPU_FP32_TRUTH -> TFLiteDepthEstimator(
-                context, mode, MODEL_NHWC
-            )
-            // ML Drift CompiledModel (fast, FP16)
-            InferenceMode.DRIFT_ATTN -> TFLiteDepthEstimator(context, mode, MODEL_ATTN)
-            InferenceMode.DRIFT_ALL -> TFLiteDepthEstimator(context, mode, MODEL_ALL)
-            InferenceMode.ONNX_RUNTIME -> OnnxDepthEstimator(context, MODEL_ONNX, optimized = false)
+            InferenceMode.CLAMPED_FP16W -> TFLiteDepthEstimator(context, mode, MODEL_CLAMPED_FP16W)
+            InferenceMode.CLAMPED_FP32W -> TFLiteDepthEstimator(context, mode, MODEL_CLAMPED_FP32W)
+            InferenceMode.NHWC_518 -> TFLiteDepthEstimator(context, mode, MODEL_NHWC_518)
+            InferenceMode.ONNX_CPU -> OnnxDepthEstimator(context, MODEL_ONNX, optimized = false)
         }
     }
 
@@ -26,10 +22,10 @@ object DepthEstimatorFactory {
         val assetFiles = context.assets.list("")?.toSet() ?: emptySet()
         return InferenceMode.entries.filter { mode ->
             when (mode) {
-                InferenceMode.GPU_FP32_TRUTH -> MODEL_NHWC in assetFiles
-                InferenceMode.DRIFT_ATTN -> MODEL_ATTN in assetFiles
-                InferenceMode.DRIFT_ALL -> MODEL_ALL in assetFiles
-                InferenceMode.ONNX_RUNTIME -> MODEL_ONNX in assetFiles
+                InferenceMode.CLAMPED_FP16W -> MODEL_CLAMPED_FP16W in assetFiles
+                InferenceMode.CLAMPED_FP32W -> MODEL_CLAMPED_FP32W in assetFiles
+                InferenceMode.NHWC_518 -> MODEL_NHWC_518 in assetFiles
+                InferenceMode.ONNX_CPU -> MODEL_ONNX in assetFiles
             }
         }
     }

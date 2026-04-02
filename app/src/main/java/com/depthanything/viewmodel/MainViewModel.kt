@@ -29,7 +29,7 @@ data class UiState(
     val depthBitmap: Bitmap? = null,
     val coloredDepthBitmap: Bitmap? = null,
     val inferenceTimeMs: Long = 0,
-    val currentMode: InferenceMode = InferenceMode.ONNX_RUNTIME,
+    val currentMode: InferenceMode = InferenceMode.ONNX_CPU,
     val availableModes: List<InferenceMode> = emptyList(),
     val error: String? = null,
     val benchmarkEntries: List<BenchmarkEntry> = emptyList()
@@ -50,9 +50,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val modes = DepthEstimatorFactory.availableModes(application)
         Log.i(TAG, "Available modes: ${modes.map { it.label }}")
         val defaultMode = when {
-            InferenceMode.ONNX_RUNTIME in modes -> InferenceMode.ONNX_RUNTIME
+            InferenceMode.ONNX_CPU in modes -> InferenceMode.ONNX_CPU
             modes.isNotEmpty() -> modes.first()
-            else -> InferenceMode.ONNX_RUNTIME
+            else -> InferenceMode.ONNX_CPU
         }
         _uiState.value = _uiState.value.copy(
             availableModes = modes,

@@ -1,20 +1,20 @@
 package com.depthanything.ml
 
 enum class InferenceMode(val label: String, val description: String) {
-    GPU_FP32_TRUTH(
-        "GPU FP32 (truth)",
-        "Old delegate FP32 - ground truth"
+    CLAMPED_FP16W(
+        "Clamped FP16w (7ms)",
+        "518x518, onnx2tf clamped, FP16 weight, ML Drift"
     ),
-    DRIFT_ATTN(
-        "Drift Attn (64)",
-        "ML Drift + Attention clamp"
+    CLAMPED_FP32W(
+        "Clamped FP32w",
+        "518x518, onnx2tf clamped, FP32 weight, ML Drift"
     ),
-    DRIFT_ALL(
-        "Drift All (112)",
-        "ML Drift + All ops clamp"
+    NHWC_518(
+        "NHWC 518 no-clamp",
+        "518x518, onnx2tf, no clamp, ML Drift"
     ),
-    ONNX_RUNTIME(
-        "ONNX (truth)",
-        "ONNX FP32 CPU"
+    ONNX_CPU(
+        "ONNX CPU (truth)",
+        "ONNX FP32 CPU = PyTorch"
     );
 }
