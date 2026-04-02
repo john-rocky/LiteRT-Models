@@ -34,13 +34,7 @@ class TFLiteDepthEstimator(
     }
 
     private fun initialize() {
-        val fp16 = mode in setOf(
-            InferenceMode.NHWC_GPU_FP16,
-            InferenceMode.CLAMPED_GPU_FP16,
-            InferenceMode.CLAMPED_FP16W_GPU_FP16
-        )
-
-        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label}, GPU FP16=$fp16)")
+        Log.i(TAG, "[LiteRT] Loading: $modelFileName (${mode.label})")
 
         val options = CompiledModel.Options(Accelerator.GPU)
         compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)

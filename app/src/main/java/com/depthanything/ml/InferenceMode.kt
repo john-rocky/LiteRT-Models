@@ -1,28 +1,20 @@
 package com.depthanything.ml
 
 enum class InferenceMode(val label: String, val description: String) {
-    NHWC_GPU_FP32(
+    GPU_FP32(
         "GPU FP32",
-        "NHWC model, GPU delegate FP32"
+        "No clamp (reference, will break)"
     ),
-    NHWC_GPU_FP16(
-        "GPU FP16",
-        "NHWC model, GPU delegate FP16 (may NaN)"
+    GPU_C60K_FP32W(
+        "clamp60k FP32w",
+        "Clamp ±60k, FP32 weights (99MB)"
     ),
-    FP16W_GPU_FP32(
-        "GPU FP16w",
-        "FP16 weight model, GPU FP32 compute"
-    ),
-    CLAMPED_GPU_FP16(
-        "GPU clamp+FP16",
-        "Clamped model, GPU FP16 compute"
-    ),
-    CLAMPED_FP16W_GPU_FP16(
-        "GPU clamp+FP16w",
-        "Clamped FP16 weight, GPU FP16 compute"
+    GPU_C60K_FP16W(
+        "clamp60k FP16w",
+        "Clamp ±60k, FP16 weights (49MB)"
     ),
     ONNX_RUNTIME(
-        "ONNX Runtime",
-        "ONNX Runtime CPU, 4 threads"
+        "ONNX (ground truth)",
+        "ONNX FP32 CPU - reference quality"
     );
 }
