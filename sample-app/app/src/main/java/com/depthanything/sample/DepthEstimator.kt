@@ -82,9 +82,9 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
      * Returns total time (preprocess + inference + postprocess) in ms.
      */
     fun predict(inputBitmap: Bitmap, outputBitmap: Bitmap): Long {
-        val t0 = System.nanoTime()
+        var t = System.nanoTime()
 
-        // Preprocess: scale into pre-allocated bitmap
+        // Preprocess
         val canvas = Canvas(resizedBitmap)
         scaleMatrix.setScale(
             inputWidth.toFloat() / inputBitmap.width,
@@ -93,20 +93,22 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         canvas.drawBitmap(inputBitmap, scaleMatrix, paint)
         resizedBitmap.getPixels(inputPixels, 0, inputWidth, 0, 0, inputWidth, inputHeight)
 
-        // ImageNet normalize NHWC
         var idx = 0
         for (pixel in inputPixels) {
             inputFloats[idx++] = (Color.red(pixel) / 255f - MEAN[0]) / STD[0]
             inputFloats[idx++] = (Color.green(pixel) / 255f - MEAN[1]) / STD[1]
             inputFloats[idx++] = (Color.blue(pixel) / 255f - MEAN[2]) / STD[2]
         }
-
         inputBuffers[0].writeFloat(inputFloats)
+        val preMs = (System.nanoTime() - t) / 1_000_000
 
         // Inference
+        t = System.nanoTime()
         compiledModel.run(inputBuffers, outputBuffers)
+        val infMs = (System.nanoTime() - t) / 1_000_000
 
-        // Postprocess: min-max + colormap into pre-allocated arrays
+        // Postprocess
+        t = System.nanoTime()
         val depth = outputBuffers[0].readFloat()
         var min = Float.MAX_VALUE; var max = Float.MIN_VALUE
         for (v in depth) { if (v < min) min = v; if (v > max) max = v }
@@ -116,18 +118,19 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
             val inv = 255 - ((depth[i] - min) / range * 255f).toInt().coerceIn(0, 255)
             outputPixels[i] = Colormap.inferno(inv)
         }
-
         depthBitmap.setPixels(outputPixels, 0, outputWidth, 0, 0, outputWidth, outputHeight)
 
-        // Scale depth to output size
         val outCanvas = Canvas(outputBitmap)
         scaleMatrix.setScale(
             outputBitmap.width.toFloat() / outputWidth,
             outputBitmap.height.toFloat() / outputHeight
         )
         outCanvas.drawBitmap(depthBitmap, scaleMatrix, paint)
+        val postMs = (System.nanoTime() - t) / 1_000_000
 
-        return (System.nanoTime() - t0) / 1_000_000
+        Log.d(TAG, "pre=${preMs}ms inf=${infMs}ms post=${postMs}ms total=${preMs+infMs+postMs}ms")
+
+        return preMs + infMs + postMs
     }
 
     override fun close() {

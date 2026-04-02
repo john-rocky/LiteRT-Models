@@ -172,7 +172,10 @@ fun CameraDepthScreen() {
                                 cameraBitmap = Bitmap.createBitmap(rotW, rotH, Bitmap.Config.ARGB_8888)
                             }
 
+                            val camT = System.nanoTime()
                             fillBitmapFromImageProxy(imageProxy, cameraBitmap!!)
+                            val camMs = (System.nanoTime() - camT) / 1_000_000
+                            Log.d(TAG, "camera->bitmap: ${camMs}ms")
 
                             val ms = estimator.predict(cameraBitmap!!, depthDisplayBitmap)
 
