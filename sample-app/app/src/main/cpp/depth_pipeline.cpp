@@ -985,32 +985,29 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     memcpy(inPtr, p.inputFloats.data(), p.inputFloats.size() * sizeof(float));
     p.api.UnlockTensorBuffer(p.inputTensorBuffer);
 
-    // Try Kotlin CompiledModel (FP32) first, fall back to C++ model
-    LiteRtCompiledModel modelToUse = p.kotlinModelHandle
-        ? (LiteRtCompiledModel)(intptr_t)p.kotlinModelHandle
-        : p.compiledModel;
-    status = p.api.RunCompiledModel(modelToUse, 0,
+    // C++ CompiledModel (shared EGL context)
+    status = p.api.RunCompiledModel(p.compiledModel, 0,
         1, &p.inputTensorBuffer, 1, &p.outputTensorBuffer);
-    static bool loggedModel = false;
-    if (!loggedModel) {
-        LOGI("Using %s model handle", p.kotlinModelHandle ? "Kotlin FP32" : "C++");
-        loggedModel = true;
-    }
 
     if (status == kLiteRtStatusOk) {
         void* outPtr = nullptr;
         status = p.api.LockTensorBuffer(p.outputTensorBuffer, &outPtr,
                 kLiteRtTensorBufferLockModeRead);
         if (status == kLiteRtStatusOk && outPtr) {
-            memcpy(p.outputFloats.data(), outPtr,
-                   p.outputW * p.outputH * sizeof(float));
-            p.api.UnlockTensorBuffer(p.outputTensorBuffer);
-            p.hasOutputReady = true;
-            static int outLog = 0;
-            if (outLog++ < 5) {
-                float* f = p.outputFloats.data();
-                LOGI("Output[0..2]=%f %f %f", f[0], f[1], f[2]);
+            float* f = (float*)outPtr;
+            // Detect FP16 garbage: all values identical = overflow
+            bool isGarbage = (f[0] == f[1] && f[1] == f[2] &&
+                              f[0] == f[100] && f[0] == f[1000]);
+            if (!isGarbage) {
+                memcpy(p.outputFloats.data(), outPtr,
+                       p.outputW * p.outputH * sizeof(float));
+                p.hasOutputReady = true;
             }
+            p.api.UnlockTensorBuffer(p.outputTensorBuffer);
+            static int outLog = 0;
+            if (outLog++ < 10)
+                LOGI("Output[0..2]=%f %f %f %s", f[0], f[1], f[2],
+                     isGarbage ? "SKIPPED" : "OK");
         }
     }
     static int infLog = 0;
