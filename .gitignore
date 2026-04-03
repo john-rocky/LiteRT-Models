@@ -3,8 +3,7 @@
 /local.properties
 /.idea
 .DS_Store
-/build
-/app/build
+**/build/
 /captures
 .externalNativeBuild
 .cxx
@@ -18,3 +17,6 @@ local.properties
 # Python venv
 scripts/.venv/
 __pycache__/
+
+# Reference repos (cloned for comparison)
+references/
