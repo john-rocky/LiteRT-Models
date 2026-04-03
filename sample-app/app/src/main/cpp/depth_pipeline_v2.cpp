@@ -211,47 +211,9 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
         size_t outSize = g.outputH * g.outputW * sizeof(float);
         LOGI("Buffer sizes: in=%zu out=%zu", inSize, outSize);
 
-        // Try OpenCL buffer (delegate is LITERT_CL — native type)
-        auto outBuf = litert::TensorBuffer::CreateManaged(
-            *g.env, litert::TensorBufferType::kOpenClBuffer, outTT, outSize);
-        if (outBuf) {
-            auto inBuf = litert::TensorBuffer::CreateManaged(
-                *g.env, litert::TensorBufferType::kOpenClBuffer, inTT, inSize);
-            if (inBuf) {
-                g.inputBuffers.push_back(std::move(*inBuf));
-                g.outputBuffers.push_back(std::move(*outBuf));
-                g.useGlBuffers = true;  // reuse flag for zero-copy path
-                glOk = true;
-                LOGI("OpenCL buffer zero-copy created!");
-            } else {
-                LOGI("OpenCL input buffer failed, trying GL...");
-                // Try GL as fallback
-                auto inBuf2 = litert::TensorBuffer::CreateManaged(
-                    *g.env, litert::TensorBufferType::kGlBuffer, inTT, inSize);
-                if (inBuf2) {
-                    g.inputBuffers.push_back(std::move(*inBuf2));
-                    g.outputBuffers.push_back(std::move(*outBuf));
-                    g.useGlBuffers = true;
-                    glOk = true;
-                    LOGI("Mixed: GL input + OpenCL output");
-                }
-            }
-        } else {
-            LOGI("OpenCL output buffer failed, trying GL...");
-            auto outBuf2 = litert::TensorBuffer::CreateManaged(
-                *g.env, litert::TensorBufferType::kGlBuffer, outTT, outSize);
-            if (outBuf2) {
-                auto inBuf2 = litert::TensorBuffer::CreateManaged(
-                    *g.env, litert::TensorBufferType::kGlBuffer, inTT, inSize);
-                if (inBuf2) {
-                    g.inputBuffers.push_back(std::move(*inBuf2));
-                    g.outputBuffers.push_back(std::move(*outBuf2));
-                    g.useGlBuffers = true;
-                    glOk = true;
-                    LOGI("GL buffer zero-copy created!");
-                }
-            }
-        }
+        // GL/OpenCL/AHB buffer types all rejected by ML Drift on Pixel 8a.
+        // Zero-copy not available on this device.
+        LOGI("Zero-copy buffers not available on this device (Mali-G715)");
     }
 
     // Fallback: default managed buffers
