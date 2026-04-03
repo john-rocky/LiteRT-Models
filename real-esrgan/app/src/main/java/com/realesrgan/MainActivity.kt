@@ -20,7 +20,7 @@ private const val MAX_INPUT_SIZE = 512
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var imageView: ImageView
+    private lateinit var compareView: CompareView
     private lateinit var statusText: TextView
     private lateinit var pickButton: Button
     private lateinit var progressBar: ProgressBar
@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
     private var upscaler: Upscaler? = null
     private val executor = Executors.newSingleThreadExecutor()
     private var isProcessing = false
+    private var lastResult: Bitmap? = null
 
     private val imagePicker = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -64,12 +65,11 @@ class MainActivity : ComponentActivity() {
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply { gravity = Gravity.CENTER_HORIZONTAL })
 
-        imageView = ImageView(this).apply {
-            scaleType = ImageView.ScaleType.FIT_CENTER
+        compareView = CompareView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
         }
-        root.addView(imageView)
+        root.addView(compareView)
 
         setContentView(root)
 
@@ -112,10 +112,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val ms = (System.nanoTime() - t) / 1_000_000
+
+                // Scale original to same size as result for comparison
+                val upscaledOriginal = Bitmap.createScaledBitmap(bitmap, result.width, result.height, true)
                 bitmap.recycle()
+                lastResult?.recycle()
+                lastResult = result
 
                 runOnUiThread {
-                    imageView.setImageBitmap(result)
+                    compareView.setImages(upscaledOriginal, result)
                     progressBar.visibility = View.GONE
                     statusText.text = "${w}x${h} -> ${result.width}x${result.height} in ${ms}ms"
                     pickButton.isEnabled = true
