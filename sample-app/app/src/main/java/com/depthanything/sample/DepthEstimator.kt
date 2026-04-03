@@ -60,34 +60,10 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         outputHeight = outShape[1]; outputWidth = outShape[2]
         Log.i(TAG, "Shape: ${inputWidth}x${inputHeight} -> ${outputWidth}x${outputHeight}")
 
-        // Try GPU FP32, then GPU default, then CPU
-        compiledModel = try {
-            val gpuOpts = CompiledModel.Options(Accelerator.GPU)
-            try {
-                gpuOpts.gpuOptions = CompiledModel.GpuOptions(
-                    null, null, null,
-                    CompiledModel.GpuOptions.Precision.FP32,
-                    null, null, null, null, null, null, null, null, null, null, null
-                )
-            } catch (_: Exception) {}
-            CompiledModel.create(context.assets, modelFileName, gpuOpts, null).also {
-                Log.i(TAG, "GPU FP32 OK")
-            }
-        } catch (e1: Exception) {
-            Log.w(TAG, "GPU FP32 failed: ${e1.message}, trying GPU default...")
-            try {
-                CompiledModel.create(context.assets, modelFileName,
-                    CompiledModel.Options(Accelerator.GPU), null).also {
-                    Log.i(TAG, "GPU default OK")
-                }
-            } catch (e2: Exception) {
-                Log.w(TAG, "GPU failed: ${e2.message}, falling back to CPU")
-                CompiledModel.create(context.assets, modelFileName,
-                    CompiledModel.Options(Accelerator.CPU), null).also {
-                    Log.i(TAG, "CPU OK")
-                }
-            }
-        }
+        // GPU default (FP16) — test if models work without FP32 override
+        compiledModel = CompiledModel.create(context.assets, modelFileName,
+            CompiledModel.Options(Accelerator.GPU), null)
+        Log.i(TAG, "GPU compiled OK")
         inputBuffers = compiledModel.createInputBuffers()
         outputBuffers = compiledModel.createOutputBuffers()
 
