@@ -188,38 +188,45 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
 
     // Try creating GL buffer tensors (official pattern from main_gpu.cc)
     {
-        int sig = 0, idx = 0;
-        auto inReqs = g.model->GetInputBufferRequirements(sig, idx);
-        auto outReqs = g.model->GetOutputBufferRequirements(sig, idx);
-        auto inType = g.model->GetInputTensorType(sig, idx);
-        auto outType = g.model->GetOutputTensorType(sig, idx);
+        // Build fixed-shape tensor types (model may report -1 for batch dim)
+        LiteRtRankedTensorType inRtt{};
+        inRtt.element_type = kLiteRtElementTypeFloat32;
+        inRtt.layout.rank = 4;
+        inRtt.layout.dimensions[0] = 1;
+        inRtt.layout.dimensions[1] = g.inputH;
+        inRtt.layout.dimensions[2] = g.inputW;
+        inRtt.layout.dimensions[3] = 3;
+        litert::RankedTensorType inTT(inRtt);
 
-        if (inReqs && outReqs && inType && outType) {
-            auto inSize = inReqs->BufferSize();
-            auto outSize = outReqs->BufferSize();
-            if (inSize && outSize) {
-                LOGI("Buffer sizes: in=%zu out=%zu", *inSize, *outSize);
+        LiteRtRankedTensorType outRtt{};
+        outRtt.element_type = kLiteRtElementTypeFloat32;
+        outRtt.layout.rank = 4;
+        outRtt.layout.dimensions[0] = 1;
+        outRtt.layout.dimensions[1] = g.outputH;
+        outRtt.layout.dimensions[2] = g.outputW;
+        outRtt.layout.dimensions[3] = 1;
+        litert::RankedTensorType outTT(outRtt);
 
-                // Try GL buffer for output (zero-copy rendering)
-                auto outBuf = litert::TensorBuffer::CreateManaged(
-                    *g.env, litert::TensorBufferType::kGlBuffer, *outType, *outSize);
-                if (outBuf) {
-                    // Also try GL for input
-                    auto inBuf = litert::TensorBuffer::CreateManaged(
-                        *g.env, litert::TensorBufferType::kGlBuffer, *inType, *inSize);
-                    if (inBuf) {
-                        g.inputBuffers.push_back(std::move(*inBuf));
-                        g.outputBuffers.push_back(std::move(*outBuf));
-                        g.useGlBuffers = true;
-                        glOk = true;
-                        LOGI("GL buffer zero-copy created!");
-                    } else {
-                        LOGI("GL input buffer failed, trying managed");
-                    }
-                } else {
-                    LOGI("GL output buffer creation failed, trying managed");
-                }
+        size_t inSize = g.inputH * g.inputW * 3 * sizeof(float);
+        size_t outSize = g.outputH * g.outputW * sizeof(float);
+        LOGI("Buffer sizes: in=%zu out=%zu", inSize, outSize);
+
+        auto outBuf = litert::TensorBuffer::CreateManaged(
+            *g.env, litert::TensorBufferType::kGlBuffer, outTT, outSize);
+        if (outBuf) {
+            auto inBuf = litert::TensorBuffer::CreateManaged(
+                *g.env, litert::TensorBufferType::kGlBuffer, inTT, inSize);
+            if (inBuf) {
+                g.inputBuffers.push_back(std::move(*inBuf));
+                g.outputBuffers.push_back(std::move(*outBuf));
+                g.useGlBuffers = true;
+                glOk = true;
+                LOGI("GL buffer zero-copy created!");
+            } else {
+                LOGI("GL input buffer failed");
             }
+        } else {
+            LOGI("GL output buffer failed");
         }
     }
 
