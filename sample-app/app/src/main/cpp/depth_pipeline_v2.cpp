@@ -168,9 +168,7 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
     if (gpuResult) {
         auto& gpuOpts = *gpuResult;
         gpuOpts.SetPrecision(litert::GpuOptions::Precision::kFp32);
-        gpuOpts.SetBufferStorageType(litert::GpuOptions::BufferStorageType::kBuffer);
-        gpuOpts.EnableExternalTensorsMode(true);
-        LOGI("GPU options: FP32 + kBuffer + ExternalTensors");
+        LOGI("GPU options: FP32");
     } else {
         LOGE("GetGpuOptions failed");
     }
