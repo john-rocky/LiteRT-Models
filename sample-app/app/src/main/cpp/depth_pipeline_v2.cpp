@@ -183,33 +183,57 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
     g.model = std::make_unique<litert::CompiledModel>(std::move(*modelResult));
     LOGI("CompiledModel created with FP32 GPU");
 
-    // 4. Create GL buffer tensors (zero-copy) or managed buffers (fallback)
+    // 4. Try GL buffer zero-copy, fall back to managed buffers
     bool glOk = false;
 
-    // Try GL buffers first
+    // Try creating GL buffer tensors (official pattern from main_gpu.cc)
     {
-        auto inResult = g.model->CreateInputBuffers();
-        auto outResult = g.model->CreateOutputBuffers();
-        if (inResult && outResult) {
-            g.inputBuffers = std::move(*inResult);
-            g.outputBuffers = std::move(*outResult);
-            LOGI("Managed buffers created (default type)");
+        int sig = 0, idx = 0;
+        auto inReqs = g.model->GetInputBufferRequirements(sig, idx);
+        auto outReqs = g.model->GetOutputBufferRequirements(sig, idx);
+        auto inType = g.model->GetInputTensorType(sig, idx);
+        auto outType = g.model->GetOutputTensorType(sig, idx);
 
-            // Check if they're GL buffers
-            auto btResult = g.outputBuffers[0].BufferType();
-            if (btResult) {
-                LOGI("Output buffer type: %d", static_cast<int>(*btResult));
-                if (*btResult == litert::TensorBufferType::kGlBuffer) {
-                    g.useGlBuffers = true;
-                    glOk = true;
-                    LOGI("Zero-copy GL buffers!");
+        if (inReqs && outReqs && inType && outType) {
+            auto inSize = inReqs->BufferSize();
+            auto outSize = outReqs->BufferSize();
+            if (inSize && outSize) {
+                LOGI("Buffer sizes: in=%zu out=%zu", *inSize, *outSize);
+
+                // Try GL buffer for output (zero-copy rendering)
+                auto outBuf = litert::TensorBuffer::CreateManaged(
+                    *g.env, litert::TensorBufferType::kGlBuffer, *outType, *outSize);
+                if (outBuf) {
+                    // Also try GL for input
+                    auto inBuf = litert::TensorBuffer::CreateManaged(
+                        *g.env, litert::TensorBufferType::kGlBuffer, *inType, *inSize);
+                    if (inBuf) {
+                        g.inputBuffers.push_back(std::move(*inBuf));
+                        g.outputBuffers.push_back(std::move(*outBuf));
+                        g.useGlBuffers = true;
+                        glOk = true;
+                        LOGI("GL buffer zero-copy created!");
+                    } else {
+                        LOGI("GL input buffer failed, trying managed");
+                    }
+                } else {
+                    LOGI("GL output buffer creation failed, trying managed");
                 }
             }
         }
     }
 
+    // Fallback: default managed buffers
     if (!glOk) {
-        LOGI("Using managed buffers (no GL zero-copy)");
+        auto inResult = g.model->CreateInputBuffers();
+        auto outResult = g.model->CreateOutputBuffers();
+        if (inResult && outResult) {
+            g.inputBuffers = std::move(*inResult);
+            g.outputBuffers = std::move(*outResult);
+            auto btResult = g.outputBuffers[0].BufferType();
+            if (btResult) LOGI("Output buffer type: %d", static_cast<int>(*btResult));
+        }
+        LOGI("Using managed buffers (fallback)");
     }
 
     g.initialized = true;
@@ -265,10 +289,24 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     }
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    // Read output
-    auto readResult = g.outputBuffers[0].Read<float>(
-        absl::MakeSpan(g.outputFloats));
-    auto t3 = std::chrono::high_resolution_clock::now();
+    // Read output — GL buffer: get SSBO ID, managed: Read to CPU
+    auto t3 = t2;
+    if (g.useGlBuffers) {
+        // GL zero-copy: output is already in a GL SSBO
+        // Just read for logging on first frames
+        auto glBuf = g.outputBuffers[0].GetGlBuffer();
+        if (glBuf) {
+            static int glLog = 0;
+            if (glLog++ < 5) LOGI("GL output SSBO id=%u size=%zu", glBuf->id, glBuf->size_bytes);
+            // TODO: use glBuf->id for compute shader colormap (skip CPU read)
+            // For now, also read to CPU for colormap
+            g.outputBuffers[0].Read<float>(absl::MakeSpan(g.outputFloats));
+        }
+        t3 = std::chrono::high_resolution_clock::now();
+    } else {
+        g.outputBuffers[0].Read<float>(absl::MakeSpan(g.outputFloats));
+        t3 = std::chrono::high_resolution_clock::now();
+    }
 
     long writeMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0).count();
     long runMs = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
