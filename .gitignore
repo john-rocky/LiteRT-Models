@@ -1,0 +1,38 @@
+*.iml
+.gradle
+/.idea
+.DS_Store
+local.properties
+**/build/
+/captures
+.externalNativeBuild
+.cxx
+
+# Model files (too large for git)
+*.tflite
+*.onnx
+*.ort
+*.bin
+*.param
+
+# Python
+scripts/.venv/
+__pycache__/
+
+# References
+references/
+
+# Depth estimation (local development only)
+/app/
+/sample-app/
+/scripts/
+/models_518x518/
+/build.gradle.kts
+/gradle.properties
+/settings.gradle.kts
+/gradlew
+/gradlew.bat
+/gradle/
+CLIENT_QUESTIONS.md
+INVESTIGATION.md
+REALTIME_REPORT.md
