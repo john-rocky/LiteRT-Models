@@ -9,6 +9,7 @@
 
 #include <GLES3/gl31.h>
 #include <EGL/egl.h>
+#include <android/hardware_buffer.h>
 
 #include <cstring>
 #include <vector>
@@ -44,6 +45,7 @@ struct Pipeline {
 
     int inputW = 518, inputH = 518;
     int outputW = 518, outputH = 518;
+    AHardwareBuffer* ahbOutput = nullptr;  // for zero-copy via clImportMemoryARM
 
     std::vector<float> inputFloats;
     std::vector<float> outputFloats;
@@ -211,9 +213,40 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
         size_t outSize = g.outputH * g.outputW * sizeof(float);
         LOGI("Buffer sizes: in=%zu out=%zu", inSize, outSize);
 
-        // GL/OpenCL/AHB buffer types all rejected by ML Drift on Pixel 8a.
-        // Zero-copy not available on this device.
-        LOGI("Zero-copy buffers not available on this device (Mali-G715)");
+        // Try AHardwareBuffer for output (Mali clImportMemoryARM zero-copy)
+        AHardwareBuffer_Desc ahbDesc = {};
+        ahbDesc.width = outSize;  // BLOB format: width = size in bytes
+        ahbDesc.height = 1;
+        ahbDesc.layers = 1;
+        ahbDesc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+        ahbDesc.usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER |
+                        AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN;
+
+        int ahbResult = AHardwareBuffer_allocate(&ahbDesc, &g.ahbOutput);
+        LOGI("AHB allocate: result=%d", ahbResult);
+
+        if (ahbResult == 0 && g.ahbOutput) {
+            // Wrap AHB as output TensorBuffer via clImportMemoryARM
+            auto outBuf = litert::TensorBuffer::CreateFromAhwb(
+                *g.env, outTT, g.ahbOutput, 0);
+            if (outBuf) {
+                // Input: managed (default), Output: AHB zero-copy
+                auto inResult = g.model->CreateInputBuffers();
+                if (inResult) {
+                    g.inputBuffers = std::move(*inResult);
+                    g.outputBuffers.push_back(std::move(*outBuf));
+                    g.useGlBuffers = true;  // flag for AHB read path
+                    glOk = true;
+                    LOGI("AHB output zero-copy created! (clImportMemoryARM)");
+                }
+            } else {
+                LOGI("CreateFromAhwb failed");
+                AHardwareBuffer_release(g.ahbOutput);
+                g.ahbOutput = nullptr;
+            }
+        } else {
+            LOGI("AHB allocate failed");
+        }
     }
 
     // Fallback: default managed buffers
@@ -282,18 +315,19 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     }
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    // Read output — GL buffer: get SSBO ID, managed: Read to CPU
+    // Read output
     auto t3 = t2;
-    if (g.useGlBuffers) {
-        // GL zero-copy: output is already in a GL SSBO
-        // Just read for logging on first frames
-        auto glBuf = g.outputBuffers[0].GetGlBuffer();
-        if (glBuf) {
-            static int glLog = 0;
-            if (glLog++ < 5) LOGI("GL output SSBO id=%u size=%zu", glBuf->id, glBuf->size_bytes);
-            // TODO: use glBuf->id for compute shader colormap (skip CPU read)
-            // For now, also read to CPU for colormap
-            g.outputBuffers[0].Read<float>(absl::MakeSpan(g.outputFloats));
+    if (g.ahbOutput) {
+        // AHB path: Lock AHardwareBuffer (Mali shared memory = cache invalidation only, no DMA)
+        void* ahbPtr = nullptr;
+        int lockResult = AHardwareBuffer_lock(g.ahbOutput,
+            AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN, -1, nullptr, &ahbPtr);
+        if (lockResult == 0 && ahbPtr) {
+            memcpy(g.outputFloats.data(), ahbPtr, g.outputW * g.outputH * sizeof(float));
+            AHardwareBuffer_unlock(g.ahbOutput, nullptr);
+        } else {
+            static int errLog = 0;
+            if (errLog++ < 5) LOGE("AHB lock failed: %d", lockResult);
         }
         t3 = std::chrono::high_resolution_clock::now();
     } else {
