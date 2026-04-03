@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var fpsText: TextView
     private lateinit var modelSpinner: Spinner
     private val cameraExecutor = Executors.newSingleThreadExecutor()
-    private var estimator: InterpreterDepthEstimator? = null
+    private var estimator: DepthEstimator? = null
     private var depthDisplayBitmap: Bitmap? = null
     private var isProcessing = false
     private var currentModel = ""
@@ -121,7 +121,7 @@ class MainActivity : ComponentActivity() {
                 oldEstimator?.close()
 
                 // Create new estimator and bitmap
-                val newEstimator = InterpreterDepthEstimator(this, modelFile)
+                val newEstimator = DepthEstimator(this, modelFile)
                 val newBitmap = Bitmap.createBitmap(
                     newEstimator.inputWidth, newEstimator.inputHeight, Bitmap.Config.ARGB_8888)
 

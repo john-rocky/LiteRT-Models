@@ -85,10 +85,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
     implementation("androidx.camera:camera-view:$cameraVersion")
 
-    // TFLite V1 Interpreter + GPU Delegate (for compatibility testing)
-    implementation("com.google.ai.edge.litert:litert:1.4.0")
-    implementation("com.google.ai.edge.litert:litert-gpu:1.4.1")
-    implementation("com.google.ai.edge.litert:litert-gpu-api:1.4.1")
+    // LiteRT (CompiledModel API, ML Drift GPU)
+    implementation("com.google.ai.edge.litert:litert:2.1.3")
 
     implementation("androidx.core:core-ktx:1.15.0")
 }
