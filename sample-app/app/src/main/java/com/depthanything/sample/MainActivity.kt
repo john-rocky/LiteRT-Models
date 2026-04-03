@@ -111,17 +111,27 @@ class MainActivity : ComponentActivity() {
 
     private fun loadModel(modelFile: String) {
         isProcessing = true  // pause inference
-        fpsText.text = "Loading $modelFile..."
+        runOnUiThread { fpsText.text = "Loading..." }
 
         cameraExecutor.execute {
             try {
-                estimator?.close()
-                estimator = DepthEstimator(this, modelFile)
-                depthDisplayBitmap = Bitmap.createBitmap(
-                    estimator!!.inputWidth, estimator!!.inputHeight, Bitmap.Config.ARGB_8888)
+                // Close old estimator (recycles internal bitmaps)
+                val oldEstimator = estimator
+                estimator = null
+                oldEstimator?.close()
+
+                // Create new estimator and bitmap
+                val newEstimator = DepthEstimator(this, modelFile)
+                val newBitmap = Bitmap.createBitmap(
+                    newEstimator.inputWidth, newEstimator.inputHeight, Bitmap.Config.ARGB_8888)
+
+                // Swap atomically
+                estimator = newEstimator
+                depthDisplayBitmap = newBitmap
                 currentModel = modelFile
+
                 runOnUiThread {
-                    fpsText.text = "Ready: ${estimator!!.inputWidth}x${estimator!!.inputHeight}"
+                    fpsText.text = "Ready: ${newEstimator.inputWidth}x${newEstimator.inputHeight}"
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Model load failed: $modelFile", e)
