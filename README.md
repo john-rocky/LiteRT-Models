@@ -14,8 +14,6 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [YOLO11n](#yolo11n)
   - [YOLO26n](#yolo26n)
 
-- [**Monocular Depth Estimation**](#monocular-depth-estimation)
-  - [Depth Anything V2](#depth-anything-v2)
 
 # How to use
 
@@ -71,20 +69,6 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). No ImageNet mean/std.
 
-# Monocular Depth Estimation
-
-### Depth Anything V2
-
-Depth Anything V2: Monocular depth estimation with ViT-Small backbone. Native Keras conversion achieves **correlation 0.9995** with original PyTorch model. Runs at **3+ FPS** on Pixel 8a GPU.
-
-| Download Link | Size | Input | Output | Original Project | License | Sample App |
-| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
-| [depth_anything_v2_fp16w.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/depth_anything_v2_fp16w.tflite) | 47 MB | Float32 [1, 392, 518, 3] NHWC | Float32 [1, 392, 518, 1] | [DepthAnything/Depth-Anything-V2](https://github.com/DepthAnything/Depth-Anything-V2) | [Apache-2.0](https://github.com/DepthAnything/Depth-Anything-V2/blob/main/LICENSE) | Coming soon |
-
-**Output format**: `[1, H, W, 1]` — relative inverse depth (higher = closer). Apply min-max normalization for visualization.
-
-**Preprocessing**: RGB with ImageNet normalization (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]).
-
 # GPU Compatibility Notes
 
 CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
@@ -95,16 +79,7 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 
 **Proven conversion paths**:
 1. **SavedModel → TFLiteConverter** — Eliminates PACK/SPLIT ops (used for YOLO11)
-2. **Native Keras → from_keras_model()** — Full op control (used for Depth Anything V2)
-
-# Conversion Scripts
-
-[**scripts/**](scripts/) — Python scripts for model conversion.
-
-| Script | Description |
-|--------|-------------|
-| `convert_keras_native.py` | Native Keras DepthAnything V2 → TFLite |
-| `compare_quality.py` | Quality comparison vs PyTorch ground truth |
+2. **Native Keras → from_keras_model()** — Full op control for ViT models
 
 # License
 
