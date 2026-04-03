@@ -36,12 +36,10 @@ class MainActivity : ComponentActivity() {
     private var currentModel = ""
 
     private val models = arrayOf(
-        "depth_anything_v2_keras.tflite",
         "depth_anything_v2_keras_392x518.tflite",
     )
 
     private val modelNames = arrayOf(
-        "518x518 FP32",
         "392x518 FP32",
     )
 
