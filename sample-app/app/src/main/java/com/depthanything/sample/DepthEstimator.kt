@@ -60,10 +60,16 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         outputHeight = outShape[1]; outputWidth = outShape[2]
         Log.i(TAG, "Shape: ${inputWidth}x${inputHeight} -> ${outputWidth}x${outputHeight}")
 
-        // GPU default (FP16) — test if models work without FP32 override
-        compiledModel = CompiledModel.create(context.assets, modelFileName,
-            CompiledModel.Options(Accelerator.GPU), null)
-        Log.i(TAG, "GPU compiled OK")
+        val options = CompiledModel.Options(Accelerator.GPU)
+        try {
+            options.gpuOptions = CompiledModel.GpuOptions(
+                null, null, null,
+                CompiledModel.GpuOptions.Precision.FP32,
+                null, null, null, null, null, null, null, null, null, null, null
+            )
+        } catch (_: Exception) {}
+        compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)
+        Log.i(TAG, "GPU FP32 compiled OK")
         inputBuffers = compiledModel.createInputBuffers()
         outputBuffers = compiledModel.createOutputBuffers()
 
