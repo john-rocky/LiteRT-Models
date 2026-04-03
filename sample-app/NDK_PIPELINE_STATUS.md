@@ -1,186 +1,142 @@
-# Depth Pipeline — Full Technical Status
+# DepthAnything V2 リアルタイム化 — 最終技術レポート
 
-## Repository
-`sample-app/` in this repo. Pixel 8a (Tensor G3, Mali-G715, Android 15/16, LiteRT 2.1.3).
-
----
-
-## Current Working Setup (3fps)
+## 決定的発見: ボトルネックはデータ転送ではなくGPU計算時間
 
 ```
-Camera (CameraX RGBA_8888, 1080x1080, rot=90)
-  → CPU preprocess: resize 518x518, ImageNet normalize (17ms)
-  → Kotlin CompiledModel.run() GPU inference (9ms)
-  → readFloat() GPU→CPU transfer (320ms) ← 97% of frame time
-  → CPU Inferno colormap (5ms)
-  → ImageView display
-  = ~350ms/frame = ~3 FPS
+C++ SDK計測結果 (Pixel 8a, Tensor G3, Mali-G715):
+  write = 15ms   (CPU→GPU入力書き込み)
+  run   = 4-8ms  (GPU推論dispatch — 非同期)
+  lock  = 345ms  (GPU計算完了待ち — 実際の推論時間)
+  copy  = 0ms    (Mali共有メモリ — DMAコピー不要!)
 ```
 
-### Key files
-- `MainActivity.kt` — CameraX + ImageView, no Compose
-- `DepthEstimator.kt` — Kotlin LiteRT CompiledModel API, FP32 GPU
-- `Colormap.kt` — 256-entry Inferno LUT
-- `depth_anything_v2_keras.tflite` — 518x518 NHWC native Keras model (99MB, corr=0.9995)
+**readFloat 340msの正体は「GPU計算時間345ms」。** データ転送は0ms（Maliの共有メモリアーキテクチャ）。zero-copyは既に達成されている。バッファ最適化では一切高速化できない。
 
-### Why 3fps
-`readFloat()` = 320ms. This is GPU→CPU DMA transfer of 518×518×4=1MB.
-The Kotlin `TensorBuffer.readFloat()` API has no zero-copy alternative (Google rejected: LiteRT issue #3006).
+## 推論時間の真実
 
----
-
-## C++ NDK Pipeline Attempt (experimental, unused)
-
-### Goal
-Eliminate `readFloat()` by keeping depth output on GPU:
-```
-Camera → SSBO → LiteRT GPU inference → SSBO → compute shader colormap → GLSurfaceView
-= target ~10ms/frame = 100+ FPS
-```
-
-### Files (in repo, not active)
-- `app/src/main/cpp/litert_c_api.h` — LiteRT C API type declarations + dlsym loader
-- `app/src/main/cpp/depth_pipeline.cpp` — Full C++ pipeline (JNI, EGL, LiteRT, shaders)
-- `app/src/main/cpp/CMakeLists.txt` — NDK build config (GLESv3, EGL, dl)
-- `NativeDepthPipeline.kt` — JNI bridge class
-- `DepthGLSurfaceView.kt` — GLSurfaceView + Renderer
-- `build.gradle.kts` — has NDK/CMake config (externalNativeBuild)
-
-### What works in C++
-1. **LiteRT C API via dlopen** — `dlopen("libLiteRt.so", RTLD_NOW)` loads runtime from Maven AAR at link-free. All core symbols found via dlsym.
-2. **Tensor buffer creation** — `LiteRtCreateManagedTensorBufferFromRequirements()` correctly creates buffers matching compiled model's requirements.
-3. **GPU inference** — `LiteRtRunCompiledModel()` returns status=0 with correct depth values when EGL context has FP32.
-4. **CPU colormap** — Inferno LUT in C++, percentile-based normalization (2nd/98th), exponential smoothing.
-
-### Critical bugs / enum values discovered
-- **`kLiteRtElementTypeFloat32 = 1`** (not 2). Value 2 = Int32. Caused `CreateManagedTensorBuffer` to return "invalid argument".
-- **`LiteRtEnvOption` struct**: `{ LiteRtEnvOptionTag tag; union { void* ptr; uint64_t u64; } value; }` — option tags include `kLiteRtEnvOptionTagEglDisplay=14`, `kLiteRtEnvOptionTagEglContext=15`.
-- **`LiteRtCreateManagedTensorBufferFromRequirements`** takes 4 params: `(env, tensor_type*, requirements, buffer*)` — NOT 2.
-
-### Unresolved Blockers
-
-#### Blocker 1: GLSurfaceView + LiteRT EGL Conflict
-**Problem:** `LiteRtGpuEnvironmentCreate()` and `LiteRtCreateCompiledModel()` permanently corrupt GLSurfaceView's EGL context. Even `eglMakeCurrent` restore doesn't fix rendering.
-
-**Tested combinations (all failed for rendering):**
-
-| Setup | Result |
+| 計測値 | 意味 |
 |---|---|
-| LiteRT init on GL thread, `eglMakeCurrent` restore | Black screen (EGL corrupted) |
-| LiteRT init on GL thread + TRANSLUCENT + setZOrderOnTop | Intermittent depth + white flicker |
-| LiteRT init on bg thread (shared EGL context) | Correct inference but shared context creation breaks GLSurfaceView |
-| LiteRT init on bg thread (independent EGL context) | GL rendering works but inference outputs garbage (FP16) |
-| Diagnostic: skip all LiteRT init, just glClear(red) | **Red shows** — confirms GLSurfaceView works when LiteRT doesn't touch EGL |
+| Kotlin `inf=7ms` | 非同期dispatch（GPUにキューイング） |
+| Kotlin `readFloat=340ms` | GPU計算完了待ち + Java配列確保 |
+| C++ `run=4ms` | 非同期dispatch |
+| C++ `lock=345ms` | **GPU計算完了待ち（実際の推論時間）** |
+| C++ `copy=0ms` | Mali共有メモリ、DMAなし |
 
-**Root cause:** LiteRT's GPU environment creates its own EGL context/display and makes it current. This side-effects GLSurfaceView's internal EGL management even after restore. No workaround found with GLSurfaceView.
+DepthAnything V2 ViT-S/14 (518x518) の**実際のGPU推論時間は~345ms**。
 
-**Potential solutions not tried:**
-- TextureView (integrates into view hierarchy, no separate surface)
-- Manual EGL + SurfaceView (full control, like terryky/android_tflite NativeActivity approach)
-- MediaPipe's `GlCalculatorHelper` pattern
+## 試行した全アプローチ
 
-#### Blocker 2: SSBO Zero-Copy Inference (status=3)
-**Problem:** `LiteRtRunCompiledModel()` with GL buffer tensor buffers returns `kLiteRtStatusErrorRuntimeFailure` (3).
+### バッファタイプ (全てC++ SDKで検証)
 
-```cpp
-// This succeeds:
-LiteRtCreateTensorBufferFromGlBuffer(env, &type, GL_SHADER_STORAGE_BUFFER, ssbo_id, size, 0, nullptr, &buffer);
+| タイプ | CreateManaged | Run | 理由 |
+|---|---|---|---|
+| managed (default) | ✅ | ✅ read=369ms | GPU stall |
+| **kOpenClTexture (12)** | ✅ | **✅** lock=345ms, copy=0ms | **唯一の外部サポート型** |
+| kGlBuffer (6) | ✅ | ❌ "not supported" | cl_khr_gl_sharing非対応 |
+| kOpenClBuffer (10) | ✅ | ❌ "not supported" | |
+| kAhwb (2) | ✅ | ❌ "not supported" | |
 
-// This fails with status=3:
-LiteRtRunCompiledModel(compiled_model, 0, 1, &input_buf, 1, &output_buf);
+**`GetOutputBufferRequirements().supportedTypes` = [12] (kOpenClTexture のみ)**
+
+### FP32/FP16
+
+| 方式 | FP32設定 | 結果 |
+|---|---|---|
+| Kotlin CompiledModel | `GpuOptions.Precision.FP32` ✅ | 正常（全シーン） |
+| C++ dlopen | 設定不可（関数未エクスポート） | FP16 → ViTオーバーフロー |
+| **C++ SDK** | **`GpuOptions::SetPrecision(kFp32)` ✅** | **正常** |
+
+### EGLコンテキスト
+
+| 方式 | 結果 |
+|---|---|
+| dlopen + 手動struct | ABI間違い → EGL共有失敗 |
+| dlopen + ABI修正 (24byte, tag 6/7) | GpuEnvironmentCreateに渡す → "Reusing provided EGL" |
+| **C++ SDK `Environment::Create({})`** | **自動管理 ✅** |
+
+### GLSurfaceView表示
+
+| 設定 | 結果 |
+|---|---|
+| デフォルト | SurfaceView behind window → 黒 |
+| setZOrderOnTop + OPAQUE | 黒 |
+| setZOrderOnTop + TRANSLUCENT | 白（EGL破壊時）/ 表示（EGL正常時） |
+| LiteRT init on bg thread | GLは正常だがFP16 → ゴミ出力 |
+| LiteRT init on GL thread | GPU推論OK、GL表示壊れる |
+
+### Zero-Copy試行
+
+| 方式 | 結果 |
+|---|---|
+| SSBO `CreateTensorBufferFromGlBuffer` | CreateOK, Run status=3 |
+| AHB `CreateTensorBufferFromAhwb` | CreateOK, Run status=3 |
+| OpenCL buffer CreateManaged | CreateOK, Run "not supported" |
+| GL buffer CreateManaged | CreateOK, Run "not supported" |
+| **OpenCL texture CreateManaged** | **CreateOK, Run OK!** → lock=345ms, copy=0ms |
+| Kotlin TensorBuffer Lock from C++ | status=3 (JNI wrapper) |
+| Kotlin CompiledModel handle in C++ | クラッシュ (JNI wrapper) |
+| Kotlin nativeRun from C++ | "events attached" エラー |
+
+## NPU/TPU可能性
+
+| パス | 実現性 | 理由 |
+|---|---|---|
+| Tensor G3 Darwinn TPU | **❌ 不可能** | 公開APIなし、INT8のみ、GELU/LayerNorm/BatchMatMul非対応 |
+| NNAPI | △ 非推奨 | Android 15で非推奨、GPU/CPUにルーティングされるだけ |
+| GPU (Mali-G715) | ✅ 現行 | 345ms/frame = ~3fps |
+| CPU (XNNPACK) | △ フォールバック | ~500-1000ms |
+
+**Tensor G3のDarwinn TPUは第三者開発者には非公開。** Google自社アプリ（カメラ、音声認識）のみ使用。
+
+## 結論: Pixel 8aではDepthAnything V2のリアルタイムは不可能
+
+**根本原因: Mali-G715のGPU計算能力不足 (345ms/frame for ViT-S)**
+
+これはデータ転送の問題ではなく、GPU演算速度の限界。
+
+## リアルタイム達成への道
+
+### 1. デバイス変更 (最も確実)
+Samsung S24/S25+ (Snapdragon 8 Gen3/Elite, Adreno 750/830)
+- cl_khr_gl_sharing対応 → GL buffer zero-copy可
+- Adreno GPUはViT推論がMaliより高速
+- 公式サンプルで17ms (セグメンテーション) の実績
+
+### 2. NCNN + Vulkan (Pixel 8aで試す価値あり)
+- Vulkan computeはOpenCLと異なるGPUパイプライン
+- DepthAnything V2のAndroidデモ既存 (ncnn-android-depth_anything)
+- Mali-G715のVulkan性能はOpenCLと異なる可能性
+
+### 3. モデル軽量化
+- ViT-Tiny (5Mパラメータ, ViT-Sの1/5)
+- MobileNetベースの深度推定モデル
+- INT8量子化 (FP16精度問題を回避)
+
+### 4. クライアント確認
+- 「FP32でiOSの2倍程度」の詳細: デバイス、計測方法、モデル
+- dispatch時間(7ms)と実計算時間(345ms)の混同の可能性
+
+## 技術スタック
+
+```
+LiteRT: v2.1.3 (最新)
+C++ SDK: litert_cc_sdk.zip (FP32 + OpenCLTexture対応)
+モデル: depth_anything_v2_keras.tflite (518x518, 99MB, NHWC)
+デバイス: Pixel 8a (Tensor G3, Mali-G715, Android 15/16)
 ```
 
-**Possible causes:**
-- LiteRT 2.1.3 on Tensor G3 doesn't support GL buffer I/O for this model
-- CL-GL interop not properly initialized
-- The model's internal representation incompatible with GL buffers
+## ファイル
 
-**Alternative approaches not tried:**
-- `LiteRtCreateTensorBufferFromAhwb()` — AHardwareBuffer (symbol exists in libLiteRt.so)
-- Legacy TFLite Interpreter API + `TfLiteGpuDelegateBindBufferToTensor()` (proven in MediaPipe/terryky samples, must bind BEFORE `ModifyGraphWithDelegate`)
+### C++ SDK パイプライン
+- `cpp/depth_pipeline_v2.cpp` — 公式パターンベース、FP32 + OpenCLTexture
+- `cpp/litert_sdk/litert_cc_sdk/` — LiteRT C++ SDK v2.1.3
+- `cpp/CMakeLists.txt` — SDK統合ビルド
 
-#### Blocker 3: FP32 Precision on Background Thread
-**Problem:** LiteRT v2.1.3 doesn't export `LrtCreateGpuOptions` / `LrtSetGpuAcceleratorCompilationOptionsPrecision`. Cannot set FP32 via C API.
+### Kotlin
+- `DepthEstimator.kt` — V2 CompiledModel (FP32, readFloat 340ms)
+- `InterpreterDepthEstimator.kt.v1-only` — V1 Interpreter (GPU非対応)
+- `DepthGLSurfaceView.kt` — GLSurfaceView (表示不安定)
 
-**Behavior:**
-- GLSurfaceView's EGL context → GPU defaults to FP32 → correct output (4.19, 3.78, etc.)
-- Independent EGL context (bg thread) → GPU defaults to FP16 → ViT attention overflow → constant output 0.088684
-- Shared EGL context from GLSurfaceView → FP32 works BUT breaks GLSurfaceView rendering
-
-**Why FP32 matters:** DepthAnything V2 ViT-S has 6-head attention with 64-dim heads. FP16 accumulation overflows at ~26 bits, producing garbage depth output. Documented in INVESTIGATION.md.
-
----
-
-## Symbol Table (libLiteRt.so v2.1.3, arm64-v8a)
-
-### Available (confirmed via llvm-nm)
-```
-LiteRtCreateEnvironment, LiteRtDestroyEnvironment
-LiteRtGpuEnvironmentCreate
-LiteRtCreateModelFromFile, LiteRtCreateModelFromBuffer, LiteRtDestroyModel
-LiteRtCreateOptions, LiteRtDestroyOptions, LiteRtSetOptionsHardwareAccelerators
-LiteRtAddOpaqueOptions
-LiteRtCreateCompiledModel, LiteRtDestroyCompiledModel
-LiteRtRunCompiledModel, LiteRtRunCompiledModelAsync
-LiteRtGetCompiledModelInputBufferRequirements, LiteRtGetCompiledModelOutputBufferRequirements
-LiteRtCreateManagedTensorBuffer, LiteRtCreateManagedTensorBufferFromRequirements
-LiteRtCreateTensorBufferFromGlBuffer, LiteRtCreateTensorBufferFromAhwb
-LiteRtDestroyTensorBuffer, LiteRtLockTensorBuffer, LiteRtUnlockTensorBuffer
-LiteRtGetTensorBufferRequirementsBufferSize
-```
-
-### NOT available (dlsym fails)
-```
-LrtCreateGpuOptions — needed for FP32 precision setting
-LrtDestroyGpuOptions
-LrtSetGpuAcceleratorCompilationOptionsPrecision
-```
-
-### Also present (legacy TFLite C API)
-```
-TfLiteInterpreterCreate, TfLiteInterpreterGetInputTensor, etc.
-```
-
----
-
-## Research: Proven Real-time Approaches
-
-### 1. Legacy TFLite Interpreter + GL Delegate SSBO Binding
-```cpp
-TfLiteDelegate* delegate = TfLiteGpuDelegateCreate(&options);
-TfLiteGpuDelegateBindBufferToTensor(delegate, ssbo_id, tensor_index);  // BEFORE ModifyGraphWithDelegate
-interpreter->ModifyGraphWithDelegate(delegate);
-// Now Invoke() reads/writes SSBOs directly
-```
-**Source:** terryky/android_tflite, MediaPipe tflite_inference_calculator.cc
-
-### 2. MediaPipe TFLiteGPURunner
-```cpp
-builder->SetInputObjectDef(i, GetSSBOObjectDef(channels));
-builder->SetOutputObjectDef(i, GetSSBOObjectDef(channels));
-builder->Build(&runner_);
-runner_->SetInputObject(0, OpenGlBuffer{ssbo_id});
-runner_->Run();
-```
-
-### 3. AHardwareBuffer → GL SSBO Bridge
-```cpp
-AHardwareBuffer_allocate(&desc, &ahwb);  // BLOB format, GPU_DATA_BUFFER usage
-EGLClientBuffer native = eglGetNativeClientBufferANDROID(ahwb);
-glBufferStorageExternalEXT(GL_SHADER_STORAGE_BUFFER, 0, bytes, native, flags);
-```
-**Source:** tensorflow/lite/delegates/gpu/async_buffers.cc
-
-### Key Rule
-> `ModifyGraphWithDelegate()` and all `Invoke()`/`Run()` calls must happen from the **same EGL context thread**.
-
----
-
-## Model Details
-- **File:** `depth_anything_v2_keras.tflite` (99MB)
-- **Input:** [1, 518, 518, 3] NHWC Float32, ImageNet normalized (mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
-- **Output:** [1, 518, 518, 1] Float32 (relative depth, higher=closer)
-- **Architecture:** DINOv2 ViT-S/14 backbone + DPT neck + conv head, ReLU output
-- **Conversion:** Native Keras (not onnx2tf), corr=0.9995 vs PyTorch
-- **GPU:** 9ms inference on Pixel 8a Tensor G3 (ML Drift)
-- **FP16 incompatible:** ViT attention overflow at FP16 precision
+### レガシー (dlopen方式)
+- `cpp/depth_pipeline.cpp` — dlopen + 手動struct (参考用)
+- `cpp/litert_c_api.h` — C API型定義 (参考用)
