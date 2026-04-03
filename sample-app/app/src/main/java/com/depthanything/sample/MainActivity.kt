@@ -35,24 +35,14 @@ class MainActivity : ComponentActivity() {
     private var isProcessing = false
     private var currentModel = ""
 
-    // Available models (must exist in assets/)
     private val models = arrayOf(
         "depth_anything_v2_keras.tflite",
-        "depth_anything_v2_keras_fp16w.tflite",
         "depth_anything_v2_keras_392x518.tflite",
-        "depth_anything_v2_keras_392x518_fp16w.tflite",
-        "depth_anything_v2_nhwc_clamped.tflite",
-        "depth_anything_v2_nhwc_clamped_fp16w.tflite",
     )
 
-    // Short display names
     private val modelNames = arrayOf(
-        "Keras 518 FP32 (99MB)",
-        "Keras 518 FP16w (50MB)",
-        "Keras 392 FP32 (98MB)",
-        "Keras 392 FP16w (49MB)",
-        "Clamped 392 FP32 (99MB)",
-        "Clamped 392 FP16w (50MB)",
+        "518x518 FP32",
+        "392x518 FP32",
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
