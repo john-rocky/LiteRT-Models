@@ -46,6 +46,21 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
 
     init {
         Log.i(TAG, "Loading model: $modelFileName")
+
+        // Detect shape first (before CompiledModel which might crash)
+        val fd = context.assets.openFd(modelFileName)
+        val channel = java.io.FileInputStream(fd.fileDescriptor).channel
+        val buf = channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
+        val interp = org.tensorflow.lite.Interpreter(buf)
+        val inShape = interp.getInputTensor(0).shape()
+        val outShape = interp.getOutputTensor(0).shape()
+        interp.close()
+
+        inputHeight = inShape[1]; inputWidth = inShape[2]
+        outputHeight = outShape[1]; outputWidth = outShape[2]
+        Log.i(TAG, "Shape: ${inputWidth}x${inputHeight} -> ${outputWidth}x${outputHeight}")
+
+        // Create CompiledModel with GPU FP32
         val options = CompiledModel.Options(Accelerator.GPU)
         try {
             options.gpuOptions = CompiledModel.GpuOptions(
@@ -58,18 +73,6 @@ class DepthEstimator(context: Context, modelFileName: String) : AutoCloseable {
         compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)
         inputBuffers = compiledModel.createInputBuffers()
         outputBuffers = compiledModel.createOutputBuffers()
-
-        // Detect shape
-        val fd = context.assets.openFd(modelFileName)
-        val channel = java.io.FileInputStream(fd.fileDescriptor).channel
-        val buf = channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
-        val interp = org.tensorflow.lite.Interpreter(buf)
-        val inShape = interp.getInputTensor(0).shape()
-        val outShape = interp.getOutputTensor(0).shape()
-        interp.close()
-
-        inputHeight = inShape[1]; inputWidth = inShape[2]
-        outputHeight = outShape[1]; outputWidth = outShape[2]
 
         // Pre-allocate all buffers
         inputFloats = FloatArray(inputHeight * inputWidth * 3)
