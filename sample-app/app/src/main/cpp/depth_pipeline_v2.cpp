@@ -214,6 +214,31 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
         size_t outSize = g.outputH * g.outputW * sizeof(float);
         LOGI("Buffer sizes: in=%zu out=%zu", inSize, outSize);
 
+        // Log supported buffer types
+        int sig = 0, idx = 0;
+        auto outReqs = g.model->GetOutputBufferRequirements(sig, idx);
+        if (outReqs) {
+            auto types = outReqs->SupportedTypes();
+            if (types) {
+                std::string typeStr;
+                for (auto t : *types) {
+                    typeStr += std::to_string(static_cast<int>(t)) + " ";
+                }
+                LOGI("Output supported buffer types: [%s]", typeStr.c_str());
+            }
+        }
+        auto inReqs = g.model->GetInputBufferRequirements(sig, idx);
+        if (inReqs) {
+            auto types = inReqs->SupportedTypes();
+            if (types) {
+                std::string typeStr;
+                for (auto t : *types) {
+                    typeStr += std::to_string(static_cast<int>(t)) + " ";
+                }
+                LOGI("Input supported buffer types: [%s]", typeStr.c_str());
+            }
+        }
+
         // Try AHardwareBuffer for output (Mali clImportMemoryARM zero-copy)
         AHardwareBuffer_Desc ahbDesc = {};
         ahbDesc.width = outSize;  // BLOB format: width = size in bytes
