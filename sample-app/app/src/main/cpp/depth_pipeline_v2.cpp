@@ -322,9 +322,26 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     }
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    // Read output
-    g.outputBuffers[0].Read<float>(absl::MakeSpan(g.outputFloats));
+    // Read output — measure Lock vs memcpy separately
+    auto tLock0 = std::chrono::high_resolution_clock::now();
+
+    // Lock: waits for GPU + maps memory
+    auto lockResult = g.outputBuffers[0].Lock(litert::TensorBufferLockMode::kRead);
+    auto tLock1 = std::chrono::high_resolution_clock::now();
+
+    if (lockResult) {
+        float* ptr = static_cast<float*>(*lockResult);
+        // memcpy from locked pointer
+        memcpy(g.outputFloats.data(), ptr, g.outputW * g.outputH * sizeof(float));
+        g.outputBuffers[0].Unlock();
+    } else {
+        // Fallback to Read
+        g.outputBuffers[0].Read<float>(absl::MakeSpan(g.outputFloats));
+    }
     auto t3 = std::chrono::high_resolution_clock::now();
+
+    long lockMs = std::chrono::duration_cast<std::chrono::milliseconds>(tLock1-tLock0).count();
+    long copyMs = std::chrono::duration_cast<std::chrono::milliseconds>(t3-tLock1).count();
 
     long writeMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0).count();
     long runMs = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
@@ -332,8 +349,9 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
 
     static int logCount = 0;
     if (logCount++ < 20) {
-        LOGI("write=%ldms run=%ldms read=%ldms out[0..2]=%f %f %f",
-             writeMs, runMs, readMs, g.outputFloats[0], g.outputFloats[1], g.outputFloats[2]);
+        LOGI("write=%ldms run=%ldms lock=%ldms copy=%ldms out[0..2]=%f %f %f",
+             writeMs, runMs, lockMs, copyMs,
+             g.outputFloats[0], g.outputFloats[1], g.outputFloats[2]);
     }
 
     // CPU colormap → RGBA
