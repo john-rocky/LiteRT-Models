@@ -36,6 +36,8 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
 
     init {
         setEGLContextClientVersion(3)
+        setZOrderOnTop(true)
+        holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
         setRenderer(renderer)
         renderMode = RENDERMODE_CONTINUOUSLY
     }

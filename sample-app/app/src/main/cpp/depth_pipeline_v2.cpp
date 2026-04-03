@@ -13,6 +13,7 @@
 #include <cstring>
 #include <vector>
 #include <string>
+#include <chrono>
 
 #include "litert/cc/litert_compiled_model.h"
 #include "litert/cc/litert_environment.h"
@@ -248,14 +249,13 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     env->ReleaseIntArrayElements(pixels, data, JNI_ABORT);
 
     // Write input
+    auto t0 = std::chrono::high_resolution_clock::now();
     auto writeResult = g.inputBuffers[0].Write<float>(
         absl::MakeConstSpan(g.inputFloats));
-    if (!writeResult) {
-        LOGE("Write input failed");
-        return;
-    }
+    if (!writeResult) { LOGE("Write input failed"); return; }
+    auto t1 = std::chrono::high_resolution_clock::now();
 
-    // Run inference (synchronous)
+    // Run inference
     auto runResult = g.model->Run(
         absl::MakeSpan(g.inputBuffers), absl::MakeSpan(g.outputBuffers));
     if (!runResult) {
@@ -263,25 +263,21 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
         if (errLog++ < 5) LOGE("Run failed");
         return;
     }
+    auto t2 = std::chrono::high_resolution_clock::now();
 
     // Read output
-    if (g.useGlBuffers) {
-        // GL buffer path — get SSBO ID for direct rendering
-        auto glResult = g.outputBuffers[0].GetGlBuffer();
-        if (glResult) {
-            // TODO: use gl_buffer.id in compute shader for colormap
-            // For now, fall through to read path
-            LOGI("GL buffer output: id=%u", glResult->id);
-        }
-    }
-
-    // Read to CPU for colormap (works for both managed and GL)
     auto readResult = g.outputBuffers[0].Read<float>(
         absl::MakeSpan(g.outputFloats));
+    auto t3 = std::chrono::high_resolution_clock::now();
+
+    long writeMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0).count();
+    long runMs = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
+    long readMs = std::chrono::duration_cast<std::chrono::milliseconds>(t3-t2).count();
 
     static int logCount = 0;
-    if (logCount++ < 10) {
-        LOGI("Output[0..2]=%f %f %f", g.outputFloats[0], g.outputFloats[1], g.outputFloats[2]);
+    if (logCount++ < 20) {
+        LOGI("write=%ldms run=%ldms read=%ldms out[0..2]=%f %f %f",
+             writeMs, runMs, readMs, g.outputFloats[0], g.outputFloats[1], g.outputFloats[2]);
     }
 
     // CPU colormap → RGBA
