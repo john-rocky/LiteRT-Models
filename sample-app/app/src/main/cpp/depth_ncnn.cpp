@@ -5,6 +5,7 @@
 #include <android/asset_manager_jni.h>
 #include <net.h>
 #include <gpu.h>
+#include <cpu.h>
 #include <cstring>
 #include <vector>
 #include <chrono>
