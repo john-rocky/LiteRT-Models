@@ -14,6 +14,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [YOLO11n](#yolo11n)
   - [YOLO26n](#yolo26n)
 
+- [**Super Resolution**](#super-resolution)
+  - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
 # How to use
 
@@ -68,6 +70,20 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 **Output format**: Same as YOLO11n — `[1, 84, N]` with NMS post-processing in app. Bbox coords are normalized 0-1.
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). No ImageNet mean/std.
+
+# Super Resolution
+
+### Real-ESRGAN x4v3
+
+Real-ESRGAN: Practical image restoration and upscaling. The General-x4v3 variant is a lightweight model (1.21M params) with excellent quality for 4x super resolution.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [real_esrgan_x4v3.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/real_esrgan_x4v3.tflite) | 4.7 MB | Float32 [1, 128, 128, 3] NHWC | Float32 [1, 512, 512, 3] NHWC | [xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) | [BSD-3-Clause](https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE) | [real-esrgan/](real-esrgan/) |
+
+**Output format**: `[1, 512, 512, 3]` — 4x upscaled RGB image (0-1 range).
+
+**Preprocessing**: RGB normalized to 0-1 (divide by 255). For images larger than 128x128, process as overlapping tiles and stitch.
 
 # GPU Compatibility Notes
 
