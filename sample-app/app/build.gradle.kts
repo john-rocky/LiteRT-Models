@@ -85,9 +85,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
     implementation("androidx.camera:camera-view:$cameraVersion")
 
-    // LiteRT (for legacy Interpreter shape detection only)
+    // LiteRT (CompiledModel API, ML Drift GPU)
     implementation("com.google.ai.edge.litert:litert:2.1.3")
-    // NCNN handles actual inference via Vulkan compute
 
     implementation("androidx.core:core-ktx:1.15.0")
 }

@@ -9,10 +9,9 @@ import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -23,22 +22,44 @@ import androidx.core.content.ContextCompat
 import java.util.concurrent.Executors
 
 private const val TAG = "DepthAnything"
-private const val TARGET_SIZE = 518
 private const val REQUEST_CAMERA = 100
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var depthImageView: ImageView
     private lateinit var fpsText: TextView
+    private lateinit var modelSpinner: Spinner
     private val cameraExecutor = Executors.newSingleThreadExecutor()
-    private var pipeline: NcnnDepthPipeline? = null
-    private var depthBitmap: Bitmap? = null
+    private var estimator: DepthEstimator? = null
+    private var depthDisplayBitmap: Bitmap? = null
     private var isProcessing = false
+    private var currentModel = ""
+
+    // Available models (must exist in assets/)
+    private val models = arrayOf(
+        "depth_anything_v2_keras.tflite",
+        "depth_anything_v2_keras_fp16w.tflite",
+        "depth_anything_v2_keras_392x518.tflite",
+        "depth_anything_v2_keras_392x518_fp16w.tflite",
+        "depth_anything_v2_nhwc_clamped.tflite",
+        "depth_anything_v2_nhwc_clamped_fp16w.tflite",
+    )
+
+    // Short display names
+    private val modelNames = arrayOf(
+        "Keras 518 FP32 (99MB)",
+        "Keras 518 FP16w (50MB)",
+        "Keras 392 FP32 (98MB)",
+        "Keras 392 FP16w (49MB)",
+        "Clamped 392 FP32 (99MB)",
+        "Clamped 392 FP16w (50MB)",
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val frame = FrameLayout(this)
+
         depthImageView = ImageView(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -46,39 +67,68 @@ class MainActivity : ComponentActivity() {
         }
         frame.addView(depthImageView)
 
+        // Top bar: FPS + model selector
+        val topBar = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 48, 32, 0)
+        }
+
         fpsText = TextView(this).apply {
-            textSize = 24f
+            textSize = 20f
             setTextColor(0xFFFFFFFF.toInt())
             setShadowLayer(4f, 2f, 2f, 0xFF000000.toInt())
-            text = "Loading NCNN..."
+            text = "Loading..."
         }
-        frame.addView(fpsText, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
-            Gravity.TOP or Gravity.START
-        ).apply { setMargins(32, 48, 0, 0) })
+        topBar.addView(fpsText)
+
+        modelSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item, modelNames)
+            setBackgroundColor(0x88000000.toInt())
+        }
+        modelSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                val model = models[pos]
+                if (model != currentModel) {
+                    loadModel(model)
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        topBar.addView(modelSpinner)
+
+        frame.addView(topBar, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP))
 
         setContentView(frame)
-
-        try {
-            pipeline = NcnnDepthPipeline()
-            val ok = pipeline!!.nativeInit(
-                assets, "dptv2_s.param", "dptv2_s.bin",
-                TARGET_SIZE, false  // CPU mode (Vulkan 3.3s on Mali-G715)
-            )
-            if (!ok) throw RuntimeException("NCNN init failed")
-            depthBitmap = Bitmap.createBitmap(TARGET_SIZE, TARGET_SIZE, Bitmap.Config.ARGB_8888)
-            val mode = if (pipeline!!.nativeIsVulkan()) "Vulkan" else "CPU"
-            fpsText.text = "Ready ($mode)"
-        } catch (e: Exception) {
-            Log.e(TAG, "Init failed", e)
-            fpsText.text = "Failed: ${e.message}"
-            return
-        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED) startCamera()
         else ActivityCompat.requestPermissions(this,
             arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA)
+    }
+
+    private fun loadModel(modelFile: String) {
+        isProcessing = true  // pause inference
+        fpsText.text = "Loading $modelFile..."
+
+        cameraExecutor.execute {
+            try {
+                estimator?.close()
+                estimator = DepthEstimator(this, modelFile)
+                depthDisplayBitmap = Bitmap.createBitmap(
+                    estimator!!.inputWidth, estimator!!.inputHeight, Bitmap.Config.ARGB_8888)
+                currentModel = modelFile
+                runOnUiThread {
+                    fpsText.text = "Ready: ${estimator!!.inputWidth}x${estimator!!.inputHeight}"
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Model load failed: $modelFile", e)
+                runOnUiThread { fpsText.text = "Failed: ${e.message}" }
+            }
+            isProcessing = false
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -94,7 +144,7 @@ class MainActivity : ComponentActivity() {
             val provider = future.get()
             @Suppress("DEPRECATION")
             val analysis = ImageAnalysis.Builder()
-                .setTargetResolution(android.util.Size(TARGET_SIZE, TARGET_SIZE))
+                .setTargetResolution(android.util.Size(518, 518))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                 .build()
@@ -102,31 +152,20 @@ class MainActivity : ComponentActivity() {
             var frameCount = 0; var lastFpsTime = System.currentTimeMillis()
 
             analysis.setAnalyzer(cameraExecutor) { proxy ->
-                if (isProcessing || depthBitmap == null) { proxy.close(); return@setAnalyzer }
-                isProcessing = true
-
-                val w = proxy.width; val h = proxy.height
-                val rot = proxy.imageInfo.rotationDegrees
-                val plane = proxy.planes[0]; val buffer = plane.buffer
-                val pixelStride = plane.pixelStride; val rowStride = plane.rowStride
-                val srcW = w + (rowStride - pixelStride * w) / pixelStride
-                val src = Bitmap.createBitmap(srcW, h, Bitmap.Config.ARGB_8888)
-                buffer.rewind(); src.copyPixelsFromBuffer(buffer); proxy.close()
-                val pixels = IntArray(w * h)
-                src.getPixels(pixels, 0, w, 0, 0, w, h); src.recycle()
-
-                val result = pipeline?.nativeInfer(pixels, w, h, rot)
-                if (result != null && result.size == TARGET_SIZE * TARGET_SIZE) {
-                    depthBitmap!!.setPixels(result, 0, TARGET_SIZE, 0, 0, TARGET_SIZE, TARGET_SIZE)
-                    depthImageView.post { depthImageView.setImageBitmap(depthBitmap) }
+                if (isProcessing || estimator == null || depthDisplayBitmap == null) {
+                    proxy.close(); return@setAnalyzer
                 }
-
+                isProcessing = true
+                val bmp = proxyToBitmap(proxy, estimator!!.inputWidth, estimator!!.inputHeight)
+                proxy.close()
+                estimator!!.predict(bmp, depthDisplayBitmap!!)
+                bmp.recycle()
+                depthImageView.post { depthImageView.setImageBitmap(depthDisplayBitmap) }
                 frameCount++
                 val now = System.currentTimeMillis()
                 if (now - lastFpsTime >= 1000) {
                     val fps = frameCount; frameCount = 0; lastFpsTime = now
-                    val mode = if (pipeline?.nativeIsVulkan() == true) "Vulkan" else "CPU"
-                    fpsText.post { fpsText.text = "$fps FPS ($mode)" }
+                    fpsText.post { fpsText.text = "$fps FPS — $currentModel" }
                 }
                 isProcessing = false
             }
@@ -135,5 +174,24 @@ class MainActivity : ComponentActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    override fun onDestroy() { super.onDestroy(); pipeline?.close(); cameraExecutor.shutdown() }
+    private val mat = Matrix(); private val pnt = Paint(Paint.FILTER_BITMAP_FLAG)
+    private fun proxyToBitmap(proxy: ImageProxy, tw: Int, th: Int): Bitmap {
+        val p = proxy.planes[0]; val buf = p.buffer
+        val sw = proxy.width + (p.rowStride - p.pixelStride * proxy.width) / p.pixelStride
+        val src = Bitmap.createBitmap(sw, proxy.height, Bitmap.Config.ARGB_8888)
+        buf.rewind(); src.copyPixelsFromBuffer(buf)
+        val rot = proxy.imageInfo.rotationDegrees.toFloat()
+        val dst = Bitmap.createBitmap(tw, th, Bitmap.Config.ARGB_8888)
+        val c = Canvas(dst); mat.reset()
+        if (rot != 0f) {
+            val rw = if (rot == 90f || rot == 270f) proxy.height else proxy.width
+            val rh = if (rot == 90f || rot == 270f) proxy.width else proxy.height
+            mat.postRotate(rot, proxy.width / 2f, proxy.height / 2f)
+            mat.postTranslate((rw - proxy.width) / 2f, (rh - proxy.height) / 2f)
+            mat.postScale(tw.toFloat() / rw, th.toFloat() / rh)
+        } else mat.setScale(tw.toFloat() / proxy.width, th.toFloat() / proxy.height)
+        c.drawBitmap(src, mat, pnt); src.recycle(); return dst
+    }
+
+    override fun onDestroy() { super.onDestroy(); estimator?.close(); cameraExecutor.shutdown() }
 }
