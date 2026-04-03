@@ -239,39 +239,20 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeInitLiteRT(
             }
         }
 
-        // Try AHardwareBuffer for output (Mali clImportMemoryARM zero-copy)
-        AHardwareBuffer_Desc ahbDesc = {};
-        ahbDesc.width = outSize;  // BLOB format: width = size in bytes
-        ahbDesc.height = 1;
-        ahbDesc.layers = 1;
-        ahbDesc.format = AHARDWAREBUFFER_FORMAT_BLOB;
-        ahbDesc.usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER |
-                        AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN;
-
-        int ahbResult = AHardwareBuffer_allocate(&ahbDesc, &g.ahbOutput);
-        LOGI("AHB allocate: result=%d", ahbResult);
-
-        if (ahbResult == 0 && g.ahbOutput) {
-            // Wrap AHB as output TensorBuffer via clImportMemoryARM
-            auto outBuf = litert::TensorBuffer::CreateFromAhwb(
-                *g.env, outTT, g.ahbOutput, 0);
-            if (outBuf) {
-                // Input: managed (default), Output: AHB zero-copy
-                auto inResult = g.model->CreateInputBuffers();
-                if (inResult) {
-                    g.inputBuffers = std::move(*inResult);
-                    g.outputBuffers.push_back(std::move(*outBuf));
-                    g.useGlBuffers = true;  // flag for AHB read path
-                    glOk = true;
-                    LOGI("AHB output zero-copy created! (clImportMemoryARM)");
-                }
-            } else {
-                LOGI("CreateFromAhwb failed");
-                AHardwareBuffer_release(g.ahbOutput);
-                g.ahbOutput = nullptr;
+        // Supported type is kOpenClTexture (12) — try it!
+        auto outBuf = litert::TensorBuffer::CreateManaged(
+            *g.env, litert::TensorBufferType::kOpenClTexture, outTT, outSize);
+        if (outBuf) {
+            auto inResult = g.model->CreateInputBuffers();
+            if (inResult) {
+                g.inputBuffers = std::move(*inResult);
+                g.outputBuffers.push_back(std::move(*outBuf));
+                g.useGlBuffers = true;
+                glOk = true;
+                LOGI("OpenCL Texture output created! (type=12)");
             }
         } else {
-            LOGI("AHB allocate failed");
+            LOGI("OpenCL Texture output creation failed");
         }
     }
 
@@ -342,24 +323,8 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     auto t2 = std::chrono::high_resolution_clock::now();
 
     // Read output
-    auto t3 = t2;
-    if (g.ahbOutput) {
-        // AHB path: Lock AHardwareBuffer (Mali shared memory = cache invalidation only, no DMA)
-        void* ahbPtr = nullptr;
-        int lockResult = AHardwareBuffer_lock(g.ahbOutput,
-            AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN, -1, nullptr, &ahbPtr);
-        if (lockResult == 0 && ahbPtr) {
-            memcpy(g.outputFloats.data(), ahbPtr, g.outputW * g.outputH * sizeof(float));
-            AHardwareBuffer_unlock(g.ahbOutput, nullptr);
-        } else {
-            static int errLog = 0;
-            if (errLog++ < 5) LOGE("AHB lock failed: %d", lockResult);
-        }
-        t3 = std::chrono::high_resolution_clock::now();
-    } else {
-        g.outputBuffers[0].Read<float>(absl::MakeSpan(g.outputFloats));
-        t3 = std::chrono::high_resolution_clock::now();
-    }
+    g.outputBuffers[0].Read<float>(absl::MakeSpan(g.outputFloats));
+    auto t3 = std::chrono::high_resolution_clock::now();
 
     long writeMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0).count();
     long runMs = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
