@@ -5,8 +5,6 @@ import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.util.Log
 import androidx.camera.core.ImageProxy
-import com.google.ai.edge.litert.Accelerator
-import com.google.ai.edge.litert.CompiledModel
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import javax.microedition.khronos.egl.EGLConfig
@@ -36,9 +34,6 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
     var initError: String? = null; private set
     var onFpsUpdate: ((Int, Boolean) -> Unit)? = null
 
-    private var compiledModel: CompiledModel? = null
-    private var environment: com.google.ai.edge.litert.Environment? = null
-
     init {
         setEGLContextClientVersion(3)
         setRenderer(renderer)
@@ -62,10 +57,8 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
         if (processing.get()) { imageProxy.close(); return }
         val w = imageProxy.width; val h = imageProxy.height
         val rotation = imageProxy.imageInfo.rotationDegrees
-        val plane = imageProxy.planes[0]
-        val buffer = plane.buffer
-        val pixelStride = plane.pixelStride
-        val rowStride = plane.rowStride
+        val plane = imageProxy.planes[0]; val buffer = plane.buffer
+        val pixelStride = plane.pixelStride; val rowStride = plane.rowStride
         val srcW = w + (rowStride - pixelStride * w) / pixelStride
         val src = Bitmap.createBitmap(srcW, h, Bitmap.Config.ARGB_8888)
         buffer.rewind(); src.copyPixelsFromBuffer(buffer); imageProxy.close()
@@ -77,36 +70,7 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
         }
     }
 
-    fun destroy() {
-        pipeline.close()
-        compiledModel?.close()
-        environment?.close()
-    }
-
-    /**
-     * Called from C++ via JNI to run inference using Kotlin CompiledModel (FP32).
-     * This is the bridge: C++ prepares input buffer handle, Kotlin runs with FP32,
-     * C++ reads output buffer handle.
-     */
-    fun runKotlinInference(inputBufferHandles: LongArray, outputBufferHandles: LongArray): Boolean {
-        val model = compiledModel ?: return false
-        try {
-            // Call Kotlin CompiledModel's internal nativeRun via reflection
-            val cls = model.javaClass
-            val method = cls.getDeclaredMethod("nativeRun",
-                Long::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                LongArray::class.java,
-                LongArray::class.java)
-            method.isAccessible = true
-            val handle = NativeDepthPipeline.getNativeHandle(model)
-            method.invoke(null, handle, 0, inputBufferHandles, outputBufferHandles)
-            return true
-        } catch (e: Exception) {
-            Log.e(TAG, "runKotlinInference failed", e)
-            return false
-        }
-    }
+    fun destroy() { pipeline.close() }
 
     private inner class DepthRenderer : Renderer {
         private var frameCount = 0
@@ -114,39 +78,22 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
             try {
-                Log.i(TAG, "onSurfaceCreated")
+                Log.i(TAG, "onSurfaceCreated — C++ SDK pipeline init")
 
-                // 1. Init GL resources
+                // 1. GL resources
                 if (!pipeline.nativeInitGl(inputWidth, inputHeight, inputWidth, inputHeight)) {
                     initError = "GL init failed"; return
                 }
 
-                // 2. Create Kotlin CompiledModel with FP32
-                environment = com.google.ai.edge.litert.Environment.create()
-                val options = CompiledModel.Options(Accelerator.GPU)
-                try {
-                    options.gpuOptions = CompiledModel.GpuOptions(
-                        null, null, null,
-                        CompiledModel.GpuOptions.Precision.FP32,
-                        null, null, null, null, null, null, null, null, null, null, null
-                    )
-                } catch (_: Exception) {}
-                compiledModel = CompiledModel.create(
-                    context.assets, MODEL_FILE, options, environment
-                )
-                Log.i(TAG, "Kotlin FP32 CompiledModel created")
-
-                // 3. Init LiteRT in C++ + pass Kotlin model handle for FP32 inference
-                val modelHandle = NativeDepthPipeline.getNativeHandle(compiledModel!!)
-                Log.i(TAG, "Kotlin model handle: $modelHandle")
+                // 2. LiteRT C++ SDK (FP32 GPU, managed buffers)
                 if (!pipeline.nativeInitLiteRT(
-                    context.assets, MODEL_FILE,
-                    inputWidth, inputHeight, inputWidth, inputHeight, modelHandle)) {
-                    initError = "C++ LiteRT init failed"; return
+                        context.assets, MODEL_FILE,
+                        inputWidth, inputHeight, inputWidth, inputHeight, 0L)) {
+                    initError = "LiteRT init failed"; return
                 }
 
                 isZeroCopy = pipeline.nativeIsZeroCopy()
-                Log.i(TAG, "Pipeline ready")
+                Log.i(TAG, "Pipeline ready (zeroCopy=$isZeroCopy)")
             } catch (e: Throwable) {
                 Log.e(TAG, "onSurfaceCreated CRASHED", e)
                 initError = e.message
@@ -157,7 +104,6 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
 
         override fun onDrawFrame(gl: GL10?) {
             if (!pipeline.nativeIsInitialized()) return
-
             var pixels: IntArray? = null; var w = 0; var h = 0; var rot = 0
             frameLock.withLock {
                 if (hasNewFrame) {
@@ -165,13 +111,11 @@ class DepthGLSurfaceView(context: Context) : GLSurfaceView(context) {
                     rot = pendingRotation; hasNewFrame = false
                 }
             }
-
             if (pixels != null) {
                 processing.set(true)
                 pipeline.nativeProcessFrame(pixels!!, w, h, rot)
                 processing.set(false)
             }
-
             pipeline.nativeRender(width, height)
 
             frameCount++
