@@ -326,7 +326,7 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     auto tLock0 = std::chrono::high_resolution_clock::now();
 
     // Lock: waits for GPU + maps memory
-    auto lockResult = g.outputBuffers[0].Lock(litert::TensorBufferLockMode::kRead);
+    auto lockResult = g.outputBuffers[0].Lock(litert::TensorBuffer::LockMode::kRead);
     auto tLock1 = std::chrono::high_resolution_clock::now();
 
     if (lockResult) {
