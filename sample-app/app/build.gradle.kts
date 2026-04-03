@@ -65,7 +65,7 @@ android {
     }
 
     aaptOptions {
-        noCompress += listOf("tflite")
+        noCompress += listOf("tflite", "param", "bin")
     }
 }
 
@@ -85,9 +85,9 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
     implementation("androidx.camera:camera-view:$cameraVersion")
 
-    // LiteRT V2 (CompiledModel API - for Kotlin shape detection)
-    // C++ SDK handles actual GPU inference via litert_cc_api
+    // LiteRT (for legacy Interpreter shape detection only)
     implementation("com.google.ai.edge.litert:litert:2.1.3")
+    // NCNN handles actual inference via Vulkan compute
 
     implementation("androidx.core:core-ktx:1.15.0")
 }
