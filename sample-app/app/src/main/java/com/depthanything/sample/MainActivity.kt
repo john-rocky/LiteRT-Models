@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
             pipeline = NcnnDepthPipeline()
             val ok = pipeline!!.nativeInit(
                 assets, "dptv2_s.param", "dptv2_s.bin",
-                TARGET_SIZE, true  // useGpu=true for Vulkan
+                TARGET_SIZE, false  // CPU mode (Vulkan 3.3s on Mali-G715)
             )
             if (!ok) throw RuntimeException("NCNN init failed")
             depthBitmap = Bitmap.createBitmap(TARGET_SIZE, TARGET_SIZE, Bitmap.Config.ARGB_8888)
