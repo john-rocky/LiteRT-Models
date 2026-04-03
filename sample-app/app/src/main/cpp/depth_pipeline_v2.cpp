@@ -255,18 +255,13 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
         return;
     }
 
-    // Run async inference
-    bool async = false;
-    auto runResult = g.model->RunAsync(0, g.inputBuffers, g.outputBuffers, async);
+    // Run inference (synchronous)
+    auto runResult = g.model->Run(
+        absl::MakeSpan(g.inputBuffers), absl::MakeSpan(g.outputBuffers));
     if (!runResult) {
-        LOGE("RunAsync failed");
+        static int errLog = 0;
+        if (errLog++ < 5) LOGE("Run failed");
         return;
-    }
-
-    // Wait for completion
-    if (g.outputBuffers[0].HasEvent()) {
-        auto evResult = g.outputBuffers[0].GetEvent();
-        if (evResult) evResult->Wait();
     }
 
     // Read output
