@@ -272,11 +272,21 @@ Java_com_depthanything_sample_NativeDepthPipeline_nativeProcessFrame(
     }
     env->ReleaseIntArrayElements(pixels, data, JNI_ABORT);
 
-    // Write input
+    // Write input — GL buffer: use glBufferSubData, managed: use Write<float>
     auto t0 = std::chrono::high_resolution_clock::now();
-    auto writeResult = g.inputBuffers[0].Write<float>(
-        absl::MakeConstSpan(g.inputFloats));
-    if (!writeResult) { LOGE("Write input failed"); return; }
+    if (g.useGlBuffers) {
+        auto glBuf = g.inputBuffers[0].GetGlBuffer();
+        if (!glBuf) { LOGE("GetGlBuffer failed for input"); return; }
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, glBuf->id);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0,
+                        g.inputFloats.size() * sizeof(float), g.inputFloats.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    } else {
+        auto writeResult = g.inputBuffers[0].Write<float>(
+            absl::MakeConstSpan(g.inputFloats));
+        if (!writeResult) { LOGE("Write input failed"); return; }
+    }
     auto t1 = std::chrono::high_resolution_clock::now();
 
     // Run inference
