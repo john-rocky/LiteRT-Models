@@ -20,6 +20,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Background Removal**](#background-removal)
   - [RMBG-1.4 (ISNet)](#rmbg-14-isnet)
 
+- [**Inpainting**](#inpainting)
+  - [LaMa-Dilated](#lama-dilated)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -115,6 +118,22 @@ Converted via **litert-torch** from [briaai/RMBG-1.4](https://huggingface.co/bri
 **Preprocessing**: RGB normalized as `(pixel/255 - 0.5)`. NCHW planar layout.
 
 **Output format**: Sigmoid mask (0-1). Apply as alpha channel to original image for transparent background.
+
+# Inpainting
+
+### LaMa-Dilated
+
+LaMa-Dilated: Large Mask Inpainting with dilated convolutions. Draw a mask over unwanted objects and the model fills in the region naturally. Based on [LaMa](https://github.com/advimman/lama) with FFT blocks replaced by dilated convolutions for GPU compatibility.
+
+Pre-converted TFLite from [Qualcomm AI Hub](https://aihub.qualcomm.com/models/lama_dilated). Pure CNN, 361 ops, all GPU-native.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [lama_dilated.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/lama_dilated.tflite) | 174 MB | Float32 [1, 512, 512, 3] + [1, 512, 512, 1] NHWC | Float32 [1, 512, 512, 3] NHWC | [advimman/lama](https://github.com/advimman/lama) | [Apache-2.0](https://github.com/advimman/lama/blob/main/LICENSE) | [lama/](lama/) |
+
+**Preprocessing**: Image RGB normalized to 0-1 (divide by 255). Mask is single channel 0-1 (1 = area to inpaint).
+
+**Sample app**: [lama/](lama/) — Image picker + finger drawing mask + inpainting with before/after toggle.
 
 # Super Resolution
 
