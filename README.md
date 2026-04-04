@@ -101,6 +101,8 @@ Encoder converted via **litert-torch** (the only converter that preserves Vision
 
 ### Real-ESRGAN x4v3
 
+<img src="https://github.com/user-attachments/assets/ba4466ad-ed23-4bbe-bffd-53b3b3cc3a4a" width="300">
+
 Real-ESRGAN: Practical image restoration and upscaling. The General-x4v3 variant is a lightweight model (1.21M params) with excellent quality for 4x super resolution.
 
 | Download Link | Size | Input | Output | Original Project | License | Sample App |
