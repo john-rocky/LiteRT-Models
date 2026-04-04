@@ -22,9 +22,11 @@ __pycache__/
 # References
 references/
 
-# MobileSAM local
+# Module local files
 mobilesam/.idea/
 mobilesam/scripts/.venv/
+rmbg/.idea/
+rmbg/scripts/.venv/
 mobile_sam.pt
 
 # Depth estimation (local development only)

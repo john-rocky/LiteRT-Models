@@ -113,6 +113,28 @@ Decoder limitations tried:
 - litert-torch: `NonConcreteBooleanIndexError` in mask selection
 - onnx_tf: Works but produces FlexErf ops (no GPU)
 
+### RMBG-1.4 (ISNet)
+
+Converter: litert-torch (pure CNN, 247 ops, all GPU-compatible).
+
+Key points:
+- ISNet is a U2-Net variant — only Conv2d, BN, ReLU, MaxPool, bilinear upsample, concat, sigmoid
+- Model outputs 6 side masks — wrap with `model(x)[0][0]` to get primary mask
+- Normalization: `(pixel/255 - 0.5)`, NOT ImageNet mean/std
+- Output is sigmoid-activated (0-1), no additional sigmoid needed
+- `F.interpolate` must use `align_corners=False` for GPU compatibility
+
+### BiRefNet-lite (Swin Transformer) — NOT GPU-compatible
+
+**Attempted and failed.** Swin Transformer's window attention creates 5D+ tensors (`[B, num_windows, 1, 49, 49]`) that CompiledModel GPU rejects (4D max). This is an architectural limitation, not a conversion issue. Patches attempted:
+- Replaced GATHER_ND (relative position bias → pre-computed static tensors)
+- Replaced SELECT/NOT_EQUAL (attention masks → pre-computed)
+- Replaced DeformableConv2d → regular Conv2d
+- Replaced GELU → sigmoid approximation
+- Duplicated backbone for dual-resolution pass
+
+All ops became TFLite-native but the 5D tensor constraint blocked GPU compilation. **Swin Transformer ≠ CompiledModel GPU.**
+
 ### YOLO11 / YOLO26
 
 Converter: SavedModel → TFLiteConverter (eliminates PACK/SPLIT from Ultralytics export).

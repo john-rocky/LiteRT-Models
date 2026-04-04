@@ -17,6 +17,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
 
+- [**Background Removal**](#background-removal)
+  - [RMBG-1.4 (ISNet)](#rmbg-14-isnet)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -96,6 +99,22 @@ Encoder converted via **litert-torch** (the only converter that preserves Vision
 **Sample app**: [mobilesam/](mobilesam/) — Image picker + tap-to-segment with mask overlay.
 
 **Original project**: [ChaoningZhang/MobileSAM](https://github.com/ChaoningZhang/MobileSAM) | [Apache-2.0](https://github.com/ChaoningZhang/MobileSAM/blob/master/LICENSE)
+
+# Background Removal
+
+### RMBG-1.4 (ISNet)
+
+RMBG-1.4: High-quality background removal based on ISNet (U2-Net variant). Pure CNN architecture — 44M params, runs on CompiledModel GPU. Outputs alpha matte for clean foreground extraction.
+
+Converted via **litert-torch** from [briaai/RMBG-1.4](https://huggingface.co/briaai/RMBG-1.4). Output is sigmoid-activated (0-1 mask), no post-processing needed.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rmbg14.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/rmbg14.tflite) | 176 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 1, 1024, 1024] | [briaai/RMBG-1.4](https://huggingface.co/briaai/RMBG-1.4) | [bria-rmbg-1.4](https://bria.ai/bria-huggingface-model-license-agreement/) | [rmbg/](rmbg/) |
+
+**Preprocessing**: RGB normalized as `(pixel/255 - 0.5)`. NCHW planar layout.
+
+**Output format**: Sigmoid mask (0-1). Apply as alpha channel to original image for transparent background.
 
 # Super Resolution
 
