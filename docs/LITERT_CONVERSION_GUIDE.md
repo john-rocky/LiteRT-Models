@@ -30,16 +30,15 @@ model.eval()
 dummy = torch.randn(1, 3, 1024, 1024)
 result = litert_torch.convert(model, (dummy,))
 
-# Save — returns TfLiteModel object, not bytes
-data = result.export_flatbuffer()
-with open("model.tflite", "wb") as f:
-    f.write(data)
+# Save — returns TfLiteModel object
+result.export("model.tflite")
 ```
 
 **Key points**:
 - Preserves NCHW layout (no transpose errors)
-- Output is `TfLiteModel` object — use `.export_flatbuffer()` to get bytes
+- Output is `TfLiteModel` object — use `.export("path")` to save
 - Requires `torch.export` compatibility (no dynamic control flow)
+- `F.interpolate` must use `align_corners=False` (GPU rejects `half_pixel_centers=True` + `align_corners=True`)
 
 ### GELU Handling
 
@@ -98,6 +97,13 @@ Common ops that prevent CompiledModel GPU:
 - `CAST` (float↔int) — Keep everything as float
 - `Erf` (FlexErf) — Replace with sigmoid approximation
 - Dynamic `RESHAPE` with -1 dimensions — Use static shapes
+- `RESIZE_BILINEAR` with `align_corners=True` — Use `align_corners=False`
+
+### 4D Tensor Limit (Critical)
+
+CompiledModel GPU (ML Drift) only supports **4D tensors (BHWC)**. Any intermediate tensor with 5+ dimensions causes compilation failure. This is the fundamental reason why **Swin Transformer, window attention, and similar architectures cannot run on CompiledModel GPU** — window partition inherently requires 6D reshapes.
+
+Standard ViT (global attention) works because Q/K/V are always 4D: `(B, heads, tokens, dim)`.
 
 ## Model-Specific Notes
 
