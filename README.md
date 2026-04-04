@@ -14,6 +14,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [YOLO11n](#yolo11n)
   - [YOLO26n](#yolo26n)
 
+- [**Segmentation**](#segmentation)
+  - [MobileSAM](#mobilesam)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -71,6 +74,27 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). No ImageNet mean/std.
 
+# Segmentation
+
+### MobileSAM
+
+MobileSAM: Fast Segment Anything on mobile. Tap anywhere to segment — encoder runs once per image (GPU), decoder runs per tap (CPU). Based on TinyViT encoder (6.1M params) + SAM mask decoder (4.1M params).
+
+Encoder converted via **litert-torch** (the only converter that preserves Vision Transformer attention accuracy). Decoder runs on ONNX Runtime due to TFLite conversion limitations with cross-attention.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Encoder | [mobilesam_encoder.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/mobilesam_encoder.tflite) | 28 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 256, 64, 64] NCHW | CompiledModel GPU |
+| Decoder | [mobilesam_decoder.onnx](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/mobilesam_decoder.onnx) | 16 MB | Embeddings + point coords | Mask [1, 1, 1024, 1024] + IoU | ONNX Runtime CPU |
+
+**Preprocessing**: RGB with `mean=[123.675, 116.28, 103.53]`, `std=[58.395, 57.12, 57.375]`. NCHW planar layout.
+
+**Decoder inputs**: `image_embeddings` [1,256,64,64] + `point_coords` [1,2,2] + `point_labels` [1,2] + `mask_input` [1,1,256,256] + `has_mask_input` [1] + `orig_im_size` [2]
+
+**Sample app**: [mobilesam/](mobilesam/) — Image picker + tap-to-segment with mask overlay.
+
+**Original project**: [ChaoningZhang/MobileSAM](https://github.com/ChaoningZhang/MobileSAM) | [Apache-2.0](https://github.com/ChaoningZhang/MobileSAM/blob/master/LICENSE)
+
 # Super Resolution
 
 ### Real-ESRGAN x4v3
@@ -96,6 +120,9 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 **Proven conversion paths**:
 1. **SavedModel → TFLiteConverter** — Eliminates PACK/SPLIT ops (used for YOLO11)
 2. **Native Keras → from_keras_model()** — Full op control for ViT models
+3. **litert-torch** — Only viable converter for Vision Transformers (ViT, TinyViT). onnx2tf breaks attention layers (corr≈0.3). See [docs/](docs/) for details.
+
+> **Note**: MobileSAM encoder uses NCHW layout (not NHWC) because litert-torch preserves PyTorch's native layout. The decoder runs on ONNX Runtime as no TFLite converter supports SAM's cross-attention + boolean indexing.
 
 # License
 

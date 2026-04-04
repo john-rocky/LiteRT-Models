@@ -1,0 +1,122 @@
+# LiteRT Model Conversion Guide
+
+Practical findings from converting various model architectures to TFLite for CompiledModel GPU inference on Android.
+
+## Conversion Tools Comparison
+
+| Tool | Best For | Avoid For | Layout |
+|------|----------|-----------|--------|
+| **litert-torch** | Vision Transformers, attention models | Models with dynamic control flow | NCHW (preserved) |
+| **onnx2tf** | Pure CNN models (YOLO, ESRGAN) | ViT, attention layers (destroys accuracy) | NHWC (converted) |
+| **SavedModel → TFLiteConverter** | Models already in TF/Keras | PyTorch-only models | NHWC |
+| **Native Keras reimplementation** | Maximum accuracy control | Quick prototyping | NHWC |
+
+## Vision Transformer (ViT) Models
+
+### The Problem
+
+onnx2tf converts NCHW → NHWC during conversion. For CNNs this works fine, but **attention mechanisms break** because onnx2tf incorrectly transposes batch/spatial dimensions in MatMul operations.
+
+Measured accuracy loss with onnx2tf on TinyViT (MobileSAM encoder):
+- **onnx2tf**: corr = 0.29 (unusable)
+- **litert-torch**: corr = 0.99 (excellent)
+
+### The Solution: litert-torch
+
+```python
+import litert_torch
+
+model.eval()
+dummy = torch.randn(1, 3, 1024, 1024)
+result = litert_torch.convert(model, (dummy,))
+
+# Save — returns TfLiteModel object, not bytes
+data = result.export_flatbuffer()
+with open("model.tflite", "wb") as f:
+    f.write(data)
+```
+
+**Key points**:
+- Preserves NCHW layout (no transpose errors)
+- Output is `TfLiteModel` object — use `.export_flatbuffer()` to get bytes
+- Requires `torch.export` compatibility (no dynamic control flow)
+
+### GELU Handling
+
+TFLite has no native `Erf` op. The standard GELU `x * 0.5 * (1 + erf(x/√2))` produces FlexErf ops.
+
+**Solution**: Replace with sigmoid approximation before conversion:
+
+```python
+class SigmoidGELU(nn.Module):
+    def forward(self, x):
+        return x * torch.sigmoid(1.702 * x)
+
+# Replace all nn.GELU modules
+for name, child in model.named_modules():
+    if isinstance(child, nn.GELU):
+        setattr(parent, name, SigmoidGELU())
+
+# Also patch functional calls
+F.gelu = lambda x, approximate='none': x * torch.sigmoid(1.702 * x)
+```
+
+Max error vs real GELU: ~0.01 (negligible).
+
+### ONNX Graph Surgery (Alternative)
+
+If you must use onnx2tf (e.g., for a mixed CNN+attention model), you can replace Erf nodes in the ONNX graph:
+
+```python
+# erf(z) ≈ 2 * sigmoid(2.407 * z) - 1
+# Coefficient: 1.702 * √2 = 2.407
+```
+
+**Warning**: Even with correct Erf replacement, onnx2tf still breaks attention accuracy. This only eliminates FlexErf ops — the underlying NCHW→NHWC issue remains.
+
+## CNN Models (YOLO, ESRGAN)
+
+### onnx2tf Works Well
+
+For pure CNN architectures, onnx2tf is the recommended path:
+
+```bash
+onnx2tf -i model.onnx -o output/ -osd
+```
+
+Key flags:
+- `-osd`: Output SavedModel directory
+- `-ois input:1,3,H,W`: Override input shape
+- `-dsm`: Disable strict mode (skip accuracy correction if it errors)
+- `-ebu`: Enable BatchMatMul unfold (for models with matmul ops)
+
+### GPU-Incompatible Ops
+
+Common ops that prevent CompiledModel GPU:
+- `TOPK_V2`, `GATHER`, `GATHER_ND` — Reconvert with these ops removed
+- `PACK`, `SPLIT` — Use SavedModel export path instead
+- `CAST` (float↔int) — Keep everything as float
+- `Erf` (FlexErf) — Replace with sigmoid approximation
+- Dynamic `RESHAPE` with -1 dimensions — Use static shapes
+
+## Model-Specific Notes
+
+### MobileSAM
+
+| Component | Format | Converter | Reason |
+|-----------|--------|-----------|--------|
+| Encoder (TinyViT) | TFLite | litert-torch | ViT attention |
+| Decoder (MaskDecoder) | ONNX | torch.onnx.export | Boolean indexing + cross-attention incompatible with all TFLite converters |
+
+Decoder limitations tried:
+- onnx2tf: BatchMatMul shape mismatch in cross-attention
+- litert-torch: `NonConcreteBooleanIndexError` in mask selection
+- onnx_tf: Works but produces FlexErf ops (no GPU)
+
+### YOLO11 / YOLO26
+
+Converter: SavedModel → TFLiteConverter (eliminates PACK/SPLIT from Ultralytics export).
+
+### Real-ESRGAN
+
+Converter: onnx2tf (pure CNN, no issues).
