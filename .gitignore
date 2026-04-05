@@ -28,6 +28,10 @@ mobilesam/scripts/.venv/
 rmbg/.idea/
 rmbg/scripts/.venv/
 lama/.idea/
+clip/.idea/
+clip/scripts/output/
+dsine/.idea/
+dsine/scripts/output/
 mobile_sam.pt
 
 # Depth estimation (local development only)

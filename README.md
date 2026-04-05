@@ -23,6 +23,12 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Inpainting**](#inpainting)
   - [LaMa-Dilated](#lama-dilated)
 
+- [**Zero-Shot Classification**](#zero-shot-classification)
+  - [CLIP ViT-B/32](#clip-vit-b32)
+
+- [**Surface Normal Estimation**](#surface-normal-estimation)
+  - [DSINE](#dsine)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -135,6 +141,43 @@ Pre-converted TFLite from [Qualcomm AI Hub](https://aihub.qualcomm.com/models/la
 
 **Sample app**: [lama/](lama/) — Image picker + finger drawing mask + inpainting with before/after toggle.
 
+# Zero-Shot Classification
+
+### CLIP ViT-B/32
+
+CLIP: Zero-shot image classification using OpenAI's CLIP ViT-B/32 image encoder with pre-computed text embeddings. Classify any image into 96 diverse labels without task-specific training.
+
+Converted via **litert-torch** (ViT architecture). Text embeddings pre-computed with prompt template "a photo of a {label}".
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Image Encoder | [clip_image_encoder.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/clip_image_encoder.tflite) | 352 MB | Float32 [1, 3, 224, 224] NCHW | Float32 [1, 512] | CompiledModel GPU |
+| Text Embeddings | [text_embeddings.bin](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/text_embeddings.bin) | 192 KB | — | Float32 [96, 512] | Pre-computed |
+
+**Preprocessing**: RGB with CLIP normalization (mean=[122.77, 116.75, 104.09], std=[68.50, 66.63, 70.32]). Center-crop to square, resize to 224x224. NCHW planar layout.
+
+**Classification**: Cosine similarity between image embedding and text embeddings → softmax with temperature 100.
+
+**Sample app**: [clip/](clip/) — Image picker + top-10 classification results with confidence bars.
+
+**Original project**: [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) | [MIT](https://github.com/mlfoundations/open_clip/blob/main/LICENSE)
+
+# Surface Normal Estimation
+
+### DSINE
+
+DSINE (CVPR 2024): Per-pixel surface normal estimation from a single image. Outputs unit normal vectors visualized as RGB color map. Uses EfficientNet-B5 encoder with a custom decoder incorporating camera ray direction encoding.
+
+Converted via **litert-torch** with encoder + decoder initial prediction only (ConvGRU iterative refinement skipped for TFLite compatibility). Additional patches: GroupNorm → 4D manual ops, Conv2d_WS weights baked, F.normalize replaced.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [dsine.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/dsine.tflite) | 282 MB | Float32 [1, 3, 480, 640] NCHW | Float32 [1, 3, 480, 640] | [baegwangbin/DSINE](https://github.com/baegwangbin/DSINE) | [MIT](https://github.com/baegwangbin/DSINE/blob/main/LICENSE) | [dsine/](dsine/) |
+
+**Preprocessing**: RGB with ImageNet normalization (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]). NCHW planar layout.
+
+**Output format**: `[1, 3, 480, 640]` — unit normal vectors (X, Y, Z) in [-1, 1]. Visualize as `RGB = (normal + 1) / 2 * 255`.
+
 # Super Resolution
 
 ### Real-ESRGAN x4v3
@@ -164,7 +207,14 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 2. **Native Keras → from_keras_model()** — Full op control for ViT models
 3. **litert-torch** — Only viable converter for Vision Transformers (ViT, TinyViT). onnx2tf breaks attention layers (corr≈0.3). See [docs/](docs/) for details.
 
-> **Note**: MobileSAM encoder uses NCHW layout (not NHWC) because litert-torch preserves PyTorch's native layout. The decoder runs on ONNX Runtime as no TFLite converter supports SAM's cross-attention + boolean indexing.
+**Common GPU-incompatible ops and fixes**:
+- **GroupNorm** → Replace with manual 4D mean/var computation (`reshape(B*G, C//G, H, W)`)
+- **Conv2d_WS** (weight standardization) → Pre-compute standardized weights, bake into regular Conv2d
+- **F.normalize** → Manual `x / sqrt(sum(x*x) + eps)` to avoid div broadcast issues
+- **GELU / QuickGELU** → `x * sigmoid(1.702 * x)` (SigmoidGELU approximation)
+- **Swish / SiLU** → `x * sigmoid(x)`
+
+> **Note**: litert-torch models use NCHW layout (PyTorch native). Large models (>150 MB) should be loaded from `filesDir` via `CompiledModel.create(path, options, null)` instead of APK assets.
 
 # License
 
