@@ -12,12 +12,20 @@ GPU_INCOMPATIBLE_OPS = {
     'GATHER_ND', 'GATHER', 'SELECT', 'SELECT_V2',
     'NOT_EQUAL', 'EQUAL', 'GREATER', 'LESS',
     'TOPK_V2', 'CAST', 'PACK', 'SPLIT',
+    'BATCH_MATMUL',  # Some configurations fail on GPU
 }
 
 # Ops that need specific parameter settings
 GPU_CONDITIONAL_OPS = {
     'RESIZE_BILINEAR': 'align_corners must be False',
 }
+
+# PyTorch modules known to cause GPU issues (for documentation)
+# nn.GroupNorm → ManualGroupNorm (4D reshape approach)
+# Conv2d_WS → bake standardized weights into regular Conv2d
+# F.normalize → manual sqrt+div (div broadcast issue)
+# nn.SiLU/Swish → x * sigmoid(x)
+# nn.GELU → x * sigmoid(1.702 * x)
 
 
 def check_gpu_compatibility(tflite_path: str) -> dict:

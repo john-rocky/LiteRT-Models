@@ -8,7 +8,7 @@ import logging
 import torch
 import torch.nn as nn
 
-from litert_gpu_toolkit.patches import apply_all_patches, restore_gelu, restore_interpolate
+from litert_gpu_toolkit.patches import apply_all_patches, restore_gelu, restore_interpolate, restore_normalize
 from litert_gpu_toolkit.checker import check_gpu_compatibility, print_report
 
 log = logging.getLogger("litert_gpu_toolkit")
@@ -71,6 +71,7 @@ def convert_for_gpu(
     # Restore global patches
     restore_gelu()
     restore_interpolate()
+    restore_normalize()
 
     # Check
     if check:

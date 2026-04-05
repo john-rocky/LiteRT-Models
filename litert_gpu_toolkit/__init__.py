@@ -2,7 +2,8 @@
 litert_gpu_toolkit — Automatic GPU-compatible TFLite conversion for PyTorch models.
 
 Wraps litert-torch with pre-conversion patches that eliminate common
-GPU-incompatible patterns (FlexErf, GATHER_ND, SELECT, align_corners, etc.).
+GPU-incompatible patterns (GELU, Swish, GroupNorm, Conv2d_WS, F.normalize,
+GATHER_ND, SELECT, align_corners, etc.).
 
 Usage:
     from litert_gpu_toolkit import convert_for_gpu

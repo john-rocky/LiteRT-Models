@@ -210,6 +210,134 @@ def patch_patch_merging(model: nn.Module) -> int:
     return count
 
 
+# ─── GroupNorm → 4D manual ops ──────────────────────────────────────────────
+
+class ManualGroupNorm(nn.Module):
+    """GPU-friendly GroupNorm using only 4D tensors.
+    nn.GroupNorm is not supported by TFLite GPU delegate.
+    Reshape to (B*G, C//G, H, W) to stay 4D throughout.
+    """
+    def __init__(self, gn: nn.GroupNorm):
+        super().__init__()
+        self.num_groups = gn.num_groups
+        self.num_channels = gn.num_channels
+        self.eps = gn.eps
+        self.weight = nn.Parameter(gn.weight.clone()) if gn.weight is not None else None
+        self.bias = nn.Parameter(gn.bias.clone()) if gn.bias is not None else None
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        G = self.num_groups
+        x = x.reshape(B * G, C // G, H, W)
+        mean = x.mean(dim=(1, 2, 3), keepdim=True)
+        var = ((x - mean) * (x - mean)).mean(dim=(1, 2, 3), keepdim=True)
+        x = (x - mean) / torch.sqrt(var + self.eps)
+        x = x.reshape(B, C, H, W)
+        if self.weight is not None:
+            x = x * self.weight.reshape(1, C, 1, 1)
+        if self.bias is not None:
+            x = x + self.bias.reshape(1, C, 1, 1)
+        return x
+
+
+def patch_groupnorm(model: nn.Module) -> int:
+    """Replace all nn.GroupNorm with GPU-friendly ManualGroupNorm.
+    Returns number of modules replaced.
+    """
+    count = 0
+    for name, module in list(model.named_modules()):
+        for child_name, child in list(module.named_children()):
+            if isinstance(child, nn.GroupNorm):
+                setattr(module, child_name, ManualGroupNorm(child))
+                count += 1
+    if count:
+        log.info(f"Patched {count} nn.GroupNorm → ManualGroupNorm (4D ops)")
+    return count
+
+
+# ─── Conv2d_WS → baked Conv2d ──────────────────────────────────────────────
+
+def patch_weight_standardization(model: nn.Module) -> int:
+    """Replace Conv2d_WS (weight standardization) with regular Conv2d.
+    Pre-computes standardized weights at conversion time so the runtime
+    forward pass is a standard conv2d (no dynamic weight normalization).
+    Returns number of modules replaced.
+    """
+    count = 0
+    for name, module in list(model.named_modules()):
+        for child_name, child in list(module.named_children()):
+            if type(child).__name__ == 'Conv2d_WS':
+                with torch.no_grad():
+                    weight = child.weight.clone()
+                    weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
+                    weight = weight - weight_mean
+                    std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
+                    weight = weight / std.expand_as(weight)
+
+                conv = nn.Conv2d(
+                    child.in_channels, child.out_channels, child.kernel_size,
+                    stride=child.stride, padding=child.padding,
+                    dilation=child.dilation, groups=child.groups,
+                    bias=child.bias is not None,
+                )
+                conv.weight = nn.Parameter(weight)
+                if child.bias is not None:
+                    conv.bias = nn.Parameter(child.bias.clone())
+                setattr(module, child_name, conv)
+                count += 1
+    if count:
+        log.info(f"Patched {count} Conv2d_WS → Conv2d (baked weights)")
+    return count
+
+
+# ─── F.normalize → manual sqrt+div ─────────────────────────────────────────
+
+_original_normalize = F.normalize
+
+
+def patch_normalize() -> None:
+    """Replace F.normalize with manual sqrt+div.
+    TFLite GPU fails on the div broadcast in F.normalize.
+    """
+    def safe_normalize(input, p=2.0, dim=1, eps=1e-12, out=None):
+        norm = torch.sqrt(torch.sum(input * input, dim=dim, keepdim=True).clamp(min=eps * eps))
+        return input / norm
+
+    F.normalize = safe_normalize
+    log.info("Patched F.normalize → manual sqrt+div")
+
+
+def restore_normalize():
+    """Restore original F.normalize."""
+    F.normalize = _original_normalize
+
+
+# ─── Swish/SiLU → x * sigmoid(x) ──────────────────────────────────────────
+
+class SigmoidSwish(nn.Module):
+    """Swish/SiLU replacement: x * sigmoid(x)."""
+    def forward(self, x):
+        return x * torch.sigmoid(x)
+
+
+def patch_swish(model: nn.Module) -> int:
+    """Replace Swish/SiLU activations with x * sigmoid(x).
+    Returns number of modules replaced.
+    """
+    count = 0
+    for name, module in list(model.named_modules()):
+        for child_name, child in list(module.named_children()):
+            if isinstance(child, nn.SiLU):
+                setattr(module, child_name, SigmoidSwish())
+                count += 1
+            elif type(child).__name__ in ('Swish', 'SwishMe'):
+                setattr(module, child_name, SigmoidSwish())
+                count += 1
+    if count:
+        log.info(f"Patched {count} Swish/SiLU → SigmoidSwish")
+    return count
+
+
 # ─── einops.rearrange replacement ─────────────────────────────────────────────
 
 def patch_einops() -> None:
@@ -249,11 +377,16 @@ def apply_all_patches(model: nn.Module) -> dict:
     """Apply all available patches. Returns summary of changes made."""
     summary = {}
     summary['gelu'] = patch_gelu(model)
+    summary['swish'] = patch_swish(model)
+    summary['groupnorm'] = patch_groupnorm(model)
+    summary['weight_standardization'] = patch_weight_standardization(model)
     summary['deformable_conv'] = patch_deformable_conv(model)
     summary['window_attention'] = patch_window_attention(model)
     summary['patch_merging'] = patch_patch_merging(model)
     patch_interpolate()
+    patch_normalize()
     patch_einops()
     summary['interpolate'] = True
+    summary['normalize'] = True
     summary['einops'] = True
     return summary
