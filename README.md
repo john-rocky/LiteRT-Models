@@ -29,6 +29,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Surface Normal Estimation**](#surface-normal-estimation)
   - [DSINE](#dsine)
 
+- [**Speech Recognition**](#speech-recognition)
+  - [Whisper-tiny](#whisper-tiny)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -177,6 +180,27 @@ Converted via **litert-torch** with encoder + decoder initial prediction only (C
 **Preprocessing**: RGB with ImageNet normalization (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]). NCHW planar layout.
 
 **Output format**: `[1, 3, 480, 640]` — unit normal vectors (X, Y, Z) in [-1, 1]. Visualize as `RGB = (normal + 1) / 2 * 255`.
+
+# Speech Recognition
+
+### Whisper-tiny
+
+Whisper: OpenAI's speech recognition model running on-device. First implementation with LiteRT GPU-accelerated encoder. Supports microphone recording and audio file input with 10 language options.
+
+Encoder converted via **litert-torch** with SigmoidGELU patch. Decoder exported to ONNX with manual attention (SDPA disabled for ONNX compatibility). No KV-cache — acceptable for tiny's 4 decoder layers. Mel spectrogram computed in pure Kotlin (FFT + filterbank).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Encoder | [whisper_encoder.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/whisper_encoder.tflite) | 33 MB | Float32 [1, 80, 3000] | Float32 [1, 1500, 384] | CompiledModel GPU |
+| Decoder | [whisper_decoder.onnx](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/whisper_decoder.onnx) | 199 MB | Tokens [1, seq] int64 + Audio [1, 1500, 384] | Logits [1, seq, 51865] | ONNX Runtime CPU |
+
+**Preprocessing**: 16kHz mono audio → log-mel spectrogram (80 bins, 3000 frames). Mel computation in Kotlin with Cooley-Tukey FFT.
+
+**Decoding**: Autoregressive greedy decoding. Prompt: `[SOT, language, transcribe, no_timestamps]`. Max 224 tokens.
+
+**Sample app**: [whisper/](whisper/) — Microphone recording + audio file picker + language selector + transcription display.
+
+**Original project**: [openai/whisper](https://github.com/openai/whisper) | [MIT](https://github.com/openai/whisper/blob/main/LICENSE)
 
 # Super Resolution
 
