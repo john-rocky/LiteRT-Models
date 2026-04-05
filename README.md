@@ -32,6 +32,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Speech Recognition**](#speech-recognition)
   - [Whisper-tiny](#whisper-tiny)
 
+- [**Vision-Language Model**](#vision-language-model)
+  - [SmolVLM-256M](#smolvlm-256m)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -202,6 +205,28 @@ Encoder converted via **litert-torch** with SigmoidGELU patch. Decoder exported 
 
 **Original project**: [openai/whisper](https://github.com/openai/whisper) | [MIT](https://github.com/openai/whisper/blob/main/LICENSE)
 
+# Vision-Language Model
+
+### SmolVLM-256M
+
+SmolVLM: On-device vision-language model that can describe images and answer questions about them. SigLIP vision encoder compresses images to just 64 visual tokens via pixel shuffle, feeding into a SmolLM2 language model for text generation with streaming output.
+
+Vision encoder converted via **litert-torch** with SigLIP position embedding pre-computation (bypassing torch.bucketize). LM decoder exported to ONNX with causal mask patch. Repetition penalty prevents generation loops.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Vision Encoder | [smolvlm_vision.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_vision.tflite) | 357 MB | Float32 [1, 3, 512, 512] NCHW | Float32 [1, 64, 576] | CompiledModel GPU |
+| LM Decoder | [smolvlm_decoder.onnx](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_decoder.onnx) | 515 MB | Float32 [1, seq, 576] | Float32 [1, seq, 49280] | ONNX Runtime CPU |
+| Token Embeddings | [embed_tokens.bin](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/embed_tokens.bin) | 108 MB | — | Float32 [49280, 576] | — |
+
+**Preprocessing**: Image normalized to [-1, 1] (pixel/127.5 - 1). Center-crop to square, resize to 512x512. NCHW layout.
+
+**Generation**: Greedy decoding with repetition penalty 1.2x. Prompt format: `<|im_start|>User:<image>{prompt}<end_of_utterance>\nAssistant:`
+
+**Sample app**: [smolvlm/](smolvlm/) — Image picker + text prompt + streaming response.
+
+**Original project**: [HuggingFaceTB/SmolVLM-256M-Instruct](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct) | [Apache-2.0](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/blob/main/LICENSE)
+
 # Super Resolution
 
 ### Real-ESRGAN x4v3
@@ -237,6 +262,10 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 - **F.normalize** → Manual `x / sqrt(sum(x*x) + eps)` to avoid div broadcast issues
 - **GELU / QuickGELU** → `x * sigmoid(1.702 * x)` (SigmoidGELU approximation)
 - **Swish / SiLU** → `x * sigmoid(x)`
+- **`torch.bucketize`** → Pre-compute results for fixed input size, register as buffer
+- **`padding='valid'` Conv2d** → Replace with `padding=0`
+- **transformers `create_causal_mask`** → Monkey-patch with simple `torch.triu` mask for ONNX export
+- **`scaled_dot_product_attention`** → Set `use_sdpa = False` to use manual matmul+softmax attention
 
 > **Note**: litert-torch models use NCHW layout (PyTorch native). Large models (>150 MB) should be loaded from `filesDir` via `CompiledModel.create(path, options, null)` instead of APK assets.
 

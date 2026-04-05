@@ -34,6 +34,8 @@ dsine/.idea/
 dsine/scripts/output/
 whisper/.idea/
 whisper/scripts/output/
+smolvlm/.idea/
+smolvlm/scripts/output/
 mobile_sam.pt
 
 # Depth estimation (local development only)

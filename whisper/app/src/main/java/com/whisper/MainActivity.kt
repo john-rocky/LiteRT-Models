@@ -19,8 +19,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import java.nio.ByteOrder
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "Whisper"
+private const val STREAM_INTERVAL_MS = 3000L  // transcribe every 3 seconds
 
 class MainActivity : ComponentActivity() {
 
@@ -32,12 +34,14 @@ class MainActivity : ComponentActivity() {
 
     private var transcriber: WhisperTranscriber? = null
     private val executor = Executors.newSingleThreadExecutor()
+    private val transcribeExecutor = Executors.newSingleThreadExecutor()
     private var isProcessing = false
 
     // Recording state
     private var audioRecord: AudioRecord? = null
     private var isRecording = false
     private var recordedSamples = mutableListOf<Float>()
+    private val isTranscribing = AtomicBoolean(false)
 
     private val audioPicker = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -195,16 +199,18 @@ class MainActivity : ComponentActivity() {
 
         audioRecord?.startRecording()
         isRecording = true
-        recordedSamples.clear()
+        synchronized(recordedSamples) { recordedSamples.clear() }
         recordButton.text = "Stop"
         recordButton.setBackgroundColor(0xFFB71C1C.toInt())
         pickButton.isEnabled = false
-        statusText.text = "Recording... (max 30s)"
+        statusText.text = "Recording + streaming..."
+        resultText.text = ""
 
-        // Read audio in background
+        // Read audio in background + trigger streaming transcription
         executor.execute {
             val buffer = ShortArray(bufferSize / 2)
-            val maxSamples = MelSpectrogram.N_SAMPLES  // 30s max
+            val maxSamples = MelSpectrogram.N_SAMPLES
+            var lastTranscribeTime = System.currentTimeMillis()
 
             while (isRecording && recordedSamples.size < maxSamples) {
                 val read = audioRecord?.read(buffer, 0, buffer.size) ?: -1
@@ -215,9 +221,24 @@ class MainActivity : ComponentActivity() {
                             recordedSamples.add(buffer[i].toFloat() / 32768f)
                         }
                     }
+
                     val sec = recordedSamples.size.toFloat() / MelSpectrogram.SAMPLE_RATE
+                    val now = System.currentTimeMillis()
+
+                    // Trigger streaming transcription every STREAM_INTERVAL_MS
+                    if (now - lastTranscribeTime >= STREAM_INTERVAL_MS
+                        && sec >= 1.0f
+                        && !isTranscribing.get()
+                    ) {
+                        lastTranscribeTime = now
+                        streamTranscribe()
+                    }
+
                     runOnUiThread {
-                        statusText.text = "Recording... ${String.format("%.1f", sec)}s"
+                        if (isRecording) {
+                            val indicator = if (isTranscribing.get()) " (transcribing...)" else ""
+                            statusText.text = "Recording ${String.format("%.1f", sec)}s$indicator"
+                        }
                     }
                 }
             }
@@ -226,6 +247,34 @@ class MainActivity : ComponentActivity() {
             if (isRecording) {
                 runOnUiThread { stopRecording() }
             }
+        }
+    }
+
+    private fun streamTranscribe() {
+        if (isTranscribing.getAndSet(true)) return
+
+        val samples: FloatArray
+        synchronized(recordedSamples) {
+            samples = recordedSamples.toFloatArray()
+        }
+
+        if (samples.size < MelSpectrogram.SAMPLE_RATE) {
+            isTranscribing.set(false)
+            return
+        }
+
+        val language = langSpinner.selectedItem as String
+
+        transcribeExecutor.execute {
+            try {
+                val text = transcriber!!.transcribe(samples, language)
+                runOnUiThread {
+                    resultText.text = text.ifEmpty { "..." }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Stream transcribe error: ${e.message}")
+            }
+            isTranscribing.set(false)
         }
     }
 
@@ -249,7 +298,36 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        transcribeSamples(samples)
+        // Final transcription on the complete audio
+        statusText.text = "Final transcription..."
+        isProcessing = true
+
+        transcribeExecutor.execute {
+            // Wait for any in-progress streaming transcription to finish
+            while (isTranscribing.get()) Thread.sleep(50)
+
+            try {
+                val language = langSpinner.selectedItem as String
+                val text = transcriber!!.transcribe(samples, language)
+                val durationSec = samples.size.toFloat() / MelSpectrogram.SAMPLE_RATE
+                runOnUiThread {
+                    resultText.text = text.ifEmpty { "(no speech detected)" }
+                    statusText.text = "Encode: ${transcriber!!.lastEncodeMs}ms | " +
+                        "Decode: ${transcriber!!.lastDecodeMs}ms | " +
+                        "${String.format("%.1f", durationSec)}s audio"
+                    pickButton.isEnabled = true
+                    recordButton.isEnabled = true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Final transcription failed", e)
+                runOnUiThread {
+                    statusText.text = "Error: ${e.message}"
+                    pickButton.isEnabled = true
+                    recordButton.isEnabled = true
+                }
+            }
+            isProcessing = false
+        }
     }
 
     // ── Transcribe from file ───────────────────────────────────────────────
@@ -266,34 +344,13 @@ class MainActivity : ComponentActivity() {
             try {
                 val samples = decodeAudio(uri)
                     ?: throw Exception("Failed to decode audio")
-                runOnUiThread { transcribeSamples(samples) }
-            } catch (e: Exception) {
-                Log.e(TAG, "Audio decode failed", e)
+
+                val language = langSpinner.selectedItem as String
+                val durationSec = samples.size.toFloat() / MelSpectrogram.SAMPLE_RATE
                 runOnUiThread {
-                    statusText.text = "Error: ${e.message}"
-                    pickButton.isEnabled = true
-                    recordButton.isEnabled = true
-                    isProcessing = false
+                    statusText.text = "Transcribing ${String.format("%.1f", durationSec)}s..."
                 }
-            }
-        }
-    }
 
-    // ── Common transcribe ──────────────────────────────────────────────────
-
-    private fun transcribeSamples(samples: FloatArray) {
-        if (isProcessing && !isRecording) return  // prevent double-run from file path
-        isProcessing = true
-        pickButton.isEnabled = false
-        recordButton.isEnabled = false
-
-        val language = langSpinner.selectedItem as String
-        val durationSec = samples.size.toFloat() / MelSpectrogram.SAMPLE_RATE
-        statusText.text = "Transcribing ${String.format("%.1f", durationSec)}s audio..."
-        resultText.text = ""
-
-        executor.execute {
-            try {
                 val text = transcriber!!.transcribe(samples, language)
                 runOnUiThread {
                     resultText.text = text.ifEmpty { "(no speech detected)" }
@@ -426,5 +483,6 @@ class MainActivity : ComponentActivity() {
         }
         transcriber?.close()
         executor.shutdown()
+        transcribeExecutor.shutdown()
     }
 }

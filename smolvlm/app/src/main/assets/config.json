@@ -1,0 +1,83 @@
+{
+  "vocab_size": 49280,
+  "embed_dim": 576,
+  "image_token_id": 49190,
+  "bos_token_id": 1,
+  "eos_token_id": 49279,
+  "n_visual_tokens": 64,
+  "image_size": 512,
+  "prompt_prefix": [
+    1,
+    11126,
+    42
+  ],
+  "prompt_suffix": [
+    49279,
+    198,
+    9519,
+    9531,
+    42
+  ],
+  "common_prompts": {
+    "Describe this image.": [
+      37964,
+      451,
+      2443,
+      30
+    ],
+    "What is this?": [
+      1780,
+      314,
+      451,
+      47
+    ],
+    "What do you see?": [
+      1780,
+      536,
+      346,
+      963,
+      47
+    ],
+    "What is in this image?": [
+      1780,
+      314,
+      281,
+      451,
+      2443,
+      47
+    ],
+    "Explain this image in detail.": [
+      36971,
+      451,
+      2443,
+      281,
+      2202,
+      30
+    ],
+    "What colors are in this image?": [
+      1780,
+      4683,
+      359,
+      281,
+      451,
+      2443,
+      47
+    ],
+    "How many objects are there?": [
+      2020,
+      800,
+      3401,
+      359,
+      665,
+      47
+    ],
+    "What is the main subject?": [
+      1780,
+      314,
+      260,
+      1085,
+      2138,
+      47
+    ]
+  }
+}
