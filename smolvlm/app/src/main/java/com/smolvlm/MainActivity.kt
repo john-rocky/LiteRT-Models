@@ -51,27 +51,24 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(statusText)
 
-        // Image + Pick button
-        val imageRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 4, 0, 4)
-        }
-
         pickButton = Button(this).apply {
             text = "Select Image"
             isEnabled = false
             setOnClickListener { imagePicker.launch("image/*") }
         }
-        imageRow.addView(pickButton)
+        root.addView(pickButton)
 
         imageView = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(200, 200).apply { marginStart = 16 }
-            scaleType = ImageView.ScaleType.CENTER_CROP
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 8; bottomMargin = 8 }
+            adjustViewBounds = true
+            maxHeight = 600
+            scaleType = ImageView.ScaleType.FIT_CENTER
             setBackgroundColor(0xFF2A2A2A.toInt())
         }
-        imageRow.addView(imageView)
-        root.addView(imageRow)
+        root.addView(imageView)
 
         // Prompt input
         val promptRow = LinearLayout(this).apply {
