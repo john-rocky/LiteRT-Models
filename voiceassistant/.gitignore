@@ -1,0 +1,19 @@
+*.iml
+.gradle
+local.properties
+.DS_Store
+build/
+captures/
+.externalNativeBuild
+.cxx
+*.apk
+.idea/
+
+# Python venv used by conversion scripts
+scripts/.venv/
+scripts/__pycache__/
+
+# Model artifacts
+scripts/output/
+*.onnx
+*.tflite
