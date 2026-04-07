@@ -145,6 +145,28 @@ All ops became TFLite-native but the 5D tensor constraint blocked GPU compilatio
 
 Converter: SavedModel → TFLiteConverter (eliminates PACK/SPLIT from Ultralytics export).
 
+### YOLO26 Pose
+
+Converter: **litert-torch** (NOT onnx2tf — see below).
+
+Output: NCHW `[1, 3, 384, 384]` → `[1, 56, 3024]` where `56 = 4 bbox (cx,cy,w,h) + 1 person conf + 17 keypoints * 3 (x,y,vis)`.
+
+**Bypass the end-to-end head**: the default YOLO26 head emits `(N, 300, 6+kp)` after `torch.topk`, which compiles to `TOPK_V2/GATHER` and is rejected by CompiledModel GPU. Drop the topk by flipping three flags on the head module before forward:
+
+```python
+yolo = YOLO("yolo26n-pose.pt")
+head = yolo.model.model[-1]
+head.end2end = False  # bypass NMS-free TopK / Gather
+head.export = True    # use the export-mode forward path
+head.format = "tflite"
+```
+
+This exposes the legacy one-to-many head output `[1, 56, N]`. **Bbox channels are `(cx, cy, w, h)` in input image pixel space — NOT `(x1, y1, x2, y2)`.** The xyxy form is only emitted by the end-to-end head we just disabled. Keypoint xy are also in input pixel space; conf and keypoint visibility are sigmoid-activated.
+
+**Why not onnx2tf**: Ultralytics' default TFLite export pipeline goes ONNX → onnx2tf, but onnx2tf trips a channel-tracking bug at the YOLO26 backbone's `model.2/m.0/Add` (`Dimensions must be equal, but are 32 and 16`). This is the same class of failure that breaks ViT attention through onnx2tf — the tool mis-tracks NCHW channel positions through residual paths in newer YOLO blocks.
+
+**`BATCH_MATMUL` is a false alarm**: `litert_gpu_toolkit`'s checker historically flagged `BATCH_MATMUL` as incompatible. The C2PSA attention block produces 4 BMM ops, and the existing `yolo26n.tflite` in this repo also has 4 BMM ops — both run cleanly on the LiteRT GPU delegate (`DELEGATE: 3` in op distribution). Treat `BATCH_MATMUL` as a warning, not a blocker.
+
 ### Real-ESRGAN
 
 Converter: onnx2tf (pure CNN, no issues).

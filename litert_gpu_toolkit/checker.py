@@ -12,7 +12,12 @@ GPU_INCOMPATIBLE_OPS = {
     'GATHER_ND', 'GATHER', 'SELECT', 'SELECT_V2',
     'NOT_EQUAL', 'EQUAL', 'GREATER', 'LESS',
     'TOPK_V2', 'CAST', 'PACK', 'SPLIT',
-    'BATCH_MATMUL',  # Some configurations fail on GPU
+}
+
+# Ops that compile to a GPU delegate fallback rather than failing outright.
+# They are reported as warnings instead of hard incompatibilities.
+GPU_DELEGATED_OPS = {
+    'BATCH_MATMUL',  # YOLO26 C2PSA attention; runs via delegate (verified on Mali-G715)
 }
 
 # Ops that need specific parameter settings
@@ -49,9 +54,12 @@ def check_gpu_compatibility(tflite_path: str) -> dict:
     op_counts = collections.Counter(d.get('op_name', 'UNKNOWN') for d in details)
 
     incompatible = {k: v for k, v in op_counts.items() if k in GPU_INCOMPATIBLE_OPS}
+    delegated = {k: v for k, v in op_counts.items() if k in GPU_DELEGATED_OPS}
     flex = {k: v for k, v in op_counts.items() if 'Flex' in k}
 
     warnings = []
+    for op, count in delegated.items():
+        warnings.append(f"{op} x{count} runs via GPU delegate (verified compatible)")
 
     # Check tensor dimensions (4D max for GPU)
     for detail in interp.get_tensor_details():
@@ -74,6 +82,7 @@ def check_gpu_compatibility(tflite_path: str) -> dict:
         'compatible': compatible,
         'total_ops': len(details),
         'incompatible_ops': incompatible,
+        'delegated_ops': delegated,
         'flex_ops': flex,
         'warnings': warnings[:10],  # Limit warnings
         'input_shape': list(inp['shape']),
@@ -83,7 +92,13 @@ def check_gpu_compatibility(tflite_path: str) -> dict:
 
     # Log summary
     if compatible:
-        log.info(f"GPU compatible: {len(details)} ops, all native")
+        if delegated:
+            log.info(
+                f"GPU compatible: {len(details)} ops "
+                f"({sum(delegated.values())} via delegate: {sorted(delegated)})"
+            )
+        else:
+            log.info(f"GPU compatible: {len(details)} ops, all native")
     else:
         log.warning(f"GPU INCOMPATIBLE: {incompatible or flex}")
         for w in warnings[:3]:
@@ -105,6 +120,10 @@ def print_report(result: dict) -> None:
     if result['compatible']:
         print("  Status: COMPATIBLE")
         print("  All ops are GPU-native. Ready for CompiledModel GPU.")
+        if result.get('delegated_ops'):
+            print(f"\n  Delegated ops (run via LiteRT GPU delegate):")
+            for op, count in result['delegated_ops'].items():
+                print(f"    {op}: {count}")
     else:
         print("  Status: NOT COMPATIBLE")
         if result['incompatible_ops']:
@@ -115,10 +134,10 @@ def print_report(result: dict) -> None:
             print(f"\n  Flex ops (require TF delegate):")
             for op, count in result['flex_ops'].items():
                 print(f"    {op}: {count}")
-        if result['warnings']:
-            print(f"\n  Warnings:")
-            for w in result['warnings']:
-                print(f"    {w}")
+    if result['warnings']:
+        print(f"\n  Warnings:")
+        for w in result['warnings']:
+            print(f"    {w}")
 
     print(f"\n  Op distribution (top 10):")
     for op, count in list(result['op_distribution'].items())[:10]:

@@ -36,6 +36,10 @@ whisper/.idea/
 whisper/scripts/output/
 smolvlm/.idea/
 smolvlm/scripts/output/
+yolo-pose/.idea/
+yolo-pose/scripts/yolo26n-pose.pt
+yolo-pose/scripts/calibration_image_sample_data_*.npy
+yolo-pose/scripts/build/
 mobile_sam.pt
 
 # Depth estimation (local development only)
