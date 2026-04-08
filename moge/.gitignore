@@ -1,0 +1,16 @@
+# Build outputs
+build/
+.gradle/
+local.properties
+.idea/
+
+# Model files (downloaded / converted, never committed)
+*.tflite
+*.onnx
+*.pt
+*.pth
+*.bin
+app/src/main/assets/moge*.tflite
+scripts/output/
+scripts/__pycache__/
+scripts/.cache/
