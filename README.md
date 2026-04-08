@@ -49,6 +49,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
+- [**Monocular Geometry Estimation**](#monocular-geometry-estimation)
+  - [MoGe-2 ViT-S](#moge-2-vit-s)
+
 # How to use
 
 1. Download the `.tflite` model from the GitHub Release link below.
@@ -334,6 +337,30 @@ Real-ESRGAN: Practical image restoration and upscaling. The General-x4v3 variant
 **Output format**: `[1, 512, 512, 3]` — 4x upscaled RGB image (0-1 range).
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). For images larger than 128x128, process as overlapping tiles and stitch.
+
+# Monocular Geometry Estimation
+
+### MoGe-2 ViT-S
+
+MoGe-2 (CVPR'25 Oral): Accurate monocular geometry estimation from a single image. Outputs an affine 3D point map, surface normals, confidence mask, and metric scale — all in a single forward pass. Based on DINOv2 ViT-S backbone with a multi-scale ConvStack decoder.
+
+Converted via **litert-torch** with five GPU-compat patches: DINOv2 attention rewrite (4D slice instead of 5D stack+unbind), encoder output add instead of stack+sum, baked position embeddings (eliminates GATHER_ND from bicubic interpolation), replicate→zeros Conv2d padding, and bicubic→bilinear interpolation.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [moge.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v3/moge.tflite) | 136 MB | Float32 [1, 3, 448, 448] NCHW | Points [1,448,448,3] + Normal [1,448,448,3] + Mask [1,448,448,1] + Scale [1,1,1,1] | [microsoft/MoGe](https://github.com/microsoft/MoGe) | [MIT](https://github.com/microsoft/MoGe/blob/main/LICENSE) (DINOv2: Apache-2.0) | [moge/](moge/) |
+
+**Preprocessing**: RGB normalized to 0-1 (divide by 255). NCHW planar layout. The DINOv2 encoder applies ImageNet normalization internally.
+
+**Output format**: Four tensors:
+- `points [1, 448, 448, 3]` — affine point map after exp remap (`xy * exp(z), exp(z)`)
+- `normal [1, 448, 448, 3]` — L2-normalized surface normals (visualize as `(n + 1) / 2 * 255`)
+- `mask [1, 448, 448, 1]` — sigmoid confidence (>0.5 = valid)
+- `scale [1, 1, 1, 1]` — metric scale factor (multiply points/depth for metric units)
+
+**Sample app**: [moge/](moge/) — Image picker + four visualization modes: normal map (RGB), depth heatmap (turbo colormap), 3D point cloud (touch-rotatable OpenGL ES), and geometry info overlay.
+
+**Original project**: [microsoft/MoGe](https://github.com/microsoft/MoGe) | [MIT](https://github.com/microsoft/MoGe/blob/main/LICENSE)
 
 # GPU Compatibility Notes
 

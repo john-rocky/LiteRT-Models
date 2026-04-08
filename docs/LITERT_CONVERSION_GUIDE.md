@@ -170,3 +170,23 @@ This exposes the legacy one-to-many head output `[1, 56, N]`. **Bbox channels ar
 ### Real-ESRGAN
 
 Converter: onnx2tf (pure CNN, no issues).
+
+### MoGe-2 (DINOv2 ViT-S)
+
+Converter: litert-torch. Most complex conversion in the repo — 9 patches required.
+
+**Architecture**: DINOv2 ViT-S backbone (12 blocks, 384 dim, 6 heads) + ConvStack multi-scale decoder with 4 heads (points, normal, mask, scale). 35M params, 835 TFLite ops, 136 MB.
+
+**Critical finding — LayerScale breaks GPU delegate**: DINOv2 uses `LayerScale` (per-channel gamma multiply) after each attention and MLP block. The FC output is a 2D tensor `[N, C]` which the GPU delegate interprets as `{N, 1, 1, C}` (batch=N). The subsequent LayerScale MUL with `[1, 1, C]` triggers a shape conflict: `{1, 1, N, C}` vs `{N, 1, 1, C}`. SmolVLM's SigLIP works because it has no LayerScale. **Fix**: bake gamma into the preceding Linear's weight and bias, eliminating the MUL entirely.
+
+**Other patches**:
+- Fused qkv `Linear(dim, 3*dim)` → 3 separate `Linear(dim, dim)` to avoid 5D reshape+unbind
+- `torch.stack` of multi-layer features → element-wise add
+- Position embedding interpolation (bicubic → pre-computed buffer for fixed 32×32 grid)
+- `ConvTranspose2d` → `F.interpolate(bilinear, 2x)` + `Conv2d(1x1)` (TRANSPOSE_CONV rejected by Pixel 8a delegate despite desktop checker saying compatible)
+- Constant UV buffers need `+ image_slice * 1e-10` to prevent constant folding — GPU delegate rejects Conv2d with constant-only inputs ("input must be a runtime tensor")
+- `nn.Upsample(scale_factor=2)` → fixed-size `F.interpolate` (dynamic RESIZE_BILINEAR rejected)
+- `padding_mode='replicate'` → `'zeros'` (×40 Conv2d layers)
+- `F.interpolate` bicubic → bilinear
+
+**Key lesson**: The desktop GPU compatibility checker (checking op names against a blocklist) is necessary but not sufficient. The on-device ML Drift GPU delegate imposes additional constraints: no constant-only Conv2d inputs, no TRANSPOSE_CONV, no dynamic RESIZE sizes, and FC output shape interpretation depends on surrounding ops (LayerScale MUL specifically).
