@@ -80,8 +80,17 @@ class LanguageModel(context: Context) : AutoCloseable {
     /**
      * Generate a short chat response to user input. Greedy decoding with
      * repetition penalty. Stops at EOS or max tokens.
+     *
+     * If [cancelled] returns true between tokens, generation aborts and
+     * returns whatever has been produced so far. Used by the voice assistant
+     * for barge-in: a new SPEECH_START while the LM is still generating
+     * cancels the in-flight turn.
      */
-    fun generate(userText: String, onToken: ((String) -> Unit)? = null): String {
+    fun generate(
+        userText: String,
+        cancelled: (() -> Boolean)? = null,
+        onToken: ((String) -> Unit)? = null,
+    ): String {
         val t0 = System.nanoTime()
 
         // Tokenize user text greedy longest-match against BPE vocab.
@@ -107,6 +116,7 @@ class LanguageModel(context: Context) : AutoCloseable {
         val sb = StringBuilder()
 
         for (step in 0 until MAX_NEW_TOKENS) {
+            if (cancelled?.invoke() == true) break
             val seqLen = embedsList.size
             val flat = FloatArray(seqLen * embedDim)
             for (i in 0 until seqLen) {

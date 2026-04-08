@@ -23,6 +23,9 @@ class VoiceAssistant(context: Context) : AutoCloseable {
     private val kokoro: KokoroSynthesizer
     private val phonemizer: EnglishPhonemizer
 
+    /** Silero VAD — owned here so MainActivity can drive the mic loop with it. */
+    val vad: VadDetector
+
     /** Per-stage timings in ms, populated after each call to [process]. */
     var lastWhisperMs = 0L; private set
     var lastLmMs = 0L; private set
@@ -36,11 +39,12 @@ class VoiceAssistant(context: Context) : AutoCloseable {
         whisper = WhisperTranscriber(context)
         lm = LanguageModel(context)
         kokoro = KokoroSynthesizer(context)
+        vad = VadDetector(context)
         val vocab = Phonemizer.loadVocab(context)
         phonemizer = EnglishPhonemizer.load(context, vocab)
         voiceIds = kokoro.voiceIds
         ttsProvider = kokoro.providerName
-        Log.i(TAG, "Pipeline ready (whisper=${whisper.acceleratorName}, tts=$ttsProvider)")
+        Log.i(TAG, "Pipeline ready (whisper=${whisper.acceleratorName}, tts=$ttsProvider, vad=ON)")
     }
 
     data class Result(
@@ -56,8 +60,14 @@ class VoiceAssistant(context: Context) : AutoCloseable {
      * "LM_full_time + TTS_full_time" down to roughly
      * "LM_first_sentence + TTS_first_sentence" (~600 ms for short replies).
      *
-     * @param samples       16 kHz mono PCM
+     * If [cancelled] returns true at any of the checkpoints (after STT,
+     * between LM tokens, between TTS sentences) the pipeline aborts and
+     * returns whatever has been produced so far. Used by the VAD-driven UI
+     * to barge-in on an in-flight turn when the user starts speaking again.
+     *
+     * @param samples       16 kHz mono PCM (already segmented by VAD)
      * @param voiceId       Kokoro voice
+     * @param cancelled     Predicate polled at each pipeline stage
      * @param onTranscript  Called once with the Whisper transcript
      * @param onResponse    Called incrementally as the LM grows the response
      * @param onAudioChunk  Called for each synthesized sentence audio buffer.
@@ -68,16 +78,23 @@ class VoiceAssistant(context: Context) : AutoCloseable {
     fun processStreaming(
         samples: FloatArray,
         voiceId: String = DEFAULT_VOICE,
+        cancelled: (() -> Boolean)? = null,
         onTranscript: (String) -> Unit,
         onResponse: (String) -> Unit,
         onAudioChunk: (FloatArray) -> Unit,
     ): Result {
-        // Stage 1: Whisper STT
+        // Stage 1: Whisper STT (not internally cancellable — runs to completion,
+        // ~700 ms; the cancellation check just below skips LM/TTS if needed)
         val transcript = whisper.transcribe(samples, "en")
         lastWhisperMs = whisper.lastEncodeMs + whisper.lastDecodeMs
         Log.i(TAG, "STT: '$transcript' (${lastWhisperMs}ms)")
-        onTranscript(transcript)
 
+        if (cancelled?.invoke() == true) {
+            Log.i(TAG, "Cancelled after STT")
+            return Result(transcript, "", FloatArray(0))
+        }
+
+        onTranscript(transcript)
         if (transcript.isBlank()) return Result("(no speech detected)", "", FloatArray(0))
 
         // Stage 2 + 3 + 4 interleaved: LM token stream → sentence chunks → TTS → audio chunks
@@ -87,15 +104,19 @@ class VoiceAssistant(context: Context) : AutoCloseable {
         val firstChunkNs = AtomicLongRef()
         val processStartNs = System.nanoTime()
 
-        val response = lm.generate(transcript) { cumulative ->
+        val response = lm.generate(
+            userText = transcript,
+            cancelled = cancelled,
+        ) { cumulative ->
             // Compute the new substring since last callback
             val delta = cumulative.substring(lastEmittedLength)
             lastEmittedLength = cumulative.length
             sentenceBuffer.append(delta)
             onResponse(cumulative)
 
-            // Drain any complete sentences
-            while (true) {
+            // Drain any complete sentences. Skip synth if the turn was cancelled
+            // mid-token so we don't queue audio for an aborted turn.
+            while (cancelled?.invoke() != true) {
                 val sentence = extractCompleteSentence(sentenceBuffer) ?: break
                 val tokenIds = phonemizer.phonemize(sentence)
                 if (tokenIds.isEmpty()) continue
@@ -103,28 +124,30 @@ class VoiceAssistant(context: Context) : AutoCloseable {
                 val audio = kokoro.synthesize(tokenIds, voiceId, 1.0f)
                 ttsTotalNs.value += System.nanoTime() - t0
                 if (firstChunkNs.value == 0L) firstChunkNs.value = System.nanoTime() - processStartNs
+                if (cancelled?.invoke() == true) break
                 onAudioChunk(audio)
             }
         }
         lastLmMs = lm.lastGenerateMs
 
-        // Flush trailing partial sentence (no terminator)
+        // Flush trailing partial sentence (no terminator) — also gated on cancellation
         val tail = sentenceBuffer.toString().trim()
-        if (tail.isNotEmpty()) {
+        if (tail.isNotEmpty() && cancelled?.invoke() != true) {
             val tokenIds = phonemizer.phonemize(tail)
             if (tokenIds.isNotEmpty()) {
                 val t0 = System.nanoTime()
                 val audio = kokoro.synthesize(tokenIds, voiceId, 1.0f)
                 ttsTotalNs.value += System.nanoTime() - t0
                 if (firstChunkNs.value == 0L) firstChunkNs.value = System.nanoTime() - processStartNs
-                onAudioChunk(audio)
+                if (cancelled?.invoke() != true) onAudioChunk(audio)
             }
         }
 
         lastTtsMs = ttsTotalNs.value / 1_000_000
         val firstChunkMs = firstChunkNs.value / 1_000_000
         Log.i(TAG, "Streaming done: STT ${lastWhisperMs}ms, LM ${lastLmMs}ms, " +
-            "TTS total ${lastTtsMs}ms, time-to-first-audio ${firstChunkMs}ms")
+            "TTS total ${lastTtsMs}ms, time-to-first-audio ${firstChunkMs}ms" +
+            (if (cancelled?.invoke() == true) " (cancelled)" else ""))
 
         return Result(transcript, response, FloatArray(0))
     }
@@ -258,5 +281,6 @@ class VoiceAssistant(context: Context) : AutoCloseable {
         whisper.close()
         lm.close()
         kokoro.close()
+        vad.close()
     }
 }

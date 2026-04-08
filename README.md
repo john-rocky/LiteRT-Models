@@ -283,15 +283,21 @@ Vision encoder converted via **litert-torch** with SigLIP position embedding pre
 
 ### Whisper + SmolLM2 + Kokoro pipeline
 
-Full on-device conversational pipeline running entirely offline on a Pixel-class device:
+Full on-device conversational pipeline running entirely offline on a Pixel-class device. Hands-free with **Silero VAD** driving turn taking and barge-in:
 
 ```
-mic ─► Whisper-tiny STT (TFLite GPU)
-     ─► SmolLM2-135M chat (ONNX CPU, text-only via SmolVLM decoder)
+mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
+     ─► Silero VAD v5 (ONNX CPU, 32 ms chunks) ─► SegmentTracker hysteresis
+     ─► [SPEECH_END] Whisper-tiny STT (TFLite GPU + ONNX CPU decoder)
+     ─► SmolLM2-135M chat (ONNX CPU, cancellable streaming)
      ─► EnglishPhonemizer (CMU dict + ARPABET → IPA)
      ─► Kokoro-82M TTS (ONNX, NNAPI EP)
-     ─► AudioTrack streaming playback
+     ─► AudioTrack streaming playback (hard-stoppable on barge-in)
 ```
+
+**Hands-free turn taking.** Tap **Listen** once. The mic stays open, VAD watches every 32 ms chunk, and a 600 ms trailing silence after a speech segment automatically submits the captured audio to the pipeline. A 5-chunk preroll ring buffer is prepended to the capture so the first phoneme that triggered VAD is not clipped.
+
+**Barge-in.** While the assistant is replying, mic + VAD keep running. A new SPEECH_START event during THINKING/SPEAKING flips the in-flight turn's cancellation flag, hard-stops the AudioTrack, aborts the LM generation between tokens, and starts capturing the new utterance as the next turn.
 
 **Streaming TTS** drops time-to-first-audio from ~4.5 s to **~1.5 s** on Pixel 8a: the LM token-by-token callback detects sentence boundaries, each completed sentence is phonemized and synthesized while the LM keeps generating, and audio chunks are pushed to a player thread via a blocking queue. Each chunk plays via a one-shot MODE_STATIC AudioTrack, decoupling the LM/TTS producer from playback duration.
 
@@ -303,6 +309,7 @@ mic ─► Whisper-tiny STT (TFLite GPU)
 
 | Component | Model | Size |
 | --------- | ----- | ---- |
+| VAD | [silero_vad.onnx](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/silero_vad.onnx) | 2.3 MB |
 | STT encoder | [whisper_encoder.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/whisper_encoder.tflite) | 33 MB |
 | STT decoder | [whisper_decoder.onnx](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/whisper_decoder.onnx) | 199 MB |
 | LM decoder | [smolvlm_decoder.onnx](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_decoder.onnx) | 515 MB |
@@ -310,7 +317,7 @@ mic ─► Whisper-tiny STT (TFLite GPU)
 | TTS | [model_fp16.onnx](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_fp16.onnx) | 163 MB |
 | TTS voices | [voices/*.bin](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/tree/main/voices) | 510 KB each |
 
-**Sample app**: [voiceassistant/](voiceassistant/) — Hold-to-talk button, transcript display, streaming response display, sentence-by-sentence audio playback. English-only for the MVP.
+**Sample app**: [voiceassistant/](voiceassistant/) — Listen toggle, idle/listening/capturing/thinking/replying state indicator, transcript + streaming response display, hands-free turn taking, barge-in. English-only for the MVP.
 
 # Super Resolution
 

@@ -11,6 +11,7 @@
 #   smolvlm_decoder.onnx       (~540 MB)
 #   embed_tokens.bin           (~114 MB)
 #   model_fp16.onnx            (~163 MB)  Kokoro
+#   silero_vad.onnx            (~2.3 MB)  Voice activity detection
 #   kokoro_voices/*.bin        (5 voices, ~2.5 MB)
 
 set -euo pipefail
@@ -28,6 +29,7 @@ REQUIRED=(
     "smolvlm_decoder.onnx"
     "embed_tokens.bin"
     "model_fp16.onnx"
+    "silero_vad.onnx"
 )
 for f in "${REQUIRED[@]}"; do
     if ! adb shell "[ -f /data/local/tmp/$f ]"; then
