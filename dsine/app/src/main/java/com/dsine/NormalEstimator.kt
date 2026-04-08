@@ -98,26 +98,28 @@ class NormalEstimator(context: Context) : AutoCloseable {
     fun estimate(bitmap: Bitmap): Bitmap {
         val t = System.nanoTime()
 
-        // Resize to MODEL_W x MODEL_H (landscape) with center crop
+        // Letterbox the entire image into MODEL_W x MODEL_H (preserve aspect ratio, pad with black)
         val canvas = Canvas(resizedBitmap)
+        canvas.drawColor(0xFF000000.toInt())
+
         val srcAspect = bitmap.width.toFloat() / bitmap.height
         val dstAspect = MODEL_W.toFloat() / MODEL_H
 
-        val srcRect = if (srcAspect > dstAspect) {
-            // Source is wider — crop sides
-            val cropW = (bitmap.height * dstAspect).toInt()
-            val x = (bitmap.width - cropW) / 2
-            android.graphics.RectF(x.toFloat(), 0f, (x + cropW).toFloat(), bitmap.height.toFloat())
+        val dstRect = if (srcAspect > dstAspect) {
+            // Source is wider — fit width, pad top/bottom
+            val fitH = MODEL_W / srcAspect
+            val y = (MODEL_H - fitH) * 0.5f
+            android.graphics.RectF(0f, y, MODEL_W.toFloat(), y + fitH)
         } else {
-            // Source is taller — crop top/bottom
-            val cropH = (bitmap.width / dstAspect).toInt()
-            val y = (bitmap.height - cropH) / 2
-            android.graphics.RectF(0f, y.toFloat(), bitmap.width.toFloat(), (y + cropH).toFloat())
+            // Source is taller — fit height, pad left/right
+            val fitW = MODEL_H * srcAspect
+            val x = (MODEL_W - fitW) * 0.5f
+            android.graphics.RectF(x, 0f, x + fitW, MODEL_H.toFloat())
         }
 
         scaleMatrix.setRectToRect(
-            srcRect,
-            android.graphics.RectF(0f, 0f, MODEL_W.toFloat(), MODEL_H.toFloat()),
+            android.graphics.RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()),
+            dstRect,
             Matrix.ScaleToFit.FILL
         )
         canvas.drawBitmap(bitmap, scaleMatrix, scalePaint)
