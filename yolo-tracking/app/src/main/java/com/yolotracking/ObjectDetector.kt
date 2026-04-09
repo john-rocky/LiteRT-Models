@@ -73,12 +73,12 @@ class ObjectDetector(context: Context, modelFileName: String = "yolo11n.tflite")
         try {
             options.gpuOptions = CompiledModel.GpuOptions(
                 null, null, null,
-                CompiledModel.GpuOptions.Precision.FP32,
+                CompiledModel.GpuOptions.Precision.FP16,
                 null, null, null, null, null, null, null, null, null, null, null
             )
         } catch (_: Exception) {}
         compiledModel = CompiledModel.create(context.assets, modelFileName, options, null)
-        Log.i(TAG, "GPU FP32 compiled OK")
+        Log.i(TAG, "GPU FP16 compiled OK")
         inputBuffers = compiledModel.createInputBuffers()
 
         inputPixels = IntArray(inputSize * inputSize)
@@ -132,7 +132,6 @@ class ObjectDetector(context: Context, modelFileName: String = "yolo11n.tflite")
         val dets = postProcess(raw, bitmap.width, bitmap.height)
         val postMs = (System.nanoTime() - t) / 1_000_000
 
-        Log.i(TAG, "pre=${preMs}ms run=${runMs}ms read=${readMs}ms post=${postMs}ms total_inf=${infMs}ms dets=${dets.size}")
         return dets to (preMs + infMs + postMs)
     }
 

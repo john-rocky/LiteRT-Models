@@ -19,8 +19,8 @@ class ReIDExtractor(context: Context, modelFileName: String = "osnet_x0_25.tflit
 
     companion object {
         private const val TAG = "ReID"
-        private const val INPUT_H = 256
-        private const val INPUT_W = 128
+        private const val INPUT_H = 128  // halved from 256 for speed
+        private const val INPUT_W = 64   // halved from 128 for speed
         private const val EMBED_DIM = 512
         private val MEAN = floatArrayOf(0.485f, 0.456f, 0.406f)
         private val STD = floatArrayOf(0.229f, 0.224f, 0.225f)
@@ -53,7 +53,7 @@ class ReIDExtractor(context: Context, modelFileName: String = "osnet_x0_25.tflit
         try {
             options.gpuOptions = CompiledModel.GpuOptions(
                 null, null, null,
-                CompiledModel.GpuOptions.Precision.FP32,
+                CompiledModel.GpuOptions.Precision.FP16,
                 null, null, null, null, null, null, null, null, null, null, null
             )
         } catch (_: Exception) {}
@@ -65,15 +65,9 @@ class ReIDExtractor(context: Context, modelFileName: String = "osnet_x0_25.tflit
 
     fun extractFeatures(bitmap: Bitmap, detections: List<Detection>): List<Detection> {
         if (detections.isEmpty()) return detections
-
-        val t = System.nanoTime()
-        val result = detections.map { det ->
-            val feature = extractSingle(bitmap, det)
-            det.copy(feature = feature)
+        return detections.map { det ->
+            det.copy(feature = extractSingle(bitmap, det))
         }
-        val ms = (System.nanoTime() - t) / 1_000_000
-        Log.i(TAG, "Re-ID: ${detections.size} crops in ${ms}ms (${if (detections.isNotEmpty()) ms / detections.size else 0}ms/crop)")
-        return result
     }
 
     private fun extractSingle(bitmap: Bitmap, det: Detection): FloatArray {
