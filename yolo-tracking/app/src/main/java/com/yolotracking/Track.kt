@@ -25,6 +25,18 @@ class Track(
     var hits = 1
         private set
 
+    // Last observed bounding box (in image coords). Used for display so the
+    // visualization stays anchored to the actual measurement instead of the
+    // Kalman prediction (which can drift / inflate when detections are missed).
+    var lastObservedCx: Float = detection.cx
+        private set
+    var lastObservedCy: Float = detection.cy
+        private set
+    var lastObservedW: Float = detection.w
+        private set
+    var lastObservedH: Float = detection.h
+        private set
+
     // Appearance feature gallery
     private val features = mutableListOf<FloatArray>()
 
@@ -54,6 +66,10 @@ class Track(
         className = detection.className
         hits++
         timeSinceUpdate = 0
+        lastObservedCx = detection.cx
+        lastObservedCy = detection.cy
+        lastObservedW = detection.w
+        lastObservedH = detection.h
         trail.addLast(detection.cx to detection.cy)
         if (trail.size > TRAIL_LENGTH) trail.removeFirst()
 
@@ -80,6 +96,13 @@ class Track(
             val w = a * h
             return floatArrayOf(cx, cy, w, h)
         }
+
+    /**
+     * Display bounding box: last observed measurement (no Kalman drift).
+     * Use this for visualization to avoid box inflation when detections are missed.
+     */
+    val displayBox: FloatArray
+        get() = floatArrayOf(lastObservedCx, lastObservedCy, lastObservedW, lastObservedH)
 
     /**
      * Minimum cosine distance between given feature and stored gallery.

@@ -57,9 +57,14 @@ class DeepSORTTracker(
         // 8. Remove deleted tracks
         tracks.removeAll { it.state == Track.State.DELETED }
 
-        // 9. Build output: confirmed tracks mapped to Detection with trackId
-        return tracks.filter { it.state == Track.State.CONFIRMED }.map { track ->
-            val box = track.predictedBox
+        // 9. Build output: only confirmed tracks that have a fresh observation
+        // this frame. Tracks with timeSinceUpdate > 0 are kept alive internally
+        // (so they can re-associate after brief occlusion) but are NOT drawn
+        // to avoid box inflation from Kalman extrapolation.
+        return tracks.filter {
+            it.state == Track.State.CONFIRMED && it.timeSinceUpdate == 0
+        }.map { track ->
+            val box = track.displayBox
             val h = box[3].coerceAtLeast(1f)
             val w = box[2]
             Detection(

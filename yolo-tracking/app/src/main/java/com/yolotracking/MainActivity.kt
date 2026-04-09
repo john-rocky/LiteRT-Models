@@ -220,10 +220,16 @@ class MainActivity : ComponentActivity() {
         progressText.visibility = View.VISIBLE
         progressText.text = "Preparing..."
 
+        // Pause camera pipeline to free GPU + detector/reid for the video pipeline
+        pipeline?.enabled = false
+
         // Video processing always uses high accuracy (Re-ID every frame)
         val processor = VideoProcessor(this, det, reid, reIdInterval = 1)
 
         backgroundExecutor.execute {
+            // Give the inference thread time to drain its current frame before
+            // we start using the shared detector/reid from this background thread
+            try { Thread.sleep(200) } catch (_: InterruptedException) {}
             processor.process(uri, object : VideoProcessor.ProgressListener {
                 override fun onProgress(currentFrame: Int, totalFrames: Int) {
                     val pct = (currentFrame * 100) / totalFrames
@@ -240,6 +246,7 @@ class MainActivity : ComponentActivity() {
                         videoButton.isEnabled = true
                         lastOutputFile = outputFile
                         playButton.visibility = View.VISIBLE
+                        pipeline?.enabled = true
                         // Auto-play the result
                         playVideo(outputFile)
                     }
@@ -250,6 +257,7 @@ class MainActivity : ComponentActivity() {
                         progressBar.visibility = View.GONE
                         progressText.text = "Error: $message"
                         videoButton.isEnabled = true
+                        pipeline?.enabled = true
                     }
                 }
             })
