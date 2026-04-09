@@ -39,6 +39,8 @@ class MainActivity : ComponentActivity() {
     private var lastFpsTime = System.currentTimeMillis()
     private var totalFrameCount = 0
 
+    // 0 = Accurate (Re-ID every frame), 1 = Fast (Re-ID every N frames)
+    private var mode = 0
     private val reIdInterval = 3
 
     private val mat = Matrix()
@@ -47,6 +49,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var previewView: PreviewView
     private lateinit var overlayView: TrackingCanvasView
     private lateinit var fpsText: TextView
+    private lateinit var modeSpinner: Spinner
     private lateinit var videoButton: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
@@ -92,6 +95,21 @@ class MainActivity : ComponentActivity() {
             text = "Loading..."
         }
         topBar.addView(fpsText)
+
+        // Mode spinner
+        val modeNames = arrayOf("Accurate", "Fast (Re-ID 1/${reIdInterval})")
+        modeSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item, modeNames)
+            setBackgroundColor(0x88000000.toInt())
+        }
+        modeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                mode = pos
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        topBar.addView(modeSpinner)
 
         // Video button
         videoButton = Button(this).apply {
@@ -231,8 +249,13 @@ class MainActivity : ComponentActivity() {
                 // 1. Detect
                 val (rawDets, _) = detector!!.detect(bmp)
 
-                // 2. Extract Re-ID features
-                val detsWithFeatures = reIdExtractor!!.extractFeatures(bmp, rawDets)
+                // 2. Extract Re-ID features (skip in Fast mode)
+                val runReId = mode == 0 || (totalFrameCount % reIdInterval == 0)
+                val detsWithFeatures = if (runReId) {
+                    reIdExtractor!!.extractFeatures(bmp, rawDets)
+                } else {
+                    rawDets
+                }
                 bmp.recycle()
                 totalFrameCount++
 
@@ -251,7 +274,8 @@ class MainActivity : ComponentActivity() {
                     frameCount = 0
                     lastFpsTime = now
                     val trackCount = tracked.size
-                    fpsText.post { fpsText.text = "$fps FPS | $trackCount tracks" }
+                    val modeName = if (mode == 0) "Accurate" else "Fast"
+                    fpsText.post { fpsText.text = "$fps FPS | $trackCount tracks | $modeName" }
                 }
 
                 isProcessing = false
