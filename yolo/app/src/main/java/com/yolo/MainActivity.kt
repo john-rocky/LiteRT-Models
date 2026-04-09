@@ -3,9 +3,6 @@ package com.yolo
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
@@ -13,11 +10,6 @@ import android.view.View
 import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import java.util.concurrent.Executors
@@ -27,16 +19,10 @@ private const val TAG = "YOLO"
 class MainActivity : ComponentActivity() {
 
     private var detector: ObjectDetector? = null
-    private val executor = Executors.newSingleThreadExecutor()
+    private var pipeline: RealtimeCameraPipeline? = null
+    private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
-    @Volatile
-    private var isProcessing = false
-    private var frameCount = 0
-    private var lastFpsTime = System.currentTimeMillis()
     private var currentModel = ""
-
-    private val mat = Matrix()
-    private val pnt = Paint(Paint.FILTER_BITMAP_FLAG)
 
     private lateinit var previewView: PreviewView
     private lateinit var overlayView: DetectionCanvasView
@@ -109,103 +95,48 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun loadModel(modelFile: String) {
-        isProcessing = true
+        pipeline?.enabled = false
         fpsText.post { fpsText.text = "Loading $modelFile..." }
-        executor.execute {
+        backgroundExecutor.execute {
             try {
                 detector?.close()
                 detector = ObjectDetector(this, modelFile)
                 currentModel = modelFile
                 fpsText.post { fpsText.text = "$modelFile GPU ready" }
+                pipeline?.enabled = true
             } catch (e: Exception) {
                 Log.e(TAG, "Load failed: ${e.message}")
                 fpsText.post { fpsText.text = "Failed: ${e.message}" }
             }
-            isProcessing = false
         }
     }
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-
-            @Suppress("DEPRECATION")
-            val preview = Preview.Builder()
-                .setTargetResolution(android.util.Size(640, 480))
-                .build().also {
-                    it.surfaceProvider = previewView.surfaceProvider
-                }
-
-            @Suppress("DEPRECATION")
-            val analysis = ImageAnalysis.Builder()
-                .setTargetResolution(android.util.Size(640, 480))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                .build()
-
-            analysis.setAnalyzer(executor) { proxy ->
-                if (isProcessing || detector == null) {
-                    proxy.close()
-                    return@setAnalyzer
-                }
-                isProcessing = true
-
-                val bmp = proxyToBitmap(proxy)
-                proxy.close()
-
-                val (dets, _) = detector!!.detect(bmp)
-                val bmpW = bmp.width
-                val bmpH = bmp.height
-                bmp.recycle()
-
-                overlayView.post { overlayView.setDetections(dets, bmpW, bmpH) }
-
-                frameCount++
-                val now = System.currentTimeMillis()
-                if (now - lastFpsTime >= 1000) {
-                    val fps = frameCount
-                    frameCount = 0
-                    lastFpsTime = now
-                    fpsText.post { fpsText.text = "$fps FPS | ${dets.size} detections" }
-                }
-
-                isProcessing = false
-            }
-
-            cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
-        }, ContextCompat.getMainExecutor(this))
+        pipeline = RealtimeCameraPipeline(
+            activity = this,
+            previewView = previewView,
+        ) { bmp -> runInference(bmp) }.also {
+            it.enabled = false  // wait until model is loaded
+            it.start(this)
+        }
     }
 
-    private fun proxyToBitmap(proxy: ImageProxy): Bitmap {
-        val plane = proxy.planes[0]
-        val buf = plane.buffer
-        val sw = proxy.width + (plane.rowStride - plane.pixelStride * proxy.width) / plane.pixelStride
+    private fun runInference(bmp: Bitmap) {
+        val det = detector ?: return
+        val (dets, _) = det.detect(bmp)
+        val bmpW = bmp.width
+        val bmpH = bmp.height
 
-        val src = Bitmap.createBitmap(sw, proxy.height, Bitmap.Config.ARGB_8888)
-        buf.rewind()
-        src.copyPixelsFromBuffer(buf)
+        overlayView.post { overlayView.setDetections(dets, bmpW, bmpH) }
 
-        val rot = proxy.imageInfo.rotationDegrees.toFloat()
-        if (rot == 0f && sw == proxy.width) return src
-
-        val rw = if (rot == 90f || rot == 270f) proxy.height else proxy.width
-        val rh = if (rot == 90f || rot == 270f) proxy.width else proxy.height
-        val dst = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
-        val c = Canvas(dst)
-        mat.reset()
-        mat.postRotate(rot, proxy.width / 2f, proxy.height / 2f)
-        mat.postTranslate((rw - proxy.width) / 2f, (rh - proxy.height) / 2f)
-        c.drawBitmap(src, mat, pnt)
-        src.recycle()
-        return dst
+        val fps = pipeline?.fps ?: 0
+        fpsText.post { fpsText.text = "$fps FPS | ${dets.size} detections" }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        executor.shutdown()
+        pipeline?.close()
+        backgroundExecutor.shutdown()
         detector?.close()
     }
 }

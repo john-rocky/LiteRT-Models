@@ -16,6 +16,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [YOLO11n](#yolo11n)
   - [YOLO26n](#yolo26n)
 
+- [**Multi-Object Tracking**](#multi-object-tracking)
+  - [YOLO + DeepSORT (OSNet)](#yolo--deepsort-osnet)
+
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
 
@@ -105,6 +108,24 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 **Output format**: Same as YOLO11n — `[1, 84, N]` with NMS post-processing in app. Bbox coords are normalized 0-1.
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). No ImageNet mean/std.
+
+# Multi-Object Tracking
+
+### YOLO + DeepSORT (OSNet)
+
+| | |
+|---|---|
+| **Module** | [`yolo-tracking/`](yolo-tracking/) |
+| **Detection** | YOLO11n — 384×384, 10 MB |
+| **Re-ID** | OSNet x0.25 — 256×128 → 512-dim embedding, ~1.4 MB |
+| **Tracker** | DeepSORT (Kalman + Hungarian + cascade matching) |
+| **Pipeline** | YOLO detect → OSNet Re-ID per crop → DeepSORT track |
+
+Real-time multi-object tracking with appearance-based re-identification. YOLO11n detects objects, OSNet x0.25 extracts 512-dim appearance embeddings from each detection crop, and DeepSORT maintains track identities using cosine similarity on embeddings gated by Mahalanobis distance from Kalman-predicted positions.
+
+Both ML models run on **CompiledModel GPU**. The tracker logic (Kalman filter, Hungarian algorithm, cascade matching) runs in Kotlin on CPU.
+
+**Conversion**: `yolo-tracking/scripts/convert_osnet.py` — uses `litert_gpu_toolkit.convert_for_gpu()`. OSNet is a pure CNN, no special GPU patches needed.
 
 # Pose Estimation
 

@@ -4,9 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
 import android.graphics.Matrix
-import android.graphics.Paint
 import android.media.ExifInterface
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -21,11 +19,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import java.util.concurrent.Executors
@@ -39,11 +32,10 @@ class MainActivity : ComponentActivity() {
 
     private var estimator: PoseEstimator? = null
     private val executor = Executors.newSingleThreadExecutor()
+    private var pipeline: RealtimeCameraPipeline? = null
 
     @Volatile
     private var isProcessing = false
-    private var frameCount = 0
-    private var lastFpsTime = System.currentTimeMillis()
 
     @Volatile
     private var mode = Mode.CAMERA
@@ -51,12 +43,8 @@ class MainActivity : ComponentActivity() {
     @Volatile
     private var cancelVideo = false
 
-    private var cameraProvider: ProcessCameraProvider? = null
     private var staticBitmap: Bitmap? = null
     private var displayedVideoFrame: Bitmap? = null
-
-    private val mat = Matrix()
-    private val pnt = Paint(Paint.FILTER_BITMAP_FLAG)
 
     private lateinit var previewView: PreviewView
     private lateinit var staticImageView: ImageView
@@ -199,59 +187,23 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startCamera() {
-        val future = ProcessCameraProvider.getInstance(this)
-        future.addListener({
-            val provider = future.get()
-            cameraProvider = provider
+        // Close any existing pipeline first
+        pipeline?.close()
+        pipeline = RealtimeCameraPipeline(
+            activity = this,
+            previewView = previewView,
+        ) { bmp ->
+            if (mode != Mode.CAMERA || estimator == null) return@RealtimeCameraPipeline
 
-            @Suppress("DEPRECATION")
-            val preview = Preview.Builder()
-                .setTargetResolution(android.util.Size(640, 480))
-                .build().also {
-                    it.surfaceProvider = previewView.surfaceProvider
-                }
+            val (poses, _) = estimator!!.detect(bmp)
+            val bmpW = bmp.width
+            val bmpH = bmp.height
 
-            @Suppress("DEPRECATION")
-            val analysis = ImageAnalysis.Builder()
-                .setTargetResolution(android.util.Size(640, 480))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                .build()
+            overlayView.post { overlayView.setPoses(poses, bmpW, bmpH) }
 
-            analysis.setAnalyzer(executor) { proxy ->
-                if (mode != Mode.CAMERA || isProcessing || estimator == null) {
-                    proxy.close()
-                    return@setAnalyzer
-                }
-                isProcessing = true
-
-                val bmp = proxyToBitmap(proxy)
-                proxy.close()
-
-                val (poses, _) = estimator!!.detect(bmp)
-                val bmpW = bmp.width
-                val bmpH = bmp.height
-                bmp.recycle()
-
-                overlayView.post { overlayView.setPoses(poses, bmpW, bmpH) }
-
-                frameCount++
-                val now = System.currentTimeMillis()
-                if (now - lastFpsTime >= 1000) {
-                    val fps = frameCount
-                    frameCount = 0
-                    lastFpsTime = now
-                    fpsText.post { fpsText.text = "$fps FPS | ${poses.size} persons" }
-                }
-
-                isProcessing = false
-            }
-
-            provider.unbindAll()
-            provider.bindToLifecycle(
-                this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis,
-            )
-        }, ContextCompat.getMainExecutor(this))
+            val fps = pipeline?.fps ?: 0
+            fpsText.post { fpsText.text = "$fps FPS | ${poses.size} persons" }
+        }.also { it.start(this) }
     }
 
     // ── Image mode ─────────────────────────────────────────────────────────
@@ -263,7 +215,7 @@ class MainActivity : ComponentActivity() {
         }
         cancelVideo = true  // stop any running video
         mode = Mode.IMAGE
-        cameraProvider?.unbindAll()
+        pipeline?.close(); pipeline = null
         previewView.visibility = View.GONE
         staticImageView.visibility = View.VISIBLE
         overlayView.fitCenter = true
@@ -355,7 +307,7 @@ class MainActivity : ComponentActivity() {
 
         mode = Mode.VIDEO
         cancelVideo = false
-        cameraProvider?.unbindAll()
+        pipeline?.close(); pipeline = null
         previewView.visibility = View.GONE
         staticImageView.visibility = View.VISIBLE
         overlayView.fitCenter = true
@@ -453,35 +405,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
-
-    private fun proxyToBitmap(proxy: ImageProxy): Bitmap {
-        val plane = proxy.planes[0]
-        val buf = plane.buffer
-        val sw = proxy.width + (plane.rowStride - plane.pixelStride * proxy.width) / plane.pixelStride
-
-        val src = Bitmap.createBitmap(sw, proxy.height, Bitmap.Config.ARGB_8888)
-        buf.rewind()
-        src.copyPixelsFromBuffer(buf)
-
-        val rot = proxy.imageInfo.rotationDegrees.toFloat()
-        if (rot == 0f && sw == proxy.width) return src
-
-        val rw = if (rot == 90f || rot == 270f) proxy.height else proxy.width
-        val rh = if (rot == 90f || rot == 270f) proxy.width else proxy.height
-        val dst = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
-        val c = Canvas(dst)
-        mat.reset()
-        mat.postRotate(rot, proxy.width / 2f, proxy.height / 2f)
-        mat.postTranslate((rw - proxy.width) / 2f, (rh - proxy.height) / 2f)
-        c.drawBitmap(src, mat, pnt)
-        src.recycle()
-        return dst
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         cancelVideo = true
+        pipeline?.close()
         executor.shutdown()
         estimator?.close()
         displayedVideoFrame?.recycle()
