@@ -113,6 +113,8 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 
 ### YOLO + DeepSORT (OSNet)
 
+<img src="https://github.com/user-attachments/assets/d4cacaa1-da30-49f4-8e63-9789ee5bd1a7" width="300">
+
 | | |
 |---|---|
 | **Module** | [`yolo-tracking/`](yolo-tracking/) |
@@ -124,6 +126,13 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 Real-time multi-object tracking with appearance-based re-identification. YOLO11n detects objects, OSNet x0.25 extracts 512-dim appearance embeddings from each detection crop, and DeepSORT maintains track identities using cosine similarity on embeddings gated by Mahalanobis distance from Kalman-predicted positions.
 
 Both ML models run on **CompiledModel GPU**. The tracker logic (Kalman filter, Hungarian algorithm, cascade matching) runs in Kotlin on CPU.
+
+| Model | Download Link | Size | Input | Output | Original Project | License |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- |
+| YOLO11n | [yolo11n.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/yolo11n.tflite) | 10 MB | Float32 [1, 384, 384, 3] NHWC | Float32 [1, 84, 3024] | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) | AGPL-3.0 |
+| OSNet x0.25 | [osnet_x0_25.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v3/osnet_x0_25.tflite) | 867 KB | Float32 [1, 3, 256, 128] NCHW | Float32 [1, 512] | [KaiyangZhou/deep-person-reid](https://github.com/KaiyangZhou/deep-person-reid) | [MIT](https://github.com/KaiyangZhou/deep-person-reid/blob/master/LICENSE) |
+
+**Preprocessing**: YOLO — RGB 0-1. OSNet — RGB with ImageNet normalization (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), NCHW layout.
 
 **Conversion**: `yolo-tracking/scripts/convert_osnet.py` — uses `litert_gpu_toolkit.convert_for_gpu()`. OSNet is a pure CNN, no special GPU patches needed.
 
