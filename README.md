@@ -54,6 +54,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Monocular Geometry Estimation**](#monocular-geometry-estimation)
   - [MoGe-2 ViT-S](#moge-2-vit-s)
+  - [Depth Anything 3 ViT-S (Small)](#depth-anything-3-vit-s-small)
 
 # How to use
 
@@ -391,6 +392,24 @@ Converted via **litert-torch** with five GPU-compat patches: DINOv2 attention re
 **Sample app**: [moge/](moge/) — Image picker + four visualization modes: normal map (RGB), depth heatmap (turbo colormap), 3D point cloud (touch-rotatable OpenGL ES), and geometry info overlay.
 
 **Original project**: [microsoft/MoGe](https://github.com/microsoft/MoGe) | [MIT](https://github.com/microsoft/MoGe/blob/main/LICENSE)
+
+### Depth Anything 3 ViT-S (Small)
+
+Depth Anything 3 (ByteDance-Seed, 2025): monocular depth from a single RGB image. DINOv2 ViT-S + RoPE backbone with a DPT/DualDPT depth head.
+
+Converted via **litert-torch** with nine GPU-compat patches: RoPE data-dependent int → constant, fused-QKV → 4D attention, **LayerScale folded into the preceding Linear** (the LayerScale MUL otherwise mis-lays-out the token dim on the GPU delegate), baked bicubic `pos_embed`, **ConvTranspose2d → zero-stuff + Conv2d** (exact, since Pixel 8a rejects `TRANSPOSE_CONV`), `align_corners`→False, camera-token in-place assign → `cat` (avoids `SELECT_V2`). Processed at **native aspect** — a square letterbox drops fidelity from corr 0.9994 to 0.977 (padding leaks through global attention).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [da3_small_gpu_fp16.tflite](https://huggingface.co/mlboydaisuke/Depth-Anything-3-Small-LiteRT) | 55 MB | Float32 [1, 3, 896, 504] NCHW | Depth [1, 1, 896, 504] | [ByteDance-Seed/Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) | [Apache-2.0](https://github.com/ByteDance-Seed/Depth-Anything-3) | [da3/](da3/) |
+
+**Preprocessing**: resize to 504×896 (W×H), divide by 255, ImageNet mean/std `[0.485,0.456,0.406]`/`[0.229,0.224,0.225]`, NCHW planar.
+
+**Fidelity**: Pearson corr **0.99948** vs the official PyTorch DA3-Small pipeline. FP16 is not a factor (FP32≡FP16); the residual ~0.05% is the DPT-head `align_corners=True→False` change, forced because the GPU delegate bans `align_corners=True` resize — an irreducible mobile-GPU constraint. Pixel 8a GPU ~1.8 s/image.
+
+**Sample app**: [da3/](da3/) — loads a bundled image, runs CompiledModel GPU inference, shows input | depth.
+
+**Original project**: [ByteDance-Seed/Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) | Apache-2.0
 
 # GPU Compatibility Notes
 
