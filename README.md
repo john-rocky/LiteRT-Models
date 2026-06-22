@@ -56,6 +56,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [MoGe-2 ViT-S](#moge-2-vit-s)
   - [Depth Anything 3 ViT-S (Small)](#depth-anything-3-vit-s-small)
 
+- [**Text Generation (LLM)**](#text-generation-llm)
+  - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
+
 # How to use
 
 1. Download the `.tflite` model from the GitHub Release link below.
@@ -436,6 +439,22 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 - **`scaled_dot_product_attention`** → Set `use_sdpa = False` to use manual matmul+softmax attention
 
 > **Note**: litert-torch models use NCHW layout (PyTorch native). Large models (>150 MB) should be loaded from `filesDir` via `CompiledModel.create(path, options, null)` instead of APK assets.
+
+# Text Generation (LLM)
+
+### Falcon3-3B-Instruct
+
+[tiiuae/Falcon3-3B-Instruct](https://huggingface.co/tiiuae/Falcon3-3B-Instruct) converted to **LiteRT-LM** (`.litertlm`) for fully on-device chat. Dense `LlamaForCausalLM`, so it rides the official converter/runtime with no custom code. **int4 (blockwise-128) at parity with bf16** — GSM8K (n=100, greedy): LiteRT int4 **77%** ≈ MLX 4-bit 76% ≈ bf16 75%. Runs on **iPhone 17 Pro at ~27 tok/s** (Metal GPU).
+
+| Type | Model | Size | Quant | Quality (GSM8K) | Source | License |
+|---|---|---|---|---|---|---|
+| LLM | [model.litertlm](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT/resolve/main/model.litertlm) | ~1.7 GB | int4 blockwise-128 + int8 emb | 77% (≈ bf16 75%) | [tiiuae/Falcon3-3B-Instruct](https://huggingface.co/tiiuae/Falcon3-3B-Instruct) | [Falcon LLM License](https://falconllm.tii.ae/falcon-terms-and-conditions.html) |
+
+**Run it**: via the [LiteRT-LM Swift sample app](https://github.com/john-rocky/swift-litert-lm) (model picker → *Falcon3-3B Instruct*), or any [LiteRT-LM](https://github.com/google-ai-edge/litert-lm) runtime. The `.litertlm` bundles the tokenizer and prompt template — no extra files. (This is an LLM `.litertlm` run by the LiteRT-LM runtime, not the `.tflite` / `CompiledModel` path above.)
+
+**HF model**: [mlboydaisuke/Falcon3-3B-Instruct-LiteRT](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT)
+
+**Original project**: [tiiuae/Falcon3-3B-Instruct](https://huggingface.co/tiiuae/Falcon3-3B-Instruct) | [Falcon LLM License](https://falconllm.tii.ae/falcon-terms-and-conditions.html)
 
 # License
 
