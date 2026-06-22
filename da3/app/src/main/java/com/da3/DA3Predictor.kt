@@ -10,7 +10,6 @@ import android.util.Log
 import com.google.ai.edge.litert.Accelerator
 import com.google.ai.edge.litert.CompiledModel
 import com.google.ai.edge.litert.TensorBuffer
-import kotlin.math.abs
 
 /**
  * Depth Anything 3 (DA3-SMALL mono) depth predictor: single CompiledModel GPU inference.
@@ -99,25 +98,59 @@ data class DA3Result(
     val cropL: Int, val cropT: Int, val cropR: Int, val cropB: Int,
     val inferenceMs: Long, val accelerator: String
 ) {
-    /** Turbo-colormap depth, cropped to the content region (original aspect), normalized over content only. */
+    /**
+     * Depth visualization matching the official DA3 `visualize.py`:
+     * disparity = 1/depth → robust 2nd/98th-percentile normalization → invert → **Spectral** colormap
+     * (256-entry LUT). Cropped to the content region. The percentile clip (not full min-max) is what keeps it
+     * clean instead of washed out by outliers. (For plain grayscale: `n = (disp-lo)/range; gray = n*255`.)
+     */
     fun depthBitmap(): Bitmap {
         val cw = (cropR - cropL).coerceAtLeast(1)
         val ch = (cropB - cropT).coerceAtLeast(1)
-        var mn = Float.MAX_VALUE; var mx = -Float.MAX_VALUE
+        val disp = FloatArray(cw * ch)
+        var k = 0
         for (y in cropT until cropB) for (x in cropL until cropR) {
-            val d = depth[y * width + x]; if (d < mn) mn = d; if (d > mx) mx = d
+            val d = depth[y * width + x]
+            disp[k++] = if (d > 0f) 1f / d else 0f          // 1/depth = disparity (near = large)
         }
-        val range = if (mx > mn) mx - mn else 1f
+        val sorted = disp.copyOf(); sorted.sort()           // 2nd / 98th percentile
+        val lo = sorted[(0.02f * (sorted.size - 1)).toInt()]
+        val hi = sorted[(0.98f * (sorted.size - 1)).toInt()]
+        val range = if (hi > lo) hi - lo else 1e-6f
         val px = IntArray(cw * ch)
-        for (y in 0 until ch) for (x in 0 until cw) {
-            val tt = ((depth[(y + cropT) * width + (x + cropL)] - mn) / range).coerceIn(0f, 1f)
-            val r = (255 * (1.5f - abs(4 * tt - 3)).coerceIn(0f, 1f)).toInt()
-            val g = (255 * (1.5f - abs(4 * tt - 2)).coerceIn(0f, 1f)).toInt()
-            val b = (255 * (1.5f - abs(4 * tt - 1)).coerceIn(0f, 1f)).toInt()
-            px[y * cw + x] = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
+        for (i in disp.indices) {
+            val n = 1f - ((disp[i] - lo) / range).coerceIn(0f, 1f)   // normalize + invert (official)
+            px[i] = SPECTRAL[(n * 255f).toInt().coerceIn(0, 255)]    // Spectral colormap (matches DA3)
         }
         return Bitmap.createBitmap(cw, ch, Bitmap.Config.ARGB_8888).also {
             it.setPixels(px, 0, cw, 0, 0, cw, ch)
+        }
+    }
+
+    companion object {
+        // matplotlib "Spectral" colormap, 256 RGB entries (the DA3 default depth colormap)
+        private const val LUT =
+            "9e0142a00343a20643a40844a70b44a90d45ab0f45ad1246af1446b11747b41947b61b48b81e48ba2049bc2249be254a" +
+            "c1274ac32a4bc52c4bc72e4cc9314ccb334dcd364dd0384ed23a4ed43d4fd63f4fd7414ed8434ed9444dda464ddc484c" +
+            "dd4a4cde4c4bdf4e4be1504be2514ae3534ae45549e55749e75948e85b48e95c47ea5e47eb6046ed6246ee6445ef6645" +
+            "f06744f26944f36b43f46d43f47044f57245f57547f57748f67a49f67c4af67f4bf7814cf7844ef8864ff88950f88c51" +
+            "f98e52f99153f99355fa9656fa9857fa9b58fb9d59fba05bfba35cfca55dfca85efcaa5ffdad60fdaf62fdb163fdb365" +
+            "fdb567fdb768fdb96afdbb6cfdbd6dfdbf6ffdc171fdc372fdc574fdc776fec877feca79fecc7bfece7cfed07efed27f" +
+            "fed481fed683fed884feda86fedc88fede89fee08bfee18dfee28ffee491fee593fee695fee797fee999feea9bfeeb9d" +
+            "feec9ffeeda1feefa3fff0a6fff1a8fff2aafff3acfff5aefff6b0fff7b2fff8b4fffab6fffbb8fffcbafffdbcfffebe" +
+            "ffffbefefebdfdfebbfcfebafbfdb8fafdb7f9fcb5f8fcb4f7fcb2f6fbb0f5fbaff4faadf3faacf2faaaf1f9a9f0f9a7" +
+            "eff9a6eef8a4edf8a3ecf7a1ebf7a0eaf79ee9f69de8f69be7f59ae6f598e4f498e1f399dff299ddf19adaf09ad8ef9b" +
+            "d6ee9bd3ed9cd1ed9ccfec9dcdeb9dcaea9ec8e99ec6e89fc3e79fc1e6a0bfe5a0bce4a0bae3a1b8e2a1b5e1a2b3e0a2" +
+            "b1dfa3aedea3acdda4aadca4a7dba4a4daa4a2d9a49fd8a49cd7a499d6a497d5a494d4a491d3a48fd2a48cd1a489d0a4" +
+            "86cfa584cea581cda57ecca57ccaa579c9a576c8a574c7a571c6a56ec5a56bc4a569c3a566c2a564c0a662bda760bba8" +
+            "5eb9a95cb7aa5ab4ab58b2ac56b0ad54aead52abae50a9af4ea7b04ba4b149a2b247a0b3459eb4439bb54199b63f97b7" +
+            "3d95b83b92b93990ba378ebb358bbc3389bd3387bc3585bb3682ba3880b93a7eb83b7cb73d79b63f77b54175b44273b3" +
+            "4471b2466eb1486cb0496aaf4b68ae4d65ad4e63ac5061aa525fa9545ca8555aa75758a65956a55b53a45c51a35e4fa2"
+        private val SPECTRAL = IntArray(256) { i ->
+            val r = LUT.substring(i * 6, i * 6 + 2).toInt(16)
+            val g = LUT.substring(i * 6 + 2, i * 6 + 4).toInt(16)
+            val b = LUT.substring(i * 6 + 4, i * 6 + 6).toInt(16)
+            (0xFF shl 24) or (r shl 16) or (g shl 8) or b
         }
     }
 }
