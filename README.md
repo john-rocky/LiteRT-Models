@@ -447,6 +447,8 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 
 # Text Generation (LLM)
 
+> **Conversion recipes** (official `litert-torch` `export_hf`, no fork — blockwise int4 + OCTAV, `externalize_embedder`, simple chat templates): [`text-generation/`](text-generation/).
+
 ### Falcon3-3B-Instruct
 
 [tiiuae/Falcon3-3B-Instruct](https://huggingface.co/tiiuae/Falcon3-3B-Instruct) converted to **LiteRT-LM** (`.litertlm`) for fully on-device chat. Dense `LlamaForCausalLM`, so it rides the official converter/runtime with no custom code. **int4 (blockwise-128) at parity with bf16** — GSM8K (n=100, greedy): LiteRT int4 **77%** ≈ MLX 4-bit 76% ≈ bf16 75%. Runs on **iPhone 17 Pro at ~27 tok/s** (Metal GPU).

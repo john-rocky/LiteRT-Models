@@ -1,0 +1,13 @@
+{#- SmolLM3 simple-structured NO-THINK template (fast direct instruct, fallback if
+    think-mode rambles on device). The assistant prefix pre-fills an empty
+    <think>\n\n</think> block — exactly how the official template disables reasoning
+    in /no_think mode — so the model answers directly and never opens a think block. -#}
+{%- if messages[0]['role'] != 'system' -%}
+{{- '<|im_start|>system\n## Metadata\n\nKnowledge Cutoff Date: June 2025\nReasoning Mode: /no_think\n\n## Custom Instructions\n\nYou are a helpful AI assistant named SmolLM, trained by Hugging Face.<|im_end|>\n' -}}
+{%- endif -%}
+{%- for message in messages -%}
+{{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' -}}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+{{- '<|im_start|>assistant\n<think>\n\n</think>\n' -}}
+{%- endif -%}
