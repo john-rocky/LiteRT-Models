@@ -58,7 +58,6 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Text Generation (LLM)**](#text-generation-llm)
   - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
-  - [Qwen3-1.7B](#qwen3-17b)
 
 # How to use
 
@@ -456,20 +455,6 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 **HF model**: [mlboydaisuke/Falcon3-3B-Instruct-LiteRT](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT)
 
 **Original project**: [tiiuae/Falcon3-3B-Instruct](https://huggingface.co/tiiuae/Falcon3-3B-Instruct) | [Falcon LLM License](https://falconllm.tii.ae/falcon-terms-and-conditions.html)
-
-### Qwen3-1.7B
-
-[Qwen/Qwen3-1.7B](https://huggingface.co/Qwen/Qwen3-1.7B) converted to **LiteRT-LM** (`.litertlm`) for fully on-device chat. A **reasoning** model (emits `<think>…</think>`). **int4 (blockwise-32 + OCTAV) at parity with bf16** — GSM8K (n=100, greedy): LiteRT int4 **72%** ≈ MLX 4-bit 73% ≈ bf16 72%. Note: this 1.7B needs **block size 32** — block128 drops it to ~56% (block size is per-model).
-
-| Type | Model | Size | Quant | Quality (GSM8K) | Source | License |
-|---|---|---|---|---|---|---|
-| LLM | [model.litertlm](https://huggingface.co/mlboydaisuke/Qwen3-1.7B-LiteRT/resolve/main/model.litertlm) | ~1.6 GB | int4 blockwise-32 + OCTAV + int8 emb | 72% (≈ bf16 72%) | [Qwen/Qwen3-1.7B](https://huggingface.co/Qwen/Qwen3-1.7B) | [Apache-2.0](https://huggingface.co/Qwen/Qwen3-1.7B) |
-
-**Run it**: via the [LiteRT-LM Swift sample app](https://github.com/john-rocky/swift-litert-lm), or any [LiteRT-LM](https://github.com/google-ai-edge/litert-lm) runtime. Reproducible with stock litert-torch + the included `recipe.json`.
-
-**HF model**: [mlboydaisuke/Qwen3-1.7B-LiteRT](https://huggingface.co/mlboydaisuke/Qwen3-1.7B-LiteRT)
-
-**Original project**: [Qwen/Qwen3-1.7B](https://huggingface.co/Qwen/Qwen3-1.7B) | [Apache-2.0](https://huggingface.co/Qwen/Qwen3-1.7B)
 
 # License
 
