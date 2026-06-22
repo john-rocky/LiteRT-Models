@@ -59,6 +59,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Text Generation (LLM)**](#text-generation-llm)
   - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
   - [Llama-3.2-3B-Instruct](#llama-32-3b-instruct)
+  - [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512)
+  - [SmolLM3-3B](#smollm3-3b)
 
 # How to use
 
@@ -474,6 +476,38 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 **HF model**: [mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT)
 
 **Original project**: [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) | [Llama 3.2 Community License](https://www.llama.com/llama3_2/license/)
+
+### Ministral-3-3B-Instruct-2512
+
+[mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) converted to **LiteRT-LM** (`.litertlm`) for fully on-device chat. Dense `Ministral3ForCausalLM` (YaRN RoPE); the source is multimodal, so only the text decoder is exported (vision tower dropped) — it then rides the existing converter/runtime with no custom code. **int4 (blockwise-32 + OCTAV) at parity** — GSM8K (n=100, greedy): LiteRT int4 **85%** (−4 pt vs bf16 89%). Runs on **iPhone 17 Pro at ~17.6 tok/s** (Metal GPU, loads in 7.6 s). Apache-2.0.
+
+| Type | Model | Size | Quant | Quality (GSM8K) | Source | License |
+|---|---|---|---|---|---|---|
+| LLM | [model.litertlm](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT/resolve/main/model.litertlm) | ~2.3 GB | int4 blockwise-32 + OCTAV + int8 emb (externalized) | 85% (−4 pt, bf16 89%) | [mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) | Apache-2.0 |
+
+**Run it**: via the [LiteRT-LM Swift sample app](https://github.com/john-rocky/swift-litert-lm) (model picker → *Ministral-3-3B Instruct*), or any [LiteRT-LM](https://github.com/google-ai-edge/litert-lm) runtime. The `.litertlm` bundles the tokenizer and prompt template (Mistral `[INST]…[/INST]`, EOS `</s>` — not ChatML) — no extra files.
+
+**iOS note**: exported with `externalize_embedder=True` so the embedding is its own section — the text decoder's single ~2.55 GiB weights section otherwise exceeds the iOS ~2 GiB `mmap` limit. Drops the main section to ~1.8 GiB (and dedups the tied embedding, 2.74 → 2.34 GB).
+
+**HF model**: [mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT)
+
+**Original project**: [mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) | Apache-2.0
+
+### SmolLM3-3B
+
+[HuggingFaceTB/SmolLM3-3B](https://huggingface.co/HuggingFaceTB/SmolLM3-3B) converted to **LiteRT-LM** (`.litertlm`) for fully on-device chat. Dense `SmolLM3ForCausalLM` (GQA + **NoPE**, rotary disabled every 4th layer) — the per-layer NoPE lowers to generic ops through the official converter with no custom code. **int4 (blockwise-32 + OCTAV) — the tightest parity of the four** — GSM8K (n=100, greedy): LiteRT int4 **81%** == bf16 **81%** (0.0-pt drop). Runs on **iPhone 17 Pro at ~22.5 tok/s** (Metal GPU, loads in 7.7 s). Apache-2.0.
+
+| Type | Model | Size | Quant | Quality (GSM8K) | Source | License |
+|---|---|---|---|---|---|---|
+| LLM | [model.litertlm](https://huggingface.co/mlboydaisuke/SmolLM3-3B-LiteRT/resolve/main/model.litertlm) | ~1.9 GB | int4 blockwise-32 + OCTAV + int8 emb (externalized) | 81% (== bf16 81%, 0-pt) | [HuggingFaceTB/SmolLM3-3B](https://huggingface.co/HuggingFaceTB/SmolLM3-3B) | Apache-2.0 |
+
+**Run it**: via the [LiteRT-LM Swift sample app](https://github.com/john-rocky/swift-litert-lm) (model picker → *SmolLM3-3B*), or any [LiteRT-LM](https://github.com/google-ai-edge/litert-lm) runtime. The `.litertlm` bundles the tokenizer and prompt template (bare ChatML — SmolLM3 emits a short `<think>` block then the answer) — no extra files.
+
+**iOS note**: exported with `externalize_embedder=True` (drops the main weights section to ~1.61 GiB, under the iOS ~2 GiB single-section `mmap` limit).
+
+**HF model**: [mlboydaisuke/SmolLM3-3B-LiteRT](https://huggingface.co/mlboydaisuke/SmolLM3-3B-LiteRT)
+
+**Original project**: [HuggingFaceTB/SmolLM3-3B](https://huggingface.co/HuggingFaceTB/SmolLM3-3B) | Apache-2.0
 
 # License
 
