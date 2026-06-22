@@ -13,14 +13,17 @@ On-device **monocular depth** with [Depth Anything 3 — Small](https://huggingf
 1. Download the model from
    [`mlboydaisuke/Depth-Anything-3-Small-LiteRT`](https://huggingface.co/mlboydaisuke/Depth-Anything-3-Small-LiteRT):
    - `da3_small_gpu_fp16.tflite` (55 MB) → put it in `app/src/main/assets/`
-2. Add a test image `app/src/main/assets/test.jpg` (portrait works best — the model is built for ~9:16).
-3. Open this directory in Android Studio and run (or `./gradlew :app:installDebug`).
+2. Open this directory in Android Studio and run (or `./gradlew :app:installDebug`).
+3. Tap **Select image** to pick any photo from the library (portrait works best — the model is built for
+   ~9:16; other aspects are letterboxed and the depth is cropped back, so they work but at lower effective
+   resolution). Inference is ~1.8 s/image on Pixel 8a GPU — on-demand, not live (DA3-Small ViT is too heavy
+   for real-time on a phone GPU; ~3 fps even at 448).
 
 ## Architecture
 
 | File | Description |
 |------|-------------|
-| `app/src/main/java/com/da3/MainActivity.kt` | loads the bundled image, runs inference, shows input \| depth |
+| `app/src/main/java/com/da3/MainActivity.kt` | photo-library picker (EXIF-aware) → inference → input \| depth |
 | `app/src/main/java/com/da3/DA3Predictor.kt` | `CompiledModel` GPU inference + ImageNet preprocessing + turbo colormap |
 | `scripts/convert_da3.py` | the GPU-clean conversion (needs the upstream DA3 source — see header) |
 
