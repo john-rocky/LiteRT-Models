@@ -395,6 +395,8 @@ Converted via **litert-torch** with five GPU-compat patches: DINOv2 attention re
 
 ### Depth Anything 3 ViT-S (Small)
 
+![Depth Anything 3 Small — input | depth, on-device LiteRT GPU](https://huggingface.co/mlboydaisuke/Depth-Anything-3-Small-LiteRT/resolve/main/samples/avenue.png)
+
 Depth Anything 3 (ByteDance-Seed, 2025): monocular depth from a single RGB image. DINOv2 ViT-S + RoPE backbone with a DPT/DualDPT depth head.
 
 Converted via **litert-torch** with nine GPU-compat patches: RoPE data-dependent int → constant, fused-QKV → 4D attention, **LayerScale folded into the preceding Linear** (the LayerScale MUL otherwise mis-lays-out the token dim on the GPU delegate), baked bicubic `pos_embed`, **ConvTranspose2d → zero-stuff + Conv2d** (exact, since Pixel 8a rejects `TRANSPOSE_CONV`), `align_corners`→False, camera-token in-place assign → `cat` (avoids `SELECT_V2`). Processed at **native aspect** — a square letterbox drops fidelity from corr 0.9994 to 0.977 (padding leaks through global attention).
