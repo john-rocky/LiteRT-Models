@@ -58,6 +58,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Text Generation (LLM)**](#text-generation-llm)
   - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
+  - [Llama-3.2-3B-Instruct](#llama-32-3b-instruct)
 
 # How to use
 
@@ -455,6 +456,22 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 **HF model**: [mlboydaisuke/Falcon3-3B-Instruct-LiteRT](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT)
 
 **Original project**: [tiiuae/Falcon3-3B-Instruct](https://huggingface.co/tiiuae/Falcon3-3B-Instruct) | [Falcon LLM License](https://falconllm.tii.ae/falcon-terms-and-conditions.html)
+
+### Llama-3.2-3B-Instruct
+
+Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) converted to **LiteRT-LM** (`.litertlm`) for fully on-device chat. Dense `LlamaForCausalLM`, converted with the **official** litert-torch — no custom code. **int4 (blockwise-32) at parity** — GSM8K (n=100, greedy): LiteRT int4 **73%** == MLX 4-bit 73% (−5 pt vs bf16 78%). Runs on **iPhone 17 Pro at ~18.5 tok/s** (Metal GPU, loads in 8.8 s).
+
+| Type | Model | Size | Quant | Quality (GSM8K) | Source | License |
+|---|---|---|---|---|---|---|
+| LLM | [model.litertlm](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT/resolve/main/model.litertlm) | ~2.1 GB | int4 blockwise-32 + int8 emb (externalized) | 73% (== MLX-4bit, bf16 78%) | [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) | [Llama 3.2 Community License](https://www.llama.com/llama3_2/license/) |
+
+**Run it**: via the [LiteRT-LM Swift sample app](https://github.com/john-rocky/swift-litert-lm) (model picker → *Llama-3.2-3B Instruct*), or any [LiteRT-LM](https://github.com/google-ai-edge/litert-lm) runtime. The `.litertlm` bundles the tokenizer and prompt template — no extra files.
+
+**iOS note**: exported with `externalize_embedder=True` so the embedding is its own section — a 28-layer 3B's single weights section otherwise exceeds the iOS ~2 GiB `mmap` limit (engine-create fails). This is the generic equivalent of Gemma's per-layer-embedding mmap; it also dedups the tied embedding (2.48 GB → 2.1 GB). Desktop/Mac load the un-split model fine.
+
+**HF model**: [mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT)
+
+**Original project**: [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) | [Llama 3.2 Community License](https://www.llama.com/llama3_2/license/)
 
 # License
 
