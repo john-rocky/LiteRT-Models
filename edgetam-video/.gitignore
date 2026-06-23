@@ -1,0 +1,24 @@
+# Build outputs
+build/
+.gradle/
+local.properties
+.idea/
+
+# Gradle wrapper binary / scripts (not committed; use your local gradle)
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+
+# Model files (downloaded / converted, never committed)
+*.tflite
+*.onnx
+*.pt
+*.pth
+*.bin
+app/src/main/assets/*.tflite
+app/src/main/assets/*.bin
+
+# Python conversion artifacts
+scripts/output/
+scripts/__pycache__/
+scripts/.cache/

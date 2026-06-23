@@ -196,8 +196,8 @@ Converted via **litert-torch** (MobileSAM-style split): image **encoder** (image
 
 | Model | Download Link | Size | Input | Output | API |
 | ----- | ------------- | ---- | ----- | ------ | --- |
-| Encoder | [edgetam_encoder.tflite](edgetam/app/src/main/assets/edgetam_encoder.tflite) | 10 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 4194304] (ie \| fpn0 \| fpn1) | CompiledModel GPU |
-| Decoder | [edgetam_decoder.tflite](edgetam/app/src/main/assets/edgetam_decoder.tflite) | 17 MB | Float32 [1, 4194816] (ie \| sparse \| fpn0 \| fpn1) | Masks [1, 3, 256, 256] | CompiledModel GPU |
+| Encoder | [edgetam_encoder.tflite](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT) | 10 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 4194304] (ie \| fpn0 \| fpn1) | CompiledModel GPU |
+| Decoder | [edgetam_decoder.tflite](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT) | 17 MB | Float32 [1, 4194816] (ie \| sparse \| fpn0 \| fpn1) | Masks [1, 3, 256, 256] | CompiledModel GPU |
 
 **Preprocessing**: resize to 1024×1024, divide by 255, ImageNet mean/std `[0.485,0.456,0.406]`/`[0.229,0.224,0.225]`, NCHW planar.
 
@@ -215,10 +215,10 @@ Four stateless per-frame graphs run on the GPU; the rolling memory bank (7 spati
 
 | Graph | Role | Size (FP16) |
 | ----- | ---- | ----------- |
-| [encode](edgetam-video/app/src/main/assets/encode.tflite)   | frame → image features + FPN                          | 10 MB |
-| [memcond](edgetam-video/app/src/main/assets/memcond.tflite) | memory attention over the fixed-7 bank (masked) → conditioned features | 26 MB |
-| [decode](edgetam-video/app/src/main/assets/decode.tflite)   | mask decoder → 3 masks + IoU + object pointers + score | 18 MB |
-| [memorize](edgetam-video/app/src/main/assets/memorize.tflite) | memory encoder + 2D Spatial Perceiver → new memory | 5 MB |
+| [encode.tflite](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT)   | frame → image features + FPN                          | 10 MB |
+| [memcond.tflite](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT) | memory attention over the fixed-7 bank (masked) → conditioned features | 26 MB |
+| [decode.tflite](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT)   | mask decoder → 3 masks + IoU + object pointers + score | 18 MB |
+| [memorize.tflite](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT) | memory encoder + 2D Spatial Perceiver → new memory | 5 MB |
 
 **Conversion** (litert-torch): the memory attention's **RoPE** (5D `rotate_pairwise`) is rewritten as a baked even/odd projection permutation + `rotate_half` with constant cos/sin; the cross-attention temporal/spatial 5D regroup is replaced by a constant masked `cos_k`; the 2D Spatial Perceiver's **Swin-style window partition (6D)** is replaced by a **grouped one-hot `Conv2d` space-to-depth** (stays 4D — the trick that lets window attention run on CompiledModel GPU at all); and several on-device-only fixes (constant-input `MEAN`/`DIV`/`SELECT` are rejected by ML Drift: latents tainted to runtime, single-key softmax skipped, sine position-encodings baked). See [GPU Compatibility Notes](#gpu-compatibility-notes) and [edgetam-video/scripts/convert_edgetam_video.py](edgetam-video/scripts/convert_edgetam_video.py).
 

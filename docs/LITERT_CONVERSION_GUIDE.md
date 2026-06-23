@@ -101,9 +101,13 @@ Common ops that prevent CompiledModel GPU:
 
 ### 4D Tensor Limit (Critical)
 
-CompiledModel GPU (ML Drift) only supports **4D tensors (BHWC)**. Any intermediate tensor with 5+ dimensions causes compilation failure. This is the fundamental reason why **Swin Transformer, window attention, and similar architectures cannot run on CompiledModel GPU** — window partition inherently requires 6D reshapes.
+CompiledModel GPU (ML Drift) only supports **4D tensors (BHWC)**. Any intermediate tensor with 5+ dimensions causes compilation failure. Window partition (Swin, 2D perceivers) is the classic offender — `view(B, Hg, w, Wg, w, C)` is 6D.
 
 Standard ViT (global attention) works because Q/K/V are always 4D: `(B, heads, tokens, dim)`.
+
+**Window partition CAN be made 4D (EdgeTAM 2D Spatial Perceiver).** A non-overlapping window partition `(B,H,W,C) → (B·nWin, w, w, C)` is exactly a **space-to-depth**, which can be done with a single **grouped one-hot `Conv2d`** (stride `w`, `groups=C`, weight `[c·w²+i·w+j, 0, i, j] = 1`) followed by 4D `view`/`permute`/`reshape` (drop `B=1`). This stays ≤4D and is GPU-clean. Naive alternatives fail: a `view(...,−1,2)`/reshape route produces the 6D tensor; `F.pixel_unshuffle` also lowers to 6D; strided slicing `x[:, :, i::w, j::w]` lowers to `GATHER_ND` (banned). The grouped-conv space-to-depth is the one that works — so window attention with a *fixed* window size is **not** fundamentally GPU-incompatible (only dynamic/variable partitions are).
+
+**On-device-only: ops on constant-only inputs are rejected.** Beyond the desktop op-blocklist, ML Drift's compiler rejects `MEAN` / `DIV` / `SELECT` (and similar) when **all their inputs are constants** (the desktop GPU_BAD-name check passes; the on-device *compile* fails with e.g. `MEAN: Expected 1 const input tensor(s), but node has 2 const input(s)`). Seen in EdgeTAM's perceiver: (a) `LayerNorm` applied to a constant `latents` parameter → `MEAN` over a const → **taint the constant to runtime** with `+ 1e-9 * x.mean()` (non-folding, numerically negligible); (b) softmax over a single-element sequence (1 token attending to itself) → `exp(0)/exp(0)` = `DIV` of a tensor by itself → **special-case `seq_len==1`** (the attention weight is identically 1.0, so the output is just the value); (c) a runtime `sine` position-encoding that emits `GATHER_ND`/>4D → **bake it to a constant** for the fixed feature size.
 
 ## Model-Specific Notes
 
