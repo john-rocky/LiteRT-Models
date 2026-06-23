@@ -18,3 +18,6 @@ scripts/output/
 app/src/main/assets/voices/
 app/src/main/files/
 *.onnx
+
+# Neural G2P LiteRT model (large; from scripts/convert_dp_g2p_litert.py)
+app/src/main/assets/*.tflite

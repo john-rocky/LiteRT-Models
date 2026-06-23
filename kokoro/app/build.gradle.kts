@@ -36,7 +36,7 @@ android {
     }
 
     androidResources {
-        noCompress += listOf("onnx", "bin", "json", "gz", "txt")
+        noCompress += listOf("onnx", "tflite", "bin", "json", "gz", "txt")
     }
 
     packaging {
@@ -53,6 +53,9 @@ android {
 dependencies {
     // ONNX Runtime — Kokoro StyleTTS2 (single graph)
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.24.3")
+
+    // LiteRT — neural English G2P (DeepPhonemizer forward transformer, CPU)
+    implementation("com.google.ai.edge.litert:litert:2.1.3")
 
     // Japanese morphological analyzer for runtime phonemization
     implementation("com.atilika.kuromoji:kuromoji-ipadic:0.9.0")

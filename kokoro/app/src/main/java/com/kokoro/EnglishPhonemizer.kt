@@ -6,21 +6,26 @@ import android.util.Log
 /**
  * English text → Kokoro vocab IDs via CMU Pronouncing Dictionary + ARPABET → Misaki IPA mapping.
  *
- * Quality note: this is a simple lookup-only G2P with NO NLP context (no
- * function-word reduction, no part-of-speech disambiguation). The resulting
- * phoneme sequence will differ from misaki's output for the same text but
- * will still be intelligible since Kokoro generalizes from training data.
+ * Pipeline for robust free-text input:
+ *   1. [EnglishTextNormalizer] expands numbers / currency / symbols to words.
+ *   2. In-dictionary words use CMU (exact, with stress).
+ *   3. Out-of-dictionary words fall back to the neural [NeuralG2p] (DeepPhonemizer,
+ *      MIT) instead of being dropped — so names, brands and new words still speak.
  *
- * OOV (out-of-vocabulary) words are dropped silently and logged.
+ * Quality note: lookup has NO NLP context (no function-word reduction or POS
+ * disambiguation), and the neural fallback is stress-less, so output differs from
+ * misaki's, but is intelligible since Kokoro generalizes from training data.
  */
 class EnglishPhonemizer private constructor(
     private val cmu: Map<String, String>,
     private val vocab: Map<String, Int>,
+    private val neural: NeuralG2p?,
 ) : Phonemizer {
 
     override fun phonemize(text: String): IntArray {
         val result = ArrayList<Int>(text.length * 2)
-        val tokens = tokenize(text)
+        // Expand numbers/currency/symbols to words first so they aren't dropped.
+        val tokens = tokenize(EnglishTextNormalizer.normalize(text))
         var prevWasWord = false
 
         for (tok in tokens) {
@@ -40,11 +45,17 @@ class EnglishPhonemizer private constructor(
             prevWasWord = true
 
             val arpabet = cmu[tok.lowercase()]
-            if (arpabet == null) {
-                Log.w(TAG, "OOV: $tok")
-                continue
+            if (arpabet != null) {
+                arpabetToTokens(arpabet, result)
+            } else {
+                // Out-of-dictionary: fall back to the neural G2P (stress-less ARPABET).
+                val arpa = neural?.predict(tok)
+                if (!arpa.isNullOrEmpty()) {
+                    arpabetToTokens(arpa.joinToString(" "), result)
+                } else {
+                    Log.w(TAG, "OOV unresolved: $tok")
+                }
             }
-            arpabetToTokens(arpabet, result)
         }
         return result.toIntArray()
     }
@@ -159,8 +170,9 @@ class EnglishPhonemizer private constructor(
                     cmu[word] = phones
                 }
             }
-            Log.i(TAG, "Loaded CMU dict: ${cmu.size} entries")
-            return EnglishPhonemizer(cmu, vocab)
+            val neural = NeuralG2p.load(context)
+            Log.i(TAG, "Loaded CMU dict: ${cmu.size} entries (neural OOV G2P: ${neural != null})")
+            return EnglishPhonemizer(cmu, vocab, neural)
         }
     }
 }

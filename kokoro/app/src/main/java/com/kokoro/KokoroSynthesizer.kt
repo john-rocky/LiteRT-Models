@@ -20,9 +20,9 @@ import java.nio.LongBuffer
  *           speed    [1]              float32 — speed multiplier (1.0 = normal)
  *   Output: audio    [1, samples]     float32 — 24kHz mono waveform
  *
- * MVP: phonemes are precomputed offline (see scripts/convert_kokoro.py) and
- * shipped in assets/demo_phrases.json. eSpeak NG / open_jtalk integration
- * for runtime phonemization is phase 2.
+ * Demo phrases ship precomputed token IDs (assets/demo_phrases.json). Free-form text
+ * is phonemized at runtime: English via EnglishPhonemizer (CMU + number normalization +
+ * DeepPhonemizer neural OOV fallback), Japanese via JapanesePhonemizer (kuromoji).
  *
  * Push model + voices via adb (see scripts/install_to_device.sh).
  */

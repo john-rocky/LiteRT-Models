@@ -188,5 +188,102 @@ Converter: litert-torch. Most complex conversion in the repo — 9 patches requi
 - `nn.Upsample(scale_factor=2)` → fixed-size `F.interpolate` (dynamic RESIZE_BILINEAR rejected)
 - `padding_mode='replicate'` → `'zeros'` (×40 Conv2d layers)
 - `F.interpolate` bicubic → bilinear
+- **Global average pool `x.mean((2,3))` → two single-axis means `x.mean(3).mean(2)`** (EdgeTAM RepViT SqueezeExcite). A multi-axis `mean`/`SUM` reducing a large spatial extent (~65k elements) lowers to a single multi-axis `SUM` op that the Pixel 8a ML Drift delegate **mis-computes → silent NaN** (FP32 too, so it is not an FP16 overflow). The graph compiles and runs; only the output is garbage. Splitting into two sequential single-axis reductions is numerically identical and computes correctly. `F.avg_pool2d(x, kernel=spatial)` (→ `AVERAGE_POOL_2D`) also works; `F.adaptive_avg_pool2d(x,1)` does **not** (still a single multi-axis `SUM`).
 
-**Key lesson**: The desktop GPU compatibility checker (checking op names against a blocklist) is necessary but not sufficient. The on-device ML Drift GPU delegate imposes additional constraints: no constant-only Conv2d inputs, no TRANSPOSE_CONV, no dynamic RESIZE sizes, and FC output shape interpretation depends on surrounding ops (LayerScale MUL specifically).
+**Key lesson**: The desktop GPU compatibility checker (checking op names against a blocklist) is necessary but not sufficient. The on-device ML Drift GPU delegate imposes additional constraints: no constant-only Conv2d inputs, no TRANSPOSE_CONV, no dynamic RESIZE sizes, and FC output shape interpretation depends on surrounding ops (LayerScale MUL specifically). **There is also a "compiles + runs but silently mis-computes" class** — e.g. multi-axis reductions over large tensors returning NaN — that neither the desktop checker nor a compile/run smoke test catches. Only an on-device GPU-vs-CPU numeric comparison (CPU is the trusted reference) catches it; bisect with sub-graphs that each output an intermediate to localize the broken op.
+
+### Roboflow Soccer (YOLOv8x detect + YOLOv8x pose)
+
+Sister project: `~/Downloads/SoccerAIDemo`. Ports Roboflow's
+[Soccer AI](https://github.com/roboflow/sports/tree/main/examples/soccer) end-to-end
+to Android (player detection + 32-keypoint pitch detection + ByteTrack + SigLIP
+team classification + radar via DLT homography).
+
+Converter: **litert-torch** for both YOLOs. The Roboflow YOLOv8x weights trip the
+**same** onnx2tf channel-tracking bug as YOLO26 — failure at `model.2/m.0/Add`,
+`Dimensions must be equal, but are 160 and 80` for an imgsz=640 export. The flag
+recipe is identical to the YOLO26 Pose section above:
+
+```python
+head = yolo.model.model[-1]
+head.end2end = False
+head.export = True
+head.format = "tflite"
+```
+
+Outputs:
+- `football-player-detection.tflite` — 260 MB FP32, NCHW `[1, 3, 640, 640]` →
+  `[1, 8, 8400]` (4 bbox + 4 class scores: ball, goalkeeper, player, referee).
+- `football-pitch-detection.tflite` — 267 MB FP32, NCHW `[1, 3, 640, 640]` →
+  `[1, 101, 8400]` (4 bbox + 1 class score + 32 keypoints × 3 (x, y, vis)).
+
+Both pass `litert_gpu_toolkit` GPU compatibility check (`Status: COMPATIBLE`,
+ops: CONV_2D / MUL / LOGISTIC / ADD / SLICE / CONCATENATION / TRANSPOSE / RESHAPE /
+PAD / DELEGATE — no banned ops, no BATCH_MATMUL false alarm).
+
+**Pitch keypoint order is non-trivial**: the model emits keypoints in the order
+defined by `sports/configs/soccer.py` `labels`:
+`01..13, 15, 16, 17, 18, 20..32, 14, 19`. Indices 30 and 31 of the model output
+are vertices 13 and 18 (1-indexed: 14, 19) — easy to miss; if you skip the
+remap, the homography fits but the radar overlay collapses subtly. Fix: store
+`keypointOrderToVertex[i] = int(labels[i]) - 1` and apply it before pairing
+keypoints with `SoccerPitchConfiguration.vertices` for DLT.
+
+**Homography for the radar view**: pure-Kotlin DLT (8-parameter system, Gaussian
+elimination on the normal equations) is sufficient for drone-altitude footage.
+SVD / Hartley normalization not needed — the keypoint coord ranges and pitch
+coord ranges (cm) are similar in magnitude. RANSAC may help for very oblique
+ground-level shots.
+
+### SigLIP-Base (vision-only, for clustering / feature extraction)
+
+Same recipe as the SmolVLM SigLIP wrapper (SigmoidGELU, position embedding
+pre-computation, patch_embedding `padding=0`, manual L2 normalization), minus the
+pixel-shuffle connector. For Soccer team classification we just need the
+mean-pooled L2-normalized feature; UMAP from the Python sample is replaced with
+direct KMeans(k=2) on 768-dim embeddings (no dim-reduction needed for binary
+clustering of distinct uniforms).
+
+Converter: **litert-torch** (ViT requires it). Output: NCHW `[1, 3, 224, 224]` →
+`[1, 768]`, ~327 MB FP32. Too large for APK assets — install to app `filesDir`
+via the `install_<model>_to_device.sh` pattern used elsewhere in this repo.
+
+**Surprise that wasn't broken**: `Skipping import of cpp extensions due to
+incompatible torch version` (cpp ext requires torch >= 2.11.0; venv has 2.9.1)
+prints a warning but the pure-Python fallback path still produces a valid TFLite
+file via the SavedModel intermediate. Don't waste time chasing the warning —
+verify with a numerical sanity check (`output norm == 1.0`) and move on.
+
+### DeepPhonemizer (English G2P) — sequence model → LiteRT (free-text TTS input)
+
+A non-vision case: an on-device **grapheme-to-phoneme** model that makes free-text TTS input work
+on **LiteRT** (`scripts/convert_dp_g2p_litert.py`, used by the Kokoro sample's `NeuralG2p.kt`).
+Source: DeepPhonemizer `en_us_cmudict_forward` (**MIT**), a non-autoregressive forward Transformer,
+char → stress-less ARPABET. Converted via litert-torch and run on the **CompiledModel CPU**
+accelerator (the consumer app already does its TTS on ORT, but the *G2P* is genuinely LiteRT).
+
+Lessons worth keeping:
+
+- **Variable length does NOT convert (the headline blocker).** Exporting with a dynamic sequence
+  `Dim` fails: `Shapes must be 1D sequences of concrete values of integer type, got Traced<int32[]>`
+  — litert-torch can't carry the symbolic seq length through the transformer's reshapes. This is the
+  same class as the already-reported variable-length converter bug. **Workaround**: a single
+  **static `[1, 96]`** graph; right-pad every word, decode back to its real length.
+- **Compute the padding mask IN-GRAPH and keep ONE input.** With static max length you must mask, or
+  attention over pad corrupts the real positions. Build `pad_mask = (ids == 0)` inside `forward` so
+  the Kotlin side passes just one tensor. The `eq`/`SELECT_V2`/`CAST` this adds are CPU-fine (only
+  the GPU delegate bans them) — and this G2P is CPU-only anyway.
+- **FLOAT input, not int.** Feed char ids as **float32** `[1, 96]` and `ids = text.to(int64)` inside
+  the graph. Lets Kotlin use the proven `CompiledModel.writeFloat`/`readFloat` path (the int
+  TensorBuffer path in litert 2.1.3 is fiddlier). Small ids are exact in fp32.
+- **CPU, not GPU.** Op-check shows `EQUAL`, `SELECT_V2`, `CAST`, and **>4D ×12** (MHA head-split 5D,
+  the same C12 fused-attention shape as DA3/MoGe). So `CompiledModel.Options(Accelerator.CPU)`. To
+  reach GPU you'd decompose attention to 4D + drop the eq/select — not worth it for a rare fallback.
+- **The I/O contract lives in two places** — keep the exporter and `NeuralG2p.kt` in sync:
+  `char_repeats=3` input expansion (`[<lang>] + id×3 + [<end>]`) and the **CTC greedy decode**
+  (argmax per position → collapse consecutive dups → drop pad/blank `0` and lang/end ids). The
+  model is CTC, not 1:1-aligned — an every-3rd subsample looks plausible but silently drops phonemes.
+- **macOS converter snags**: litert-torch's min-cut layout pass imports
+  `scipy.sparse.csgraph.maximum_flow`, whose transitive `_propack` fails to `dlopen` — stub
+  `scipy.sparse.linalg._propack` (SVD is unused by maximum_flow). And torch ≥ 2.6 defaults
+  `weights_only=True`, but DeepPhonemizer checkpoints pickle classes → monkeypatch `torch.load`.

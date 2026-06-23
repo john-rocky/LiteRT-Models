@@ -24,6 +24,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
+  - [EdgeTAM (SAM2)](#edgetam-sam2)
 
 - [**Background Removal**](#background-removal)
   - [RMBG-1.4 (ISNet)](#rmbg-14-isnet)
@@ -186,6 +187,25 @@ Encoder converted via **litert-torch** (the only converter that preserves Vision
 
 **Original project**: [ChaoningZhang/MobileSAM](https://github.com/ChaoningZhang/MobileSAM) | [Apache-2.0](https://github.com/ChaoningZhang/MobileSAM/blob/master/LICENSE)
 
+### EdgeTAM (SAM2)
+
+EdgeTAM (Meta, CVPR 2025): on-device Segment Anything 2. Tap an object to segment it. RepViT backbone + FPN neck encoder (runs once per image) and a SAM2 mask decoder (runs per tap) — **both on CompiledModel GPU**. Image-segment mode only (the novel 2D Spatial Perceiver lives in the video-memory path, skipped). 9.1M params.
+
+Converted via **litert-torch** (MobileSAM-style split): image **encoder** (image → embeddings + FPN), a tiny **prompt encoder in Kotlin** (point → sparse embedding, bit-exact vs the model — the positional `coords @ Gaussian` trips a `batch_matmul` converter pass, so it stays off-graph), and the mask **decoder** (embeddings + FPN + sparse → masks). Both graphs use a single concatenated input/output so CompiledModel never maps same-sized tensors by order. GPU-compat patches: **SqueezeExcite global avg-pool `mean((2,3))` → two single-axis means** (a single multi-axis `SUM` over ~65k elements silently returns NaN on the Pixel 8a ML Drift delegate — see [GPU Compatibility Notes](#gpu-compatibility-notes)), **ConvTranspose2d → zero-stuff + Conv2d** (`TRANSPOSE_CONV` rejected on-device), and a 4D mask decoder. Exact erf-GELU is kept (it is GPU-correct; the sigmoid approximation hurt mask quality).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Encoder | [edgetam_encoder.tflite](edgetam/app/src/main/assets/edgetam_encoder.tflite) | 10 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 4194304] (ie \| fpn0 \| fpn1) | CompiledModel GPU |
+| Decoder | [edgetam_decoder.tflite](edgetam/app/src/main/assets/edgetam_decoder.tflite) | 17 MB | Float32 [1, 4194816] (ie \| sparse \| fpn0 \| fpn1) | Masks [1, 3, 256, 256] | CompiledModel GPU |
+
+**Preprocessing**: resize to 1024×1024, divide by 255, ImageNet mean/std `[0.485,0.456,0.406]`/`[0.229,0.224,0.225]`, NCHW planar.
+
+**Fidelity**: split pipeline corr **1.0** vs the full PyTorch model; on-device circle self-test `mask_fg=11376` (PyTorch ≈ 11816). Pixel 8a GPU: encoder ~110–220 ms (first run includes shader compile), decoder ~60 ms/tap → interactive tap-to-segment.
+
+**Sample app**: [edgetam/](edgetam/) — image picker + tap-to-segment with mask overlay. Conversion: [edgetam/scripts/convert_edgetam.py](edgetam/scripts/convert_edgetam.py).
+
+**Original project**: [facebook/EdgeTAM](https://github.com/facebookresearch/EdgeTAM) ([yonigozlan/EdgeTAM-hf](https://huggingface.co/yonigozlan/EdgeTAM-hf)) | [Apache-2.0](https://github.com/facebookresearch/EdgeTAM/blob/main/LICENSE)
+
 # Background Removal
 
 ### RMBG-1.4 (ISNet)
@@ -282,16 +302,17 @@ Encoder converted via **litert-torch** with SigmoidGELU patch. Decoder exported 
 
 Kokoro: 82M parameter neural TTS based on StyleTTS2. Bilingual English / Japanese with 5 bundled voices, 24 kHz mono output, single ONNX graph (no model splitting). Pixel 8a CPU achieves **RTF 0.60** (3.9 s of audio synthesized in 2.4 s) — comfortably realtime.
 
-Runs on **ONNX Runtime with NNAPI EP fallback to XNNPACK CPU**. Phonemization is pure Kotlin/Java (no NDK): English uses the CMU Pronouncing Dictionary (126k entries) with ARPABET → Misaki IPA mapping (verified bit-identical to misaki for in-vocab inputs); Japanese uses kuromoji-ipadic morphological analyzer with katakana → IPA lookup (yōon and long vowel handling).
+Runs on **ONNX Runtime with NNAPI EP fallback to XNNPACK CPU**. Phonemization is pure Kotlin/Java (no NDK). **English** is robust to free-form input: numbers / currency / symbols are normalized to words ("$42.99" → "forty two dollars and ninety nine cents"), in-dictionary words use the CMU Pronouncing Dictionary (126k entries, ARPABET → Misaki IPA, bit-identical to misaki), and **out-of-dictionary words (names, brands, new words) fall back to a neural G2P** ([DeepPhonemizer](https://github.com/as-ideas/DeepPhonemizer), MIT) instead of being dropped — so nothing goes silent. **Japanese** uses the kuromoji-ipadic morphological analyzer with katakana → IPA lookup (yōon and long vowel handling).
 
 | Model | Download Link | Size | Input | Output | API |
 | ----- | ------------- | ---- | ----- | ------ | --- |
 | TTS | [model_fp16.onnx](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_fp16.onnx) | 163 MB | input_ids [1, seq] int64 + style [1, 256] + speed [1] | waveform [1, samples] @ 24 kHz | ONNX Runtime |
 | Voices | [voices/*.bin](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/tree/main/voices) | 510 KB each | — | Style vectors [N, 1, 256] | — |
+| English G2P (OOV) | `dp_g2p_litert.tflite` (build via `scripts/convert_dp_g2p_litert.py`) | 51 MB FP32 | text [1, 96] float (char ids, 0-padded) | logits [1, 96, 42] (ARPABET) | LiteRT CompiledModel (CPU) |
 
 **Bundled voices**: af_heart, am_michael, bf_emma (English), jf_alpha, jm_kumo (Japanese). Add more from [the HF voices folder](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/tree/main/voices).
 
-**Phonemizer assets**: `cmudict.txt` (3.3 MB plain text, generated by `scripts/build_cmudict.py`), `kokoro_vocab.json` (vocab mapping IPA characters to Kokoro token IDs).
+**Phonemizer assets**: `cmudict.txt` (3.3 MB plain text, generated by `scripts/build_cmudict.py`), `kokoro_vocab.json` (IPA → Kokoro token IDs), and `dp_g2p_litert.tflite` (neural OOV G2P on **LiteRT**, drop into `app/src/main/assets/`; build with `scripts/convert_dp_g2p_litert.py`). The neural model is optional — without it the app degrades to CMU + normalization. It runs on the **LiteRT CompiledModel CPU** accelerator (GPU is blocked by the attention 5D / EQUAL / SELECT_V2 ops, and variable-length export hits a known litert-torch dynamic-shape gap — worked around with a static `[1, 96]` graph + in-graph padding mask).
 
 **Sample app**: [kokoro/](kokoro/) — Free-form text input with auto-language detection, voice picker, preset phrase fallback, AudioTrack PCM_FLOAT playback.
 

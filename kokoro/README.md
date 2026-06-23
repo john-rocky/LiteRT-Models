@@ -45,11 +45,14 @@ On-device text-to-speech using Kokoro-82M v1.0 (StyleTTS2-based) via ONNX Runtim
 |------|-------------|
 | `KokoroSynthesizer.kt` | Single ORT session: phoneme IDs + style vector + speed → 24 kHz waveform. Tries NNAPI EP first, falls back to CPU XNNPACK |
 | `Phonemizer.kt` | Common interface for text → vocab IDs |
-| `EnglishPhonemizer.kt` | CMU dict (134k entries, 845 KB gz) → ARPABET → Misaki IPA → vocab IDs |
+| `EnglishPhonemizer.kt` | Normalize → CMU dict (134k entries, 845 KB gz) → ARPABET → Misaki IPA → vocab IDs; neural OOV fallback |
+| `EnglishTextNormalizer.kt` | Numbers / currency / symbols → spoken words (before phonemization) |
+| `NeuralG2p.kt` | DeepPhonemizer (MIT) G2P on **LiteRT** (CompiledModel CPU) for out-of-dictionary English words (ARPABET) |
 | `JapanesePhonemizer.kt` | kuromoji-ipadic morphological analyzer → katakana pronunciation → IPA → vocab IDs |
 | `MainActivity.kt` | Free-form text input, phrase picker, voice picker, AudioTrack playback |
 | `convert_kokoro.py` | Downloads model + voices from HuggingFace, runs misaki to precompute phoneme token IDs for demo phrases |
 | `build_cmudict.py` | Downloads CMU Pronouncing Dictionary, normalizes, gzips into assets |
+| `convert_dp_g2p_litert.py` | Converts the DeepPhonemizer neural OOV G2P to `assets/dp_g2p_litert.tflite` (LiteRT) |
 | `install_to_device.sh` | Post-install adb script that moves staged model + voices into the app's filesDir |
 
 ## Model Details
@@ -84,15 +87,27 @@ are provided:
    misaki output.
 
 2. **Free-form text** (live, on-device): pure Kotlin/Java phonemizers, no NDK required.
-   - **English**: CMU Pronouncing Dictionary (845 KB gzipped, 126k entries) lookup,
-     ARPABET → Misaki IPA mapping with stress digits handled, OOV words skipped.
-     Verified bit-identical to misaki for in-vocab inputs (e.g. "Hello world.").
+   - **English** (robust, never drops words):
+     1. `EnglishTextNormalizer` expands numbers / currency / symbols to words
+        ("I have 42 cats" → "forty two", "$5.99" → "five dollars and ninety nine cents").
+     2. CMU Pronouncing Dictionary (845 KB gzipped, 126k entries) for in-vocab words —
+        ARPABET → Misaki IPA with stress. Bit-identical to misaki for in-vocab inputs.
+     3. Out-of-dictionary words (names, brands, new words) fall back to a neural G2P —
+        [DeepPhonemizer](https://github.com/as-ideas/DeepPhonemizer) (**MIT**)
+        `en_us_cmudict_forward` converted to **LiteRT** (`assets/dp_g2p_litert.tflite`,
+        ~51 MB FP32) and run on the **LiteRT CompiledModel CPU** accelerator. Stress-less
+        ARPABET → the same IPA mapping. Static `[1, 96]` graph with an in-graph padding
+        mask handles any word (variable-length export is a known litert-torch gap; CPU-only
+        because the attention 5D / EQUAL / SELECT_V2 ops aren't GPU-delegate-clean).
+        Reproduce with `scripts/convert_dp_g2p_litert.py`. Optional: if the asset is absent
+        the app degrades to CMU + normalization.
    - **Japanese**: [kuromoji-ipadic](https://www.atilika.com/en/kuromoji/) gradle dep
      (~10 MB JAR with built-in dictionary), uses each morpheme's `pronunciation` field
      (closer to actual sound than literal `reading`, e.g. は particle → ワ), then
      katakana → Misaki IPA via lookup table with yōon and long vowel handling.
 
-Both phonemizers fall back gracefully on unknown words (skip + log warning).
+Unknown Japanese characters are skipped + logged; English always produces phonemes
+(CMU → neural fallback).
 The MainActivity auto-detects language from the selected voice prefix
 (`af_/am_/bf_/bm_` → English, `jf_/jm_` → Japanese).
 
