@@ -53,7 +53,8 @@ class EnglishPhonemizer private constructor(
                 if (!arpa.isNullOrEmpty()) {
                     arpabetToTokens(arpa.joinToString(" "), result)
                 } else {
-                    Log.w(TAG, "OOV unresolved: $tok")
+                    // Last resort: never drop a word — spell it out letter by letter.
+                    spellOut(tok, result)
                 }
             }
         }
@@ -78,6 +79,21 @@ class EnglishPhonemizer private constructor(
         }
         if (sb.isNotEmpty()) tokens.add(sb.toString())
         return tokens
+    }
+
+    /**
+     * Absolute last resort so a word is never silently dropped: pronounce each letter
+     * by its name ("NXT" -> "en ex tee"). Only reached if both CMU and the neural G2P
+     * produced nothing (e.g. the neural model is missing, or a token with no a-z letters).
+     */
+    private fun spellOut(word: String, out: MutableList<Int>) {
+        var first = true
+        for (c in word.lowercase()) {
+            val arpa = LETTER_ARPABET[c] ?: continue
+            if (!first) vocab[" "]?.let { out.add(it) }
+            first = false
+            arpabetToTokens(arpa, out)
+        }
     }
 
     /** Convert one ARPABET sequence ("HH AH0 L OW1") into Kokoro vocab IDs. */
@@ -158,6 +174,16 @@ class EnglishPhonemizer private constructor(
         private const val STRESS_PRIMARY = "ˈ"
         private const val STRESS_SECONDARY = "ˌ"
         private val PUNCT_VOCAB = setOf(".", ",", "!", "?", ";", ":")
+
+        // Spoken letter names (ARPABET) for the spell-out last resort.
+        private val LETTER_ARPABET = mapOf(
+            'a' to "EY1", 'b' to "B IY1", 'c' to "S IY1", 'd' to "D IY1", 'e' to "IY1",
+            'f' to "EH1 F", 'g' to "JH IY1", 'h' to "EY1 CH", 'i' to "AY1", 'j' to "JH EY1",
+            'k' to "K EY1", 'l' to "EH1 L", 'm' to "EH1 M", 'n' to "EH1 N", 'o' to "OW1",
+            'p' to "P IY1", 'q' to "K Y UW1", 'r' to "AA1 R", 's' to "EH1 S", 't' to "T IY1",
+            'u' to "Y UW1", 'v' to "V IY1", 'w' to "D AH1 B AH0 L Y UW0", 'x' to "EH1 K S",
+            'y' to "W AY1", 'z' to "Z IY1",
+        )
 
         fun load(context: Context, vocab: Map<String, Int>): EnglishPhonemizer {
             val cmu = HashMap<String, String>(140_000)

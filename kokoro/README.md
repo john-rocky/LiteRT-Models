@@ -96,10 +96,11 @@ are provided:
         [DeepPhonemizer](https://github.com/as-ideas/DeepPhonemizer) (**MIT**)
         `en_us_cmudict_forward` converted to **LiteRT** (`assets/dp_g2p_litert.tflite`,
         ~51 MB FP32) and run on the **LiteRT CompiledModel CPU** accelerator. Stress-less
-        ARPABET → the same IPA mapping. Static `[1, 96]` graph with an in-graph padding
-        mask handles any word (variable-length export is a known litert-torch gap; CPU-only
-        because the attention 5D / EQUAL / SELECT_V2 ops aren't GPU-delegate-clean).
-        Reproduce with `scripts/convert_dp_g2p_litert.py`. Optional: if the asset is absent
+        ARPABET → the same IPA mapping. A static `[1, 96]` graph with an in-graph padding
+        mask handles any word — the fixed-shape design that suits edge runtimes, with a
+        fused-QKV attention layout that fits the CPU path.
+        Download from [Hugging Face](https://huggingface.co/mlboydaisuke/Kokoro-G2P-en-US-LiteRT)
+        or reproduce with `scripts/convert_dp_g2p_litert.py`. Optional: if the asset is absent
         the app degrades to CMU + normalization.
    - **Japanese**: [kuromoji-ipadic](https://www.atilika.com/en/kuromoji/) gradle dep
      (~10 MB JAR with built-in dictionary), uses each morpheme's `pronunciation` field

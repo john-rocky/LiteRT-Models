@@ -17,7 +17,9 @@ package com.kokoro
 object EnglishTextNormalizer {
 
     fun normalize(text: String): String {
-        var t = text
+        // Fold accents to ASCII so accented names keep all their letters (José -> Jose),
+        // instead of the diacritic chars being dropped downstream.
+        var t = asciiFold(text)
         // Split letter/digit boundaries: "covid19" -> "covid 19", "3rd" handled below.
         t = Regex("(?<=[A-Za-z])(?=\\d)|(?<=\\d)(?=[A-Za-z])").replace(t, " ")
         // Currency: $<number> -> "<words> dollars [and <cc> cents]"
@@ -38,6 +40,11 @@ object EnglishTextNormalizer {
         // Collapse whitespace.
         return t.replace(Regex("\\s+"), " ").trim()
     }
+
+    /** Strip diacritics: NFD-decompose then drop combining marks (é -> e, ñ -> n, ü -> u). */
+    private fun asciiFold(s: String): String =
+        java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "")
 
     /** A number token (possibly with a decimal part) -> words. */
     private fun spokenNumber(s: String): String {
