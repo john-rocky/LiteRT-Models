@@ -126,7 +126,7 @@ The model's built-in postprocess (DefaultBoxGenerator + NMS) lowers to GPU-incom
 
 | Download Link | Size | Input | Output | Original Project | License | Sample App |
 | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
-| reproduce via [convert_ssdlite.py](ssdlite/scripts/convert_ssdlite.py) — HF upload pending device test | 7.2 MB FP16 | Float32 [1, 3, 320, 320] NCHW | 12× raw head: cls `[1, 546, H, W]` + box `[1, 24, H, W]` per level (H = 20,10,5,3,2,1) | [pytorch/vision](https://github.com/pytorch/vision) | [BSD-3](https://github.com/pytorch/vision/blob/main/LICENSE) | [ssdlite/](ssdlite/) |
+| [HF: mlboydaisuke/ssdlite320-mobilenetv3-litert](https://huggingface.co/mlboydaisuke/ssdlite320-mobilenetv3-litert) (or [reproduce](ssdlite/scripts/convert_ssdlite.py)) | 7.2 MB FP16 | Float32 [1, 3, 320, 320] NCHW | 12× raw head: cls `[1, 546, H, W]` + box `[1, 24, H, W]` per level (H = 20,10,5,3,2,1) | [pytorch/vision](https://github.com/pytorch/vision) | [BSD-3](https://github.com/pytorch/vision/blob/main/LICENSE) | [ssdlite/](ssdlite/) |
 
 **Output format**: 6 feature levels × {classification, box regression}. 6 anchors/location, 91 classes (COCO 90 + background). Decode in Kotlin mirrors torchvision `SSD.postprocess_detections` + `BoxCoder(10,10,5,5)`: softmax → best non-background class → threshold → default-box decode → per-class NMS. Verified **298/300 boxes @ IoU 0.99** vs stock torchvision on the FP16 tflite.
 

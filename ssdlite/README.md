@@ -17,7 +17,7 @@ GPU detector slot with a model fast enough for live camera use.
 ## Setup
 
 1. Get the model **`ssdlite_mobilenetv3_320_fp16.tflite`** (7.2 MB, FP16) — either:
-   - download from Hugging Face: **mlboydaisuke/ssdlite320-mobilenetv3-litert** *(upload pending)*, or
+   - download from Hugging Face: **[mlboydaisuke/ssdlite320-mobilenetv3-litert](https://huggingface.co/mlboydaisuke/ssdlite320-mobilenetv3-litert)** (`ssdlite_mobilenetv3_320_fp16.tflite`), or
    - reproduce it with `scripts/convert_ssdlite.py` (litert-torch).
 2. Place it in `app/src/main/assets/`
 3. Open this directory in Android Studio and run (back camera + grant permission)
