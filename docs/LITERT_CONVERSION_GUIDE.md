@@ -291,3 +291,28 @@ Lessons worth keeping:
   `scipy.sparse.csgraph.maximum_flow`, whose transitive `_propack` fails to `dlopen` — stub
   `scipy.sparse.linalg._propack` (SVD is unused by maximum_flow). And torch ≥ 2.6 defaults
   `weights_only=True`, but DeepPhonemizer checkpoints pickle classes → monkeypatch `torch.load`.
+
+### DAC / neural audio codec (ConvTranspose1d + RVQ)
+
+Converter: litert-torch. A neural audio codec (DAC, EnCodec, vocoders) splits into a GPU conv graph + a
+CPU RVQ. Two walls (device-verified on Pixel 8a):
+
+1. **ConvTranspose1d.** The real DAC decoder (`upsampling_ratios [8,5,4,2]`, kernel = 2·ratio) does NOT
+   convert: the odd **stride-5** transposed conv fails legalization (`mhlo.convolution` `lhs_dilation=5`,
+   "explicitly marked illegal"); even strides emit `TRANSPOSE_CONV` which Mali rejects. **Fix =
+   `ZeroStuffConvT1d`** (the DA3 zero-stuff C20 trick generalized to 1D, kernel = 2·stride): nearest-upsample
+   ×S **in 2D** (`x.unsqueeze(2)` → `F.interpolate(size=(1,L·S),"nearest")` → squeeze — the **1D** interpolate
+   lowers to `GATHER_ND`, 2D → clean `RESIZE_NEAREST_NEIGHBOR`) × a constant mask buffer (1 at `::S`) → `conv1d`
+   with `weight.flip(2).transpose(0,1)`, `padding=K-1` → crop `[P : P+((L-1)·S+K-2P+out_pad)]`. Numerically
+   exact (corr 1.0). Per-layer input length captured via a forward-hook dry run. Applies to any vocoder / 1D
+   U-Net decoder with transposed-conv upsamplers.
+
+2. **RVQ → CPU.** The residual vector quantizer (codes ↔ latent) uses `EMBEDDING_LOOKUP` + **int64** code
+   indices; on Mali the full codes→audio graph fails with `CAST: Tensor type(INT64) is not supported` +
+   `EMBEDDING_LOOKUP: Empty quantization params` (only 464/578 nodes delegate). **Split it out**: run the RVQ
+   on CPU (in_proj 1×1 → L2-normalize → cosine-argmax → codebook lookup → out_proj, residual loop; ~1 ms in
+   Kotlin), feed the GPU decoder a continuous float latent. The float conv encoder/decoder then stay 100% on GPU.
+
+**On-device (Pixel 8a):** DAC 16kHz encoder **367/367** + decoder **398/398** nodes on `LITERT_CL`, warm RTF
+~0.82, reconstruction corr 1.0 vs PyTorch. Scripts: `dac/scripts/convert_dac_{encoder,deconly}.py` +
+`dac_rvq_validate_export.py` (RVQ codes match torch 100%).
