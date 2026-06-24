@@ -3,6 +3,8 @@
 Real-time object detection using **SSDLite320-MobileNetV3-Large** (torchvision, BSD-3)
 on LiteRT CompiledModel GPU.
 
+![SSDLite320-MobileNetV3 object detection on-device (LiteRT GPU, Pixel 8a)](https://huggingface.co/mlboydaisuke/ssdlite320-mobilenetv3-litert/resolve/main/samples/demo.jpg)
+
 A lightweight (**0.59 GMACs**) detector that converts **patch-free** through
 litert-torch — the cleanest path for an official LiteRT sample — and fills the
 GPU detector slot with a model fast enough for live camera use.

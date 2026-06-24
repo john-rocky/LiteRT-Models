@@ -120,6 +120,8 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 
 ### SSDLite320 MobileNetV3
 
+![SSDLite320-MobileNetV3 object detection on-device (LiteRT GPU, Pixel 8a)](https://huggingface.co/mlboydaisuke/ssdlite320-mobilenetv3-litert/resolve/main/samples/demo.jpg)
+
 Lightweight (**0.59 GMACs**) single-shot detector — torchvision's SSDLite320-MobileNetV3-Large. **BSD-3** (permissive, unlike the AGPL YOLO family) and converts **patch-free** through litert-torch, the clean path for official LiteRT samples.
 
 The model's built-in postprocess (DefaultBoxGenerator + NMS) lowers to GPU-incompatible `GATHER_ND`/`TOPK`/`>4D`, so the export taps each feature level's **raw 4D head conv outputs** (NCHW) and moves anchor decode + multiclass NMS to Kotlin — no model-internal op rewrite (same technique as the YOLOX raw-head / U²-Net `d0` samples). Keeping **NCHW** I/O (no `to_channel_last_io`) also avoids the channel-last × MobileNetV3 SqueezeExcitation `GATHER_ND` blow-up, so it converts stock-clean.
