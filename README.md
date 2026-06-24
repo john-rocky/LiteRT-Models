@@ -118,6 +118,26 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). No ImageNet mean/std.
 
+### SSDLite320 MobileNetV3
+
+![SSDLite320-MobileNetV3 object detection on-device (LiteRT GPU, Pixel 8a)](https://huggingface.co/mlboydaisuke/ssdlite320-mobilenetv3-litert/resolve/main/samples/demo.jpg)
+
+Lightweight (**0.59 GMACs**) single-shot detector — torchvision's SSDLite320-MobileNetV3-Large. **BSD-3** (permissive, unlike the AGPL YOLO family) and converts **patch-free** through litert-torch, the clean path for official LiteRT samples.
+
+The model's built-in postprocess (DefaultBoxGenerator + NMS) lowers to GPU-incompatible `GATHER_ND`/`TOPK`/`>4D`, so the export taps each feature level's **raw 4D head conv outputs** (NCHW) and moves anchor decode + multiclass NMS to Kotlin — no model-internal op rewrite (same technique as the YOLOX raw-head / U²-Net `d0` samples). Keeping **NCHW** I/O (no `to_channel_last_io`) also avoids the channel-last × MobileNetV3 SqueezeExcitation `GATHER_ND` blow-up, so it converts stock-clean.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [HF: mlboydaisuke/ssdlite320-mobilenetv3-litert](https://huggingface.co/mlboydaisuke/ssdlite320-mobilenetv3-litert) (or [reproduce](ssdlite/scripts/convert_ssdlite.py)) | 7.2 MB FP16 | Float32 [1, 3, 320, 320] NCHW | 12× raw head: cls `[1, 546, H, W]` + box `[1, 24, H, W]` per level (H = 20,10,5,3,2,1) | [pytorch/vision](https://github.com/pytorch/vision) | [BSD-3](https://github.com/pytorch/vision/blob/main/LICENSE) | [ssdlite/](ssdlite/) |
+
+**Output format**: 6 feature levels × {classification, box regression}. 6 anchors/location, 91 classes (COCO 90 + background). Decode in Kotlin mirrors torchvision `SSD.postprocess_detections` + `BoxCoder(10,10,5,5)`: softmax → best non-background class → threshold → default-box decode → per-class NMS. Verified **298/300 boxes @ IoU 0.99** vs stock torchvision on the FP16 tflite.
+
+**Preprocessing**: RGB, NCHW, normalized `pixel/127.5 - 1` → `[-1, 1]` (mean = std = 0.5, **not** ImageNet); bilinear stretch-resize to 320×320.
+
+**GPU compatibility**: BANNED NONE, Flex/Custom NONE, max tensor ndim 4, 0 dynamic dims (ops include `SUM×8` = SqueezeExcitation global pools, `TRANSPOSE×11`). **On-device verified (Pixel 8a, Tensor G3)**: CompiledModel GPU delegates all 286 graph nodes to OpenCL (`LITERT_CL`, 1 partition, no CPU fallback) and runs the live camera at **~30 FPS** with correct detections.
+
+**Conversion**: `ssdlite/scripts/convert_ssdlite.py` (litert-torch, 4D-head-tap, FP16 `float_casting`) + `ssdlite/scripts/validate_decode.py` (decode parity vs torchvision).
+
 # Multi-Object Tracking
 
 ### YOLO + DeepSORT (OSNet)
