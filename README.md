@@ -51,6 +51,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Voice Assistant**](#voice-assistant)
   - [Whisper + SmolLM2 + Kokoro pipeline](#whisper--smollm2--kokoro-pipeline)
 
+- [**Audio Codec**](#audio-codec)
+  - [DAC 16kHz](#dac-16khz)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -401,6 +404,23 @@ mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
 | TTS voices | [voices/*.bin](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/tree/main/voices) | 510 KB each |
 
 **Sample app**: [voiceassistant/](voiceassistant/) — Listen toggle, idle/listening/capturing/thinking/replying state indicator, transcript + streaming response display, hands-free turn taking, barge-in. English-only for the MVP.
+
+# Audio Codec
+
+### DAC 16kHz
+
+[Descript Audio Codec](https://github.com/descriptinc/descript-audio-codec) (DAC, 16 kHz) — a neural audio codec on **CompiledModel GPU**. Compresses 1 s of audio to 12×50 = 600 int codes (~43:1) and reconstructs it; the convolutional encoder/decoder run on the GPU, the RVQ on CPU (~1 ms). The sample app round-trips a clip and plays original vs. reconstructed to A/B by ear.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** encoder **367/367** + decoder **398/398** nodes on the LiteRT GPU delegate (`LITERT_CL`, no CPU fallback), warm **RTF ≈ 0.82** (faster than real-time), reconstruction **corr 1.0** vs PyTorch DAC.
+
+| Model | Download | Size | Input → Output | Original Project | License | Sample App |
+| ----- | -------- | ---- | -------------- | ---------------- | ------- | ---------- |
+| Encoder | [HF: mlboydaisuke/DAC-16kHz-LiteRT](https://huggingface.co/mlboydaisuke/DAC-16kHz-LiteRT) | 43 MB FP16 | audio [1,1,16000] → latent [1,1024,50] | [descriptinc/descript-audio-codec](https://github.com/descriptinc/descript-audio-codec) | MIT | [dac/](dac/) |
+| Decoder | (same HF repo) | 105 MB FP16 | latent [1,1024,50] → audio | — | MIT | [dac/](dac/) |
+
+**Pipeline**: audio → encoder.tflite (GPU) → RVQ encode (CPU) → codes[12,50] → RVQ decode (CPU) → decoder.tflite (GPU) → audio.
+
+**GPU compatibility**: the decoder's `ConvTranspose1d` are rewritten to a GPU-clean **zero-stuff** form (`ZeroStuffConvT1d` — the real DAC's odd stride-5 transposed conv fails converter legalization and `TRANSPOSE_CONV` is rejected by Mali); the RVQ (`EMBEDDING_LOOKUP` + int64 indices, Mali-rejected) runs on CPU. The big tflites are pushed to the app's filesDir via `dac/scripts/install_to_device.sh`.
 
 # Super Resolution
 
