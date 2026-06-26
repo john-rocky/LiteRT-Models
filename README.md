@@ -350,10 +350,10 @@ Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN tim
 
 | Model | Download Link | Size | Input | Output | API |
 | ----- | ------------- | ---- | ----- | ------ | --- |
-| Text encoder | [matcha_textenc_fp16.tflite](https://huggingface.co/mlboydaisuke/Matcha-TTS-LiteRT) | 15 MB | emb [1,256,192] + mask [1,1,256] | mu [1,80,256] + logw [1,1,256] | CompiledModel GPU |
-| CFM decoder | [matcha_decoder_fp16.tflite](https://huggingface.co/mlboydaisuke/Matcha-TTS-LiteRT) | 23 MB | x,mu [1,80,512] + t_sin [1,160] + mask [1,1,512] | v [1,80,512] | CompiledModel CPU |
-| HiFi-GAN vocoder | [matcha_vocoder_fp16.tflite](https://huggingface.co/mlboydaisuke/Matcha-TTS-LiteRT) | 29 MB | mel [1,80,512] | wav [1,1,131072] | CompiledModel GPU |
-| English G2P | [dp_g2p_matcha_fp16.tflite](https://huggingface.co/mlboydaisuke/Matcha-TTS-LiteRT) | 26 MB | text [1,96] float (char ids) | logits [1,96,64] (IPA) | CompiledModel CPU |
+| Text encoder | [matcha_textenc_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 15 MB | emb [1,256,192] + mask [1,1,256] | mu [1,80,256] + logw [1,1,256] | CompiledModel GPU |
+| CFM decoder | [matcha_decoder_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 23 MB | x,mu [1,80,512] + t_sin [1,160] + mask [1,1,512] | v [1,80,512] | CompiledModel CPU |
+| HiFi-GAN vocoder | [matcha_vocoder_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 29 MB | mel [1,80,512] | wav [1,1,131072] | CompiledModel GPU |
+| English G2P | [dp_g2p_matcha_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 26 MB | text [1,96] float (char ids) | logits [1,96,64] (IPA) | CompiledModel CPU |
 
 **Fixed shapes** (`MAX_TEXT=256` phonemes, `MAX_MEL=512` frames ≈ 5.9 s); a **runtime float mask** makes padded positions a no-op (additive attention bias), so one compiled graph handles any length without recompiling.
 

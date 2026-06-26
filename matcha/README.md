@@ -71,7 +71,7 @@ cd matcha/
 ```
 
 The first launch fails with "model not found" until the install script has run. Get the tflites
-from Hugging Face (`mlboydaisuke/Matcha-TTS-LiteRT`) or build them:
+from Hugging Face (`litert-community/Matcha-TTS`) or build them:
 
 ```bash
 pip install --no-deps matcha-tts diffusers einops conformer deep-phonemizer
