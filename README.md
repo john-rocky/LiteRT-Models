@@ -44,6 +44,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Text-to-Speech**](#text-to-speech)
   - [Kokoro-82M](#kokoro-82m)
+  - [Matcha-TTS](#matcha-tts)
 
 - [**Vision-Language Model**](#vision-language-model)
   - [SmolVLM-256M](#smolvlm-256m)
@@ -342,6 +343,27 @@ Runs on **ONNX Runtime with NNAPI EP fallback to XNNPACK CPU**. Phonemization is
 **Sample app**: [kokoro/](kokoro/) — Free-form text input with auto-language detection, voice picker, preset phrase fallback, AudioTrack PCM_FLOAT playback.
 
 **Original project**: [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) | [Apache-2.0](https://huggingface.co/hexgrad/Kokoro-82M)
+
+### Matcha-TTS
+
+Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN time-domain vocoder**. This is the **FFT-free** TTS lane — there is **no FFT/iSTFT anywhere** in the synthesis path (spectral vocoders like Kokoro/Vocos are blocked on the missing ML Drift FFT kernel). 22.05 kHz output. All three graphs convert **GPU-clean** (parity 1.0); on the Pixel 8a the text encoder + vocoder run on the GPU and the CFM decoder runs on the **CPU** (a Mali ML Drift transformer-fusion bug — see the matcha/ README), keeping the pipeline realtime (RTF ~0.8). The Euler ODE loop, duration/length-regulator and embedding run host-side.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Text encoder | [matcha_textenc_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 15 MB | emb [1,256,192] + mask [1,1,256] | mu [1,80,256] + logw [1,1,256] | CompiledModel GPU |
+| CFM decoder | [matcha_decoder_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 23 MB | x,mu [1,80,512] + t_sin [1,160] + mask [1,1,512] | v [1,80,512] | CompiledModel CPU |
+| HiFi-GAN vocoder | [matcha_vocoder_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 29 MB | mel [1,80,512] | wav [1,1,131072] | CompiledModel GPU |
+| English G2P | [dp_g2p_matcha_fp16.tflite](https://huggingface.co/litert-community/Matcha-TTS) | 26 MB | text [1,96] float (char ids) | logits [1,96,64] (IPA) | CompiledModel CPU |
+
+**Fixed shapes** (`MAX_TEXT=256` phonemes, `MAX_MEL=512` frames ≈ 5.9 s); a **runtime float mask** makes padded positions a no-op (additive attention bias), so one compiled graph handles any length without recompiling.
+
+**G2P (espeak-free)**: Matcha-LJSpeech is trained on espeak en-us IPA, but espeak is GPL. The clean replacement is a hybrid (same shape as kokoro's): a **275k-entry espeak-IPA dictionary** (from [OpenPhonemizer](https://github.com/NeuralVox/OpenPhonemizer), Clear BSD) as primary, with [DeepPhonemizer](https://github.com/as-ideas/DeepPhonemizer) (MIT, espeak-IPA checkpoint) on **LiteRT CompiledModel CPU** for out-of-dictionary words. Output IPA maps 1:1 onto the keithito 178-symbol set.
+
+**Conversion** (litert-torch): `GroupNorm → 4D`, `Mish → SELECT-free softplus`, `ConvTranspose1d → ZeroStuffConvT1d` (no `TRANSPOSE_CONV`), diffusers `Attention → manual additive-masked` (mask is a runtime input — decoder adds the raw 0/1 mask = `AttnProcessor2_0`'s soft bias, text-enc adds `(mask-1)·1e4`), half-res mask via reshape-decimate (a step-2 slice → `GATHER_ND`), time embedding host-side (weight-free sin/cos) with `time_mlp` on GPU. Per-graph tflite-vs-torch corr 1.000000; end-to-end waveform corr ≥0.99. See [matcha/scripts/build_matcha.py](matcha/scripts/build_matcha.py) and [GPU Compatibility Notes](#gpu-compatibility-notes).
+
+**Sample app**: [matcha/](matcha/) — type text, synthesize on the GPU, AudioTrack PCM_FLOAT playback.
+
+**Original project**: [shivammehta25/Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS) | [MIT](https://github.com/shivammehta25/Matcha-TTS/blob/main/LICENSE)
 
 # Vision-Language Model
 

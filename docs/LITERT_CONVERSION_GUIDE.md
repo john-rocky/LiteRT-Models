@@ -194,7 +194,7 @@ Converter: litert-torch. Most complex conversion in the repo — 9 patches requi
 - `F.interpolate` bicubic → bilinear
 - **Global average pool `x.mean((2,3))` → two single-axis means `x.mean(3).mean(2)`** (EdgeTAM RepViT SqueezeExcite). A multi-axis `mean`/`SUM` reducing a large spatial extent (~65k elements) lowers to a single multi-axis `SUM` op that the Pixel 8a ML Drift delegate **mis-computes → silent NaN** (FP32 too, so it is not an FP16 overflow). The graph compiles and runs; only the output is garbage. Splitting into two sequential single-axis reductions is numerically identical and computes correctly. `F.avg_pool2d(x, kernel=spatial)` (→ `AVERAGE_POOL_2D`) also works; `F.adaptive_avg_pool2d(x,1)` does **not** (still a single multi-axis `SUM`).
 
-**Key lesson**: The desktop GPU compatibility checker (checking op names against a blocklist) is necessary but not sufficient. The on-device ML Drift GPU delegate imposes additional constraints: no constant-only Conv2d inputs, no TRANSPOSE_CONV, no dynamic RESIZE sizes, and FC output shape interpretation depends on surrounding ops (LayerScale MUL specifically). **There is also a "compiles + runs but silently mis-computes" class** — e.g. multi-axis reductions over large tensors returning NaN — that neither the desktop checker nor a compile/run smoke test catches. Only an on-device GPU-vs-CPU numeric comparison (CPU is the trusted reference) catches it; bisect with sub-graphs that each output an intermediate to localize the broken op.
+**Key lesson**: The desktop GPU compatibility checker (checking op names against a blocklist) is necessary but not sufficient. The on-device ML Drift GPU delegate imposes additional constraints: no constant-only Conv2d inputs, no TRANSPOSE_CONV, no dynamic RESIZE sizes, and FC output shape interpretation depends on surrounding ops (LayerScale MUL specifically). **There is also a "compiles + runs but silently mis-computes" class** — e.g. multi-axis reductions over large tensors returning NaN, or a transformer block whose residual **collapses only when fused** into a large graph at high activation magnitude (correct as a standalone graph — see Matcha-TTS) — that neither the desktop checker nor a compile/run smoke test catches. Only an on-device GPU-vs-CPU numeric comparison (CPU is the trusted reference) catches it; bisect with sub-graphs that each output an intermediate to localize the broken op.
 
 ### Roboflow Soccer (YOLOv8x detect + YOLOv8x pose)
 
@@ -316,3 +316,49 @@ CPU RVQ. Two walls (device-verified on Pixel 8a):
 **On-device (Pixel 8a):** DAC 16kHz encoder **367/367** + decoder **398/398** nodes on `LITERT_CL`, warm RTF
 ~0.82, reconstruction corr 1.0 vs PyTorch. Scripts: `dac/scripts/convert_dac_{encoder,deconly}.py` +
 `dac_rvq_validate_export.py` (RVQ codes match torch 100%).
+
+### Matcha-TTS (CFM acoustic model + HiFi-GAN vocoder) — the FFT-free TTS lane
+
+Converter: litert-torch. Matcha-TTS pairs a conditional-flow-matching (CFM) acoustic model with a
+**HiFi-GAN time-domain vocoder**, so there is **no FFT/iSTFT anywhere** in the synthesis path — this is what
+lets a TTS model ride the GPU at all (spectral vocoders — Kokoro/iSTFTNet/Vocos — need an FFT kernel the ML
+Drift delegate does not provide, so their spectral steps are forced host-side). Three graphs: text encoder,
+CFM decoder (run per ODE step), HiFi-GAN vocoder; the Euler ODE loop / duration / length-regulator /
+embedding / sinusoidal time-embed run host-side.
+
+**Re-authoring (all numerically-equivalent, per-graph tflite-vs-torch corr 1.0, end-to-end waveform corr ≥0.99):**
+`GroupNorm` → manual 4D mean/var; `nn.Mish` → SELECT-free fp16-safe softplus `x·tanh(relu(x)+log1p(exp(-|x|)))`;
+`ConvTranspose1d` (Upsample1D) → `ZeroStuffConvT1d` (the DAC 1D trick above); diffusers `Attention` → manual
+additive-masked attention; the half-res mask `mask[:,:,::2]` → reshape-decimate (a step-2 slice lowers to
+`GATHER_ND`); `SinusoidalPosEmb` → host-side (weight-free sin/cos), the learned `time_mlp` stays on GPU.
+
+**Variable length = pad-to-max + a runtime float mask** (256 phonemes, 512 mel frames). The mask is a runtime
+graph input, not dropped: the decoder **adds the raw 0/1 mask** to attention scores (replicating diffusers
+`AttnProcessor2_0`'s soft bias — NOT `-1e4`), the text encoder adds `(mask-1)·1e4` (replicating `masked_fill`).
+Dropping the mask leaks pad frames through global attention (corr 0.936). With the runtime mask, one compiled
+graph handles any length and matches torch exactly (corr 1.0).
+
+**The decoder runs on CPU — a NEW on-device "compiles + runs + silently-wrong" failure mode (graph FUSION, not
+an op).** On the Pixel 8a, the CFM decoder's diffusers transformer blocks **mis-fuse at large activation
+magnitude**: the up-path transformer (input |x|~60) collapses its residual — device output ±0.7 vs CPU ±60,
+**corr 0.006** — giving a NaN/garbled mel (the user hears a buzz/tone). The decisive isolation: the **same
+transformer block converted as a STANDALONE graph computes correctly on the GPU (corr 0.984)**, so it is a
+graph-fusion/scheduling bug, not a bad op (GroupNorm-4D, Mish, SnakeBeta, ZeroStuffConvT1d, the manual masked
+attention are each verified correct on Mali via on-device tap dumps). **fp32 and fp16 both fail** (not a
+precision/overflow bug) and it is NOT the "global-pool multi-axis mean → NaN" class above (that was a separate
+first bug here, fixed with the `mean(3).mean(2)` split) nor the deep-ViT fp16 variance-overflow class — the
+`SafeLayerNorm` scale-before-square fix does **not** help (it NaNs: the variance itself exceeds fp16 max and
+the scaled eps underflows in the zero-variance pad). **Workaround:** load the decoder with
+`CompiledModel.Options(Accelerator.CPU)` — it is exact on CPU, and the pipeline stays realtime (**RTF ~0.8 on
+Pixel 8a**) because the GPU HiFi-GAN vocoder dominates wall time. Text encoder + vocoder stay on the GPU.
+Minimal repro: `matcha/scripts/probe_tx_standalone.py` (standalone 0.984 vs fused 0.006). Localize fusion bugs
+like this by emitting intermediates as extra graph outputs and comparing each stage device-vs-CPU on the same
+inputs (`probe_decoder_taps.py`).
+
+**G2P (espeak-free):** Matcha-LJSpeech is trained on espeak en-us IPA (GPL), so the runtime G2P is a 275k-entry
+espeak-IPA dictionary (OpenPhonemizer, Clear BSD) primary + a DeepPhonemizer (MIT) `[1,96]` LiteRT CPU graph
+for out-of-dictionary words; output IPA maps 1:1 onto the keithito 178-symbol set. The neural model **alone**
+mispronounces common/function words ("this"→ðaɪz), so the dictionary must be primary (same hybrid as kokoro).
+
+Scripts: `matcha/scripts/{build_matcha,convert_final,convert_g2p_matcha}.py`. Models:
+[`litert-community/Matcha-TTS`](https://huggingface.co/litert-community/Matcha-TTS).
