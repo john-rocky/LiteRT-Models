@@ -56,6 +56,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [DAC 16kHz](#dac-16khz)
   - [Mimi (Kyutai 2024)](#mimi-kyutai-2024)
 
+- [**Audio Classification**](#audio-classification)
+  - [wav2vec2 Keyword Spotting](#wav2vec2-keyword-spotting)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -466,6 +469,27 @@ mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
 **Sample app**: [mimi/](mimi/) — round-trips a clip, plays original vs. reconstructed (AudioTrack).
 
 **Original project**: [kyutai/mimi](https://huggingface.co/kyutai/mimi) | [CC-BY-4.0](https://huggingface.co/kyutai/mimi)
+
+# Audio Classification
+
+### wav2vec2 Keyword Spotting
+
+[wav2vec2](https://huggingface.co/facebook/wav2vec2-base) keyword spotting ([`superb/wav2vec2-base-superb-ks`](https://huggingface.co/superb/wav2vec2-base-superb-ks)) running **fully on CompiledModel GPU**. Classifies 1 s of 16 kHz audio into 12 Speech-Commands labels. **No FFT anywhere** — the raw waveform goes straight into a 1D-conv feature extractor (no mel step), so the whole model rides the GPU delegate. The sample classifies a bundled clip and records keywords from the mic.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** frontend **134/134** + head **893/893** nodes on the LiteRT GPU delegate (`LITERT_CL`), end-to-end ~19 ms for a 1 s clip (**RTF ≈ 0.02**); real-speech validation 10/10 keywords, device-vs-CPU logits corr 0.9995.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| frontend | [HF: litert-community/wav2vec2-keyword-spotting](https://huggingface.co/litert-community/wav2vec2-keyword-spotting) | 9 MB FP16 | audio [1,16000] → feat [1,49,768] | CompiledModel GPU |
+| head | (same repo) | 181 MB FP16 | feat [1,49,768] → logits [1,12] | CompiledModel GPU |
+
+**Why two graphs**: the model is op-clean but the full 1008-node graph exceeds the Mali shader-compile limit (fails fused); splitting at the conv-frontend / transformer-encoder boundary makes each half compile (134/134 + 893/893). Both run on the GPU.
+
+**Re-authoring** (litert-torch): GELU→tanh-GELU, feature-extractor GroupNorm→GN4D, pos-conv `weight_norm` fold, `create_bidirectional_mask`→None, and the `use_weighted_layer_sum` head accumulated incrementally with **baked** softmax layer-weights (stack-13 + runtime `w[i]` gathers split the Mali partition). Residual peaks at `|x|≈3.2` so it is fp16-exact on GPU (no CPU fallback). Per-graph tflite-vs-torch corr 1.0. See [wav2vec2-kws/scripts/](wav2vec2-kws/scripts/).
+
+**Sample app**: [wav2vec2-kws/](wav2vec2-kws/) — bundled-clip classify on launch + mic Record button.
+
+**Original project**: [superb/wav2vec2-base-superb-ks](https://huggingface.co/superb/wav2vec2-base-superb-ks) | [Apache-2.0](https://huggingface.co/facebook/wav2vec2-base)
 
 # Super Resolution
 
