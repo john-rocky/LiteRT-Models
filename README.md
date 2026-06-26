@@ -54,6 +54,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Audio Codec**](#audio-codec)
   - [DAC 16kHz](#dac-16khz)
+  - [Mimi (Kyutai 2024)](#mimi-kyutai-2024)
 
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
@@ -443,6 +444,28 @@ mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
 **Pipeline**: audio → encoder.tflite (GPU) → RVQ encode (CPU) → codes[12,50] → RVQ decode (CPU) → decoder.tflite (GPU) → audio.
 
 **GPU compatibility**: the decoder's `ConvTranspose1d` are rewritten to a GPU-clean **zero-stuff** form (`ZeroStuffConvT1d` — the real DAC's odd stride-5 transposed conv fails converter legalization and `TRANSPOSE_CONV` is rejected by Mali); the RVQ (`EMBEDDING_LOOKUP` + int64 indices, Mali-rejected) runs on CPU. The big tflites are pushed to the app's filesDir via `dac/scripts/install_to_device.sh`.
+
+### Mimi (Kyutai 2024)
+
+[Mimi](https://huggingface.co/kyutai/mimi) (Kyutai/Moshi streaming neural codec, 24 kHz, 12.5 Hz) — a **hybrid** on-device codec: the heavy SEANet convolutional halves run on **CompiledModel GPU**, the two 8-layer Transformers + split RVQ on CPU. A 2 s clip round-trips faster than real-time; the app A/Bs original vs. reconstructed.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** enc_conv **189/189** + deconly **220/220** nodes on the LiteRT GPU delegate (`LITERT_CL`); encoder/decoder Transformers on CPU (XNNPACK). encode ≈ 0.49 s · decode ≈ 0.18 s for 2 s → **RTF ≈ 0.35**; reconstruction at the codec's own quality floor (device-vs-input corr = the PyTorch Mimi reference).
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| enc_conv | [HF: mlboydaisuke/Mimi-LiteRT](https://huggingface.co/mlboydaisuke/Mimi-LiteRT) | 24 MB FP16 | audio [1,1,L] → feat [1,512,Se] | CompiledModel GPU |
+| enc_tx | (same) | 50 MB FP16 | feat [1,Se,512] → emb [1,512,Tc] | CompiledModel CPU |
+| dec_tx | (same) | 48 MB FP16 | emb [1,512,Tc] → conv_in [1,512,seq] | CompiledModel CPU |
+| deconly | (same) | 28 MB FP16 | conv_in [1,512,seq] → audio [1,1,L] | CompiledModel GPU |
+| RVQ weights | `mimi_rvq.bin` | 69 MB | codes ↔ emb (32 codebooks) | CPU |
+
+**Why hybrid (the C33 result)**: every op is GPU-clean and the convs are fp16-exact on Mali (decoder-only fed the exact transformer output = **48 dB**), but the decoder transformer's residual stream reaches **|x|=27** and the Mali fp16 compute loses precision there (full-GPU decode ~12 dB on real speech). It behaves **identically standalone and fused** on device, so this is fp16 **precision**, not a fusion collapse — **the Matcha "C33" transformer-fusion bug does NOT generalize** to Mimi's own transformer (it is diffusers-specific). Transformers → CPU (tiny, exact); convs → GPU. RVQ → CPU (Euclidean argmin + int64, Mali-rejected).
+
+**Re-authoring** (litert-torch): GELU→tanh-GELU, RoPE→baked cos/sin + rotate_half, causal mask→baked additive bias, `MimiLayerScale`→bake into Linear, depthwise `ConvTranspose1d`→grouped `ZeroStuffConvT1d`, `MimiConv1d` causal pad→baked `F.pad`, `nn.ELU`→`relu(x)−relu(1−exp(min(x,0)))`, replicate-pad→SLICE+CONCAT. Per-graph tflite-vs-torch corr 1.0; full round-trip corr 1.0. See [mimi/scripts/](mimi/scripts/) and [GPU Compatibility Notes](#gpu-compatibility-notes).
+
+**Sample app**: [mimi/](mimi/) — round-trips a clip, plays original vs. reconstructed (AudioTrack).
+
+**Original project**: [kyutai/mimi](https://huggingface.co/kyutai/mimi) | [CC-BY-4.0](https://huggingface.co/kyutai/mimi)
 
 # Super Resolution
 

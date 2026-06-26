@@ -362,3 +362,38 @@ mispronounces common/function words ("this"→ðaɪz), so the dictionary must be
 
 Scripts: `matcha/scripts/{build_matcha,convert_final,convert_g2p_matcha}.py`. Models:
 [`litert-community/Matcha-TTS`](https://huggingface.co/litert-community/Matcha-TTS).
+
+### Mimi (Kyutai 2024 codec) — the C33 generalization test (and its negative result)
+
+Converter: litert-torch. Mimi (Kyutai/Moshi streaming codec, 24 kHz/12.5 Hz, hidden 512) is structurally a
+codec with **two 8-layer LLM-style Transformers** in the path (`encoder_transformer`, `decoder_transformer`),
+so it was the decisive test of whether the Matcha "transformer-collapses-when-fused" delegate bug (above) is a
+**general** ML Drift bug or diffusers-`BasicTransformerBlock`-specific.
+
+**Re-authoring (all GPU-clean, parity ~1.0):** GELU(erf)→**tanh-GELU** `0.5x(1+tanh(√(2/π)(x+0.044715x³)))`
+(MUL/ADD/TANH, no POW; tanh beats sigmoid — transformer corr 0.991→0.99999); `MimiRotaryEmbedding`→**baked
+const cos/sin + rotate_half** (kills the GATHER_ND position-gather); causal/sliding mask→**baked const additive
+bias** `(1,1,S,S)` (NOT dropped — decode IS causal; kills CUMSUM/EQUAL/SELECT_V2); attention→manual
+matmul+softmax ≤4D; `MimiLayerScale`→**bake γ into the preceding Linear** (o_proj/fc2); `ConvTranspose1d`
+(the `upsample` is **depthwise**, groups=512!)→**grouped-aware `ZeroStuffConvT1d`** (generalize the weight
+reshape `(Cin,Cout//G,K)→(Cout,Cin//G,K)`+flip, `F.conv1d(groups=g)`); `MimiConv1d` causal pad→**baked
+constant `F.pad`** (its int64-buffer `.item()` is a dynamic value → jax `ConcretizationError` at trace time
+otherwise); `nn.ELU`→**`relu(x)−relu(1−exp(min(x,0)))`** (SELECT-free, exact, fp16-safe — the SEANet's 13
+ELUs were a `SELECT×13` blocker; EXP is GPU-clean); downsample `replicate`-pad→**SLICE+CONCAT edge-replication**
+(tflite PAD is constant-only, replicate emits `GATHER_ND`). RVQ (split: 1 semantic + 31 acoustic, Euclidean
+argmin)→**CPU** (int64 + EMBEDDING_LOOKUP, Mali-rejected; `MimiRvq.kt`, validated vs torch).
+
+**On-device result (Pixel 8a) — C33 does NOT generalize.** The decoder transformer's residual stream reaches
+**|x|=27**. On device it computes to corr **0.70** vs CPU — but **identically standalone and fused**
+(standalone 0.6995 ≈ in-fused-graph tap 0.6987, same absmax 17.5), so this is **fp16 precision loss in the
+large-magnitude residual** (L7 damps 27→4.4 via near-cancellation the fp16 compute can't hold), **NOT** a
+fusion collapse. So the Matcha C33 bug is **diffusers-specific**, not a broad transformer-fusion bug. Key
+differences from Matcha's C33: (a) standalone == fused here (Matcha: standalone 0.984, fused 0.006);
+(b) **fp32 and fp16 models give identical device output** (the LITERT_CL delegate computes fp16 internally
+regardless of stored precision); (c) `SafeLayerNorm`/sigmoid-GELU/safe-bias **hardening does not help** (it is
+residual-accumulation cancellation, not a single op). The SEANet **convs are fp16-exact on GPU** (decoder-only
+fed the exact transformer output = audio **48 dB**); full-GPU decode is ~12 dB on real speech (a synthetic
+tone hides it). **Deployment = hybrid:** transformers→CPU (tiny: 8L×512×seq~50, trivial), SEANet convs→GPU;
+4-graph split (enc_conv GPU, enc_tx CPU, dec_tx CPU, deconly GPU) + CPU RVQ. Pixel 8a **RTF ≈ 0.35**, audio at
+the codec's quality floor. This mirrors the Matcha landing (transformer→CPU) but for a **different root cause**
+(fp16 precision vs fusion bug). Scripts: `mimi/scripts/{build_mimi,build_hybrid_graphs,mimi_rvq_validate_export}.py`.
