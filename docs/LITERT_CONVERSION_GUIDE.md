@@ -397,3 +397,37 @@ tone hides it). **Deployment = hybrid:** transformers→CPU (tiny: 8L×512×seq~
 4-graph split (enc_conv GPU, enc_tx CPU, dec_tx CPU, deconly GPU) + CPU RVQ. Pixel 8a **RTF ≈ 0.35**, audio at
 the codec's quality floor. This mirrors the Matcha landing (transformer→CPU) but for a **different root cause**
 (fp16 precision vs fusion bug). Scripts: `mimi/scripts/{build_mimi,build_hybrid_graphs,mimi_rvq_validate_export}.py`.
+
+### wav2vec2 keyword spotting — all-GPU, and the whole-graph compile limit
+
+Converter: litert-torch. `superb/wav2vec2-base-superb-ks` (Apache-2.0): raw 16 kHz waveform → 1D-conv
+feature extractor → 12-layer transformer encoder → weighted-layer-sum → classifier. **No FFT anywhere**
+(not even host-side mel — the frontend is conv on the raw waveform), and the transformer residual peaks
+at only **|x|≈3.2**, so unlike Mimi there is **no fp16-precision issue: the whole model is fp16-exact on
+GPU** (no CPU fallback). Device-verified Pixel 8a: 10/10 keywords correct, device-vs-CPU logits corr 0.9995.
+
+**Re-authoring (all numerically-equivalent, parity corr 1.0):** `nn.GELU`/`GELUActivation` ×20 →
+tanh-GELU; feature-extractor `nn.GroupNorm` (num_groups=channels) → GN4D (reshape `(B,G,C//G,T)` mean/var
+over `(2,3)`; kills GATHER_ND); pos-conv (kernel-128 grouped Conv1d) `weight_norm` → **fold** to a static
+weight (`remove_parametrizations(..., leave_parametrized=True)`; the runtime `_weight_norm` recompute is
+otherwise live in-graph); `create_bidirectional_mask()` builds an all-valid mask even when
+`attention_mask=None` (arange/ge/expand → SELECT_V2 + BROADCAST_TO) → **monkeypatch it to return None**
+(fixed length, no padding → SDPA full attention = BATCH_MATMUL + SOFTMAX clean; also makes pooling a plain
+`mean(dim=1)`).
+
+**Two new on-device findings (both general):**
+1. **Whole-graph Mali shader-compile limit.** A graph can be fully op-clean AND have each half compile,
+   yet **fail to compile when fused** (`Failed to compile model`, the delegate reports e.g. "Replacing 923
+   out of 1008 node(s) ... 2 partitions"). The full wav2vec2 graph fails; splitting at the conv-frontend /
+   transformer-encoder boundary makes both halves compile (frontend 134/134 + head 893/893 LITERT_CL). This
+   is a size/complexity ceiling, not a bad op — when a clean graph won't compile, split it.
+2. **`use_weighted_layer_sum` heads on GPU.** This checkpoint's logits use a softmax-weighted sum of ALL 13
+   hidden states, not just the last (dropping it flips predictions, corr 0.54 — replicate it exactly). On
+   the GPU it must be (a) **accumulated incrementally** (`acc += w[i]·hᵢ` after each layer) — `torch.stack`
+   of all 13 keeps every layer output live and splits the partition; and (b) the `softmax(layer_weights)`
+   must be **baked to Python-float constants** — the runtime softmax + 13 scalar `w[i]` gathers off a
+   runtime tensor break delegation into partitions (3 partitions → compile fail). Baked + incremental →
+   893/893 LITERT_CL, 1 partition.
+
+Scripts: `wav2vec2-kws/scripts/{build_w2v2,build_w2v2_split}.py`. Models:
+[`litert-community/wav2vec2-keyword-spotting`](https://huggingface.co/litert-community/wav2vec2-keyword-spotting).
