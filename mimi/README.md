@@ -65,7 +65,7 @@ audio →[GPU enc_conv]→ feat →[CPU enc_tx]→ emb →[CPU RVQ.encode]→ co
 
 1. Build the graphs + RVQ weights with `scripts/build_hybrid_graphs.py` +
    `scripts/mimi_rvq_validate_export.py`, or get them from Hugging Face
-   [**mlboydaisuke/Mimi-LiteRT**](https://huggingface.co/mlboydaisuke/Mimi-LiteRT).
+   [**litert-community/Mimi**](https://huggingface.co/litert-community/Mimi).
 2. Build/install the app, then push the models into its private storage:
    ```bash
    ./scripts/install_to_device.sh <dir-with-the-files>
@@ -80,5 +80,6 @@ audio →[GPU enc_conv]→ feat →[CPU enc_tx]→ emb →[CPU RVQ.encode]→ co
 - `scripts/mimi_rvq_validate_export.py` — validates the split RVQ vs torch (encode codes / decode exact),
   exports `mimi_rvq.bin`.
 
-> Note: the conversion uses model-op rewrites (patches) + a GPU/CPU placement split, so this is hosted
-> on a personal HF namespace, not as a patch-free "clean" sample. License: same as upstream Mimi (CC-BY).
+> Models: [litert-community/Mimi](https://huggingface.co/litert-community/Mimi). The re-authoring is
+> numerically-equivalent (per-graph corr 1.0); the GPU/CPU split is a deployment choice (transformers on
+> CPU for fp16 precision). License: same as upstream Mimi (CC-BY-4.0).

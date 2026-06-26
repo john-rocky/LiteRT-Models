@@ -453,7 +453,7 @@ mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
 
 | Model | Download | Size | Input → Output | Placement |
 | ----- | -------- | ---- | -------------- | --------- |
-| enc_conv | [HF: mlboydaisuke/Mimi-LiteRT](https://huggingface.co/mlboydaisuke/Mimi-LiteRT) | 24 MB FP16 | audio [1,1,L] → feat [1,512,Se] | CompiledModel GPU |
+| enc_conv | [HF: litert-community/Mimi](https://huggingface.co/litert-community/Mimi) | 24 MB FP16 | audio [1,1,L] → feat [1,512,Se] | CompiledModel GPU |
 | enc_tx | (same) | 50 MB FP16 | feat [1,Se,512] → emb [1,512,Tc] | CompiledModel CPU |
 | dec_tx | (same) | 48 MB FP16 | emb [1,512,Tc] → conv_in [1,512,seq] | CompiledModel CPU |
 | deconly | (same) | 28 MB FP16 | conv_in [1,512,seq] → audio [1,1,L] | CompiledModel GPU |
