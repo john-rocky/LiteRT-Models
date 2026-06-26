@@ -102,5 +102,6 @@ numerically exact.)
 - RTF lever is the **vocoder** (runs once at `MAX_MEL`, dominates wall time); the ODE step count
   is cheap (N=2→10 barely changes latency), so keep N=10 for quality. Bucket the vocoder by length
   to cut padding waste if needed.
-- Acronyms phonemize letter-by-letter via the neural fallback (e.g. "GPU" → "gpoo"); a spell-out
-  pass would improve them.
+- `MatchaG2P` normalizes text host-side before phonemizing: **ALL-CAPS acronyms are spelled
+  letter-by-letter** ("GPU" → "gee pee you", via an espeak letter-name IPA table) and **numbers are
+  read as words** ("4090" → "four thousand ninety"; decimals → "point").
