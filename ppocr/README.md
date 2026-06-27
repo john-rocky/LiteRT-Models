@@ -1,5 +1,8 @@
 # PP-OCRv5 — Text Detection + Recognition on-device (LiteRT GPU, fully GPU)
 
+<p align="center"><img src="https://huggingface.co/litert-community/PP-OCRv5-LiteRT/resolve/main/hero.png" width="380" alt="PP-OCRv5 on-device OCR on a Pixel 8a"></p>
+
+
 [PP-OCRv5](https://github.com/PaddlePaddle/PaddleOCR) (PaddleOCR 2025) text detection + recognition
 running **fully on the LiteRT CompiledModel GPU** (ML Drift). Detects text regions in an image and
 reads each line. **No autoregressive decoder** (recognition uses a CTC head), so unlike VLM-based OCR
