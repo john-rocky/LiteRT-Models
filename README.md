@@ -21,6 +21,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
+  - [RTMPose-s](#rtmpose-s)
+  - [YOLO26n-pose](#yolo26n-pose)
 
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
@@ -178,6 +180,20 @@ Converted via **litert-torch** by wrapping the head with `end2end=False, export=
 **Preprocessing**: RGB normalized to 0-1 (divide by 255), planar NCHW layout. No ImageNet mean/std.
 
 **Sample app**: [yolo-pose/](yolo-pose/) — Camera / Image / Video mode toggle, skeleton overlay matching either FILL_CENTER (camera) or FIT_CENTER (image/video).
+
+### RTMPose-s
+
+RTMPose-s (mmpose, CSPNeXt + RTMCC/SimCC head): the SOTA real-time **top-down** 2D human pose model — 17 COCO keypoints for a centered person — running **fully on the GPU** (`256/256` LITERT_CL on a Pixel 8a, **~4 ms**, fp16 **11.1 MB**). Apache-2.0 (vs the YOLO pose model's AGPL), device-vs-PyTorch SimCC corr **0.999**, keypoints within **0.3 px**.
+
+Converted via **litert-torch** with two numerically-exact, on-device-only re-authorings (both pass the desktop op-check yet were needed for a correct Mali result — *residency ≠ correctness*): (1) the RTMCC **`ScaleNorm` (RMS)** input reaches ≈|274| so its `Σx²`≈3.6M **overflows fp16** on Mali → `norm=∞` → all-zero head; fixed by scaling `x` down before squaring (same class as the NAFNet SafeLayerNorm). (2) The GAU attention **`act@act` BMM** → broadcast-multiply + reduce-sum (K=17 tokens).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtmpose_s_fp16.tflite](https://huggingface.co/litert-community/RTMPose-s-LiteRT) | 11.1 MB | Float32 [1, 3, 256, 192] NCHW | simcc_x [1,17,384], simcc_y [1,17,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmpose/](rtmpose/) |
+
+**Output format**: two 1D SimCC distributions per keypoint; argmax over the bins (÷ split=2) → pixel x/y. **Preprocessing**: center-crop to 3:4, resize 192×256, ImageNet 0-255 normalize, NCHW. Top-down (one centered person).
+
+**Sample app**: [rtmpose/](rtmpose/) — image picker + COCO skeleton overlay.
 
 # Segmentation
 
