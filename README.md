@@ -37,6 +37,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Zero-Shot Classification**](#zero-shot-classification)
   - [CLIP ViT-B/32](#clip-vit-b32)
+  - [MobileNetV3-Large (ImageNet)](#mobilenetv3-large-imagenet)
 
 - [**Surface Normal Estimation**](#surface-normal-estimation)
   - [DSINE](#dsine)
@@ -312,6 +313,20 @@ Converted via **litert-torch** (ViT architecture). Text embeddings pre-computed 
 **Sample app**: [clip/](clip/) — Image picker + top-10 classification results with confidence bars.
 
 **Original project**: [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) | [MIT](https://github.com/mlfoundations/open_clip/blob/main/LICENSE)
+
+### MobileNetV3-Large (ImageNet)
+
+MobileNetV3-Large (torchvision, ImageNet-1k): a standard supervised image classifier (top-1/top-5 of 1000 classes) — the supervised counterpart to the CLIP zero-shot model above. Pure CNN → runs **fully on the GPU** (`233/233` LITERT_CL on a Pixel 8a, **~4 ms**, device-vs-PyTorch corr **0.99995**, top-1 match). At **11.2 MB** fp16 it is one of the smallest models here.
+
+Converted via **litert-torch** with a single re-authoring: the 9 `AdaptiveAvgPool2d(1)` global pools (Squeeze-Excite blocks + the final classifier pool) → `mean(3).mean(2)`. `Hardswish`/`Hardsigmoid` lower to the native `HARD_SWISH` builtin. Softmax + top-k run on the CPU.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [mnv3_fp16.tflite](https://huggingface.co/mlboydaisuke/MobileNetV3-Large-ImageNet-LiteRT) | 11.2 MB | Float32 [1, 3, 224, 224] NCHW | Logits [1, 1000] | [torchvision](https://github.com/pytorch/vision) | [BSD-3-Clause](https://github.com/pytorch/vision/blob/main/LICENSE) | [mobilenetv3/](mobilenetv3/) |
+
+**Preprocessing**: center-crop, resize to 224×224, /255, ImageNet mean/std, NCHW. Output 1000-class logits; softmax + argmax for top-k.
+
+**Sample app**: [mobilenetv3/](mobilenetv3/) — image picker + top-5 predictions.
 
 # Surface Normal Estimation
 
