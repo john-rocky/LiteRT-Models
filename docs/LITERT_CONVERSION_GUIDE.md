@@ -458,3 +458,39 @@ host-side (Kotlin). **Env note:** `import _stub_propack` FIRST — a NARROW stub
 (the macOS-27 zero-fill dlopen bug) that leaves scipy.optimize/signal real (the repo imports them); the
 matcha `_stub` over-stubs scipy.optimize and breaks any librosa/scipy.signal user. Scripts:
 `ppocr/scripts/{build_det,build_rec}.py`. Models: [`litert-community/PP-OCRv5-LiteRT`](https://huggingface.co/litert-community/PP-OCRv5-LiteRT).
+
+### Metric3D v2 (DINOv2 ViT-S + RAFT-DPT) — fully-GPU metric depth, and three device-only gotchas
+
+Metric3D v2 ViT-S (BSD-2) = DINOv2 ViT-S/14+reg encoder + RAFTDepthNormalDPT5 decoder (4 iters) → absolute
+metric depth. Fixed 448×448. Encoder reuses the MoGe-2 ViT-S suite (fused-QKV→4D attention, LayerScale baked
+into Linear, baked 32×32 pos-embed). It converts GPU-clean and runs **fully on the GPU** (`2447/2447`
+LITERT_CL, Pixel 8a ~44 ms, fp16 78 MB), but desktop fp16 (corr 0.9999) hides **three issues that only the
+on-device run reveals** — each one is reusable:
+
+1. **Convex upsample → depth-to-space via `ZeroStuffConvT2d`, NOT nearest+in-block-mask.** The RAFT convex
+   upsample is `mask.view(N,1,9,r,r,H,W)` softmax + unfold (6/7-D). Re-author as 16 per-subpixel
+   softmax-over-9-neighbour combines (each 4D via pad+slice), `cat → [N, D·r², H, W]` (channel = `s·D+d`),
+   then a **fixed `ConvTranspose2d(D·r²→D, k=r, s=r)`** with `weight[s·D+d, d, i, j]=1` (`s=i·r+j`) wrapped in
+   `ZeroStuffConvT2d`. The intuitive alternative — nearest-upsample ×r then multiply by a mask selecting the
+   in-block `(i,j)` position — is exact on desktop but gives **device corr 0.57** (fp32 too): the Mali ML
+   Drift `RESIZE_NEAREST_NEIGHBOR` uses a different half-pixel/rounding convention at **non-stride-aligned**
+   output positions, so the mask grabs the wrong replicated pixel. `ZeroStuffConvT2d` masks **only
+   stride-aligned positions** (`[::s,::s]`, exact under any nearest convention) and the conv kernel supplies
+   the in-block offset. **Rule: never rely on `RESIZE_NEAREST` replication at non-stride outputs on Mali;
+   route the offset through a conv kernel.** Broadcast vs full-2D mask is irrelevant — it's the position.
+
+2. **tanh-GELU is mandatory for wide-range regression heads (not `x·sigmoid(1.702x)`).** Metric3D regresses
+   depth via a softmax-expectation over log-spaced bins to **200 m**. The standard sigmoid GELU approximation
+   tanks far-depth fidelity → **orig-vs-reauth corr 0.51** on an outdoor 11–200 m scene (flat indoor scenes
+   hide it at 0.98); the accurate tanh GELU `0.5x(1+tanh(0.7978845608(x + 0.044715x³)))` (x³ = x·x·x, POW-free,
+   GPU-clean) restores **0.96**. The coarse top-of-range bins amplify the GELU error — use tanh.
+
+3. **`nn.ReLU(inplace=True)` mutates the residual.** The DPT `ConvBlock.forward` does `out = self.act(x)`
+   (inplace) then `return x + out`, so the residual is **`relu(x) + convs`, not `x + convs`**. If you replace
+   that leading ReLU with a non-inplace op (to dodge its `where(x>0,x,0)` → `SELECT` lowering), you silently
+   change the residual → corr 0.22. Replicate exactly: `xr = relu(x); return xr + convs(xr)`.
+
+`norm_normalize`'s `F.elu` (→ `SELECT`) is rewritten SELECT-free as `exp(−relu(−k)) + relu(k) + min_κ` (exact
+identity). `Token2Feature`'s `ConvTranspose2d` (2× upsample) → `ZeroStuffConvT2d`. Input = ImageNet norm in
+0–255 scale; output is canonical-camera depth (× `fx/1000` for a calibrated camera, host-side). Scripts:
+`metric3d/scripts/build_m3d.py`. Models: [`mlboydaisuke/Metric3D-v2-LiteRT`](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT).
