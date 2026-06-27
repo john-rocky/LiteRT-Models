@@ -59,6 +59,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Audio Classification**](#audio-classification)
   - [wav2vec2 Keyword Spotting](#wav2vec2-keyword-spotting)
 
+- [**OCR**](#ocr)
+  - [PP-OCRv5](#pp-ocrv5)
+
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
 
@@ -490,6 +493,27 @@ mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
 **Sample app**: [wav2vec2-kws/](wav2vec2-kws/) — bundled-clip classify on launch + mic Record button.
 
 **Original project**: [superb/wav2vec2-base-superb-ks](https://huggingface.co/superb/wav2vec2-base-superb-ks) | [Apache-2.0](https://huggingface.co/facebook/wav2vec2-base)
+
+# OCR
+
+### PP-OCRv5
+
+[PP-OCRv5](https://github.com/PaddlePaddle/PaddleOCR) (PaddleOCR 2025) text detection + recognition running **fully on CompiledModel GPU**. Detects text regions and reads each line. **No autoregressive decoder** (recognition uses a CTC head), so both stages ride the GPU with no CPU/ONNX fallback — unlike VLM-based OCR (Florence-2/GOT-OCR) whose AR decoder must run on CPU. The sample runs OCR on a bundled image and overlays boxes + recognized text.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** detector **777/777** + recognizer **827/827** nodes on the LiteRT GPU delegate (`LITERT_CL`), ~9 ms each; bundled 3-line image read 3/3 correct ("Hello OCR 2026" / "PP-OCRv5 on GPU" / "LiteRT CompiledModel").
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| Detection (DBNet) | [HF: litert-community/PP-OCRv5-LiteRT](https://huggingface.co/litert-community/PP-OCRv5-LiteRT) | 10 MB FP16 | image [1,3,640,640] → prob map [1,1,640,640] | CompiledModel GPU |
+| Recognition (SVTR+CTC) | (same repo) | 17 MB FP16 | line [1,3,48,320] → logits [1,T,18385] | CompiledModel GPU |
+
+**Pipeline**: image → detector.tflite (GPU) → DB box postprocess (CPU) → crop → recognizer.tflite (GPU) → CTC decode (CPU) → text.
+
+**GPU compatibility**: the detector's DB-head `ConvTranspose2d` are rewritten to a GPU-clean **`ZeroStuffConvT2d`** (2D nearest-upsample × zero-stuff mask + flipped conv2d — the DAC/DA3 zero-stuff trick generalized to 2D; `TRANSPOSE_CONV` is Mali-rejected), and the recognizer's SVTR attention fused-QKV **5D reshape** is split into 4D. Per-graph tflite-vs-torch corr 1.0. Weights via the [PaddleOCR2Pytorch](https://github.com/frotms/PaddleOCR2Pytorch) port (Apache-2.0). See [ppocr/scripts/](ppocr/scripts/).
+
+**Sample app**: [ppocr/](ppocr/) — runs OCR on a bundled image, overlays detected boxes + recognized text.
+
+**Original project**: [PaddlePaddle/PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) | [Apache-2.0](https://github.com/PaddlePaddle/PaddleOCR/blob/main/LICENSE)
 
 # Super Resolution
 

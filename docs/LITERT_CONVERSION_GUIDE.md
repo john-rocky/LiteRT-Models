@@ -431,3 +431,30 @@ otherwise live in-graph); `create_bidirectional_mask()` builds an all-valid mask
 
 Scripts: `wav2vec2-kws/scripts/{build_w2v2,build_w2v2_split}.py`. Models:
 [`litert-community/wav2vec2-keyword-spotting`](https://huggingface.co/litert-community/wav2vec2-keyword-spotting).
+
+### PP-OCRv5 (PaddleOCR 2025) — fully-GPU OCR + ZeroStuffConvT2d
+
+Converter: litert-torch via the **PaddleOCR2Pytorch** port (Apache-2.0, pure-torch, no PaddlePaddle dep;
+weights from HF `JoyCN/PaddleOCR-Pytorch`). PP-OCRv5 is a classic CNN OCR pipeline — detection (DBNet:
+PPLCNetV4 + RepLKFPN + DB head) + recognition (PPLCNetV3 + SVTR + **CTC head**). It was chosen over the
+newer VLM-OCRs (Florence-2, GOT-OCR) precisely because it has **no autoregressive decoder** — the CTC head
+means both stages ride the GPU with no CPU/ONNX fallback (a VLM-OCR's AR decoder hits the decoder KV-cache
+wall and must run on CPU, the SmolVLM split). Apache-2.0, tiny (det 10MB + rec 17MB fp16). Device-verified
+Pixel 8a: det 777/777 + rec 827/827 LITERT_CL, ~9ms each, a 3-line image read 3/3 correct.
+
+**Two blockers, both re-authored (per-graph tflite-vs-torch corr 1.0):**
+1. **Detector DB head `ConvTranspose2d` (2× k2s2)** → **`ZeroStuffConvT2d`** = the 2D generalization of the
+   1D `ZeroStuffConvT1d` (DAC C20/C32): `F.interpolate` nearest ×s × a stride zero-stuff mask + flipped
+   `conv2d(padding=k-1)` + crop. `TRANSPOSE_CONV` is Mali-rejected (#1061); this is RESIZE_NEAREST + MUL +
+   CONV_2D, numerically exact (corr 1.0). Reusable for any deconv-upsample CNN head (seg/detection). Guard:
+   skip the training-only DB `thresh` branch's ConvTranspose2d (not hit at inference).
+2. **Recognizer SVTR `Attention` fused-QKV 5D reshape** `(B,N,3,heads,hd)` [the C12 pattern] → split q/k/v
+   to 4D `(B,heads,N,hd)` (numerically identical). The port already drops the NRTR autoregressive branch →
+   pure CTC. char_num = dict(18383) + blank + space = 18385; CTC layout = ['blank'] + dict + [' '].
+
+Preprocessing: det = ImageNet mean/std, /255, NCHW, 640×640. rec = resize h=48 keep-aspect pad to 320,
+(img/255−0.5)/0.5. DB box postprocess (threshold + connected-components + unclip) and CTC greedy decode are
+host-side (Kotlin). **Env note:** `import _stub_propack` FIRST — a NARROW stub of only scipy `_propack`
+(the macOS-27 zero-fill dlopen bug) that leaves scipy.optimize/signal real (the repo imports them); the
+matcha `_stub` over-stubs scipy.optimize and breaks any librosa/scipy.signal user. Scripts:
+`ppocr/scripts/{build_det,build_rec}.py`. Models: [`litert-community/PP-OCRv5-LiteRT`](https://huggingface.co/litert-community/PP-OCRv5-LiteRT).
