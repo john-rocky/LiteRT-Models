@@ -22,6 +22,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
 
+- [**Semantic Segmentation**](#semantic-segmentation)
+  - [LR-ASPP MobileNetV3](#lr-aspp-mobilenetv3)
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
   - [EdgeTAM (SAM2)](#edgetam-sam2)
@@ -241,6 +243,22 @@ Four stateless per-frame graphs run on the GPU; the rolling memory bank (7 spati
 **Sample app**: [edgetam-video/](edgetam-video/) — pick a video, tap an object on the first frame, watch the tracked mask overlay play back. Pixel 8a GPU ~0.45 s/frame (offline). Reference pipeline: [edgetam-video/scripts/deploy_ref_flat.py](edgetam-video/scripts/deploy_ref_flat.py).
 
 **Original project**: [facebook/EdgeTAM](https://github.com/facebookresearch/EdgeTAM) ([yonigozlan/EdgeTAM-hf](https://huggingface.co/yonigozlan/EdgeTAM-hf)) | [Apache-2.0](https://github.com/facebookresearch/EdgeTAM/blob/main/LICENSE)
+
+# Semantic Segmentation
+
+### LR-ASPP MobileNetV3
+
+Lite R-ASPP with a MobileNetV3-Large backbone (torchvision, COCO-VOC 21 classes): real-time **semantic** segmentation — labels every pixel as one of 21 classes (person, dog, car, chair, …). Pure CNN → runs **fully on the GPU** (`242/242` LITERT_CL on a Pixel 8a, **~5 ms** at 512×512, device-vs-PyTorch corr **0.99998** / argmax agreement 99.85%). At **6.7 MB** fp16 it is the smallest model in this repo.
+
+Converted via **litert-torch** with a single re-authoring: the MobileNetV3 Squeeze-Excite blocks and the R-ASPP scale branch use `AdaptiveAvgPool2d(1)` (global pool), each replaced by `mean(3).mean(2)` (two single-axis means — a single multi-axis pool is mis-computed on Mali). Everything else is already GPU-clean (`Hardswish`/`Hardsigmoid` → native `HARD_SWISH`, `align_corners=False`). Per-pixel argmax runs on the CPU.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [lraspp_fp16.tflite](https://huggingface.co/mlboydaisuke/LRASPP-MobileNetV3-LiteRT) | 6.7 MB | Float32 [1, 3, 512, 512] NCHW | Logits [1, 512, 512, 21] NHWC | [torchvision](https://github.com/pytorch/vision) | [BSD-3-Clause](https://github.com/pytorch/vision/blob/main/LICENSE) | [lraspp/](lraspp/) |
+
+**Preprocessing**: divide by 255, ImageNet mean/std `[0.485,0.456,0.406]`/`[0.229,0.224,0.225]`, NCHW. Output is 21-class logits; argmax per pixel for the class map.
+
+**Sample app**: [lraspp/](lraspp/) — image picker + VOC class colormap overlay.
 
 # Background Removal
 
