@@ -521,3 +521,16 @@ and not a single `mean((2,3))`: the two-step split keeps each single-axis sum sm
 sum would overflow the same way.) Scripts: `nafnet/scripts/build_nafnet.py`. Weights:
 [`nyanko7/nafnet-models`](https://huggingface.co/nyanko7/nafnet-models). Model:
 [`litert-community/NAFNet-GoPro-width32-LiteRT`](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT).
+
+### LR-ASPP MobileNetV3 (semantic segmentation) — the smallest, and the global-pool fix in isolation
+
+torchvision `lraspp_mobilenet_v3_large` (COCO-VOC, 21 classes, 3.2M params, BSD-3). Pure CNN (MobileNetV3
+backbone + Lite R-ASPP head). Converts GPU-clean and runs fully on the GPU (`242/242` LITERT_CL, Pixel 8a
+**~5 ms**, **fp16 6.7 MB** — the smallest in the zoo), **device-vs-torch corr 0.99998 / argmax-agree 99.85%**.
+A single re-authoring: the 9 `AdaptiveAvgPool2d(1)` global pools (8 MobileNetV3 SE blocks + the R-ASPP scale
+branch) → **`mean(3).mean(2)`** (two single-axis means; the Mali multi-axis-pool fix in its cleanest form —
+the activations here are bounded so there's no overflow, just the multi-axis-reduction mis-compute). Nothing
+else needed: `Hardswish`/`Hardsigmoid` lower to the native `HARD_SWISH` builtin, and the R-ASPP
+`F.interpolate` already uses `align_corners=False`. Output = NHWC 21-class logits; per-pixel argmax in the
+app. Preprocessing = `/255` + ImageNet mean/std. Scripts: `lraspp/scripts/build_lraspp.py`. Model:
+[`mlboydaisuke/LRASPP-MobileNetV3-LiteRT`](https://huggingface.co/mlboydaisuke/LRASPP-MobileNetV3-LiteRT).
