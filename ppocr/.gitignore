@@ -1,0 +1,15 @@
+build/
+.gradle/
+local.properties
+.idea/
+*.tflite
+app/src/main/assets/*.tflite
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+scripts/output/
+scripts/__pycache__/
+scripts/PaddleOCR2Pytorch/
+scripts/weights/
+!app/src/main/assets/test_image.png
+!app/src/main/assets/ppocrv5_dict.txt
