@@ -64,6 +64,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Super Resolution**](#super-resolution)
   - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
+- [**Image Restoration**](#image-restoration)
+  - [NAFNet (deblur)](#nafnet-deblur)
 
 - [**Monocular Geometry Estimation**](#monocular-geometry-estimation)
   - [MoGe-2 ViT-S](#moge-2-vit-s)
@@ -531,6 +533,22 @@ Real-ESRGAN: Practical image restoration and upscaling. The General-x4v3 variant
 **Output format**: `[1, 512, 512, 3]` — 4x upscaled RGB image (0-1 range).
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). For images larger than 128x128, process as overlapping tiles and stitch.
+
+# Image Restoration
+
+### NAFNet (deblur)
+
+NAFNet (Nonlinear Activation Free Network, ECCV 2022): image restoration — a U-Net of **NAFBlocks** with **no activation functions at all** (SimpleGate = channel-split multiply). The **GoPro-width32** variant removes motion blur. Pure CNN → runs **fully on the GPU** (`2179/2179` LITERT_CL on a Pixel 8a, ~42 ms at 256×256, device output **== PyTorch corr 1.0**).
+
+Converted via **litert-torch** with three numerically-exact re-authorings: the custom `LayerNorm2d` → an **fp16-safe channel LayerNorm** (NAFNet's residual stream reaches |x|≈175, so the LayerNorm channel-sum `Σ_c(x−μ)²` ~15M **overflows fp16** (max 65504) on the Mali delegate — which computes in fp16 regardless of model dtype — giving a grid artifact; doing the reduction in a down-scaled `x/S` domain and rescaling is exact); the Simplified Channel Attention `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`; and the upsample `PixelShuffle(2)` → depth-to-space `ZeroStuffConvT2d`.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [nafnet_fp16.tflite](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT) | 38 MB | Float32 [1, 3, 256, 256] NCHW | Float32 [1, 3, 256, 256] (RGB [0,1]) | [megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) | [MIT](https://github.com/megvii-research/NAFNet/blob/main/LICENSE) | [nafnet/](nafnet/) |
+
+**Preprocessing**: RGB normalized to 0-1 (divide by 255), NCHW planar. Output is the restored RGB image in [0,1].
+
+**Sample app**: [nafnet/](nafnet/) — image picker showing input | deblurred.
 
 # Monocular Geometry Estimation
 

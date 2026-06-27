@@ -494,3 +494,30 @@ on-device run reveals** — each one is reusable:
 identity). `Token2Feature`'s `ConvTranspose2d` (2× upsample) → `ZeroStuffConvT2d`. Input = ImageNet norm in
 0–255 scale; output is canonical-camera depth (× `fx/1000` for a calibrated camera, host-side). Scripts:
 `metric3d/scripts/build_m3d.py`. Models: [`mlboydaisuke/Metric3D-v2-LiteRT`](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT).
+
+### NAFNet (image restoration) — pure CNN, and the SafeLayerNorm fp16-overflow fix
+
+NAFNet (ECCV 2022, MIT) = a U-Net of NAFBlocks, **no activation functions** (SimpleGate = channel-split
+multiply). Pure CNN → Bucket-1. GoPro-width32 (deblur, 17M). Converts GPU-clean and runs fully on the GPU
+(`2179/2179` LITERT_CL, Pixel 8a ~42 ms, fp16 38 MB), **device-vs-torch corr 1.0** — but only after the
+SafeLayerNorm fix. Three numerically-exact re-authorings: `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`;
+`Conv2d(1×1)+PixelShuffle(2)` → Conv2d + depth-to-space `ZeroStuffConvT2d`; and:
+
+**SafeLayerNorm — fp16 channel-sum overflow (the headline; reusable for any deep-residual CNN/ViT).** NAFNet's
+residual stream grows large (`|x|≈175` at the bottleneck — the `beta`/`gamma`-scaled residuals accumulate over
+the 28-block deep encoder). A channel LayerNorm reduces over C: `Σ_c x` (~90k over 512 channels) and
+`Σ_c (x−μ)²` (~15M) both **exceed fp16's max 65504 → overflow** on the **Mali ML Drift delegate, which computes
+in fp16 regardless of the model's dtype** (so a "fp32 model" does NOT help — fp32-device == fp16-device ==
+garbage; do not use the fp32-device test to rule out precision). Symptom: the output looks ~right (corr 0.98,
+because restoration output is input-dominated) but the **learned residual is destroyed (corr 0.016)** → a
+periodic **grid artifact** (the decoder upsamples garbage deep features). Diagnosis: tap a **shallow** block
+(32 ch, `|x|≈6` → corr 0.9999) vs the **deep middle** (`|x|≈175` → corr 0.109): divergence ∝ activation
+magnitude ⇒ fp16 reduction overflow, not op-semantics. **Always check the residual/structural corr, not just
+output corr.** Fix — do the reductions in a **down-scaled domain** (numerically EXACT, LayerNorm is
+scale-invariant): `xs=x/S; mu=xs.mean(1); d=xs−mu; var=(d*d).mean(1)*S*S; d=d*S; y=d*rsqrt(var+eps)`. `S=128`
+keeps both sums < 65504 up to ~3× the observed magnitude; eps stays in the original domain so shallow blocks
+are unchanged → corr 1.0 everywhere. (This is *also* why the channel-attention pool must be `mean(3).mean(2)`
+and not a single `mean((2,3))`: the two-step split keeps each single-axis sum small; a 65536-element spatial
+sum would overflow the same way.) Scripts: `nafnet/scripts/build_nafnet.py`. Weights:
+[`nyanko7/nafnet-models`](https://huggingface.co/nyanko7/nafnet-models). Model:
+[`litert-community/NAFNet-GoPro-width32-LiteRT`](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT).
