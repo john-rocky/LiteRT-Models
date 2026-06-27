@@ -562,11 +562,12 @@ Converted via **litert-torch** with three numerically-exact re-authorings: the c
 
 | Download Link | Size | Input | Output | Original Project | License | Sample App |
 | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
-| [nafnet_fp16.tflite](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT) | 38 MB | Float32 [1, 3, 256, 256] NCHW | Float32 [1, 3, 256, 256] (RGB [0,1]) | [megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) | [MIT](https://github.com/megvii-research/NAFNet/blob/main/LICENSE) | [nafnet/](nafnet/) |
+| [nafnet_fp16.tflite](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT) (deblur) | 38 MB | Float32 [1, 3, 256, 256] NCHW | Float32 [1, 3, 256, 256] (RGB [0,1]) | [megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) | [MIT](https://github.com/megvii-research/NAFNet/blob/main/LICENSE) | [nafnet/](nafnet/) |
+| [nafnet_sidd_width32_fp16.tflite](https://huggingface.co/litert-community/NAFNet-SIDD-width32-LiteRT) (denoise) | 62 MB | Float32 [1, 3, 256, 256] NCHW | Float32 [1, 3, 256, 256] (RGB [0,1]) | [megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) | [MIT](https://github.com/megvii-research/NAFNet/blob/main/LICENSE) | [nafnet/](nafnet/) |
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255), NCHW planar. Output is the restored RGB image in [0,1].
 
-**Sample app**: [nafnet/](nafnet/) — image picker showing input | deblurred.
+**Sample app**: [nafnet/](nafnet/) — image picker showing input | restored (GoPro deblur; the same app runs the SIDD **denoise** model via `scripts/build_sidd.py`, device-verified corr 0.999999).
 
 # Monocular Geometry Estimation
 
