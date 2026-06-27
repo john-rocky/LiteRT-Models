@@ -68,6 +68,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Monocular Geometry Estimation**](#monocular-geometry-estimation)
   - [MoGe-2 ViT-S](#moge-2-vit-s)
   - [Depth Anything 3 ViT-S (Small)](#depth-anything-3-vit-s-small)
+  - [Metric3D v2 ViT-S](#metric3d-v2-vit-s)
 
 - [**Text Generation (LLM)**](#text-generation-llm)
   - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
@@ -574,6 +575,22 @@ Converted via **litert-torch** with nine GPU-compat patches: RoPE data-dependent
 **Sample app**: [da3/](da3/) — loads a bundled image, runs CompiledModel GPU inference, shows input | depth.
 
 **Original project**: [ByteDance-Seed/Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) | Apache-2.0
+
+### Metric3D v2 ViT-S
+
+Metric3D v2 (CVPR/TPAMI 2024): **metric** (absolute, in-meters) monocular depth from a single RGB image — a different output domain from Depth Anything (relative) / MoGe (affine) / DSINE (normals). DINOv2 ViT-S/14 + register tokens encoder with a **RAFT-DPT** iterative decoder (4 iters). Runs **fully on the GPU** (encoder *and* RAFT decoder) — `2447/2447` LITERT_CL on a Pixel 8a, ~44 ms, depth corr **0.96** vs the original.
+
+Converted via **litert-torch** at a fixed 448×448. Encoder = the MoGe-2 DINOv2 ViT-S suite (fused-QKV→4D attention, LayerScale baked into Linear, baked pos-embed). RAFT decoder re-authoring: the **convex upsample (6/7-D)** → a **depth-to-space `ZeroStuffConvT2d`** (16 softmax-over-9 subpixel combines → fixed `ConvTranspose2d(96→6,k4,s4)`); the naive nearest-upsample + in-block mask gives correct desktop output but **corr 0.57 on Mali** (ML Drift `RESIZE_NEAREST` half-pixel differs at non-stride positions) — `ZeroStuffConvT2d` masks only stride-aligned positions and places the offset via the conv kernel. **GELU → accurate tanh approximation, not `x·sigmoid(1.702x)`**: at the coarse top of the 0.1–200 m log-depth bins the sigmoid error collapses depth corr to 0.51; the tanh form restores 0.96. `Token2Feature ConvTranspose2d` → `ZeroStuffConvT2d`; `elu`→SELECT-free; the DPT `ConvBlock`'s `inplace=True` leading ReLU mutates the residual (`relu(x)+convs`) and is replicated exactly.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [metric3d_fp16.tflite](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT) | 78 MB | Float32 [1, 3, 448, 448] NCHW | Depth [1, 1, 448, 448] (meters) | [YvanYin/Metric3D](https://github.com/YvanYin/Metric3D) | [BSD-2-Clause](https://github.com/YvanYin/Metric3D/blob/main/LICENSE) (DINOv2: Apache-2.0) | [metric3d/](metric3d/) |
+
+**Preprocessing**: center-crop to square, resize to 448×448, ImageNet normalize in 0–255 scale `(px − [123.675,116.28,103.53]) / [58.395,57.12,57.375]`, NCHW planar. Output is canonical-camera metric depth; multiply by `fx/1000` for a calibrated camera.
+
+**Sample app**: [metric3d/](metric3d/) — image picker + depth colormap with near/far metric range.
+
+**Original project**: [YvanYin/Metric3D](https://github.com/YvanYin/Metric3D) | BSD-2-Clause
 
 # GPU Compatibility Notes
 
