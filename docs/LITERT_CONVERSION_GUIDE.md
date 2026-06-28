@@ -645,3 +645,17 @@ directly into `migan_inference.Generator(resolution=512)` (the repo's `export_in
 converting a source `.pkl` → inference model; not needed here). gdown-folder worked for the weights. Scripts:
 `migan/scripts/build_migan.py`. Model:
 [`litert-community/MI-GAN-512-Places2-LiteRT`](https://huggingface.co/litert-community/MI-GAN-512-Places2-LiteRT).
+
+### YuNet (face detection) — the smallest model in the zoo, zero re-authoring
+
+YuNet (ShiqiYu/libfacedetection, BSD-3, 0.076M params) — a tiny anchor-free face detector. Converts
+**GPU-clean in ONE shot, zero re-authoring**: `146/146` LITERT_CL, Pixel 8a **~4 ms** at 640×640, **fp16 0.3 MB
+(smallest in the zoo)**, device-vs-torch corr **0.9999**. Pure CNN (depthwise-separable `ConvDPUnit`) + a TFPN
+neck whose upsample is **`F.interpolate(mode="nearest")` → `RESIZE_NEAREST_NEIGHBOR`** (no transposed conv → no
+ZeroStuff) + non-padded `MaxPool2d` (no `-inf` pad → no `PADV2`). Wrap the head's per-stride
+`permute(0,2,3,1).reshape(B,-1,C)` (+ `.sigmoid()` on cls/obj) so the model emits 12 decode-ready tensors
+(cls/obj/bbox/kps × strides {8,16,32}, output order identity). **Preprocessing = BGR, 0-255, NO normalization**
+(`Normalize(mean=0,std=1,to_rgb=False)`). Decode host-side: anchor-free priors `px=col·s, py=row·s` (offset 0),
+score=`cls·obj`, box=`(bbox₀₁·s+prior, exp(bbox₂₃)·s)` center+wh, 5 landmarks `kps·s+prior`, then NMS.
+Weights `weights/yunet_n.pth` ship in the libfacedetection.train repo. Scripts: `yunet/scripts/build_yunet.py`.
+Model: [`litert-community/YuNet-Face-LiteRT`](https://huggingface.co/litert-community/YuNet-Face-LiteRT).
