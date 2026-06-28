@@ -53,5 +53,5 @@ The first launch fails with "Model not found" until the install script has been 
 **Preprocessing**: center-crop to square, resize to 224×224, /255, ImageNet mean/std, NCHW. Output 365-class
 logits; softmax + argmax for top-k.
 
-Model: `mlboydaisuke/Places365-ResNet18-LiteRT` (Hugging Face). Upstream:
+Model: `litert-community/Places365-ResNet18-LiteRT` (Hugging Face). Upstream:
 [CSAILVision/places365](https://github.com/CSAILVision/places365) (MIT).

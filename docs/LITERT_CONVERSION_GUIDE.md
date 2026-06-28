@@ -582,4 +582,4 @@ numerically-exact re-authorings — the second is a **NEW reusable Mali fix for 
 
 Result: banned ops NONE, all tensors ≤4D, tflite-vs-torch corr 1.0, device-vs-torch corr 1.0. Scripts:
 `places365/scripts/build_places.py`. Model:
-[`mlboydaisuke/Places365-ResNet18-LiteRT`](https://huggingface.co/mlboydaisuke/Places365-ResNet18-LiteRT).
+[`litert-community/Places365-ResNet18-LiteRT`](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT).
