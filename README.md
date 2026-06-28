@@ -642,6 +642,22 @@ Real-ESRGAN: Practical image restoration and upscaling. The General-x4v3 variant
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). For images larger than 128x128, process as overlapping tiles and stitch.
 
+# Style Transfer
+
+### Fast Neural Style (4 styles)
+
+Fast neural **style transfer** ([PyTorch examples](https://github.com/pytorch/examples/tree/main/fast_neural_style) `TransformerNet`, Johnson et al.): applies an artistic style to a photo — **4 styles** (candy / mosaic / rain_princess / udnie), each a **3.5 MB** fp16 graph. Runs **fully on the GPU** (`350/350` LITERT_CL on a Pixel 8a, **~9 ms** @ 256×256, device-vs-PyTorch corr **0.9998–0.9999** for all styles).
+
+Converted via **litert-torch** with three numerically-exact re-authorings: (1) `ReflectionPad2d` → zero-pad (`GATHER_ND` → `PAD`); (2) the large conv activations (≈|5000|) lose fp16 precision on Mali (corr 0.34 at full residency) → **scale the conv weights down (InstanceNorm is scale-invariant → exact)** so the fp16 accumulation stays precise; (3) `InstanceNorm` → **SafeInstanceNorm** (down-scaled-domain spatial reduction, fp16-safe). Upsample is `interpolate(nearest)` (no ZeroStuff).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [Fast-Neural-Style-LiteRT](https://huggingface.co/litert-community/Fast-Neural-Style-LiteRT) | 3.5 MB ×4 | Float32 [1, 3, 256, 256] NCHW (RGB 0-255) | [1, 3, 256, 256] (RGB 0-255) | [pytorch/examples](https://github.com/pytorch/examples) | [BSD-3-Clause](https://github.com/pytorch/examples/blob/main/LICENSE) | [neuralstyle/](neuralstyle/) |
+
+**Preprocessing**: center-crop, resize to 256×256, RGB 0–255 (no normalization), NCHW. Output 0–255 RGB (clamp).
+
+**Sample app**: [neuralstyle/](neuralstyle/) — image picker + 4 tappable style buttons.
+
 # Image Restoration
 
 ### NAFNet (deblur)
