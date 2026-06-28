@@ -659,3 +659,26 @@ ZeroStuff) + non-padded `MaxPool2d` (no `-inf` pad → no `PADV2`). Wrap the hea
 score=`cls·obj`, box=`(bbox₀₁·s+prior, exp(bbox₂₃)·s)` center+wh, 5 landmarks `kps·s+prior`, then NMS.
 Weights `weights/yunet_n.pth` ship in the libfacedetection.train repo. Scripts: `yunet/scripts/build_yunet.py`.
 Model: [`litert-community/YuNet-Face-LiteRT`](https://huggingface.co/litert-community/YuNet-Face-LiteRT).
+
+### UniSal (visual saliency) — the strided-slice→avg_pool fix, gaussian-prior bake, and "smoothing isn't cosmetic"
+
+UniSal (rdroste, Apache, 3.71M) — saliency prediction (where humans look). MobileNetV2 + bilinear decoder.
+Converts GPU-clean (`158/158` LITERT_CL, Pixel 8a **~3 ms**, fp16 6.5 MB, device-vs-torch corr **0.9998**) with
+three exact fixes:
+
+1. **⭐ Strided subsample `x[..., ::2, ::2]` → `F.avg_pool2d(x, kernel_size=1, stride=2)`** (NEW reusable). A
+   stride-2 channel-preserving subsample lowers to **`GATHER_ND`** (banned). A kernel-1 stride-2 average-pool
+   selects the *exact same* pixels (kernel 1 = no averaging) and emits `AVERAGE_POOL_2D` — numerically identical.
+   (Same class as the EdgeTAM `x[:, :, i::w, j::w]`→grouped-conv finding, but for a simple 2× subsample.)
+2. **Bake the Gaussian prior maps.** `_get_gaussian_maps` (meshgrid + per-gaussian `exp`) emits `GATHER_ND` +
+   `BROADCAST_TO`; the maps depend ONLY on the (fixed) feature size + learned params, so precompute once (run on a
+   zero input of the right size) and concatenate the constant buffer.
+3. **`F.pad(mode="replicate")` → 0-pad** for the 41×41 Gaussian smoothing (replicate → `GATHER_ND`).
+
+**⚠ Lesson: the smoothing is NOT cosmetic.** Dropping the 41×41 smoothing made the saliency *anti-correlate*
+(−0.56) with the real model — the smoothing **suppresses border/corner artifacts** that otherwise become the
+spurious global max. Verify a re-authored pipeline against the FULL reference's *argmax/spatial pattern*, not
+just an internal device-vs-tflite corr (which was 1.0 even while the output was wrong). Static-image path:
+Bypass-RNN + pin one domain (SALICON) so the domain-specific BatchNorm/smoothing fold to constants; final spatial
+log-softmax → host. Scripts: `saliency/scripts/build_unisal.py`. Model:
+[`litert-community/UniSal-Saliency-LiteRT`](https://huggingface.co/litert-community/UniSal-Saliency-LiteRT).
