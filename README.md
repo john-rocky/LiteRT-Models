@@ -377,7 +377,7 @@ Converted via **litert-torch** with two numerically-exact re-authorings: the glo
 
 | Download Link | Size | Input | Output | Original Project | License | Sample App |
 | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
-| [places_fp16.tflite](https://huggingface.co/mlboydaisuke/Places365-ResNet18-LiteRT) | 22.8 MB | Float32 [1, 3, 224, 224] NCHW | Logits [1, 365] | [CSAILVision/places365](https://github.com/CSAILVision/places365) | [MIT](https://github.com/CSAILVision/places365/blob/master/LICENSE) | [places365/](places365/) |
+| [places_fp16.tflite](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT) | 22.8 MB | Float32 [1, 3, 224, 224] NCHW | Logits [1, 365] | [CSAILVision/places365](https://github.com/CSAILVision/places365) | [MIT](https://github.com/CSAILVision/places365/blob/master/LICENSE) | [places365/](places365/) |
 
 **Preprocessing**: center-crop, resize to 224×224, /255, ImageNet mean/std, NCHW. Output 365-class scene logits; softmax + argmax for top-k.
 
