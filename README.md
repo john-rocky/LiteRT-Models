@@ -714,6 +714,22 @@ Converted via **litert-torch** with three numerically-exact re-authorings: (1) `
 
 **Sample app**: [neuralstyle/](neuralstyle/) — image picker + 4 tappable style buttons.
 
+# Low-Light Enhancement
+
+### CPGA-Net
+
+[CPGA-Net](https://github.com/Shyandram/CPGA-Net-Pytorch) (Shyandram, IJPRAI, MIT): **low-light image enhancement** (brighten dark photos) via Channel Prior + Gamma Correction. At **0.025 M params / 0.1 MB fp16** it is the **smallest model in this repo**. Runs **fully on the GPU** (`135/135` LITERT_CL on a Pixel 8a, **~2 ms** at 256×256, device-vs-PyTorch corr **0.99999**).
+
+Three numerically-exact GPU fixes: the gamma correction `x^γ` → `exp(γ·log x)` (avoids the banned `POW`); the CBAM/gamma global pools → `mean(3).mean(2)` and `F.max_pool2d(x,(H,W))`; the dark/bright channel prior stays as `REDUCE_MAX`/`REDUCE_MIN`. The guided-filter post-process is disabled.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [cpga_fp16.tflite](https://huggingface.co/litert-community/CPGA-Net-LowLight-LiteRT) | 0.1 MB | Float32 [1, 3, 256, 256] NCHW ([0,1]) | enhanced [1, 3, 256, 256] ([0,1]) | [Shyandram/CPGA-Net-Pytorch](https://github.com/Shyandram/CPGA-Net-Pytorch) | [MIT](https://github.com/Shyandram/CPGA-Net-Pytorch/blob/main/LICENSE) | [lowlight/](lowlight/) |
+
+**Preprocessing**: center-crop, resize 256×256, RGB scaled to [0,1], NCHW.
+
+**Sample app**: [lowlight/](lowlight/) — image picker + enhanced view (press-and-hold to compare).
+
 # Image Restoration
 
 ### NAFNet (deblur)
