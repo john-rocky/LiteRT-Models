@@ -22,6 +22,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
   - [RTMPose-s](#rtmpose-s)
+  - [RTMW-m (whole-body, 133 keypoints)](#rtmw-m-whole-body-133-keypoints)
+  - [RTMPose-Hand (21 keypoints)](#rtmpose-hand-21-keypoints)
   - [YOLO26n-pose](#yolo26n-pose)
 
 - [**Segmentation**](#segmentation)
@@ -194,6 +196,28 @@ Converted via **litert-torch** with two numerically-exact, on-device-only re-aut
 **Output format**: two 1D SimCC distributions per keypoint; argmax over the bins (÷ split=2) → pixel x/y. **Preprocessing**: center-crop to 3:4, resize 192×256, ImageNet 0-255 normalize, NCHW. Top-down (one centered person).
 
 **Sample app**: [rtmpose/](rtmpose/) — image picker + COCO skeleton overlay.
+
+### RTMW-m (whole-body, 133 keypoints)
+
+RTMW-m (mmpose, CSPNeXt + CSPNeXtPAFPN neck + RTMW/SimCC head): **whole-body** 2D pose — **133 COCO-WholeBody keypoints** (17 body + 6 feet + 68 face + 42 hands) for a centered person. The model ControlNet/animation pipelines use. Runs **fully on the GPU** (`531/531` LITERT_CL on a Pixel 8a, **~6 ms**, fp16 **66 MB**), device-vs-PyTorch SimCC corr **0.999**, keypoints within **0.2 px**.
+
+Converted via **litert-torch** with the RTMPose-family re-authorings (SafeRMSNorm for the `ScaleNorm` fp16 overflow + GAU `act@act` BMM → broadcast-reduce) **plus** `nn.PixelShuffle` → depth-to-space `ZeroStuffConvT2d` (the RTMW head's PixelShuffle upsample lowers to a 6D tensor; the fixed depth-to-space `ConvTranspose2d` keeps it 4D — reused from NAFNet/Metric3D).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtmw_fp16.tflite](https://huggingface.co/litert-community/RTMW-m-WholeBody-LiteRT) | 66 MB | Float32 [1, 3, 256, 192] NCHW | simcc_x [1,133,384], simcc_y [1,133,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmw/](rtmw/) |
+
+**Sample app**: [rtmw/](rtmw/) — image picker + whole-body skeleton (body/feet/face/hands color-coded).
+
+### RTMPose-Hand (21 keypoints)
+
+RTMPose-m hand (mmpose, CSPNeXt + RTMCC/SimCC head): **hand** pose — the **21 standard hand keypoints** (wrist + 4 joints × 5 fingers) for a centered hand. Runs **fully on the GPU** (`333/333` LITERT_CL on a Pixel 8a, **~4 ms**, fp16 **28 MB**), device-vs-PyTorch SimCC corr **0.999**. Same RTMPose-family re-authorings as the body model (no PixelShuffle — no neck).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtmhand_fp16.tflite](https://huggingface.co/litert-community/RTMPose-Hand-LiteRT) | 28 MB | Float32 [1, 3, 256, 256] NCHW | simcc_x [1,21,512], simcc_y [1,21,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmhand/](rtmhand/) |
+
+**Sample app**: [rtmhand/](rtmhand/) — image picker + 21-keypoint hand skeleton (per-finger color).
 
 # Segmentation
 
