@@ -621,3 +621,25 @@ nearest upsample, no transposed conv → no ZeroStuff). Runs fully on the GPU (`
 
 Scripts: `neuralstyle/scripts/build_style.py`. Model:
 [`litert-community/Fast-Neural-Style-LiteRT`](https://huggingface.co/litert-community/Fast-Neural-Style-LiteRT).
+
+### AnimeGANv2 (photo→anime) — GroupNorm(1)→SafeGroupNorm + the conv-scaling fix generalizes
+
+AnimeGANv2 (bryandlee/animegan2-pytorch, MIT, 2.14M, 2 styles). Generator = ConvNormLReLU + MobileNet
+InvertedResBlocks + bilinear upsample. Runs fully on the GPU (`685/685` LITERT_CL, Pixel 8a **~10 ms**, fp16
+~4 MB/style, device-vs-torch corr **0.99996**) after four numerically-exact re-authorings — confirming the Fast
+Neural Style fixes **generalize to any normalized generator**:
+
+1. **`ReflectionPad2d` → zero-pad** (reflect → `GATHER_ND` + the boundary `LESS`/`SELECT`; zero-pad → `PAD`).
+2. **`GroupNorm(num_groups=1)` → SafeGroupNorm.** litert-torch's native GroupNorm lowering emits **`GATHER_ND`**
+   (~48). Re-author 4D: reduce over **(C,H,W)** (GroupNorm(1) normalizes all channels together) via **three**
+   single-axis means (`mean(3).mean(2).mean(1)`) in a down-scaled domain (fp16-safe; the reduction is over
+   C·H·W ≈ 16M elements → guaranteed overflow without the down-scale). Per-channel affine.
+3. **Conv-weight scaling via GroupNorm scale-invariance** — identical to the Fast Neural Style fix (GroupNorm,
+   like InstanceNorm, satisfies `GN(a·x)=GN(x)`), so scaling the convs feeding a GroupNorm down to output ≈ |10|
+   is exact and keeps the Mali fp16 conv accumulation precise. Without it: garbage at full residency.
+4. **bilinear `align_corners=True` → `False`** — the Generator's `forward(x, align_corners=False)` path already
+   uses the delegate-safe `scale_factor=2` bilinear; just trace with `align_corners=False`.
+
+So the **"rescale conv via the following norm's scale-invariance"** rule covers InstanceNorm AND GroupNorm
+generators (style transfer, anime/cartoonization, most GAN decoders). Scripts: `anime/scripts/build_anime.py`.
+Model: [`litert-community/AnimeGANv2-LiteRT`](https://huggingface.co/litert-community/AnimeGANv2-LiteRT).

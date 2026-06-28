@@ -658,6 +658,20 @@ Converted via **litert-torch** with three numerically-exact re-authorings: (1) `
 
 **Sample app**: [neuralstyle/](neuralstyle/) — image picker + 4 tappable style buttons.
 
+### AnimeGANv2 (photo → anime)
+
+[AnimeGANv2](https://github.com/bryandlee/animegan2-pytorch) (bryandlee, MIT): **photo-to-anime** stylization — **2 styles** (paprika = general anime, face_paint_512_v2 = anime face portrait), each ~4 MB fp16. Runs **fully on the GPU** (`685/685` LITERT_CL on a Pixel 8a, **~10 ms** @ 256×256, device-vs-PyTorch corr **0.99996**).
+
+Converted via **litert-torch** with four numerically-exact re-authorings: `ReflectionPad2d` → zero-pad (`GATHER_ND` → `PAD`); **`GroupNorm(1)` → SafeGroupNorm** (native GroupNorm → `GATHER_ND`; manual 4D reduce over C,H,W in a down-scaled domain); **conv-weight scaling via GroupNorm scale-invariance** (keeps the large conv activations fp16-precise on Mali); bilinear `align_corners=True` → `False`. No transposed conv → no ZeroStuff.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [AnimeGANv2-LiteRT](https://huggingface.co/litert-community/AnimeGANv2-LiteRT) | ~4 MB ×2 | Float32 [1, 3, 256, 256] NCHW ([-1,1]) | [1, 3, 256, 256] ([-1,1]) | [bryandlee/animegan2-pytorch](https://github.com/bryandlee/animegan2-pytorch) | [MIT](https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE) | [anime/](anime/) |
+
+**Preprocessing**: center-crop, resize 256×256, RGB → [-1,1] (`x/127.5-1`), NCHW. Output [-1,1] → `(x+1)·127.5` clamp.
+
+**Sample app**: [anime/](anime/) — image picker + 2 tappable style buttons (paprika / face).
+
 # Image Restoration
 
 ### NAFNet (deblur)
