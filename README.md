@@ -39,6 +39,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Zero-Shot Classification**](#zero-shot-classification)
   - [CLIP ViT-B/32](#clip-vit-b32)
+  - [Places365 ResNet18 (scene recognition)](#places365-resnet18-scene-recognition)
 
 - [**Surface Normal Estimation**](#surface-normal-estimation)
   - [DSINE](#dsine)
@@ -334,6 +335,20 @@ Converted via **litert-torch** (ViT architecture). Text embeddings pre-computed 
 **Sample app**: [clip/](clip/) — Image picker + top-10 classification results with confidence bars.
 
 **Original project**: [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) | [MIT](https://github.com/mlfoundations/open_clip/blob/main/LICENSE)
+
+### Places365 ResNet18 (scene recognition)
+
+ResNet18 trained on [Places365](http://places2.csail.mit.edu/) (CSAILVision, MIT): **scene/place recognition** across **365 categories** (beach, kitchen, forest, office, restaurant, …) — a distinct task from object classification (it answers *what kind of place* a photo is). Pure CNN → runs **fully on the GPU** (`61/61` LITERT_CL on a Pixel 8a, **~2 ms**, fp16 **22.8 MB**, device-vs-PyTorch corr **1.0**, top-1 match).
+
+Converted via **litert-torch** with two numerically-exact re-authorings: the global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`, and the ResNet stem `MaxPool2d(3,s2,p1)` → **zero-pad + valid max-pool** (PyTorch's max-pool pads with `-inf` → a `PADV2` the Mali delegate won't delegate; since the pool follows a ReLU, a 0-pad is exactly equivalent and emits a delegatable `PAD`).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [places_fp16.tflite](https://huggingface.co/mlboydaisuke/Places365-ResNet18-LiteRT) | 22.8 MB | Float32 [1, 3, 224, 224] NCHW | Logits [1, 365] | [CSAILVision/places365](https://github.com/CSAILVision/places365) | [MIT](https://github.com/CSAILVision/places365/blob/master/LICENSE) | [places365/](places365/) |
+
+**Preprocessing**: center-crop, resize to 224×224, /255, ImageNet mean/std, NCHW. Output 365-class scene logits; softmax + argmax for top-k.
+
+**Sample app**: [places365/](places365/) — image picker + top-5 scene categories.
 
 # Surface Normal Estimation
 
