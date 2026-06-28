@@ -58,7 +58,12 @@ class MainActivity : Activity() {
         bg.execute {
             try {
                 net = RtmHandEstimator(this)
-                run(cropSquare(BitmapFactory.decodeStream(assets.open("test_image.jpg"))), warm = true)
+                // Optional bundled demo image; if absent just wait for a picked image.
+                try {
+                    run(cropSquare(BitmapFactory.decodeStream(assets.open("test_image.jpg"))), warm = true)
+                } catch (_: java.io.IOException) {
+                    runOnUiThread { status.text = "Ready — pick an image to estimate hand pose." }
+                }
                 runOnUiThread { pick.isEnabled = true }
             } catch (e: Throwable) {
                 Log.e(tag, "load failed", e)
