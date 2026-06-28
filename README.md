@@ -239,6 +239,22 @@ RTMPose-m hand (mmpose, CSPNeXt + RTMCC/SimCC head): **hand** pose — the **21 
 
 **Sample app**: [rtmanimal/](rtmanimal/) — image picker + 17-keypoint AP-10K animal skeleton.
 
+# Face Detection
+
+### YuNet
+
+[YuNet](https://github.com/ShiqiYu/libfacedetection) (ShiqiYu/libfacedetection, BSD-3-Clause): a tiny, fast **face detector** (faces + 5 landmarks). At **0.076 M params / 0.3 MB fp16** it is the **smallest model in this repo**. Runs **fully on the GPU** (`146/146` LITERT_CL on a Pixel 8a, **~4 ms** at 640×640, device-vs-PyTorch corr **0.9999**).
+
+Pure CNN (depthwise-separable `ConvDPUnit`) + a **nearest-upsample** neck (→ `RESIZE_NEAREST_NEIGHBOR`, no transposed conv); non-padded `MaxPool` (no `PADV2`). No re-authoring — banned ops NONE, ≤4D. The head's `permute/reshape/sigmoid` per stride is baked in (12 outputs: cls/obj/bbox/kps × strides {8,16,32}); decode (priors + center/exp box + landmarks + NMS) runs in the app.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [yunet_fp16.tflite](https://huggingface.co/litert-community/YuNet-Face-LiteRT) | 0.3 MB | Float32 [1, 3, 640, 640] NCHW (BGR, 0-255) | 12 × (cls/obj/bbox/kps per stride) | [ShiqiYu/libfacedetection](https://github.com/ShiqiYu/libfacedetection) | [BSD-3-Clause](https://github.com/ShiqiYu/libfacedetection/blob/master/LICENSE) | [yunet/](yunet/) |
+
+**Decode**: score = `cls·obj`; box = `center + exp(wh)·stride`; 5 landmarks; NMS (IoU 0.45). **Preprocessing**: letterbox to 640×640, **BGR, 0-255 (no normalization)**.
+
+**Sample app**: [yunet/](yunet/) — image picker + face boxes + 5 landmarks.
+
 # Gaze Estimation
 
 ### L2CS-Net
