@@ -283,6 +283,22 @@ Converted via **litert-torch** with the two ResNet fixes: the stem `MaxPool2d(3,
 
 **Sample app**: [gaze/](gaze/) — image picker + gaze-direction arrow.
 
+# Saliency Prediction
+
+### UniSal
+
+[UniSal](https://github.com/rdroste/unisal) (rdroste, Apache-2.0): **visual saliency** — predicts a heatmap of *where humans look* in an image. MobileNetV2 encoder + bilinear decoder, **3.71 M params**. Runs **fully on the GPU** (`158/158` LITERT_CL on a Pixel 8a, **~3 ms** at 256×256, device-vs-PyTorch corr **0.9998**, **6.5 MB** fp16).
+
+Three numerically-exact GPU fixes: the MobileNetV2 strided subsample `x[..., ::2, ::2]` → `F.avg_pool2d(x, 1, 2)` (same pixels, avoids `GATHER_ND`); the 16 Gaussian prior maps **baked** to constants (size-only; avoids `GATHER_ND`/`BROADCAST_TO`); and the 41×41 Gaussian-smoothing `replicate`-pad → 0-pad. For static images the Bypass-RNN path is used + the SALICON domain pinned.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [unisal_fp16.tflite](https://huggingface.co/litert-community/UniSal-Saliency-LiteRT) | 6.5 MB | Float32 [1, 3, 256, 256] NCHW | saliency [1, 1, 256, 256] | [rdroste/unisal](https://github.com/rdroste/unisal) | [Apache-2.0](https://github.com/rdroste/unisal/blob/master/LICENSE) | [saliency/](saliency/) |
+
+**Preprocessing**: center-crop, resize 256×256, /255, ImageNet mean/std, NCHW. The app min-max normalizes the saliency and overlays a jet heatmap.
+
+**Sample app**: [saliency/](saliency/) — image picker + saliency heatmap overlay.
+
 # Segmentation
 
 ### MobileSAM
