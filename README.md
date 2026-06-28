@@ -26,6 +26,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [RTMPose-Hand (21 keypoints)](#rtmpose-hand-21-keypoints)
   - [YOLO26n-pose](#yolo26n-pose)
 
+- [**Gaze Estimation**](#gaze-estimation)
+  - [L2CS-Net](#l2cs-net)
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
   - [EdgeTAM (SAM2)](#edgetam-sam2)
@@ -223,6 +225,22 @@ RTMPose-m hand (mmpose, CSPNeXt + RTMCC/SimCC head): **hand** pose — the **21 
 | [rtmhand_fp16.tflite](https://huggingface.co/litert-community/RTMPose-Hand-LiteRT) | 28 MB | Float32 [1, 3, 256, 256] NCHW | simcc_x [1,21,512], simcc_y [1,21,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmhand/](rtmhand/) |
 
 **Sample app**: [rtmhand/](rtmhand/) — image picker + 21-keypoint hand skeleton (per-finger color).
+
+# Gaze Estimation
+
+### L2CS-Net
+
+[L2CS-Net](https://github.com/Ahmednull/L2CS-Net) (Ahmednull, MIT): **gaze estimation** — predicts where a centered face is looking (yaw/pitch), for attention/AR/accessibility. ResNet50 backbone trained on Gaze360. Runs **fully on the GPU** (`139/139` LITERT_CL on a Pixel 8a, **~3 ms**, fp16 **47.9 MB**, device-vs-PyTorch corr **0.9999**).
+
+Converted via **litert-torch** with the two ResNet fixes: the stem `MaxPool2d(3,s2,p1)` → **zero-pad + valid max-pool** (PyTorch's max-pool pads with `-inf` → a `PADV2` the Mali delegate won't delegate; since the pool follows a ReLU, a 0-pad is exactly equivalent → `PAD`), and the global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`. The angle-bin softmax is baked in.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [gaze_fp16.tflite](https://huggingface.co/litert-community/L2CS-Gaze360-LiteRT) | 47.9 MB | Float32 [1, 3, 448, 448] NCHW | yaw [1,90], pitch [1,90] (softmax bins) | [Ahmednull/L2CS-Net](https://github.com/Ahmednull/L2CS-Net) | [MIT](https://github.com/Ahmednull/L2CS-Net/blob/main/LICENSE) | [gaze/](gaze/) |
+
+**Output / decode**: 90 angle bins spanning [-180,180]° (4° each); the gaze angle is the softmax expectation `Σ p_i·i · 4 − 180`. **Preprocessing**: center-crop to a (centered) face, resize 448×448, /255, ImageNet mean/std, NCHW.
+
+**Sample app**: [gaze/](gaze/) — image picker + gaze-direction arrow.
 
 # Segmentation
 
