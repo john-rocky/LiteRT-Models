@@ -704,3 +704,26 @@ exact fixes:
 `isdgf=False` (no FastGuidedFilter → no bicubic). Stub `guided_filter_pytorch` (imported at module level, unused).
 Scripts: `lowlight/scripts/build_cpga.py`. Model:
 [`litert-community/CPGA-Net-LowLight-LiteRT`](https://huggingface.co/litert-community/CPGA-Net-LowLight-LiteRT).
+
+### wav2vec2-CTC (fully-GPU ASR) + the GroupNorm-reduction-extent fp16 rule (Moonshine park)
+
+wav2vec2-base-960h CTC (Facebook, Apache) — on-device **speech recognition, fully GPU, single forward pass**
+(no autoregressive decoder; CTC greedy decode on the host). Device-verified Pixel 8a: `997/997` LITERT_CL
+(single graph), **~22 ms** / 10 s, device-vs-torch corr **0.99998**, **exact** transcription. **Zero FFT** (raw
+16 kHz waveform → 1D-conv frontend). Reuses the shipped wav2vec2-KWS recipe (TanhGELU + GN4D + fold pos_conv
+weight-norm + bidirectional-mask→None); only the head changes (classification → CTC `lm_head`), output = logits
+`[1, T', 32]`. fp16 190 MB → filesDir push. Scripts: `asr/scripts/build_w2v2_ctc.py`. Model:
+[`litert-community/wav2vec2-base-960h-CTC-LiteRT`](https://huggingface.co/litert-community/wav2vec2-base-960h-CTC-LiteRT).
+
+**⭐ NEW reusable Mali rule — manual GroupNorm fp16-precision depends on the REDUCTION EXTENT.** Moonshine-tiny
+(the fresh 2024 on-device ASR) was attempted first and **parked**: its conv-stem `GroupNorm(num_groups=1)`
+reduces over the **joint C×T** feature map (288 × 1248 ≈ 360k elements). A manual GN over that extent is
+**fp16-imprecise on Mali** (device corr 0.55 at the GN tap, even with a down-scaled explicit sum *or* a staged
+native mean — fp16 accumulation error over ~360k terms), and the 0.55 compounds through the 6 transformer layers
+to a **constant** output. By contrast wav2vec2's GroupNorm is `num_groups=512` = **per-channel over time only**
+(a small ~T reduction) → fp16-precise → ships. **Rule: a manual GroupNorm/LayerNorm whose reduction spans a large
+joint (channel×spatial/time) extent will lose fp16 precision on the Mali delegate even when down-scaled; group/
+instance norms that reduce over a single small axis are safe.** (conv1 itself was corr 1.0 on device — isolate
+norm collapses with a per-stage device tap.) Moonshine encoder otherwise converted GPU-clean via the standard
+RoPE recipe: interleaved `rotate_half` → fixed `q @ P` matmul + baked cos/sin (kills the `x[...,0::2]` GATHER_ND
++ the `stack` 5D), tanh-GELU, mask→None. `~/Downloads/meeting/asr-work/build_moonshine.py` (reusable RoPE recipe).
