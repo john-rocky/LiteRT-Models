@@ -58,7 +58,12 @@ class MainActivity : Activity() {
         bg.execute {
             try {
                 net = RtmwEstimator(this)
-                run(cropPerson(BitmapFactory.decodeStream(assets.open("test_image.jpg"))), warm = true)
+                // Optional bundled demo image; if absent just wait for a picked image.
+                try {
+                    run(cropPerson(BitmapFactory.decodeStream(assets.open("test_image.jpg"))), warm = true)
+                } catch (_: java.io.IOException) {
+                    runOnUiThread { status.text = "Ready — pick an image to estimate whole-body pose." }
+                }
                 runOnUiThread { pick.isEnabled = true }
             } catch (e: Throwable) {
                 Log.e(tag, "load failed", e)
