@@ -458,3 +458,51 @@ host-side (Kotlin). **Env note:** `import _stub_propack` FIRST — a NARROW stub
 (the macOS-27 zero-fill dlopen bug) that leaves scipy.optimize/signal real (the repo imports them); the
 matcha `_stub` over-stubs scipy.optimize and breaks any librosa/scipy.signal user. Scripts:
 `ppocr/scripts/{build_det,build_rec}.py`. Models: [`litert-community/PP-OCRv5-LiteRT`](https://huggingface.co/litert-community/PP-OCRv5-LiteRT).
+
+### RF-DETR Nano (Roboflow / LW-DETR 2025) — first transformer/DETR detector fully on GPU (2-graph split + SafeLayerNorm)
+
+Converter: **litert-torch** (`pip install rfdetr`, Apache-2.0). RF-DETR is a transformer detector
+(windowed DINOv2-S backbone + deformable-attention DETR decoder, two-stage, 30.5M). The off-the-shelf
+Qualcomm/onnx2tf export is GPU-incompatible (deformable `grid_sample`→GATHER_ND, windowed attn 5D/6D,
+TOPK/GATHER) — but with litert-torch re-authoring + a 2-graph split it runs **100% on CompiledModel GPU**.
+Device-verified Pixel 8a: Graph A 1381/1381 + Graph B 404/404 LITERT_CL, ≈27 ms; on a real image the
+device chain reproduces the PyTorch detections at **IoU 0.98–0.99, same class** (the original
+"RF-DETR does NOT ride CompiledModel cleanly" verdict is superseded).
+
+**Re-authoring (per-graph tflite-vs-torch corr 1.0):**
+1. **Windowed DINOv2 backbone** — 6D window-partition → a 5-step ≤4D reshape/permute (+ exact inverse for
+   un-windowing); SDPA→manual 4D attn; `interpolate_pos_encoding` baked; cls `repeat`→`cat`; tanh-GELU.
+   Only **3 of 12 layers are global attention** (rest windowed, 144-token) → backbone survives Mali fp16
+   (corr 0.9998), unlike full-global DINOv2 (DA-V2 walled at 0.63). The windowing IS the fp16 mitigation.
+2. **Deformable `grid_sample` → GATHER/CAST-free tent-matmul**: `wx=relu(1-|ix-px|)` over `arange(W)`,
+   `W=outer(wy,wx)`, `out=input_flat @ W_flat.T` BMM — numerically exact incl. zeros-pad OOB, all ≤4D
+   (replaces RF-DETR's own `_bilinear_grid_sample` which uses `.long()`+gather = banned).
+3. **MSDeformAttn** re-authored ≤4D (n_levels=1, no 6D sampling tensors); **sine pos-embed** `dim_t` baked
+   (kills POW/FLOOR_DIV) + strided interleave `[...,0::2]`→`reshape(d//2,2)` (kills GATHER_ND).
+4. torch.export friction: `torch._shape_as_tensor`→const, `torch._assert`→no-op, `net.export()`.
+
+**2-graph split (the ship path — standard for two-stage DETR on edge).** The query selection (top-300
+proposals = TOPK_V2+GATHER) has no GPU op, but the proposal **grid is image-independent**, so split there:
+- **Graph A (GPU)** = backbone(encoder+projector) + flatten + proposal-grid + enc heads → enc_class[1,576,91],
+  enc_coord[1,576,4], memory[1,576,256]. Bake the grid as a const buffer (meshgrid→BROADCAST_TO else). The
+  24² grid is all-valid so the validity masked_fill is a no-op (skip it; host needs no validity mask).
+- **host (Kotlin)** = top-300 by `max(enc_class,-1)` (descending = torch.topk order) → gather enc_coord → ts.
+  `memory_ts`/`boxes_ts` (hs_enc/ref_enc) are **dead at inference** (decoder tgt = learned query_feat; topk
+  feeds only the reference points) → host does coord-gather only.
+- **Graph B (GPU)** = two-stage reparam combine + 2-layer decoder + bbox/class heads → boxes[1,300,4]+logits.
+  lite_refpoint_refine=True → decoder.bbox_embed=None → ref_unsigmoid = the input combined refpoint.
+
+**⭐ fp16 hardening = SafeLayerNorm in BOTH the projector AND the decoder (device-only, not desktop):**
+- The **MultiScaleProjector** fuses 4 backbone maps; ConvX outputs hit |x|~440 → channels-first LN channel
+  sum-of-squares 256·440² OVERFLOWS fp16 (>65504) on Mali → device memory corr 1.0→0.58. Fix = projector LN
+  → NAFNet SafeLayerNorm (down-scale by S=128 before reduce, exact) → 0.9999.
+- Decoder layer-0 `nn.MultiheadAttention` output |x|~1068 (trained out_proj amplifies ~222×) → residual into
+  norm1/norm3 overflows. Fix = nn.LayerNorm → **ADAPTIVE SafeLayerNorm** `S=max(1, amax/8)` per row. A FIXED
+  large S squashes the small norms (final norm ~8 → logits 0.88→0.32) — adaptiveness is essential.
+- The decoder logits still cap at device corr ~0.88 (transformer fp16 wall: near-one-hot attention scores
+  ~300 → fp16 argmax flips per low-conf query; survivable at 2 layers) — but **real detections are perfect**
+  (IoU 0.98–0.99). ⇒ ship criterion for detectors = detection IoU/class on a REAL image, NOT raw output corr.
+
+Preprocessing: square resize 384×384, RGB, ImageNet mean/std, NCHW. Host: sigmoid + threshold + cxcywh→xyxy
++ per-class NMS (light, removes fp16 near-duplicate queries). Scripts: `rfdetr/scripts/build_rfdetr_split.py`
+(imports build_rfdetr_full → build_rfdetr_bb). Models: [`litert-community/RF-DETR-Nano-LiteRT`](https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT).
