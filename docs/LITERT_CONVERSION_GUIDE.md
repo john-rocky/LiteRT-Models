@@ -565,3 +565,13 @@ with a robust `_Stub(ModuleType)` (`__file__="<stub>"`, dunder-safe `__getattr__
 `head(backbone(img))` → `(simcc_x[1,17,384], simcc_y[1,17,512])`; argmax÷split=2 → pixel in the app.
 Scripts: `rtmpose/scripts/build_rtmpose.py`. Model:
 [`litert-community/RTMPose-s-LiteRT`](https://huggingface.co/litert-community/RTMPose-s-LiteRT).
+
+The **whole-body (RTMW-m, 133 kpts)** and **hand (RTMPose-m, 21 kpts)** variants reuse this exact recipe
+(SafeRMSNorm + GAU broadcast-reduce transfer unchanged — the patches are on the shared `ScaleNorm`/`RTMCCBlock`
+classes). RTMW adds a CSPNeXtPAFPN **neck** (handle it in the export wrapper: `head(neck(backbone(x)))`) and an
+`nn.PixelShuffle` in its head that lowers to a **6D** tensor (>4D, GPU-rejected) → replace with a fixed
+**depth-to-space `ConvTranspose2d`** (the PixelShuffle channel→space permutation as the kernel) wrapped in
+`ZeroStuffConvT2d` (same fix as NAFNet/Metric3D). Both device-verified Pixel 8a fully-GPU (RTMW 531/531 ~6ms
+fp16 66MB corr 0.999; hand 333/333 ~4ms fp16 28MB corr 0.999). Models:
+[`litert-community/RTMW-m-WholeBody-LiteRT`](https://huggingface.co/litert-community/RTMW-m-WholeBody-LiteRT),
+[`litert-community/RTMPose-Hand-LiteRT`](https://huggingface.co/litert-community/RTMPose-Hand-LiteRT).
