@@ -480,6 +480,22 @@ Encoder converted via **litert-torch** with SigmoidGELU patch. Decoder exported 
 
 **Original project**: [openai/whisper](https://github.com/openai/whisper) | [MIT](https://github.com/openai/whisper/blob/main/LICENSE)
 
+### wav2vec2-CTC (fully-GPU, single-pass)
+
+[wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) (Facebook, Apache-2.0) running **fully on the CompiledModel GPU**. Unlike Whisper's encoder–decoder, the **CTC** head needs **no autoregressive decoder** — it's one GPU graph, a **single forward pass** (`997/997` LITERT_CL on a Pixel 8a, **~22 ms** for a 10 s clip, device-vs-PyTorch corr **0.99998**, **exact** transcription). CTC greedy decode runs on the host. **Zero FFT** — raw 16 kHz waveform → 1D-conv feature extractor → 12-layer transformer → CTC head.
+
+Re-authorings (all numerically-equivalent): GELU → tanh-GELU; feature-extractor `GroupNorm` → 4D reshape `(B,G,C//G,T)` mean/var (kills `GATHER_ND`; wav2vec2's GroupNorm is per-channel-over-time, so fp16-precise on Mali — unlike a `GroupNorm(1)` joint reduction, which fp16-walls); fold the `pos_conv` weight-norm; bidirectional mask → None.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| wav2vec2-CTC | [w2v2_ctc_fp16.tflite](https://huggingface.co/litert-community/wav2vec2-base-960h-CTC-LiteRT) | 190 MB FP16 | waveform [1, 160000] @ 16 kHz | logits [1, 499, 32] | CompiledModel GPU |
+
+**Preprocessing**: mono 16 kHz, zero-mean / unit-variance, padded/truncated to 10 s. **Decoding**: CTC greedy (argmax per frame → collapse repeats → drop blanks) in Kotlin.
+
+**Sample app**: [asr/](asr/) — "Hold to Talk" mic + bundled sample clip + transcription display.
+
+**Original project**: [facebook/wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) | [Apache-2.0](https://github.com/facebookresearch/fairseq/blob/main/LICENSE)
+
 # Text-to-Speech
 
 ### Kokoro-82M
