@@ -59,5 +59,14 @@ python scripts/build_nafnet.py all       # produces nafnet_fp16.tflite
 
 The first launch fails with "Model not found" until the install script has been run.
 
-Model: `litert-community/NAFNet-GoPro-width32-LiteRT` (Hugging Face). Upstream:
-[megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) (MIT).
+## Denoising variant (NAFNet-SIDD)
+
+The same NAFNet architecture trained on SIDD does real-image **denoising**. Build it with
+`scripts/build_sidd.py` (downloads `NAFNet-SIDD-width32.pth` from HF `nyanko7/nafnet-models`), then push
+`sidd_fp16.tflite` as the app's model (rename to `nafnet_fp16.tflite`) — the same `input | restored` UI shows
+noisy → denoised. Device-verified on a Pixel 8a: `2179/2179` LITERT_CL, ~46 ms, device-vs-torch corr
+**0.999999**, fp16 62.5 MB. Model:
+[litert-community/NAFNet-SIDD-width32-LiteRT](https://huggingface.co/litert-community/NAFNet-SIDD-width32-LiteRT).
+
+Models: `litert-community/NAFNet-GoPro-width32-LiteRT` (deblur) / `litert-community/NAFNet-SIDD-width32-LiteRT`
+(denoise) (Hugging Face). Upstream: [megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) (MIT).
