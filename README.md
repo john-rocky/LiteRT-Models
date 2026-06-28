@@ -38,6 +38,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Inpainting**](#inpainting)
   - [LaMa-Dilated](#lama-dilated)
+  - [MI-GAN (mobile inpainting / object removal)](#mi-gan-mobile-inpainting--object-removal)
 
 - [**Zero-Shot Classification**](#zero-shot-classification)
   - [CLIP ViT-B/32](#clip-vit-b32)
@@ -336,6 +337,20 @@ Pre-converted TFLite from [Qualcomm AI Hub](https://aihub.qualcomm.com/models/la
 **Preprocessing**: Image RGB normalized to 0-1 (divide by 255). Mask is single channel 0-1 (1 = area to inpaint).
 
 **Sample app**: [lama/](lama/) — Image picker + finger drawing mask + inpainting with before/after toggle.
+
+### MI-GAN (mobile inpainting / object removal)
+
+[MI-GAN](https://github.com/Picsart-AI-Research/MI-GAN) (Picsart AI Research, **ICCV 2023**, MIT): a "magic eraser" — paint over an object and it is removed and inpainted. A mobile-designed StyleGAN-style generator (separable convs, nearest-upsample, **no norm**) — far smaller/faster than LaMa above. Verified **fully on the GPU** (`509/509` LITERT_CL on a Pixel 8a, **~6 ms** at 512×512, device-vs-PyTorch corr **0.99998**, **16.3 MB** fp16).
+
+Converted via **litert-torch** with **no re-authoring** — the inference generator is already GPU-clean (depthwise-separable conv, `nn.Upsample(nearest)` + FIR-filter grouped conv, leaky-ReLU clamp → `MAXIMUM`/`MINIMUM`, no normalization). The FFT-free, norm-free generator lane.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [migan_fp16.tflite](https://huggingface.co/litert-community/MI-GAN-512-Places2-LiteRT) | 16.3 MB | Float32 [1, 4, 512, 512] NCHW (`concat(mask−0.5, rgb·mask)`) | Float32 [1, 3, 512, 512] ([−1,1]) | [Picsart-AI-Research/MI-GAN](https://github.com/Picsart-AI-Research/MI-GAN) | [MIT](https://github.com/Picsart-AI-Research/MI-GAN/blob/main/LICENSE) | [migan/](migan/) |
+
+**I/O**: input `concat(mask−0.5, rgb·mask)` (rgb ∈ [−1,1], mask = 1 keep / 0 erase); composite back as `rgb·mask + out·(1−mask)`. **Preprocessing**: center-crop, resize 512×512.
+
+**Sample app**: [migan/](migan/) — image picker + finger-paint mask + on-device erase.
 
 # Zero-Shot Classification
 

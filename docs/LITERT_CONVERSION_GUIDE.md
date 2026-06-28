@@ -625,3 +625,23 @@ Decode: bake the softmax over the 90 bins into the graph; the host does the expe
 upstream gdrive-folder download (which `gdown` silently fails on). Load the L2CS `model.py` via importlib (the
 `l2cs` package `__init__` pulls `face_detection`). Scripts: `gaze/scripts/build_gaze.py`. Model:
 [`litert-community/L2CS-Gaze360-LiteRT`](https://huggingface.co/litert-community/L2CS-Gaze360-LiteRT).
+
+### MI-GAN (mobile image inpainting / object removal) — the norm-free generator lane (zero re-authoring)
+
+MI-GAN (Picsart, ICCV 2023, MIT, 5.97M) — a mobile "magic eraser". Its **inference** generator
+(`migan_inference.py`, the re-parametrized deployable model, NOT the StyleGAN training `.pkl`) converts
+**GPU-clean in ONE shot, zero re-authoring**: device-vs-torch corr **0.99998**, `509/509` LITERT_CL, Pixel 8a
+**~6 ms** at 512×512, fp16 16.3 MB. Why it's free: the mobile generator is **StyleGAN-style with NO
+normalization** (no InstanceNorm/GroupNorm → none of the SafeNorm/conv-scaling fixes the style-transfer /
+AnimeGAN generators needed), upsampling is `nn.Upsample(nearest)` + a fixed FIR-filter grouped conv (→
+`RESIZE_NEAREST_NEIGHBOR` + `CONV_2D`, **no ConvTranspose → no ZeroStuff 0-byte risk**), convs are
+depthwise-separable, and the activation is a leaky-ReLU with gain+clamp (→ `LEAKY_RELU` + `MAXIMUM`/`MINIMUM`,
+not `SELECT`). So: **a norm-free, FFT-free, transpose-free generator is the cleanest GPU lane** — contrast the
+normalized generators (style transfer, AnimeGAN) that hit the large-activation fp16 conv-accumulation wall.
+
+**I/O contract:** input is 4ch `concat(mask−0.5, rgb·mask)` (rgb ∈ [−1,1], mask 1=keep/0=erase); output [−1,1];
+composite `rgb·mask + out·(1−mask)`. Weights `migan_512_places2.pt` = the inference-model state_dict, load
+directly into `migan_inference.Generator(resolution=512)` (the repo's `export_inference_model.py` is only for
+converting a source `.pkl` → inference model; not needed here). gdown-folder worked for the weights. Scripts:
+`migan/scripts/build_migan.py`. Model:
+[`litert-community/MI-GAN-512-Places2-LiteRT`](https://huggingface.co/litert-community/MI-GAN-512-Places2-LiteRT).
