@@ -534,3 +534,34 @@ else needed: `Hardswish`/`Hardsigmoid` lower to the native `HARD_SWISH` builtin,
 `F.interpolate` already uses `align_corners=False`. Output = NHWC 21-class logits; per-pixel argmax in the
 app. Preprocessing = `/255` + ImageNet mean/std. Scripts: `lraspp/scripts/build_lraspp.py`. Model:
 [`mlboydaisuke/LRASPP-MobileNetV3-LiteRT`](https://huggingface.co/mlboydaisuke/LRASPP-MobileNetV3-LiteRT).
+
+### RTMPose-s (mmpose top-down pose) — SafeRMSNorm, GAU broadcast-reduce, and the mm-stack build
+
+mmpose RTMPose-s (CSPNeXt backbone + RTMCC/SimCC head, 5.5M params, Apache-2.0). Top-down 2D human pose, 17
+COCO keypoints. Converts GPU-clean and runs fully on the GPU (`256/256` LITERT_CL, Pixel 8a **~4 ms**, **fp16
+11.1 MB**), **device-vs-torch SimCC corr 0.999, keypoints within 0.3 px**. The CSPNeXt backbone (SiLU) and the
+diffusers-free RTMCC head are GPU-clean, but two **on-device-only** Mali issues had to be fixed (both passed
+the desktop op-check and reported full LITERT_CL residency — the canonical *residency ≠ correctness* trap):
+
+1. **`ScaleNorm` (RMS norm) fp16 overflow → all-zero head (SafeRMSNorm).** The RTMCC `ScaleNorm`
+   (`x / (√(Σx²)·dim^-0.5) · g`) input reaches **≈ |274|**, so its channel `Σ x²` ≈ 3.6M **overflows fp16
+   (65504)** on the Mali delegate (which reduces in fp16 even for an fp32 graph) → `norm = ∞` → `x/∞ = 0` →
+   the **entire head outputs exactly zero** (every keypoint argmax → bin 0). This is the same class as the
+   NAFNet SafeLayerNorm fix, here in an RMS norm, with a *total-collapse* symptom (vs NAFNet's grid artifact).
+   Fix = scale `x` down by S=64 **before** squaring, then rescale (math-identical):
+   `xs=x/64; norm=√((xs·xs).sum(-1))·64·scale; x/norm.clamp(eps)·g`. ⚠ Replacing `torch.norm` with a manual
+   sum-of-squares ALONE does **not** fix it (the manual sum still overflows at |274|) — *scale-before-square*
+   is the essential ingredient. Diagnosis = bisect-tap: backbone OK (0.9998) → ScaleNorm out 100% zero →
+   input ±274 ⇒ overflow.
+2. **GAU attention `act@act` BMM → broadcast-reduce.** The Gated Attention Unit's `q@kᵀ` and `kernel@v` are
+   activation×activation batch-matmuls the Mali delegate mis-computes; at K=17 tokens the exact replacement is
+   `(q[:,:,None,:]·k[:,None,:,:]).sum(-1)`. (Kept as hardening — it alone did not fix the zero; ScaleNorm did.)
+
+**mm-stack build (no compiled mmcv):** `pip install mmengine mmcv-lite mmpose --no-deps munkres json_tricks`,
+then **stub** `xtcocotools` (Cython build fails; COCO-eval only) and `mmdet`/`mmdet.utils`/`mmcv.ops` (the
+heads `__init__` eagerly imports RTMOHead→mmdet and EDPoseHead→compiled `mmcv.ops`, neither used by RTMPose)
+with a robust `_Stub(ModuleType)` (`__file__="<stub>"`, dunder-safe `__getattr__`) plus an
+`inspect.getsourcefile` exception guard. Build via `mmpose.apis.init_model(cfg, ckpt_url)`; wrap as
+`head(backbone(img))` → `(simcc_x[1,17,384], simcc_y[1,17,512])`; argmax÷split=2 → pixel in the app.
+Scripts: `rtmpose/scripts/build_rtmpose.py`. Model:
+[`litert-community/RTMPose-s-LiteRT`](https://huggingface.co/litert-community/RTMPose-s-LiteRT).
