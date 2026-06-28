@@ -64,6 +64,10 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Audio Classification**](#audio-classification)
   - [wav2vec2 Keyword Spotting](#wav2vec2-keyword-spotting)
 
+- [**Line Detection**](#line-detection)
+
+  - [M-LSD-tiny](#m-lsd-tiny)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -551,6 +555,22 @@ mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
 **Sample app**: [wav2vec2-kws/](wav2vec2-kws/) — bundled-clip classify on launch + mic Record button.
 
 **Original project**: [superb/wav2vec2-base-superb-ks](https://huggingface.co/superb/wav2vec2-base-superb-ks) | [Apache-2.0](https://huggingface.co/facebook/wav2vec2-base)
+
+# Line Detection
+
+### M-LSD-tiny
+
+[M-LSD](https://github.com/navervision/mlsd) (NAVER, AAAI 2022): light-weight real-time **line segment detection** — straight line segments for building edges, document borders, wireframes, and room layout. The **tiny** variant (MobileNetV2 backbone, 0.62M params) runs **fully on the GPU** (`99/99` LITERT_CL on a Pixel 8a, **~2 ms**, device-vs-PyTorch corr **0.997**). At **1.4 MB** fp16 it is the **smallest model in this zoo**.
+
+Converted via **litert-torch** with a single re-authoring: the decoder's `F.interpolate(bilinear, align_corners=True)` → `align_corners=False` (the delegate bans `align_corners=True`). MobileNetV2 has no max-pool (strided convs → no `PADV2`) and the upsample is `RESIZE_BILINEAR` (not a transposed conv) → fully GPU-clean. The output is a "TP map" (center heatmap + displacement); the decode (sigmoid + NMS + displacement → endpoints) runs in the app.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [mlsd_fp16.tflite](https://huggingface.co/litert-community/M-LSD-tiny-LiteRT) | 1.4 MB | Float32 [1, 4, 512, 512] NCHW (RGB + ones) | tpMap [1, 9, 256, 256] | [navervision/mlsd](https://github.com/navervision/mlsd) | [Apache-2.0](https://github.com/navervision/mlsd/blob/main/LICENSE) | [mlsd/](mlsd/) |
+
+**Preprocessing**: resize to 512×512, append a 4th channel of ones, scale `(x/127.5)-1`, NCHW. **Decode**: sigmoid center map → 3×3 max NMS → displacement → endpoints (×2 to 512-space).
+
+**Sample app**: [mlsd/](mlsd/) — image picker + line-segment overlay.
 
 # OCR
 
