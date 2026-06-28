@@ -255,6 +255,18 @@ Pure CNN (depthwise-separable `ConvDPUnit`) + a **nearest-upsample** neck (→ `
 
 **Sample app**: [yunet/](yunet/) — image picker + face boxes + 5 landmarks.
 
+### RTMPose-Face (WFLW, 98-point face alignment)
+
+[RTMPose](https://github.com/open-mmlab/mmpose) (mmpose, Apache-2.0) **face alignment** trained on **WFLW**: **98 dense facial landmarks** (contour, eyebrows, eyes, nose, mouth, pupils) — the dense complement to YuNet's 5 points (detect a face, then align). The **same model family** as RTMPose-s above; only the config/checkpoint change to WFLW, and the two Mali fixes (SafeRMSNorm + GAU broadcast-reduce) transfer **unchanged**. Runs **fully on the GPU** (`333/333` LITERT_CL on a Pixel 8a, **~4 ms**, device-vs-PyTorch SimCC corr **0.9995**).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtm_face_fp16.tflite](https://huggingface.co/litert-community/RTMPose-Face-WFLW-LiteRT) | 33.6 MB | Float32 [1, 3, 256, 256] NCHW | simcc_x [1,98,512], simcc_y [1,98,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmface/](rtmface/) |
+
+**Output**: output[0] = simcc_x, output[1] = simcc_y; each landmark = `argmax` over its 1D SimCC (bins = pixels × 2). **Preprocessing**: center-crop to a face, resize 256×256, mmpose mean/std (RGB, 0-255).
+
+**Sample app**: [rtmface/](rtmface/) — image picker + 98-point face mesh.
+
 # Gaze Estimation
 
 ### L2CS-Net
