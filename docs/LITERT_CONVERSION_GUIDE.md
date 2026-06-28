@@ -575,3 +575,24 @@ classes). RTMW adds a CSPNeXtPAFPN **neck** (handle it in the export wrapper: `h
 fp16 66MB corr 0.999; hand 333/333 ~4ms fp16 28MB corr 0.999). Models:
 [`litert-community/RTMW-m-WholeBody-LiteRT`](https://huggingface.co/litert-community/RTMW-m-WholeBody-LiteRT),
 [`litert-community/RTMPose-Hand-LiteRT`](https://huggingface.co/litert-community/RTMPose-Hand-LiteRT).
+
+### Places365 ResNet18 (scene recognition) — the ResNet-stem `MaxPool` `-inf`-pad fix
+
+ResNet18 trained on Places365 (CSAILVision, MIT, 365 scene categories). Pure CNN, runs fully on the GPU
+(`61/61` LITERT_CL, Pixel 8a **~2 ms**, **fp16 22.8 MB**, device-vs-torch corr **1.0**, top-1 match). Two
+numerically-exact re-authorings — the second is a **NEW reusable Mali fix for ResNet-style stems**:
+
+1. global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)` (the usual multi-axis-pool fix).
+2. **ResNet stem `MaxPool2d(3, stride=2, padding=1)` → zero-pad + valid max-pool.** PyTorch's max-pool pads
+   with **`-inf`**, which litert-torch lowers to a **`PADV2`** op (pad with a non-zero constant). The Mali ML
+   Drift delegate **does not delegate `PADV2`** → it splits the graph into CPU partitions (`Replacing 36 out
+   of 61 node(s) … 2 partitions`) and then **fails to compile the whole model** (`Failed to compile model`,
+   no op-blocklist hit — desktop op-check passes). Because the stem max-pool always follows a ReLU (inputs
+   ≥ 0), padding with **0** is numerically identical (a 0-pad never wins the max over a ≥0 cell, and with
+   `padding=1`/`kernel=3` every window has a real cell), and `F.pad(x, …, value=0)` emits a delegatable
+   **`PAD`** → `61/61` full GPU residency. Replace `nn.MaxPool2d(3,2,1)` with
+   `F.max_pool2d(F.pad(x,(1,1,1,1),value=0.), 3, stride=2)`. Reusable for any ResNet/Places/ImageNet stem.
+
+Result: banned ops NONE, all tensors ≤4D, tflite-vs-torch corr 1.0, device-vs-torch corr 1.0. Scripts:
+`places365/scripts/build_places.py`. Model:
+[`litert-community/Places365-ResNet18-LiteRT`](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT).
