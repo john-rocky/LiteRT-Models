@@ -621,3 +621,20 @@ nearest upsample, no transposed conv → no ZeroStuff). Runs fully on the GPU (`
 
 Scripts: `neuralstyle/scripts/build_style.py`. Model:
 [`litert-community/Fast-Neural-Style-LiteRT`](https://huggingface.co/litert-community/Fast-Neural-Style-LiteRT).
+
+### L2CS-Net (gaze estimation) — ResNet50 ZeroPadMaxPool reused; new "Gaze Estimation" task
+
+L2CS-Net (Ahmednull, MIT) gaze estimation — ResNet50 + 2 FC heads (yaw/pitch, 90 angle bins each), Gaze360.
+Pure CNN, runs fully on the GPU (`139/139` LITERT_CL, Pixel 8a **~3 ms**, fp16 47.9 MB, device-vs-torch corr
+**0.9999**). The two fixes are the standard ResNet pair — confirming the Places365 ResNet recipe transfers to
+**any torchvision-ResNet-backed regression/classification head** (also relevant to L2CS variants, face-rec,
+gaze, age/expression on a ResNet stem):
+
+1. **stem `MaxPool2d(3,s2,p1)` → zero-pad + valid max-pool** (the `-inf`-pad `PADV2` Mali won't delegate; 0-pad
+   is exact post-ReLU → `PAD`). 2. **global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`**.
+
+Decode: bake the softmax over the 90 bins into the graph; the host does the expectation `deg = Σ p_i·i·4 − 180`
+(no `TOPK`/`GATHER`). Weights: `L2CSNet_gaze360.pkl` is on HF (`tianfxc/l2cs`, `py-feat/l2cs`) — avoids the
+upstream gdrive-folder download (which `gdown` silently fails on). Load the L2CS `model.py` via importlib (the
+`l2cs` package `__init__` pulls `face_detection`). Scripts: `gaze/scripts/build_gaze.py`. Model:
+[`litert-community/L2CS-Gaze360-LiteRT`](https://huggingface.co/litert-community/L2CS-Gaze360-LiteRT).
