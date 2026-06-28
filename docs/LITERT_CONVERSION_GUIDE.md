@@ -682,3 +682,25 @@ just an internal device-vs-tflite corr (which was 1.0 even while the output was 
 Bypass-RNN + pin one domain (SALICON) so the domain-specific BatchNorm/smoothing fold to constants; final spatial
 log-softmax → host. Scripts: `saliency/scripts/build_unisal.py`. Model:
 [`litert-community/UniSal-Saliency-LiteRT`](https://huggingface.co/litert-community/UniSal-Saliency-LiteRT).
+
+### CPGA-Net (low-light enhancement) — the POW→exp/log gamma fix; the smallest model in the zoo
+
+CPGA-Net (Shyandram, MIT, IJPRAI, 0.025M params) — low-light image enhancement (Channel Prior + Gamma
+Correction). Converts **GPU-clean in ONE cycle**: `135/135` LITERT_CL, Pixel 8a **~2 ms**, **fp16 0.1 MB
+(SMALLEST in the zoo)**, device-vs-torch corr **0.99999**. **This finally ships the low-light task** (Bread
+parked on the Mali composition-delegation wall; SCI/PairLIE were no-license — CPGA-Net is MIT + tiny). Three
+exact fixes:
+
+1. **⭐ Gamma correction `torch.pow(x, γ)` → `exp(γ · log x)`** (NEW reusable). `POW` is banned on Mali; the
+   identity `x^γ = exp(γ·log x)` is exact (clamp the base to [1e-9, 1] first) and emits native `EXP` + `LOG`
+   (both delegatable — `LOG` confirmed GPU-clean here, `EXP` already proven). Works for a learned scalar γ
+   (broadcast). Reusable for any gamma/power op.
+2. **CBAM + gamma global pools**: `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`; `AdaptiveMaxPool2d(1)` →
+   `F.max_pool2d(x, kernel_size=(H,W))` (use max-pool, NOT `torch.amax`, which has no NHWC rewriter in
+   litert-torch).
+3. The dark/bright **channel prior** (`torch.max`/`torch.min` over dim=1) lowers to `REDUCE_MAX`/`REDUCE_MIN` —
+   GPU-clean (small 3-channel reduction).
+
+`isdgf=False` (no FastGuidedFilter → no bicubic). Stub `guided_filter_pytorch` (imported at module level, unused).
+Scripts: `lowlight/scripts/build_cpga.py`. Model:
+[`litert-community/CPGA-Net-LowLight-LiteRT`](https://huggingface.co/litert-community/CPGA-Net-LowLight-LiteRT).
