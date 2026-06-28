@@ -227,6 +227,18 @@ RTMPose-m hand (mmpose, CSPNeXt + RTMCC/SimCC head): **hand** pose — the **21 
 
 **Sample app**: [rtmhand/](rtmhand/) — image picker + 21-keypoint hand skeleton (per-finger color).
 
+### RTMPose-Animal (AP-10K, 17 keypoints)
+
+[RTMPose](https://github.com/open-mmlab/mmpose) (mmpose, Apache-2.0) **animal pose** trained on **AP-10K**: 17 animal keypoints (eyes, nose, neck, tail root, and the four limbs) for pets / wildlife. The **same model family** as RTMPose-s above — only the config/checkpoint change to AP-10K, and the two on-device Mali fixes (SafeRMSNorm + GAU broadcast-reduce) transfer **unchanged**. Runs **fully on the GPU** (`333/333` LITERT_CL on a Pixel 8a, **~5 ms**, device-vs-PyTorch SimCC corr **0.999**, 17/17 keypoints).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtm_animal_fp16.tflite](https://huggingface.co/litert-community/RTMPose-Animal-AP10K-LiteRT) | 27.5 MB | Float32 [1, 3, 256, 256] NCHW | simcc_x [1,17,512], simcc_y [1,17,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmanimal/](rtmanimal/) |
+
+**Output**: output[0] = simcc_x, output[1] = simcc_y; each keypoint = `argmax` over its 1D SimCC (bins = pixels × 2). **Preprocessing**: center-crop to square, resize 256×256, mmpose mean/std (RGB, 0-255).
+
+**Sample app**: [rtmanimal/](rtmanimal/) — image picker + 17-keypoint AP-10K animal skeleton.
+
 # Gaze Estimation
 
 ### L2CS-Net
