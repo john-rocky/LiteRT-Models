@@ -583,3 +583,28 @@ numerically-exact re-authorings — the second is a **NEW reusable Mali fix for 
 Result: banned ops NONE, all tensors ≤4D, tflite-vs-torch corr 1.0, device-vs-torch corr 1.0. Scripts:
 `places365/scripts/build_places.py`. Model:
 [`litert-community/Places365-ResNet18-LiteRT`](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT).
+
+### Fast Neural Style (TransformerNet) — conv-weight scaling via norm scale-invariance (large-activation fp16 fix)
+
+PyTorch examples `TransformerNet` style transfer (BSD-3, 4 styles). Pure CNN encoder-decoder (interpolate-
+nearest upsample, no transposed conv → no ZeroStuff). Runs fully on the GPU (`350/350` LITERT_CL, Pixel 8a
+**~9 ms**, fp16 **3.5 MB**/style, device-vs-torch corr **0.9999**) after three numerically-exact re-authorings:
+
+1. **`ReflectionPad2d` → zero-pad.** Reflection padding lowers to **`GATHER_ND`** (the reflect index gather,
+   banned). Fold a `F.pad(value=0)` into each conv → emits `PAD`. Border-only cosmetic difference.
+2. **⭐ Large conv activations → conv-weight scaling (exploit normalization scale-invariance).** The conv
+   outputs reach **≈ |5000|**, where the **Mali delegate's fp16 conv accumulation loses precision** → garbage
+   (device corr **0.34** at `350/350` full residency; desktop fp16 = 1.0 — the canonical *residency ≠
+   correctness*). This is NOT a reduction overflow (SafeInstanceNorm alone made it WORSE, 0.16) — it's the conv
+   itself accumulating imprecisely at large magnitude. **Fix: scale each conv's weight+bias down so its output
+   is ≈ |10|.** Because every such conv is immediately followed by an `InstanceNorm` (which is
+   **scale-invariant**: `IN(a·x) = IN(x)`), this is **mathematically exact** (the IN output is unchanged) yet
+   keeps the fp16 accumulation in a precise range. Measure each conv's output max once (the scales are
+   independent — the IN between convs decouples them), bake `weight /= max/10`. **General rule: when a
+   large-activation CNN garbles on Mali fp16 despite full residency, and a normalization follows the big conv,
+   rescale the conv via the norm's scale-invariance.** (Reusable for any IN/BN/LN-normalized generator.)
+3. **`InstanceNorm` → SafeInstanceNorm.** Spatial mean/var over 256×256 overflows fp16; two single-axis means
+   in a down-scaled domain are fp16-safe and exact (SafeLayerNorm class). Needed in addition to (2).
+
+Scripts: `neuralstyle/scripts/build_style.py`. Model:
+[`litert-community/Fast-Neural-Style-LiteRT`](https://huggingface.co/litert-community/Fast-Neural-Style-LiteRT).
