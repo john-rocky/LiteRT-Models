@@ -44,6 +44,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Zero-Shot Classification**](#zero-shot-classification)
   - [CLIP ViT-B/32](#clip-vit-b32)
   - [MobileNetV3-Large (ImageNet)](#mobilenetv3-large-imagenet)
+  - [MobileNetV4-Conv-Medium (ImageNet)](#mobilenetv4-conv-medium-imagenet)
   - [Places365 ResNet18 (scene recognition)](#places365-resnet18-scene-recognition)
 
 - [**Surface Normal Estimation**](#surface-normal-estimation)
@@ -390,6 +391,20 @@ Converted via **litert-torch** with a single re-authoring: the 9 `AdaptiveAvgPoo
 **Preprocessing**: center-crop, resize to 224×224, /255, ImageNet mean/std, NCHW. Output 1000-class logits; softmax + argmax for top-k.
 
 **Sample app**: [mobilenetv3/](mobilenetv3/) — image picker + top-5 predictions.
+
+### MobileNetV4-Conv-Medium (ImageNet)
+
+[MobileNetV4](https://arxiv.org/abs/2404.10518) (Google, ECCV 2024 — the latest mobile backbone, `mobilenetv4_conv_medium` from timm): ImageNet-1k classifier and a newer-architecture counterpart to MobileNetV3 above (UIB blocks). Pure CNN → runs **fully on the GPU** (`186/186` LITERT_CL on a Pixel 8a, **~4 ms** at 256×256, device-vs-PyTorch corr **0.99997**, top-1 match). **19.7 MB** fp16.
+
+The only GPU re-authoring is the global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`. MobileNetV4's conv stem has no max-pool (strided convs → no `PADV2`) and the conv variant has no attention → fully GPU-clean.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [mnv4_fp16.tflite](https://huggingface.co/mlboydaisuke/MobileNetV4-Conv-Medium-ImageNet-LiteRT) | 19.7 MB | Float32 [1, 3, 256, 256] NCHW | Logits [1, 1000] | [timm](https://github.com/huggingface/pytorch-image-models) | [Apache-2.0](https://github.com/huggingface/pytorch-image-models/blob/main/LICENSE) | [mobilenetv4/](mobilenetv4/) |
+
+**Preprocessing**: center-crop, resize to 256×256, /255, ImageNet mean/std, NCHW. Output 1000-class logits; softmax + argmax for top-k.
+
+**Sample app**: [mobilenetv4/](mobilenetv4/) — image picker + top-5 predictions.
 
 ### Places365 ResNet18 (scene recognition)
 
