@@ -373,8 +373,95 @@ def patch_einops() -> None:
 
 # ─── Master apply ────────────────────────────────────────────────────────────
 
+# ─── grid_sample → GATHER/CAST-free tent-matmul (C10) ─────────────────────────
+
+_original_grid_sample = F.grid_sample
+
+
+def patch_grid_sample() -> None:
+    """Replace F.grid_sample with a GATHER/CAST-free bilinear tent-matmul.
+
+    The native lowering of grid_sample is GATHER_ND (GPU-banned). For a fixed-size
+    value map the bilinear sample is a linear op: build tent weights
+    ``wx = relu(1 - |ix - arange(W)|)`` / ``wy`` and BMM ``value_flat @ W_flat.T``.
+    Numerically exact vs F.grid_sample incl. zeros-padding OOB (err ~2e-7), all <=4D.
+    Used by RF-DETR Nano's deformable cross-attention (shipped, device-verified).
+    Replaces the model's own bilinear sampler too if it calls F.grid_sample.
+    """
+    def tent_grid_sample(input, grid, mode="bilinear", padding_mode="zeros", align_corners=None):
+        N, C, H, W = input.shape
+        Hg, Wg = grid.shape[1], grid.shape[2]
+        ac = bool(align_corners)
+        if ac:
+            ix = (grid[..., 0] + 1) * (W - 1) / 2; iy = (grid[..., 1] + 1) * (H - 1) / 2
+        else:
+            ix = (grid[..., 0] + 1) * W / 2 - 0.5; iy = (grid[..., 1] + 1) * H / 2 - 0.5
+        ix = ix.reshape(N, Hg * Wg, 1); iy = iy.reshape(N, Hg * Wg, 1)
+        xs = torch.arange(W, dtype=input.dtype).reshape(1, 1, W)
+        ys = torch.arange(H, dtype=input.dtype).reshape(1, 1, H)
+        wx = torch.relu(1 - (ix - xs).abs()); wy = torch.relu(1 - (iy - ys).abs())
+        Wm = (wy.unsqueeze(-1) * wx.unsqueeze(-2)).reshape(N, Hg * Wg, H * W)
+        return torch.matmul(input.reshape(N, C, H * W), Wm.transpose(1, 2)).reshape(N, C, Hg, Wg)
+
+    F.grid_sample = tent_grid_sample
+    log.info("Patched F.grid_sample → tent-matmul (GATHER/CAST-free)")
+
+
+def restore_grid_sample():
+    """Restore original F.grid_sample."""
+    F.grid_sample = _original_grid_sample
+
+
+# ─── SafeLayerNorm — fp16-overflow-safe channel reduction ─────────────────────
+
+def patch_safe_layernorm(scale: str = "adaptive", fixed_s: float = 128.0) -> None:
+    """Override nn.LayerNorm.forward with a down-scaled, numerically-exact reduction.
+
+    The Mali ML Drift delegate computes reductions in fp16 even for an fp32 graph, so
+    a LayerNorm over a large-magnitude activation overflows the channel sum-of-squares
+    (>65504) -> wrong norm at full LITERT_CL residency (residency != correctness).
+    Witnessed across deep ViT (PE-Core/SigLIP2/EoMT), deep-residual CNN (NAFNet), and
+    transformer detectors (RF-DETR). Fix: reduce in a down-scaled domain ``x/S`` then
+    rescale -- exact because LayerNorm is scale-invariant.
+
+    scale="adaptive" (default): per-row ``S = max(1, amax/8)`` -- native (S=1) for
+      small-magnitude norms, scales only the spikes. REQUIRED when one graph mixes
+      norms at very different magnitudes (e.g. RF-DETR decoder |x|~8 .. ~1068); a
+      fixed large S squashes the small norms.
+    scale="fixed": a constant ``S = fixed_s`` (cheaper; fine when all norms are large,
+      e.g. NAFNet S=128).
+
+    Assumes normalized_shape is the last dim (the common case). Opt-in (NOT in
+    apply_all_patches) -- only models that hit the device fp16 wall need it.
+    """
+    adaptive = scale == "adaptive"
+    s_const = float(fixed_s)
+
+    def safe_ln_forward(self, x):
+        if adaptive:
+            S = (x.abs().amax(-1, keepdim=True) * (1.0 / 8.0)).clamp(min=1.0)
+        else:
+            S = s_const
+        xs = x / S
+        mu = xs.mean(-1, keepdim=True)
+        d = xs - mu
+        var = (d * d).mean(-1, keepdim=True) * (S * S)
+        d = d * S
+        y = d * torch.rsqrt(var + self.eps)
+        if self.elementwise_affine:
+            y = y * self.weight + self.bias
+        return y
+
+    nn.LayerNorm.forward = safe_ln_forward
+    log.info(f"Patched nn.LayerNorm → SafeLayerNorm (scale={scale})")
+
+
 def apply_all_patches(model: nn.Module) -> dict:
-    """Apply all available patches. Returns summary of changes made."""
+    """Apply all available patches. Returns summary of changes made.
+
+    Note: patch_grid_sample() and patch_safe_layernorm() are NOT applied here — they
+    are opt-in (call them directly for deformable / fp16-overflow-prone models).
+    """
     summary = {}
     summary['gelu'] = patch_gelu(model)
     summary['swish'] = patch_swish(model)

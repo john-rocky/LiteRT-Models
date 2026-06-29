@@ -15,6 +15,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Object Detection**](#object-detection)
   - [YOLO11n](#yolo11n)
   - [YOLO26n](#yolo26n)
+  - [RF-DETR Nano](#rf-detr-nano)
 
 - [**Multi-Object Tracking**](#multi-object-tracking)
   - [YOLO + DeepSORT (OSNet)](#yolo--deepsort-osnet)
@@ -128,6 +129,26 @@ Original model outputs `[1, 300, 6]` (NMS-free with top-k), but top-k uses GPU-i
 **Output format**: Same as YOLO11n — `[1, 84, N]` with NMS post-processing in app. Bbox coords are normalized 0-1.
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). No ImageNet mean/std.
+
+### RF-DETR Nano
+
+RF-DETR (Roboflow 2025, an LW-DETR derivative): a **transformer** detector (windowed DINOv2 backbone +
+deformable-attention DETR decoder) running **fully on CompiledModel GPU** — the first transformer/DETR
+detector in this zoo to do so. Converted with **litert-torch** + a **2-graph split** (the two-stage
+query selection `TOPK`/`GATHER` runs on the host between the graphs) + **SafeLayerNorm** (the projector
+and decoder LayerNorms overflow Mali fp16). Device-verified on Pixel 8a: Graph A `1381/1381` LITERT_CL
+(~22 ms) + Graph B `404/404` LITERT_CL (~5 ms), ≈27 ms total; reproduces the PyTorch detections at
+IoU 0.98–0.99.
+
+| Model | Size (fp16) | Input | Outputs | Original Project | License | Sample App |
+| ----- | ----------- | ----- | ------- | ---------------- | ------- | ---------- |
+| RF-DETR-Nano (Graph A + Graph B) | 48.6 MB + 7.6 MB | Float32 [1, 3, 384, 384] NCHW | enc_class[1,576,91] / enc_coord[1,576,4] / memory[1,576,256] → boxes[1,300,4] / logits[1,300,91] | [roboflow/rf-detr](https://github.com/roboflow/rf-detr) | [Apache-2.0](https://github.com/roboflow/rf-detr/blob/main/LICENSE) | [rfdetr/](rfdetr/) |
+
+**Output format**: Graph B gives `boxes` (cxcywh, normalized 0-1) + `logits` (91 = COCO id space). Host
+applies sigmoid + score threshold + cxcywh→xyxy + per-class NMS.
+
+**Preprocessing**: square resize to 384×384, RGB, ImageNet mean/std normalization. See
+[litert-community/RF-DETR-Nano-LiteRT](https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT).
 
 # Multi-Object Tracking
 
