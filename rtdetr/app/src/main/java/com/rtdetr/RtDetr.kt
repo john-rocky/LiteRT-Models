@@ -11,9 +11,7 @@ import java.nio.ByteOrder
 /**
  * RT-DETRv2-S object detection, fully on the LiteRT CompiledModel GPU (ML Drift / LITERT_CL).
  *
- * RT-DETRv2 is a two-stage DETR whose query selection (topk + gather) has no GPU-compatible op, so the
- * model is split into two GPU graphs with a host step between them:
- *
+ * Two GPU graphs with a host step between them:
  *   Graph A (GPU)  image[1,3,640,640] -> enc_class[1,8400,80], memory_raw*2[1,8400,256]
  *   host (here)    topk-300 by max class score; for the 300 selected tokens compute, in fp32,
  *                  target = enc_output(valid*memory_raw)   (Linear + LayerNorm, per-token)
@@ -21,16 +19,15 @@ import java.nio.ByteOrder
  *   Graph B (GPU)  (memory_raw, target, ref) -> boxes[1,300,4] (cxcywh), logits[1,300,80]
  *   host (here)    sigmoid + score threshold + cxcywh->xyxy + light NMS -> detections
  *
- * Why the per-token tail (enc_output + bbox_head) is on the host: on the Mali fp16 path a 3D *token*
- * tensor [1,N,256] that fans out to several consumers inside one GPU graph gets silently corrupted
- * (the longer branch is clobbered) — enc_bbox_head's reference boxes collapsed to the default anchor
- * and large objects were lost. enc_output/enc_bbox_head are per-token (no cross-token mixing), so
- * gather(f(x),idx) == f(gather(x,idx)); running them on the host over only the 300 selected tokens is
- * exact and cheap. Graph A then emits only the two fp16-clean tensors (enc_class + memory_raw). The
- * x2 on memory_raw forces a separate, clean output buffer (exact in fp16; divided back here).
+ * The per-token tail (enc_output + bbox_head) is on the host because on the Mali fp16 path a 3D token
+ * tensor [1,N,256] that fans out inside one GPU graph is silently corrupted (the longer branch is
+ * clobbered) — enc_bbox_head's reference boxes collapsed to the default anchor and large objects were
+ * lost. enc_output/enc_bbox_head are per-token, so gather(f(x),idx) == f(gather(x,idx)); running them on
+ * the host over only the 300 selected tokens is exact. The tail is written allocation-free (preallocated
+ * scratch + a bounded top-300 min-heap) so the whole pipeline runs in real time.
  *
- * Both graphs run 100% on the GPU on a Pixel 8a (Graph A ~6 ms, Graph B ~11 ms). Device output matches
- * PyTorch (COCO val giraffe 7/7, cats 6/6, IoU 0.98-1.00).
+ * Both graphs run 100% on the GPU on a Pixel 8a. Device output matches PyTorch (COCO val giraffe 7/7,
+ * cats 6/6, IoU 0.98-1.00).
  */
 class RtDetr(private val ctx: Context) : Closeable {
 
@@ -92,32 +89,69 @@ class RtDetr(private val ctx: Context) : Closeable {
         valid = take(NPROP); anchors = take(NPROP * 4)
     }
 
-    /** y[o] = sum_i x[i]*W[o*inDim+i] + b[o] ; optional ReLU. */
-    private fun linear(x: FloatArray, w: FloatArray, b: FloatArray, outDim: Int, inDim: Int, relu: Boolean): FloatArray {
-        val y = FloatArray(outDim)
+    // Preallocated scratch for the per-token tail (reused across the 300 queries — no per-call allocation).
+    private val chw = FloatArray(3 * SIZE * SIZE)
+    private val memSel = FloatArray(HID)
+    private val tgtBuf = FloatArray(HID)
+    private val h0Buf = FloatArray(HID)
+    private val h1Buf = FloatArray(HID)
+    private val deltaBuf = FloatArray(4)
+    private val target = FloatArray(NQ * HID)
+    private val ref = FloatArray(NQ * 4)
+    private val maxScore = FloatArray(NPROP)
+    private val order = IntArray(NQ)
+    private val hScore = FloatArray(NQ)   // bounded min-heap (top-NQ by maxScore)
+    private val hIdx = IntArray(NQ)
+
+    /** out[o] = sum_i x[i]*W[o*inDim+i] + b[o] ; optional ReLU. Writes into [out] (no allocation). */
+    private fun linearInto(x: FloatArray, w: FloatArray, b: FloatArray, out: FloatArray, outDim: Int, inDim: Int, relu: Boolean) {
         for (o in 0 until outDim) {
             var s = b[o]; val base = o * inDim
             for (i in 0 until inDim) s += x[i] * w[base + i]
-            y[o] = if (relu && s < 0f) 0f else s
+            out[o] = if (relu && s < 0f) 0f else s
         }
-        return y
     }
 
-    /** enc_output = Linear(256->256) then LayerNorm(256). */
-    private fun encOutput(memSel: FloatArray): FloatArray {
-        val y = linear(memSel, eoW, eoB, HID, HID, false)
-        var mean = 0f; for (v in y) mean += v; mean /= HID
-        var varr = 0f; for (v in y) { val d = v - mean; varr += d * d }; varr /= HID
+    /** enc_output = Linear(256->256) then LayerNorm(256), into tgtBuf. */
+    private fun encOutputInto(src: FloatArray) {
+        linearInto(src, eoW, eoB, h0Buf, HID, HID, false)
+        var mean = 0f; for (v in h0Buf) mean += v; mean /= HID
+        var varr = 0f; for (v in h0Buf) { val d = v - mean; varr += d * d }; varr /= HID
         val inv = (1.0 / Math.sqrt((varr + LN_EPS).toDouble())).toFloat()
-        val out = FloatArray(HID)
-        for (o in 0 until HID) out[o] = (y[o] - mean) * inv * eoG[o] + eoBeta[o]
-        return out
+        for (o in 0 until HID) tgtBuf[o] = (h0Buf[o] - mean) * inv * eoG[o] + eoBeta[o]
+    }
+
+    /** Top-NQ proposal indices by maxScore, descending (bounded min-heap, no boxing of NPROP). */
+    private fun topNQ() {
+        var n = 0
+        for (p in 0 until NPROP) {
+            val v = maxScore[p]
+            if (n < NQ) {                                   // sift up
+                var i = n++; hScore[i] = v; hIdx[i] = p
+                while (i > 0) {
+                    val par = (i - 1) / 2; if (hScore[par] <= hScore[i]) break
+                    val ts = hScore[par]; hScore[par] = hScore[i]; hScore[i] = ts
+                    val ti = hIdx[par]; hIdx[par] = hIdx[i]; hIdx[i] = ti; i = par
+                }
+            } else if (v > hScore[0]) {                     // replace min, sift down
+                hScore[0] = v; hIdx[0] = p; var i = 0
+                while (true) {
+                    val l = 2 * i + 1; val r = 2 * i + 2; var m = i
+                    if (l < NQ && hScore[l] < hScore[m]) m = l
+                    if (r < NQ && hScore[r] < hScore[m]) m = r
+                    if (m == i) break
+                    val ts = hScore[m]; hScore[m] = hScore[i]; hScore[i] = ts
+                    val ti = hIdx[m]; hIdx[m] = hIdx[i]; hIdx[i] = ti; i = m
+                }
+            }
+        }
+        val slots = (0 until NQ).sortedByDescending { hScore[it] }   // NQ is small
+        for (k in 0 until NQ) order[k] = hIdx[slots[k]]
     }
 
     /** rgb: SIZE*SIZE*3 row-major [0,255]. Returns detections (boxes normalized in [0,1] SIZE space). */
     fun detect(rgb: FloatArray): List<Detection> {
         // ---- Graph A (GPU): backbone + hybrid encoder + score head ----
-        val chw = FloatArray(3 * SIZE * SIZE)
         val hw = SIZE * SIZE
         for (i in 0 until hw) {                       // CHW, [0,1] rescale only
             chw[i] = rgb[i * 3] / 255f
@@ -127,36 +161,29 @@ class RtDetr(private val ctx: Context) : Closeable {
         aIn[0].writeFloat(chw)
         ga.run(aIn, aOut)
         val encClass = aOut[aEncClass].readFloat()    // [8400*80]
-        val memScaled = aOut[aMemory].readFloat()      // [8400*256] = memory_raw * MEM_SCALE
+        val memRaw = aOut[aMemory].readFloat()         // [8400*256] = memory_raw * MEM_SCALE
+        val invScale = 1f / MEM_SCALE
+        for (i in memRaw.indices) memRaw[i] *= invScale   // undo the ×2 in place -> raw source_flatten
 
-        // ---- host: topk-300 by max class score (descending, matches torch.topk) ----
-        val maxScore = FloatArray(NPROP)
+        // ---- host: topk-300 by max class score (descending) ----
         for (p in 0 until NPROP) {
             var m = -Float.MAX_VALUE; val base = p * NCLS
             for (c in 0 until NCLS) { val v = encClass[base + c]; if (v > m) m = v }
             maxScore[p] = m
         }
-        val order = (0 until NPROP).sortedByDescending { maxScore[it] }
+        topNQ()
 
         // ---- host: per-token tail (fp32) on the 300 selected; build GraphB target + ref ----
-        val invScale = 1f / MEM_SCALE
-        val memRaw = FloatArray(NPROP * HID)           // raw source_flatten for GraphB cross-attn
-        for (i in memRaw.indices) memRaw[i] = memScaled[i] * invScale
-        val target = FloatArray(NQ * HID)
-        val ref = FloatArray(NQ * 4)
-        val memSel = FloatArray(HID)
         for (q in 0 until NQ) {
             val p = order[q]; val mb = p * HID; val vp = valid[p]
             for (c in 0 until HID) memSel[c] = vp * memRaw[mb + c]     // masked memory
-            val tgt = encOutput(memSel)
-            System.arraycopy(tgt, 0, target, q * HID, HID)
-            val delta = run {                                          // bbox_head MLP
-                val h0 = linear(tgt, bb0W, bb0B, HID, HID, true)
-                val h1 = linear(h0, bb1W, bb1B, HID, HID, true)
-                linear(h1, bb2W, bb2B, 4, HID, false)
-            }
+            encOutputInto(memSel)                                     // -> tgtBuf
+            System.arraycopy(tgtBuf, 0, target, q * HID, HID)
+            linearInto(tgtBuf, bb0W, bb0B, h1Buf, HID, HID, true)     // bbox_head MLP
+            linearInto(h1Buf, bb1W, bb1B, h0Buf, HID, HID, true)
+            linearInto(h0Buf, bb2W, bb2B, deltaBuf, 4, HID, false)
             val ab = p * 4
-            for (k in 0 until 4) ref[q * 4 + k] = delta[k] + anchors[ab + k]
+            for (k in 0 until 4) ref[q * 4 + k] = deltaBuf[k] + anchors[ab + k]
         }
 
         // ---- Graph B (GPU): two-stage combine + plain decoder + heads ----

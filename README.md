@@ -137,9 +137,9 @@ RF-DETR (Roboflow 2025, an LW-DETR derivative): a **transformer** detector (wind
 deformable-attention DETR decoder) running **fully on CompiledModel GPU** — the first transformer/DETR
 detector in this zoo to do so. Converted with **litert-torch** + a **2-graph split** (the two-stage
 query selection `TOPK`/`GATHER` runs on the host between the graphs) + **SafeLayerNorm** (the projector
-and decoder LayerNorms overflow Mali fp16). Device-verified on Pixel 8a: Graph A `1381/1381` LITERT_CL
-(~22 ms) + Graph B `404/404` LITERT_CL (~5 ms), ≈27 ms total; reproduces the PyTorch detections at
-IoU 0.98–0.99.
+and decoder LayerNorms overflow Mali fp16). Device-verified on Pixel 8a: both graphs fully `LITERT_CL`
+(Graph A `1381/1381`, Graph B `404/404`); runs **live camera at ~9 fps (~110 ms/frame)** — a transformer
+detector entirely on the GPU — and reproduces the PyTorch detections at IoU 0.98–0.99.
 
 | Model | Size (fp16) | Input | Outputs | Original Project | License | Sample App |
 | ----- | ----------- | ----- | ------- | ---------------- | ------- | ---------- |
@@ -160,8 +160,9 @@ the host). The on-device gate here was **not** an fp16 wall but a Mali bug where
 `[1,N,256]` that fans out inside the graph is silently corrupted — fixed by emitting only the two clean
 leaves (`enc_class` + `memory_raw`) and moving the per-token tail (`enc_output` + box head) to the host
 on the 300 selected tokens (exact, since per-token ops commute with gather). Device-verified on Pixel 8a:
-Graph A ~6 ms + Graph B `704/704` LITERT_CL ~11 ms; reproduces the PyTorch detections at IoU 0.98–1.00
-(COCO val giraffe 7/7, cats 6/6).
+both graphs fully `LITERT_CL` (Graph B `704/704`); reproduces the PyTorch detections at IoU 0.98–1.00
+(COCO val giraffe 7/7, cats 6/6). **Still-image** demo — RT-DETR's 8400-token / 80×80 deformable decoder
+is ~350 ms of GPU compute (GATHER-free tent-matmul), so ~615 ms/frame, not real-time.
 
 | Model | Size (fp16) | Input | Outputs | Original Project | License | Sample App |
 | ----- | ----------- | ----- | ------- | ---------------- | ------- | ---------- |

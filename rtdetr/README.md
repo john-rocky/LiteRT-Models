@@ -4,18 +4,22 @@
 detection running **fully on the LiteRT CompiledModel GPU** (ML Drift). RT-DETRv2 is a real-time
 transformer detector (ResNet18-vd backbone + a hybrid AIFI/CCFM encoder + a plain deformable-attention
 DETR decoder). Both transformer graphs run on the GPU with no CPU/ONNX fallback; only the topk selection
-and a tiny per-token tail run on the CPU. The demo detects objects in a bundled image and overlays the
-boxes + COCO labels.
+and a tiny per-token tail run on the CPU. This is a **still-image** demo (bundled image + gallery pick).
 
 ## On-device (Pixel 8a, Tensor G3 — verified)
 
-| graph | nodes on GPU | time |
-|---|---|---|
-| **Graph A** — ResNet18-vd backbone + hybrid encoder + score head | fully `LITERT_CL` | ~6 ms |
-| **Graph B** — two-stage combine + plain decoder + heads | `704/704` LITERT_CL | ~11 ms |
+| graph | nodes on GPU |
+|---|---|
+| **Graph A** — ResNet18-vd backbone + hybrid encoder + score head | fully `LITERT_CL` |
+| **Graph B** — two-stage combine + plain decoder + heads | `704/704` LITERT_CL |
 
 The device chain reproduces the PyTorch detections **exactly** — COCO val *giraffe* image **7/7**, *cats*
 image (`000000039769`) **6/6**, every box at **IoU 0.98–1.00** with matching class and score.
+
+End-to-end **~615 ms/frame**: RT-DETR's 8400-token / 80×80 deformable decoder is ~350 ms of GPU compute
+(the GATHER-free tent-matmul `grid_sample` is the cost), so it is accurate but **not real-time** on-device
+— hence still-image. (The [RF-DETR](../rfdetr) demo — one small 24×24 deformable level — is the real-time
+camera one, ~9 fps.)
 
 ## How it splits (and why it's fully GPU)
 

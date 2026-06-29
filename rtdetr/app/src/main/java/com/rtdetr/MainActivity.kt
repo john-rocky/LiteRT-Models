@@ -21,9 +21,14 @@ import android.widget.TextView
 import java.util.concurrent.Executors
 
 /**
- * RT-DETRv2-S demo: object detection with both transformer graphs on CompiledModel GPU; only topk +
- * the per-token tail (enc_output / bbox_head) + decode + NMS run on the CPU. Runs on a bundled image at
- * launch and on any gallery image.
+ * RT-DETRv2-S demo: object detection with both transformer graphs on CompiledModel GPU; only topk + the
+ * per-token tail (enc_output / bbox_head) + decode + NMS run on the CPU. Runs on a bundled image at launch
+ * and on any gallery image.
+ *
+ * This is a still-image demo (not live camera): RT-DETRv2's GPU-compatible deformable decoder — the
+ * deformable `grid_sample` re-authored as a GATHER-free tent-matmul over the full 8400-token / 80×80
+ * feature levels — costs ~350 ms on the Pixel 8a Mali GPU (~580 ms end-to-end), so it is accurate but not
+ * real-time on-device. (RF-DETR, with a single 24×24 deformable level, is the real-time camera demo.)
  */
 class MainActivity : Activity() {
 

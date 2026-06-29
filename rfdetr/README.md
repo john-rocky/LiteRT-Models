@@ -5,19 +5,19 @@ running **fully on the LiteRT CompiledModel GPU** (ML Drift). RF-DETR is a trans
 (DINOv2 backbone + deformable-attention DETR decoder) — a model family that previously did **not** ride
 the GPU API cleanly (deformable `grid_sample` → `GATHER_ND`, windowed attention → 5D/6D tensors,
 two-stage query selection → `TOPK`/`GATHER`). Here every one of those is re-authored or split out, so
-the whole detector runs on the GPU with no CPU/ONNX fallback. The demo detects objects in a bundled
-image and overlays the boxes + COCO labels.
+the whole detector runs on the GPU with no CPU/ONNX fallback. The demo runs **live camera** detection
+(CameraX) and overlays the boxes + COCO labels on each frame.
 
 ## On-device (Pixel 8a, Tensor G3 — verified)
 
-| graph | nodes on GPU | time |
-|---|---|---|
-| **Graph A** — backbone + encoder + proposal heads | `1381/1381` LITERT_CL | ~22 ms |
-| **Graph B** — two-stage combine + decoder + heads | `404/404` LITERT_CL | ~5 ms |
+| graph | nodes on GPU |
+|---|---|
+| **Graph A** — backbone + encoder + proposal heads | `1381/1381` LITERT_CL |
+| **Graph B** — two-stage combine + decoder + heads | `404/404` LITERT_CL |
 
-Full pipeline (Graph A → host topk/gather → Graph B → decode + NMS) ≈ **27 ms**, fully GPU-resident.
-On a real image the device chain reproduces the PyTorch detections at **IoU 0.98–0.99, same class,
-matching scores**.
+Both graphs fully GPU-resident; the **live camera runs at ~9 fps (~110 ms/frame end-to-end)** — a
+transformer detector entirely on the GPU. On a real image the device chain reproduces the PyTorch
+detections at **IoU 0.98–0.99, same class, matching scores**.
 
 ## How it splits (and why it's fully GPU)
 
