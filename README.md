@@ -17,6 +17,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [YOLO26n](#yolo26n)
   - [RF-DETR Nano](#rf-detr-nano)
   - [RT-DETRv2-S](#rt-detrv2-s)
+  - [D-FINE-S](#d-fine-s)
 
 - [**Multi-Object Tracking**](#multi-object-tracking)
   - [YOLO + DeepSORT (OSNet)](#yolo--deepsort-osnet)
@@ -173,6 +174,26 @@ is ~350 ms of GPU compute (GATHER-free tent-matmul), so ~615 ms/frame, not real-
 
 **Preprocessing**: square resize to 640×640, RGB, [0,1] rescale only (no ImageNet normalization). See
 [litert-community/RT-DETRv2-S-LiteRT](https://huggingface.co/litert-community/RT-DETRv2-S-LiteRT).
+
+### D-FINE-S
+
+D-FINE (USTC 2024, `ustc-community/dfine-small-coco`) — the **SOTA real-time DETR** — running **fully on
+CompiledModel GPU**. HGNetV2 backbone + hybrid AIFI/CCFM encoder + an **FDR** (Fine-grained Distribution
+Refinement) decoder. Converted with **litert-torch** + the same **2-graph split** as RT-DETRv2 (host topk +
+per-token tail). D-FINE was previously **parked** as a "FDR decoder fp16 wall" — but that was a misdiagnosis:
+the real cause was the same Mali 3D-token fan-out bug (the raw `memory` output was silently garbage), and
+with clean memory the FDR decoder is perfect. Device-verified on Pixel 8a: Graph A `511/511` + Graph B
+`850/850` LITERT_CL, real-image detections at IoU 0.99–1.00 (still-image; deformable decoder GPU-compute-bound).
+
+| Model | Size (fp16) | Input | Outputs | Original Project | License | Sample App |
+| ----- | ----------- | ----- | ------- | ---------------- | ------- | ---------- |
+| D-FINE-S (Graph A + Graph B) | 13.0 MB + 8.8 MB | Float32 [1, 3, 640, 640] NCHW | enc_class[1,8400,80] / memory_raw[1,8400,256] → boxes[1,300,4] / logits[1,300,80] | [Peterande/D-FINE](https://github.com/Peterande/D-FINE) | [Apache-2.0](https://github.com/Peterande/D-FINE/blob/main/LICENSE) | [dfine/](dfine/) |
+
+**Output format**: Graph B gives `boxes` (cxcywh, normalized 0-1) + `logits` (80 = contiguous COCO id
+0–79). Host applies sigmoid + score threshold + cxcywh→xyxy + light NMS.
+
+**Preprocessing**: square resize to 640×640, RGB, [0,1] rescale only (no ImageNet normalization). See
+[litert-community/D-FINE-S-LiteRT](https://huggingface.co/litert-community/D-FINE-S-LiteRT).
 
 # Multi-Object Tracking
 
