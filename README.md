@@ -43,6 +43,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [DSINE](#dsine)
 
 - [**Speech Recognition**](#speech-recognition)
+  - [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc)
   - [Whisper-tiny](#whisper-tiny)
 
 - [**Text-to-Speech**](#text-to-speech)
@@ -375,6 +376,24 @@ Converted via **litert-torch** with encoder + decoder initial prediction only (C
 **Output format**: `[1, 3, 480, 640]` — unit normal vectors (X, Y, Z) in [-1, 1]. Visualize as `RGB = (normal + 1) / 2 * 255`.
 
 # Speech Recognition
+
+### Parakeet (FastConformer-CTC)
+
+NVIDIA Parakeet (`parakeet-tdt_ctc-110m`, the CTC branch): the 17-layer FastConformer encoder + CTC head run **fully on the LiteRT CompiledModel GPU** on a Pixel 8a — the first big global-attention transformer in this zoo to survive the Mali fp16 path end to end. On-device transcript matches PyTorch exactly (real-frame logits corr 0.99997), 3105/3105 ops on LITERT_CL (1 partition), ~330 ms GPU + ~70 ms host mel ≈ 0.4 s end-to-end per 16 s window (device-app measured).
+
+Converted via **litert-torch**: RelPositionMultiHeadAttention re-authored as manual ≤4D matmuls, GLU→`a·sigmoid(b)`, masking folded into a GPU-clean additive attention bias for the fixed window, CTC `ConvASRDecoder` fused into the graph. Key fix: the subsampling front-end emits very large pre-norm activations (|x|≈7000), so the LayerNorm variance is reduced entirely in a down-scaled domain (never rebuilding the large variance, which overflows fp16 on Mali → blank output).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Encoder + CTC | [parakeet_ship_fp16.tflite](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT) | 226 MB | mel [1, 80, 1601] + frame mask [1, 201] | CTC logits [1, 201, 1025] | CompiledModel GPU |
+
+**Preprocessing**: 16 kHz mono → NeMo log-mel (80 bins, preemphasis 0.97, 512-pt FFT, slaney filterbank, per-feature norm), computed in Kotlin. Audio up to 16 s is padded to the fixed window.
+
+**Decoding**: greedy CTC (drop blank + repeats) + SentencePiece detokenize (1024 pieces), on the host.
+
+**Sample app**: [parakeet/](parakeet/) — Microphone recording + bundled sample + transcription display.
+
+**Original project**: [NVIDIA NeMo / parakeet-tdt_ctc-110m](https://huggingface.co/nvidia/parakeet-tdt_ctc-110m) | [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/)
 
 ### Whisper-tiny
 
