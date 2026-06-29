@@ -3,10 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 android {
-    namespace = "com.rfdetr"
+    namespace = "com.rtdetr"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.rfdetr"
+        applicationId = "com.rtdetr"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -23,13 +23,9 @@ android {
             pickFirsts += setOf("**/libc++_shared.so","**/libtensorflowlite_jni.so","**/libtensorflowlite_gpu_jni.so")
         }
     }
-    androidResources { noCompress += listOf("tflite","txt") }
+    androidResources { noCompress += listOf("tflite","txt","bin") }
 }
 dependencies {
     implementation("com.google.ai.edge.litert:litert:2.1.5")
     implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.activity:activity-ktx:1.9.3")
-    implementation("androidx.camera:camera-core:1.4.1")
-    implementation("androidx.camera:camera-camera2:1.4.1")
-    implementation("androidx.camera:camera-lifecycle:1.4.1")
 }
