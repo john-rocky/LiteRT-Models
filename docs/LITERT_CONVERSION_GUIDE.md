@@ -506,3 +506,51 @@ proposals = TOPK_V2+GATHER) has no GPU op, but the proposal **grid is image-inde
 Preprocessing: square resize 384×384, RGB, ImageNet mean/std, NCHW. Host: sigmoid + threshold + cxcywh→xyxy
 + per-class NMS (light, removes fp16 near-duplicate queries). Scripts: `rfdetr/scripts/build_rfdetr_split.py`
 (imports build_rfdetr_full → build_rfdetr_bb). Models: [`litert-community/RF-DETR-Nano-LiteRT`](https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT).
+
+### Parakeet (NVIDIA FastConformer-CTC, ASR) — SafeLayerNorm **v2** (never rebuild the variance)
+
+`parakeet-tdt_ctc-110m` (CTC branch, CC-BY-4.0): the 17-layer FastConformer encoder + CTC head run **fully on
+the CompiledModel GPU** — the first big global-attention transformer in this zoo to survive the Mali fp16 path
+end to end. On-device transcript matches PyTorch exactly (real-frame logits corr 0.99997), 3105/3105 ops on
+LITERT_CL.
+
+**The key finding — SafeLayerNorm v2.** The first device run gave corr 0.44 and a *blank* transcript, looking
+exactly like the EoMT/DA-V2 "deep global-attention transformers wall on Mali fp16" verdict. A per-layer device
+tap proved otherwise: N=0 (subsampling + pos only) = corr 1.0 but **|x| ≈ 7000**; N=1 (one conformer block) =
+0.20, and *every* ablation (drop attention / conv / FFN / rel-shift / plain-LN) stayed 0.20 → a single block
+already broken ⇒ a structural fault, not precision compounding. The dw-striding subsampling front-end
+legitimately emits |x| ≈ 7000, so the first LayerNorm must normalize it — and **even the adaptive SafeLayerNorm
+above overflows here**, because it *rebuilds* the variance: `var = mean(d²)·S²` with `S ≈ amax/8 ≈ 918` gives
+`S² ≈ 8.4e5` and `var ≈ 2.5e7`, both **> fp16 max 65504** → `var = ∞` → `y = 0` → output = bias → corr 0.20.
+
+Fix — **stay entirely in the down-scaled domain and never reconstruct the large variance** (the scale cancels
+in `y = d/√var`):
+
+```python
+def safe_layernorm_v2(x, weight, bias, eps):           # x: [..., C]
+    amax = x.abs().amax(-1, keepdim=True)
+    S    = (amax * 0.125).clamp(min=1.0)               # per-row; native S=1 for small norms
+    xs   = x / S                                       # down-scaled, O(1)
+    mu   = xs.mean(-1, keepdim=True)
+    d    = xs - mu
+    var  = (d * d).mean(-1, keepdim=True)              # down-scaled variance — NEVER ·S²
+    return d * torch.rsqrt(var + eps) * weight + bias  # exact; fp16-safe at any magnitude
+```
+
+Every intermediate stays `O(1)…O(amax)`, so it is overflow-free for any input magnitude — **use v2 in place of
+the `var = mean(d²)·S²` form going forward.** After this, all encoder taps N=1..17 → device corr 1.0 and the
+model ships. Diagnostic lesson: a "fp16 wall" that produces an **all-zero / all-blank** collapse, plus a tap
+showing even *one* block broken, is a Safe-norm **overflow** (variance reconstruction), not precision
+compounding (which starts near 1.0 and decays gradually). DA-V2 (|x| = 21.6) was a genuine precision wall and
+stayed parked; Parakeet's was this overflow → fixable and shipped.
+
+Other re-authoring: `RelPositionMultiHeadAttention` → manual ≤4D matmuls (no SDPA/cache); GLU → `a·sigmoid(b)`
+(SPLIT banned); BatchNorm folds; CausalConv1d symmetric zero-pad; CTC `ConvASRDecoder` (Conv1d 512→1025) fused
+into the graph. Variable length = a fixed 16 s window with the encoder masking folded into a **GPU-clean
+additive attention bias** (`scores += (1-mask)·-3e4`) + a conv frame-mask, so audio ≤16 s is zero-padded
+without contaminating real frames. NeMo and litert-torch cannot share a process (a jax/torch mutex) → convert
+in two processes, each ending `os._exit(0)`. Host log-mel matches NeMo's preprocessor (note: the model uses
+**preemphasis 0.97** even though the config says `None`); greedy-CTC + SentencePiece decode on the host.
+Scripts: `parakeet/scripts/` (`build_parakeet_ship.py`, `build_parakeet_tap.py` = the per-layer tap/ablation
+harness that nailed the SafeLayerNorm v2 fix). Model:
+[`litert-community/Parakeet-tdt-ctc-110m-LiteRT`](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT).
