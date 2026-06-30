@@ -62,6 +62,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Audio Classification**](#audio-classification)
   - [wav2vec2 Keyword Spotting](#wav2vec2-keyword-spotting)
+  - [PANNs CNN14 Audio Tagging](#panns-cnn14-audio-tagging)
 
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
@@ -578,6 +579,27 @@ mic ─► AudioRecord (VOICE_COMMUNICATION + AEC/NS/AGC)
 **Sample app**: [wav2vec2-kws/](wav2vec2-kws/) — bundled-clip classify on launch + mic Record button.
 
 **Original project**: [superb/wav2vec2-base-superb-ks](https://huggingface.co/superb/wav2vec2-base-superb-ks) | [Apache-2.0](https://huggingface.co/facebook/wav2vec2-base)
+
+### PANNs CNN14 Audio Tagging
+
+[PANNs](https://github.com/qiuqiangkong/audioset_tagging_cnn) **CNN14** (`Cnn14_mAP=0.431`) general sound-event tagging — predicts probabilities over the **527 AudioSet classes** (speech, music, instruments, animals, vehicles, alarms, household sounds…) for ~10 s of audio. Multi-label, so several tags can be high at once. The CNN body runs **fully on CompiledModel GPU**; only the log-mel front-end is host-side (it overflows fp16). Distinct from wav2vec2 keyword-spotting (fixed speech commands) — this is open-domain environmental sound tagging.
+
+```
+waveform[320000] --[Kotlin log-mel]--> logmel[1,1,1001,64] --[GPU CNN14]--> probs[527] (sigmoid)
+```
+
+**On-device (Pixel 8a, Tensor G3 — verified):** CNN body **45/45** nodes on the LiteRT GPU delegate (`LITERT_CL`), **1 partition** (single graph, no CPU fallback); ~124 ms GPU + ~99 ms host log-mel ≈ **0.22 s** per 10 s clip; bundled-clip self-test → top tag "Speech" (matches PyTorch).
+
+| Stage | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| log-mel | (Kotlin `MelSpectrogram.kt`) | — | waveform [320000] → logmel [1,1,1001,64] | CPU |
+| CNN14 | [HF: litert-community/PANNs-CNN14-AudioSet-LiteRT](https://huggingface.co/litert-community) | 162 MB FP16 | logmel [1,1,1001,64] → probs [1,527] | CompiledModel GPU |
+
+**Why the log-mel is host-side**: PANNs' spectrogram is a torchlibrosa *DFT-as-Conv1d*, so there is **no FFT op** and the raw-audio graph is almost GPU-clean — the only blocker is the STFT centering reflect-pad (one `GATHER_ND`, removable with `pad_mode='constant'`, corr 1.0). But litert-torch lowers the 1024-tap DFT-conv wrongly (fp32 corr ≈ 0.19) and `|STFT|²` (~1e6) overflows fp16 on Mali → NaN. So the spectral front-end runs on the CPU in Kotlin (Whisper/Kokoro pattern), matched to torchlibrosa exactly (host log-mel vs torch corr 1.000000, max\|d\| 0.0017). The CNN body (`bn0` + 6 conv blocks + pooling + 2 FC + sigmoid) is a pure CNN and converts at **corr 1.000000 in fp32 and fp16** (op-check banned NONE, >4D 0). Mel basis exported to `assets/mel_basis.bin` [64,513]; periodic Hann + radix-2 FFT in Kotlin. See [panns/scripts/](panns/scripts/).
+
+**Sample app**: [panns/](panns/) — bundled-clip self-test on launch + **Record 10 s & tag** button with a top-tags bar chart.
+
+**Original project**: [qiuqiangkong/audioset_tagging_cnn](https://github.com/qiuqiangkong/audioset_tagging_cnn) | code [Apache-2.0](https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/master/LICENSE), weights [CC-BY-4.0](https://zenodo.org/record/3987831)
 
 # OCR
 
