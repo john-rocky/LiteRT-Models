@@ -64,6 +64,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [wav2vec2 Keyword Spotting](#wav2vec2-keyword-spotting)
   - [PANNs CNN14 Audio Tagging](#panns-cnn14-audio-tagging)
 
+- [**Pitch Detection**](#pitch-detection)
+  - [CREPE](#crepe)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -600,6 +603,28 @@ waveform[320000] --[Kotlin log-mel]--> logmel[1,1,1001,64] --[GPU CNN14]--> prob
 **Sample app**: [panns/](panns/) — bundled-clip self-test on launch + **Record 10 s & tag** button with a top-tags bar chart.
 
 **Original project**: [qiuqiangkong/audioset_tagging_cnn](https://github.com/qiuqiangkong/audioset_tagging_cnn) | code [Apache-2.0](https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/master/LICENSE), weights [CC-BY-4.0](https://zenodo.org/record/3987831)
+
+# Pitch Detection
+
+### CREPE
+
+[CREPE](https://github.com/marl/crepe) monophonic pitch (f0) estimation running **fully on CompiledModel GPU**. A 1024-sample (16 kHz) window → activations over **360 pitch bins** (20 cents each); the host decodes to a frequency + nearest note. The sample is a **real-time tuner** — it listens to the mic and shows the live note and how many cents flat/sharp you are.
+
+```
+frame[1,1024] (16 kHz, per-frame zero-mean/unit-var) --[GPU CNN]--> activations[1,360] --[host]--> Hz → note
+```
+
+**On-device (Pixel 8a, Tensor G3 — verified):** CNN **49/49** nodes on the LiteRT GPU delegate (`LITERT_CL`), **1 partition** (single graph, no CPU fallback); ~75 ms/frame (full model); self-test (synthesized 440 Hz) → **A4, 440.4 Hz**.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| CREPE (full) | [HF: litert-community/CREPE-pitch-LiteRT](https://huggingface.co/litert-community) | 44.5 MB FP16 | frame [1,1024] → activations [1,360] | CompiledModel GPU |
+
+**GPU compatibility**: the whole network is a **pure CNN** — 6× {zero-pad → Conv2d → ReLU → BatchNorm → MaxPool} + permute/reshape (≤4D) + Linear + sigmoid. No banned ops; per-frame normalization keeps activations ~O(1) so there is no fp16-on-Mali precision issue (banned NONE, >4D 0, fp16 tflite-vs-torch corr **1.000000**). The 44.5 MB model is bundled in assets. Decode: `cents = 20·bin + 1997.379…`, `Hz = 10·2^(cents/1200)`, activation-weighted around the peak; nearest note from `midi = 69 + 12·log2(Hz/440)`. See [crepe/scripts/](crepe/scripts/).
+
+**Sample app**: [crepe/](crepe/) — 440 Hz self-test on launch + live mic tuner (note + cents gauge, `AudioSource.UNPROCESSED`).
+
+**Original project**: [marl/crepe](https://github.com/marl/crepe) (ICASSP 2018) | [MIT](https://github.com/marl/crepe/blob/master/LICENSE); PyTorch weights via [torchcrepe](https://github.com/maxrmorrison/torchcrepe) (MIT)
 
 # OCR
 
