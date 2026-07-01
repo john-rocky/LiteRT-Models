@@ -663,6 +663,18 @@ Real-ESRGAN: Practical image restoration and upscaling. The General-x4v3 variant
 
 **Preprocessing**: RGB normalized to 0-1 (divide by 255). For images larger than 128x128, process as overlapping tiles and stitch.
 
+### GFPGAN v1.4 (Blind Face Restoration)
+
+GFPGAN (TencentARC): restores degraded / low-quality faces using a StyleGAN2 generative facial prior, running **fully on CompiledModel GPU**. Converted with **litert-torch**; the StyleGAN2 `ModulatedConv2d` (a 5D runtime-weight conv, doubly GPU-banned) is rewritten to an exact 4D form (modulation → input channel-scale + constant conv; demod → a constant `(c_out×c_in)` matmul + `RSQRT`). The demod sum `Σ s²·Wsq` overflows Mali fp16 (style vectors reach |s|~1000 → ~2.3e6 ≫ 65504 → the decoder collapses to a flat color), fixed by normalizing the style by its per-image max before squaring — the scale cancels exactly against the demod, so the device output matches desktop fp32. The app detects the face with **YuNet** and FFHQ-aligns it before restoration (the StyleGAN prior mangles the mouth on off-template crops). Device-verified on Pixel 8a: `551/551 LITERT_CL`, fully GPU, ~1.2 s/face.
+
+| Model | Size (fp16) | Input | Output | Original Project | License | Sample App |
+| ----- | ----------- | ----- | ------ | ---------------- | ------- | ---------- |
+| GFPGAN v1.4 | 431 MB | Float32 [1, 3, 512, 512] NCHW, [-1,1] | Float32 [1, 3, 512, 512] NCHW, [-1,1] | [TencentARC/GFPGAN](https://github.com/TencentARC/GFPGAN) | [Apache-2.0](https://github.com/TencentARC/GFPGAN/blob/master/LICENSE) | [gfpgan/](gfpgan/) |
+
+**Output format**: `[1, 3, 512, 512]` NCHW restored face in [-1,1] → denormalize `(x+1)*127.5`.
+
+**Preprocessing**: detect 5 face landmarks (YuNet), similarity-warp to the facexlib 512 template, then normalize to [-1,1] (`x/127.5 - 1`). See [litert-community/GFPGAN-v1.4-LiteRT](https://huggingface.co/litert-community/GFPGAN-v1.4-LiteRT).
+
 # Monocular Geometry Estimation
 
 ### MoGe-2 ViT-S
