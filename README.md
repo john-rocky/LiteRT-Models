@@ -82,6 +82,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Image Matching**](#image-matching)
   - [XFeat (local features)](#xfeat-local-features)
 
+- [**Text-Prompted Segmentation**](#text-prompted-segmentation)
+  - [CLIPSeg](#clipseg)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -797,6 +800,29 @@ overflow) and `_unfold2d` space-to-depth → an exact one-hot `Conv2d(1,64,k=8,s
 **Sample app**: [xfeat/](xfeat/) — pick two photos → side-by-side match lines.
 
 **Original project**: [verlab/accelerated_features](https://github.com/verlab/accelerated_features) (Apache-2.0)
+
+# Text-Prompted Segmentation
+
+### CLIPSeg
+
+[CLIPSeg](https://huggingface.co/CIDAS/clipseg-rd64-refined) (CVPR 2022) **open-vocabulary
+segmentation**: type what to segment ("a cat", "the sky") and get a mask — no fixed class list. CLIP
+text + vision encoders run on the CompiledModel **GPU**; the tiny decoder runs on **CPU** (its
+4-head/head_dim-16 attention fp16-miscomputes on Mali — the vision encoder's 12-head/head_dim-64
+attention survives at 0.998).
+
+**On-device (Pixel 8a — verified):** text **761/761** GPU (~8.7 ms) + vision **613/613** GPU
+(~8.2 ms) + decoder CPU (exact); end-to-end device-vs-PyTorch logits corr **0.99998**, mask IoU
+**0.9986**. Re-authoring: qkv-3D-BMM attention, quick-GELU, baked interpolated pos-embed,
+⭐`safe_ln_up` (up-scaled LayerNorm so the eps stays fp16-normal), `convT4x4` exact ConvTranspose.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| CLIPSeg rd64 (text+vision+decoder) | [HF: litert-community/CLIPSeg-rd64-LiteRT](https://huggingface.co/litert-community) | 76+147 MB FP16 + 3 MB decoder | image + prompt → mask [352,352] | GPU + CPU |
+
+**Sample app**: [clipseg/](clipseg/) — pick image, type prompt, red mask overlay.
+
+**Original project**: [CIDAS/clipseg-rd64-refined](https://huggingface.co/CIDAS/clipseg-rd64-refined) (Apache-2.0)
 
 # OCR
 
