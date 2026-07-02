@@ -67,6 +67,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Pitch Detection**](#pitch-detection)
   - [CREPE](#crepe)
 
+- [**Audio Source Separation**](#audio-source-separation)
+  - [TIGER-DnR (Dialog / Effects / Music)](#tiger-dnr-dialog--effects--music)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -625,6 +628,44 @@ frame[1,1024] (16 kHz, per-frame zero-mean/unit-var) --[GPU CNN]--> activations[
 **Sample app**: [crepe/](crepe/) — 440 Hz self-test on launch + live mic tuner (note + cents gauge, `AudioSource.UNPROCESSED`).
 
 **Original project**: [marl/crepe](https://github.com/marl/crepe) (ICASSP 2018) | [MIT](https://github.com/marl/crepe/blob/master/LICENSE); PyTorch weights via [torchcrepe](https://github.com/maxrmorrison/torchcrepe) (MIT)
+
+# Audio Source Separation
+
+### TIGER-DnR (Dialog / Effects / Music)
+
+[TIGER](https://github.com/JusperLee/TIGER) (ICASSP 2025) **cinematic sound separation** running **fully on
+CompiledModel GPU**: split any clip (movie scene, game, vlog) into **Dialogue / Sound effects / Music** stems
+on the phone. Three sibling ~1.4 M-param band-split TIGER graphs (dialog / effect / music, trained on the
+openly-built [DnR](https://github.com/darius522/dnr-utils) dataset) each process a 12.06 s 44.1 kHz chunk; per
+DnR convention each graph contributes one stem. The **STFT runs inside the GPU graph** (windowed DFT as one
+`Conv1d`); the host does only reflect-pad, iSTFT and overlap-add.
+
+```
+wav[1,534016] --[GPU: DFT-conv STFT → 57-band split → 8 weight-tied freq/frame UConv+MHSA iters → complex masks]--> (real, imag)[1,3,1025,1040] --[host iSTFT+OLA]--> stems
+```
+
+**On-device (Pixel 8a, Tensor G3 — verified):** **23 974 / 23 974** nodes on the LiteRT GPU delegate
+(`LITERT_CL`), **1 partition** — the largest single graph in this zoo (10× NAFNet) — device-vs-PyTorch waveform
+corr **0.99987**; ~4.5 s per 12.06 s chunk per stem-graph.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| TIGER-DnR (dialog/effect/music) | [HF: litert-community/TIGER-DnR-LiteRT](https://huggingface.co/litert-community) | 16.1 MB FP16 × 3 | wav [1,534016] → spec real+imag [1,3,1025,1040] | CompiledModel GPU |
+
+**GPU compatibility**: no RNN / gather / dense warp, but heavy exact re-authoring: folded-batch `Conv1d` →
+4D `(1,k)`-`Conv2d`; per-sample `GlobLN` → per-position chained-mean SafeNorm; chunk length chosen so T=1040
+is divisible by 16 → every adaptive pool is a uniform `AVERAGE_POOL_2D` and every nearest resize an exact
+integer-repeat (on-stride `RESIZE_NEAREST`); non-uniform band axis via constant one-hot/averaging
+`FULLY_CONNECTED`; MHSA → per-head batch-1 3D BMM (1/√d folded into Q); PReLU → `relu(x) − w·relu(−x)`;
+6-D mask view → static channel slices. Two device-only Mali fixes: **norm eps 1e-8/1e-5 underflows to 0 in
+fp16** (silent bands → 0/0 = NaN that spreads across time; eps=1e-4 is exact-equivalent) and the mask head's
+**dim-1 broadcast MUL** (`[1,1,bw,T] × [1,3,bw,T]`) mis-executes (all stems became source 0; rewritten as
+per-source same-shape arithmetic). banned NONE, >4D 0, fp16 tflite-vs-torch corr 0.99991.
+
+**Sample app**: [tiger/](tiger/) — pick an audio/video clip (or record 15 s) → separate → play each stem.
+
+**Original project**: [JusperLee/TIGER](https://github.com/JusperLee/TIGER) (MIT) | weights
+[JusperLee/TIGER-DnR](https://huggingface.co/JusperLee/TIGER-DnR) (Apache-2.0)
 
 # OCR
 
