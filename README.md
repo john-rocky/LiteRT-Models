@@ -70,6 +70,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Audio Source Separation**](#audio-source-separation)
   - [TIGER-DnR (Dialog / Effects / Music)](#tiger-dnr-dialog--effects--music)
 
+- [**Speaker Diarization**](#speaker-diarization)
+  - [pyannote 3.1 stack (segmentation + WeSpeaker)](#pyannote-31-stack-segmentation--wespeaker)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -666,6 +669,45 @@ per-source same-shape arithmetic). banned NONE, >4D 0, fp16 tflite-vs-torch corr
 
 **Original project**: [JusperLee/TIGER](https://github.com/JusperLee/TIGER) (MIT) | weights
 [JusperLee/TIGER-DnR](https://huggingface.co/JusperLee/TIGER-DnR) (Apache-2.0)
+
+# Speaker Diarization
+
+### pyannote 3.1 stack (segmentation + WeSpeaker)
+
+On-device **"who spoke when"**: record a conversation (or pick a clip) → per-speaker timeline +
+per-speaker playback. The [pyannote/speaker-diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1)
+recipe (MIT) ported to Android — the single biggest-demand audio pipeline on HF (~8M downloads/month)
+with no Android/LiteRT port until now.
+
+```
+pcm 16 kHz → [10 s windows]—[PyanNet powerset seg, ONNX CPU]→ local speakers
+           → solo audio per (window, speaker) —[kaldi fbank+CMN, Kotlin]→ [1,500,80]
+           —[WeSpeaker ResNet34, GPU]→ 256-d embeddings —[AHC clustering, host]→ timeline
+```
+
+**On-device (Pixel 8a, Tensor G3 — verified):** embedding **108/108** nodes `LITERT_CL`
+(1 partition), **~1.2 ms**/window, device-vs-PyTorch cosine **0.99997**; segmentation ONNX
+corr 1.0 / argmax agreement 100% vs PyTorch. End-to-end mirror of the app pipeline separates a
+male/female test conversation correctly (2 speakers, correct turns).
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| WeSpeaker ResNet34 embedding | [HF: litert-community/Speaker-Diarization-LiteRT](https://huggingface.co/litert-community) | 13.4 MB FP16 | fbank [1,500,80] → embedding [1,256] | CompiledModel GPU |
+| pyannote segmentation-3.0 | same repo | 5.9 MB ONNX | wav [1,1,160000] → powerset [1,589,7] | onnxruntime CPU |
+
+**GPU compatibility**: the WeSpeaker ResNet34 is a pure CNN with no maxpool stem (stride-2 convs) —
+converts with **zero re-authoring** except the StatsPool std (down-scaled unbiased variance,
+fp16-safe). The segmentation BiLSTM has no Mali GPU kernel → onnxruntime CPU (tiny model, the
+Silero-VAD pattern). The kaldi-fbank front-end (hamming 25/10 ms, 80 mel, ×2¹⁵, CMN) is ported to
+Kotlin with precomputed mel banks, verified against `torchaudio.compliance.kaldi.fbank` (corr 1.0).
+
+**Sample app**: [diarization/](diarization/) — record up to 120 s or pick a clip → colored
+per-speaker timeline, talk-time summary, per-speaker playback.
+
+**Original projects**: [pyannote/pyannote-audio](https://github.com/pyannote/pyannote-audio) (MIT) |
+[segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT) |
+[WeSpeaker](https://github.com/wenet-e2e/wespeaker) weights
+[pyannote/wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM) (CC-BY-4.0)
 
 # OCR
 
