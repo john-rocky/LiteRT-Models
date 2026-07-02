@@ -79,6 +79,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Music Transcription**](#music-transcription)
   - [Basic Pitch (audio-to-MIDI)](#basic-pitch-audio-to-midi)
 
+- [**Image Matching**](#image-matching)
+  - [XFeat (local features)](#xfeat-local-features)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -772,6 +775,28 @@ desktop no-op) and per-bin CQT norm folded into per-octave kernel copies (exact;
 **Sample app**: [basicpitch/](basicpitch/) — record or pick a clip → piano roll + note events.
 
 **Original project**: [spotify/basic-pitch](https://github.com/spotify/basic-pitch) (Apache-2.0)
+
+# Image Matching
+
+### XFeat (local features)
+
+[XFeat](https://github.com/verlab/accelerated_features) (CVPR 2024) **local feature extraction +
+matching** running **fully on CompiledModel GPU**: pick two photos of the same scene and see the
+matched keypoints — the building block for AR, panorama stitching, SLAM and registration.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** **72/72** nodes `LITERT_CL` (1 partition),
+**~0.4 ms** per 640×480 image, device-vs-PyTorch corr **0.9999**, fp16 **1.4 MB**. Host does
+instance-norm, keypoint decode (8×8-cell logits + dustbin), NMS, bilinear descriptor sampling and
+mutual-nearest-neighbor matching. Re-authoring: InstanceNorm host-side (fp16 spatial-reduction
+overflow) and `_unfold2d` space-to-depth → an exact one-hot `Conv2d(1,64,k=8,s=8)`.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| XFeat | [HF: litert-community/xfeat-litert](https://huggingface.co/litert-community) | 1.4 MB FP16 | gray [1,1,480,640] → feats/keypoints/heatmap | CompiledModel GPU |
+
+**Sample app**: [xfeat/](xfeat/) — pick two photos → side-by-side match lines.
+
+**Original project**: [verlab/accelerated_features](https://github.com/verlab/accelerated_features) (Apache-2.0)
 
 # OCR
 
