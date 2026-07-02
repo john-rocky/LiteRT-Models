@@ -76,6 +76,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Speech Enhancement**](#speech-enhancement)
   - [CMGAN (noise suppression)](#cmgan-noise-suppression)
 
+- [**Music Transcription**](#music-transcription)
+  - [Basic Pitch (audio-to-MIDI)](#basic-pitch-audio-to-midi)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -746,6 +749,29 @@ Noisy vs Enhanced playback.
 
 **Original project**: [ruizhecao96/CMGAN](https://github.com/ruizhecao96/CMGAN) (MIT), trained on
 VoiceBank-DEMAND
+
+# Music Transcription
+
+### Basic Pitch (audio-to-MIDI)
+
+[Basic Pitch](https://github.com/spotify/basic-pitch) (Spotify, ICASSP 2022) **music transcription**
+running **fully on CompiledModel GPU — including the conv-based CQT front-end**: play an instrument
+(or sing) and see the notes on a piano roll. Re-authored from the official ONNX (bit-exact torch
+reimplementation, corr 1.000000), 0.84 MB fp32.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** **241/241** nodes `LITERT_CL` (1 partition),
+**~4.4 ms** per 2 s window; note-event F1@0.5 **0.98** vs reference, per-frame argmax agreement 98%.
+Two device-only fp16 fixes: post-log clamp (recovers log(0)=-inf from the fp16-flushed 1e-10 floor,
+desktop no-op) and per-bin CQT norm folded into per-octave kernel copies (exact; device contour
+0.845 → 0.982).
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| Basic Pitch nmp | [HF: litert-community/Basic-Pitch-LiteRT](https://huggingface.co/litert-community) | 0.84 MB FP32 | wav [1,43844] → contour/note/onset posteriorgrams | CompiledModel GPU |
+
+**Sample app**: [basicpitch/](basicpitch/) — record or pick a clip → piano roll + note events.
+
+**Original project**: [spotify/basic-pitch](https://github.com/spotify/basic-pitch) (Apache-2.0)
 
 # OCR
 
