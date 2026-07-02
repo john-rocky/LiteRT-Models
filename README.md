@@ -73,6 +73,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Speaker Diarization**](#speaker-diarization)
   - [pyannote 3.1 stack (segmentation + WeSpeaker)](#pyannote-31-stack-segmentation--wespeaker)
 
+- [**Speech Enhancement**](#speech-enhancement)
+  - [CMGAN (noise suppression)](#cmgan-noise-suppression)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -708,6 +711,41 @@ per-speaker timeline, talk-time summary, per-speaker playback.
 [segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT) |
 [WeSpeaker](https://github.com/wenet-e2e/wespeaker) weights
 [pyannote/wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM) (CC-BY-4.0)
+
+# Speech Enhancement
+
+### CMGAN (noise suppression)
+
+[CMGAN](https://github.com/ruizhecao96/CMGAN) (TASLP 2024) **speech enhancement** running **fully on
+CompiledModel GPU**: record in a noisy place (or pick a clip) and A/B the denoised result. One
+1.83 M-param dual-path conformer per 2 s 16 kHz chunk; the **STFT and mag^0.3 power compression run
+inside the GPU graph** — the host does only reflect-pad, un-compress, iSTFT, overlap-add.
+
+```
+wav[1,32400] --[GPU: DFT-conv STFT → mag^0.3 → dense encoder → 4×(time+freq conformer) → mask+complex decoders]--> (real, imag)[1,1,321,201] --[host: mag^(1/0.3) + iSTFT + OLA]--> denoised
+```
+
+**On-device (Pixel 8a, Tensor G3 — verified):** **1 651 / 1 651** nodes on the LiteRT GPU delegate
+(`LITERT_CL`), **1 partition**; **~20 ms per 2 s chunk** (RTF ≈ 0.01); SI-SNR **+7.2 dB** on a
+6.6 dB noisy sample (PyTorch +9.6 dB), device-vs-torch wav corr 0.997.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| CMGAN (VoiceBank-DEMAND) | [HF: litert-community/CMGAN-LiteRT](https://huggingface.co/litert-community) | 4.2 MB FP16 | wav [1,32400] → spec real+imag [1,1,321,201] | CompiledModel GPU |
+
+**GPU compatibility**: the phase path **cancels algebraically** (`mask·mag·cos∠x ≡ mask·x_r` — no
+atan2/cos/sin in-graph); Shaw relative positional embedding (Embedding-lookup GATHER) baked to a
+constant + applied via a 2D `FULLY_CONNECTED` and the pad/reshape **skew** realignment; conformer
+folded batches → batch-1 4D with channel-LN / 1×1-conv Linears / `(1,k)` depthwise; `mag^0.3` →
+`exp(0.3·ln(·))` (POW banned); SPConvTranspose 5-D view → exact 4D reshape chain; InstanceNorm →
+Safe spatial norm, BatchNorm (eval) → constant scale/shift, all eps ≥ 1e-4 (fp16 min-normal), no
+dim-1 broadcasts. fp16 tflite-vs-torch corr 0.999999.
+
+**Sample app**: [cmgan/](cmgan/) — record noisy audio (unprocessed mic) or pick a clip → A/B
+Noisy vs Enhanced playback.
+
+**Original project**: [ruizhecao96/CMGAN](https://github.com/ruizhecao96/CMGAN) (MIT), trained on
+VoiceBank-DEMAND
 
 # OCR
 
