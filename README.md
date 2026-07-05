@@ -91,6 +91,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Image quality**](#image-quality)
   - [NIMA (Neural Image Assessment)](#nima-neural-image-assessment)
 
+- [**Face**](#face)
+  - [3DDFA_V2 (3D face alignment)](#3ddfa_v2-3d-face-alignment)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -874,6 +877,28 @@ is the graph output; the 1-10 mean is host-side.
 **Sample app**: [nima/](nima/) — pick a photo → aesthetic + technical score.
 
 **Original project**: [idealo/image-quality-assessment](https://github.com/idealo/image-quality-assessment) (Apache-2.0)
+
+# Face
+
+### 3DDFA_V2 (3D face alignment)
+
+[3DDFA_V2](https://github.com/cleardusk/3DDFA_V2) (ECCV 2020, MIT) fits a **3D morphable face model**
+to a photo: a MobileNetV1 regresses **62 3DMM parameters** (pose + 40 shape + 10 expression) on the
+CompiledModel **GPU**; the 68 3D face landmarks (and a dense mesh) are reconstructed from the BFM
+bases host-side. A pure CNN — converts through litert-torch with no re-authoring.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** fp16 tflite-vs-PyTorch 62-param corr **0.999999**,
+reconstructed landmarks match to **0.02 px**; 68 landmarks in well under a second. Kotlin-port gotchas:
+the model wants **cv2 BGR** input, the BFM bases are **interleaved** (`reshape(3,-1, order='F')`), and
+`android.media.FaceDetector` needs an even width.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| 3DDFA_V2 MobileNetV1 | [HF: litert-community/3DDFA-V2-LiteRT](https://huggingface.co/litert-community) | 6.3 MB FP16 | crop [1,3,120,120] → 62 params → 68 landmarks | GPU |
+
+**Sample app**: [tddfa/](tddfa/) — pick a frontal-face photo → 68 3D landmarks.
+
+**Original project**: [cleardusk/3DDFA_V2](https://github.com/cleardusk/3DDFA_V2) (MIT)
 
 # OCR
 
