@@ -88,6 +88,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Image tagging**](#image-tagging)
   - [RAM++ (Recognize Anything Plus)](#ram-recognize-anything-plus)
 
+- [**Image quality**](#image-quality)
+  - [NIMA (Neural Image Assessment)](#nima-neural-image-assessment)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -850,6 +853,27 @@ fp16, so those 2 blocks go to CPU. Reweight bakes the tag bank once as fp16 (229
 **Sample app**: [ram/](ram/) — pick a photo (or the bundled sample) → recognized tags.
 
 **Original project**: [xinyu1205/recognize-anything](https://github.com/xinyu1205/recognize-anything) (Apache-2.0)
+
+# Image quality
+
+### NIMA (Neural Image Assessment)
+
+[NIMA](https://github.com/idealo/image-quality-assessment) (idealo, Apache-2.0) scores a photo's
+quality **1-10**. Two MobileNet models — **aesthetic** (AVA) and **technical** (TID2013) — each
+predict a 10-bin score distribution (the score is its mean). Both run **fully on the CompiledModel
+GPU** — a pure CNN, so it converts straight through `tf.lite` with no re-authoring.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** both models ~173 ms on the GPU delegate;
+tflite-vs-Keras score parity **0.999998** (aesthetic) / **0.999915** (technical). 10-bin distribution
+is the graph output; the 1-10 mean is host-side.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| NIMA aesthetic + technical | [HF: litert-community/NIMA-LiteRT](https://huggingface.co/litert-community) | 6.4 MB FP16 each | image [1,224,224,3] → dist [10] | GPU |
+
+**Sample app**: [nima/](nima/) — pick a photo → aesthetic + technical score.
+
+**Original project**: [idealo/image-quality-assessment](https://github.com/idealo/image-quality-assessment) (Apache-2.0)
 
 # OCR
 
