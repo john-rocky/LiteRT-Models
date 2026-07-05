@@ -85,6 +85,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Text-Prompted Segmentation**](#text-prompted-segmentation)
   - [CLIPSeg](#clipseg)
 
+- [**Image tagging**](#image-tagging)
+  - [RAM++ (Recognize Anything Plus)](#ram-recognize-anything-plus)
+
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
 
@@ -823,6 +826,30 @@ attention survives at 0.998).
 **Sample app**: [clipseg/](clipseg/) — pick image, type prompt, red mask overlay.
 
 **Original project**: [CIDAS/clipseg-rd64-refined](https://huggingface.co/CIDAS/clipseg-rd64-refined) (Apache-2.0)
+
+# Image tagging
+
+### RAM++ (Recognize Anything Plus)
+
+[RAM++](https://github.com/xinyu1205/recognize-anything) (Apache-2.0) **open-vocabulary multi-label
+tagging**: a photo in, the recognized tags out (from a 4,585-tag vocabulary; per-tag sigmoid, no
+fixed class head). Swin-L encoder stages 0-2 and the Query2Label tag head run on the CompiledModel
+**GPU**; the last Swin stage and the 479 MB frozen tag bank run on **CPU**.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** Swin 0-2 GPU (corr 0.998) + stage-3/reweight CPU
+(exact) + tag head GPU (corr 0.9987, ~270 ms); sample photo → 14 tags in **~2 s**, all correct.
+⭐**New Mali finding**: Swin-L stage 3 fp16-miscomputes on the GPU delegate — not head_dim (stage 2
+shares head_dim 32) and not overflow (fp16-round sim = 0.99999997), but **fp16 matmul accumulation**
+in the deep, high-magnitude (absmax 847) blocks; the 6144-wide fc2 / 48-head attention accumulate in
+fp16, so those 2 blocks go to CPU. Reweight bakes the tag bank once as fp16 (229 MB, not 686 MB).
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| RAM++ (Swin 0-2 / stage-3 / reweight / tag head) | [HF: litert-community/RAM-Plus-LiteRT](https://huggingface.co/litert-community) | ~769 MB FP16 (4 graphs) | image [1,3,384,384] → tags | GPU + CPU |
+
+**Sample app**: [ram/](ram/) — pick a photo (or the bundled sample) → recognized tags.
+
+**Original project**: [xinyu1205/recognize-anything](https://github.com/xinyu1205/recognize-anything) (Apache-2.0)
 
 # OCR
 
