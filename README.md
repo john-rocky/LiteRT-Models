@@ -25,6 +25,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Video Action Recognition**](#video-action-recognition)
   - [MoViNet-A0 (streaming, Kinetics-600)](#movinet-a0-streaming-kinetics-600)
 
+- [**Semantic Segmentation**](#semantic-segmentation)
+  - [PIDNet-S (real-time, Cityscapes)](#pidnet-s-real-time-cityscapes)
+
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
 
@@ -278,6 +281,22 @@ MoViNet is a causal 3D CNN whose temporal convolutions and global-average-pools 
 **Conversion** (`movinet/scripts/build_movinet.py`, litert-torch): temporal depthwise convs (kernel 3/5 over the stream buffer) become a per-channel weighted sum of the buffered frames; streaming pools become `avg = (running_sum + mean) * inv_count`; the tf-`same` residual average pool is reformulated as `count_include_pad=True` + a constant boundary-correction mask so it lowers to `AVERAGE_POOL_2D + MUL`. Result: **all float32, 0 tensors of rank > 4, 0 banned ops, 0 composites** — matches the original PyTorch model bit-for-bit (corr 0.99999999999). Keeping the recurrent state in-graph tripped three silent Mali `CompiledModel` bugs (input-passed-through-to-output loses its compute use; a `state + tensor` output reads zero; a conv output that is both consumed and emitted has its emitted copy corrupted ~2.5× → fp16 blow-up over frames), so all state plumbing is host-side and each emitted stream frame is decoupled from its compute use by a multiply against the runtime `1.0` input. Device GPU (Pixel 8a) locks onto "jumping jacks" within a few frames.
 
 **Sample app**: [movinet/](movinet/) — live camera → per-frame inference → top-5 Kinetics-600 action bars. Tap to restart the classification window.
+
+# Semantic Segmentation
+
+### PIDNet-S (real-time, Cityscapes)
+
+Real-time **semantic segmentation** running fully on the LiteRT `CompiledModel` GPU. [PIDNet-S](https://arxiv.org/abs/2206.02066) (CVPR 2023) segments a road scene into the **19 Cityscapes classes** (road, sidewalk, building, car, person, sky, …) at ~17 FPS on a Pixel 8a. PIDNet is a three-branch CNN (P: detail, I: context, D: boundary) — a **pure CNN that converts to a fully GPU-compatible graph with zero patches**.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| PIDNet-S | [pidnet_s.tflite](https://huggingface.co/litert-community/PIDNet-S-Cityscapes-LiteRT) | 30 MB | Float32 [1, 3, 1024, 1024] NCHW (ImageNet-norm) | Float32 [1, 19, 128, 128] logits | [XuJiacong/PIDNet](https://github.com/XuJiacong/PIDNet) | [MIT](https://github.com/XuJiacong/PIDNet/blob/main/LICENSE) | [pidnet/](pidnet/) |
+
+**Preprocessing**: RGB, resize to 1024×1024, ImageNet normalization (mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]), NCHW. **Postprocessing**: argmax over the 19 channels per pixel → Cityscapes-colored label map (1/8 res) → upscale.
+
+**Conversion** (`pidnet/scripts/build_pidnet.py`, litert-torch): PIDNet has no attention, no dynamic shapes at a fixed input, and `align_corners=False` on every bilinear resize, so it converts with **zero GPU patches** — `CONV_2D` ×75, `RESIZE_BILINEAR` ×11, `AVERAGE_POOL_2D`, `ADD`/`MUL`/`SUB`/`SUM`, `LOGISTIC`; **0 tensors of rank > 4, 0 banned ops**. CPU-exact vs PyTorch (corr 0.99999999999, 100% argmax); device Mali GPU (fp16) agrees at 97% of pixels with correct classes (~59 ms/frame at 1024²). The trained weights are loaded from an ONNX mirror whose initializer names match the original repo's PyTorch keys.
+
+**Sample app**: [pidnet/](pidnet/) — live camera → PIDNet-S GPU → Cityscapes-colored segmentation overlay.
 
 # Pose Estimation
 
