@@ -22,6 +22,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Multi-Object Tracking**](#multi-object-tracking)
   - [YOLO + DeepSORT (OSNet)](#yolo--deepsort-osnet)
 
+- [**Video Action Recognition**](#video-action-recognition)
+  - [MoViNet-A0 (streaming, Kinetics-600)](#movinet-a0-streaming-kinetics-600)
+
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
 
@@ -257,6 +260,24 @@ Both ML models run on **CompiledModel GPU**. The tracker logic (Kalman filter, H
 **Preprocessing**: YOLO — RGB 0-1. OSNet — RGB with ImageNet normalization (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), NCHW layout.
 
 **Conversion**: `yolo-tracking/scripts/convert_osnet.py` — uses `litert_gpu_toolkit.convert_for_gpu()`. OSNet is a pure CNN, no special GPU patches needed.
+
+# Video Action Recognition
+
+### MoViNet-A0 (streaming, Kinetics-600)
+
+The first **video-input** model in this zoo: it recognises *actions* across a stream of camera frames (not a single image), one frame at a time, with constant memory. [MoViNet-A0](https://arxiv.org/abs/2103.11511) streaming variant (Google Research), trained on **Kinetics-600** (600 action classes), running **fully on CompiledModel GPU**.
+
+MoViNet is a causal 3D CNN whose temporal convolutions and global-average-pools each keep a small buffer of the recent past, so it can be fed one frame at a time and sharpens its prediction as more frames of the same action arrive. The stock streaming graph carries that history in **5D** state tensors `[1, T, H, W, C]`, which the GPU delegate cannot compile (all tensors must be ≤4D). So the model is re-authored as a **single-frame, 4D-only functional forward** with every recurrent buffer threaded explicitly through the graph I/O.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| MoViNet-A0 stream | [movinet_a0_stream.tflite](https://huggingface.co/litert-community/MoViNet-A0-Stream-LiteRT) | 15 MB | frame [1, 3, 172, 172] NCHW + 46 state tensors | logits [1, 600] + 27 state tensors | [Atze00/MoViNet-pytorch](https://github.com/Atze00/MoViNet-pytorch) ([google-research/movinet](https://github.com/tensorflow/models/tree/master/official/projects/movinet)) | [Apache-2.0](https://github.com/Atze00/MoViNet-pytorch/blob/main/LICENSE) | [movinet/](movinet/) |
+
+**I/O** (47 inputs / 28 outputs) — `input[0]` = current RGB frame (NCHW, 0..1); `input[1..28]` = 28 temporal-conv stream buffers `[1,C,H,W]`; `input[29..44]` = 16 streaming avg-pool running sums `[1,C,1,1]`; `input[45]` = `inv_count` (1/frame-number); `input[46]` = constant `1.0`. `output[0]` = Kinetics-600 logits; `output[1..11]` = current per-conv frames; `output[12..27]` = fresh per-frame means. The **stream-buffer shift register and pool running-sum accumulation are done host-side** — the graph consumes recurrent state but only emits fresh tensors.
+
+**Conversion** (`movinet/scripts/build_movinet.py`, litert-torch): temporal depthwise convs (kernel 3/5 over the stream buffer) become a per-channel weighted sum of the buffered frames; streaming pools become `avg = (running_sum + mean) * inv_count`; the tf-`same` residual average pool is reformulated as `count_include_pad=True` + a constant boundary-correction mask so it lowers to `AVERAGE_POOL_2D + MUL`. Result: **all float32, 0 tensors of rank > 4, 0 banned ops, 0 composites** — matches the original PyTorch model bit-for-bit (corr 0.99999999999). Keeping the recurrent state in-graph tripped three silent Mali `CompiledModel` bugs (input-passed-through-to-output loses its compute use; a `state + tensor` output reads zero; a conv output that is both consumed and emitted has its emitted copy corrupted ~2.5× → fp16 blow-up over frames), so all state plumbing is host-side and each emitted stream frame is decoupled from its compute use by a multiply against the runtime `1.0` input. Device GPU (Pixel 8a) locks onto "jumping jacks" within a few frames.
+
+**Sample app**: [movinet/](movinet/) — live camera → per-frame inference → top-5 Kinetics-600 action bars. Tap to restart the classification window.
 
 # Pose Estimation
 
