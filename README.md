@@ -106,6 +106,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Text Embedding (RAG)**](#text-embedding-rag)
   - [Qwen3-Embedding-0.6B](#qwen3-embedding-06b)
+  - [Qwen3-Reranker-0.6B](#qwen3-reranker-06b)
 
 - [**Text Generation (LLM)**](#text-generation-llm)
   - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
@@ -1045,6 +1046,26 @@ correct (*"What is the capital of China?"* → *"…Beijing"* 0.77, unrelated do
 upstreamed as [litert-samples #196](https://github.com/google-ai-edge/litert-samples/pull/196).
 
 **Original project**: [Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) (Apache-2.0)
+
+### Qwen3-Reranker-0.6B
+
+[Qwen3-Reranker-0.6B](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B) (2025 SOTA, Apache-2.0)
+re-authored to run **entirely on CompiledModel GPU** — the reranking half of on-device RAG
+(embed → retrieve → **rerank**). It scores a `(query, document)` pair by `P("yes")` relevance in a
+single forward pass. Same Qwen3-0.6B graph as the embedder; the only difference is a baked **2-logit
+head** (tied-embedding rows for `"no"`=2152 / `"yes"`=9693) → `[1,256,2]`, host softmax → P(yes).
+
+**On-device (Pixel 8a, Tensor G3 — verified):** all nodes on the GPU delegate, `P(yes)` parity
+**ref 0.9995 / dev 0.9994**; query *"capital of China?"* → Beijing doc **0.999**, all others **0.000**.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| Qwen3-Reranker-0.6B | [HF: litert-community/Qwen3-Reranker-0.6B-LiteRT](https://huggingface.co/litert-community/Qwen3-Reranker-0.6B-LiteRT) | 882 MB FP16 + 310 MB embed table | inputs_embeds [1,256,1024] → logits [1,256,2] → P(yes) | GPU |
+
+**Sample app**: [text-reranking/](text-reranking/) — query + candidate docs → P(yes) ranking. Also
+upstreamed as [litert-samples #197](https://github.com/google-ai-edge/litert-samples/pull/197).
+
+**Original project**: [Qwen/Qwen3-Reranker-0.6B](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B) (Apache-2.0)
 
 # Text Generation (LLM)
 
