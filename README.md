@@ -31,6 +31,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
 
+- [**Lane Detection**](#lane-detection)
+  - [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection)
+
 - [**Instance Segmentation**](#instance-segmentation)
   - [YOLACT-ResNet50](#yolact-resnet50)
 
@@ -328,6 +331,22 @@ Converted via **litert-torch** by wrapping the head with `end2end=False, export=
 **Preprocessing**: RGB normalized to 0-1 (divide by 255), planar NCHW layout. No ImageNet mean/std.
 
 **Sample app**: [yolo-pose/](yolo-pose/) — Camera / Image / Video mode toggle, skeleton overlay matching either FILL_CENTER (camera) or FIT_CENTER (image/video).
+
+# Lane Detection
+
+### Ultra-Fast-Lane-Detection
+
+Real-time **lane detection** running fully on the LiteRT `CompiledModel` GPU. [Ultra-Fast-Lane-Detection](https://github.com/cfzd/Ultra-Fast-Lane-Detection) (ECCV 2020) reformulates lane detection as fast **row-wise classification**: the ResNet18 network runs on the GPU, and a tiny host-side arg/expectation decode turns the grid into lane points. First lane-detection model in the zoo; an ADAS building block.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| Ultra-Fast-Lane-Detection (ResNet18, CULane) | [ufld.tflite](https://huggingface.co/litert-community/Ultra-Fast-Lane-Detection-LiteRT) | 178 MB | Float32 [1, 3, 288, 800] NCHW (RGB, ImageNet-norm) | Float32 [1, 201, 18, 4] (griding+1, rows, lanes) | [cfzd/Ultra-Fast-Lane-Detection](https://github.com/cfzd/Ultra-Fast-Lane-Detection) | [MIT](https://github.com/cfzd/Ultra-Fast-Lane-Detection/blob/master/LICENSE) | [ufld/](ufld/) |
+
+**Preprocessing**: RGB, resize 800×288, `x/255` then ImageNet-normalize, NCHW. **Decode (host-side)**: per lane & row anchor, softmax over the 200 grid cells → expectation column (drop if argmax = "no lane" index 200); map column → x via `linspace(0,799,200)`, row anchor → y.
+
+**Conversion** (`ufld/scripts/build_ufld.py`, litert-torch): pure CNN → fully GPU-compatible (**41/41 nodes on the delegate, 1 partition**; device corr 0.999982, ~20 ms) with one patch — the ResNet18 stem `MaxPool2d(padding=1)` `-inf` PADV2 → 0-pad + unpadded maxpool (exact post-ReLU). CPU-exact vs PyTorch (corr 0.9999999999996).
+
+**Sample app**: [ufld/](ufld/) — live camera → UFLD GPU → per-lane points overlaid.
 
 # Instance Segmentation
 
