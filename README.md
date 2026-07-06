@@ -41,6 +41,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Background Removal**](#background-removal)
   - [RMBG-1.4 (ISNet)](#rmbg-14-isnet)
+  - [ormbg (open, Apache-2.0)](#ormbg-open-apache-20)
 
 - [**Portrait Matting**](#portrait-matting)
   - [MODNet (trimap-free)](#modnet-trimap-free)
@@ -420,6 +421,18 @@ Converted via **litert-torch** from [briaai/RMBG-1.4](https://huggingface.co/bri
 | [rmbg14.tflite](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/rmbg14.tflite) | 176 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 1, 1024, 1024] | [briaai/RMBG-1.4](https://huggingface.co/briaai/RMBG-1.4) | [bria-rmbg-1.4](https://bria.ai/bria-huggingface-model-license-agreement/) | [rmbg/](rmbg/) |
 
 **Preprocessing**: RGB normalized as `(pixel/255 - 0.5)`. NCHW planar layout.
+
+### ormbg (open, Apache-2.0)
+
+[ormbg](https://huggingface.co/schirrmacher/ormbg): a fully **open, Apache-2.0** background-removal model (an ISNet trained for photorealistic subject cut-out) — the permissively-licensed alternative to the non-commercial RMBG-1.4. Pure CNN, fully on CompiledModel GPU, ~10 ms/frame on a Pixel 8a.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [ormbg.tflite](https://huggingface.co/litert-community/ormbg-LiteRT) | 176 MB | Float32 [1, 3, 1024, 1024] NCHW (RGB, /255) | Float32 [1, 1, 1024, 1024] alpha | [schirrmacher/ormbg](https://huggingface.co/schirrmacher/ormbg) | [Apache-2.0](https://huggingface.co/schirrmacher/ormbg) | [ormbg/](ormbg/) |
+
+**Preprocessing**: RGB, `x / 255` (no mean/std). **Output**: raw alpha matte — min-max normalize per frame before compositing.
+
+**Conversion** (`ormbg/scripts/build_ormbg.py`, litert-torch): pure CNN → fully GPU-compatible (**246/246 nodes on the delegate, 1 partition**; device corr 0.999881, ~10 ms) with one defensive patch — `align_corners=True` → `False` on the bilinear upsamples. CPU-exact vs PyTorch (corr 0.9999999999).
 
 **Output format**: Sigmoid mask (0-1). Apply as alpha channel to original image for transparent background.
 
