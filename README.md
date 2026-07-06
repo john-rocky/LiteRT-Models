@@ -31,6 +31,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
 
+- [**Document Dewarping**](#document-dewarping)
+  - [DewarpNet](#dewarpnet)
+
 - [**Lane Detection**](#lane-detection)
   - [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection)
 
@@ -331,6 +334,22 @@ Converted via **litert-torch** by wrapping the head with `end2end=False, export=
 **Preprocessing**: RGB normalized to 0-1 (divide by 255), planar NCHW layout. No ImageNet mean/std.
 
 **Sample app**: [yolo-pose/](yolo-pose/) — Camera / Image / Video mode toggle, skeleton overlay matching either FILL_CENTER (camera) or FIT_CENTER (image/video).
+
+# Document Dewarping
+
+### DewarpNet
+
+Real-time **document dewarping / rectification** running fully on the LiteRT `CompiledModel` GPU. [DewarpNet](https://github.com/cvlab-stonybrook/DewarpNet) (ICCV 2019) flattens a photographed, curved/folded document — the core of a document scanner. Two CNNs (WCNet UNet → BMNet DenseNet) predict a backward-mapping grid on the GPU; the `grid_sample` unwarp is a tiny host-side step. First document-processing model in the zoo.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| DewarpNet | [dewarp.tflite](https://huggingface.co/litert-community/DewarpNet-LiteRT) | 189 MB | Float32 [1, 3, 256, 256] NCHW (BGR, /255) | Float32 [1, 2, 128, 128] backward map | [cvlab-stonybrook/DewarpNet](https://github.com/cvlab-stonybrook/DewarpNet) | [MIT](https://github.com/cvlab-stonybrook/DewarpNet/blob/master/LICENSE) | [dewarp/](dewarp/) |
+
+**Preprocessing**: BGR, resize 256×256, `x/255` (no mean/std), NCHW. **Unwarp (host-side)**: blur the backward map (3×3), resize to the image size, then bilinear `grid_sample(image, map)` → the flattened document.
+
+**Conversion** (`dewarp/scripts/build_dewarp.py`, litert-torch): pure CNN → fully GPU-compatible (**371/371 nodes on the delegate, 1 partition**; device corr 0.999866, ~24 ms) with two exact patches — `ConvTranspose2d` → ZeroStuffConvT2d (Mali rejects `TRANSPOSE_CONV`) and `Hardtanh(0,1)` → `relu(x)-relu(x-1)` (Mali rejects `RELU_0_TO_1`). CPU-exact vs PyTorch (corr 0.9999999999).
+
+**Sample app**: [dewarp/](dewarp/) — live camera → DewarpNet GPU → flattened document.
 
 # Lane Detection
 
