@@ -100,6 +100,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Image quality**](#image-quality)
   - [NIMA (Neural Image Assessment)](#nima-neural-image-assessment)
 
+- [**Fine-Grained Classification**](#fine-grained-classification)
+  - [PlantNet-300K (1081 plant species)](#plantnet-300k-1081-plant-species)
+
 - [**Face**](#face)
   - [3DDFA_V2 (3D face alignment)](#3ddfa_v2-3d-face-alignment)
   - [BiSeNet (face parsing)](#bisenet-face-parsing)
@@ -941,6 +944,24 @@ is the graph output; the 1-10 mean is host-side.
 **Sample app**: [nima/](nima/) — pick a photo → aesthetic + technical score.
 
 **Original project**: [idealo/image-quality-assessment](https://github.com/idealo/image-quality-assessment) (Apache-2.0)
+
+# Fine-Grained Classification
+
+### PlantNet-300K (1081 plant species)
+
+Identify **1081 plant species** from a photo, fully on the LiteRT `CompiledModel` GPU. A [PlantNet-300K](https://github.com/plantnet/PlantNet-300K) (NeurIPS 2021) ResNet18 — the first fine-grained classifier in this zoo. ~16 ms/frame on a Pixel 8a.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| PlantNet-300K ResNet18 | [plantnet.tflite](https://huggingface.co/litert-community/PlantNet-300K-ResNet18-LiteRT) | 47 MB | Float32 [1, 3, 224, 224] NCHW (ImageNet-norm) | Float32 [1, 1081] logits | [plantnet/PlantNet-300K](https://github.com/plantnet/PlantNet-300K) ([cpoisson/plantnet300k-resnet18](https://huggingface.co/cpoisson/plantnet300k-resnet18)) | [Apache-2.0](https://huggingface.co/cpoisson/plantnet300k-resnet18) | [plantnet/](plantnet/) |
+
+**Preprocessing**: RGB, center-crop → resize 224×224, ImageNet normalization, NCHW. **Labels**: class index `i` → the `i`-th species when PlantNet-300K species-id strings are sorted (torchvision `ImageFolder` order).
+
+**Conversion** (`plantnet/scripts/build_plantnet.py`, litert-torch): plain torchvision ResNet18 → fully GPU-compatible (**37/37 nodes on the delegate, 1 partition**; device corr 0.99999, top-1 match) with **one patch** — the ResNet stem `MaxPool2d(padding=1)` lowers to a `-inf` PADV2 (`PADV2: src has wrong size` on Mali), replaced by an explicit 0-pad + unpadded maxpool (exact post-ReLU). CPU-exact vs PyTorch (corr 0.99999999999).
+
+**Sample app**: [plantnet/](plantnet/) — camera → PlantNet-300K GPU → top-5 species (Latin names).
+
+
 
 # Face
 
