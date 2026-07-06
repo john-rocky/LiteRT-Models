@@ -104,6 +104,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [MoGe-2 ViT-S](#moge-2-vit-s)
   - [Depth Anything 3 ViT-S (Small)](#depth-anything-3-vit-s-small)
 
+- [**Text Embedding (RAG)**](#text-embedding-rag)
+  - [Qwen3-Embedding-0.6B](#qwen3-embedding-06b)
+
 - [**Text Generation (LLM)**](#text-generation-llm)
   - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
   - [Llama-3.2-3B-Instruct](#llama-32-3b-instruct)
@@ -1018,6 +1021,30 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 - **`scaled_dot_product_attention`** → Set `use_sdpa = False` to use manual matmul+softmax attention
 
 > **Note**: litert-torch models use NCHW layout (PyTorch native). Large models (>150 MB) should be loaded from `filesDir` via `CompiledModel.create(path, options, null)` instead of APK assets.
+
+# Text Embedding (RAG)
+
+### Qwen3-Embedding-0.6B
+
+[Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) (2025 SOTA, Apache-2.0)
+re-authored to run **entirely on CompiledModel GPU** for on-device semantic search / RAG retrieval.
+Last-token pooling = a **single forward** (no generation, no KV cache), so it is a plain `.tflite` —
+not a `.litertlm`. Token embedding is done **host-side** (GATHER is GPU-banned), GQA heads are
+`cat`-repeated (a broadcast matmul emits the Mali-rejected `BROADCAST_TO`), and a **max-normalized
+RMSNorm** fixes the deep-stack fp16 overflow that otherwise collapses the 28-layer output to 0.
+
+**On-device (Pixel 8a, Tensor G3 — verified):** all **3264/3264 nodes on the GPU delegate** (zero CPU
+fallback), ~390 ms per embedding, output cosine **0.9997** vs the HF fp32 reference; semantic ranking
+correct (*"What is the capital of China?"* → *"…Beijing"* 0.77, unrelated docs <0.1).
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| Qwen3-Embedding-0.6B | [HF: litert-community/Qwen3-Embedding-0.6B-LiteRT](https://huggingface.co/litert-community/Qwen3-Embedding-0.6B-LiteRT) | 881 MB FP16 + 310 MB embed table | inputs_embeds [1,128,1024] → hidden [1,128,1024] → 1024-d embedding | GPU |
+
+**Sample app**: [text-embedding/](text-embedding/) — type a query → cosine-ranked documents. Also
+upstreamed as [litert-samples #196](https://github.com/google-ai-edge/litert-samples/pull/196).
+
+**Original project**: [Qwen/Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) (Apache-2.0)
 
 # Text Generation (LLM)
 
