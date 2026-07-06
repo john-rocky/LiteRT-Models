@@ -31,6 +31,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
 
+- [**Instance Segmentation**](#instance-segmentation)
+  - [YOLACT-ResNet50](#yolact-resnet50)
+
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
   - [EdgeTAM (SAM2)](#edgetam-sam2)
@@ -324,6 +327,22 @@ Converted via **litert-torch** by wrapping the head with `end2end=False, export=
 **Preprocessing**: RGB normalized to 0-1 (divide by 255), planar NCHW layout. No ImageNet mean/std.
 
 **Sample app**: [yolo-pose/](yolo-pose/) — Camera / Image / Video mode toggle, skeleton overlay matching either FILL_CENTER (camera) or FIT_CENTER (image/video).
+
+# Instance Segmentation
+
+### YOLACT-ResNet50
+
+Real-time **instance segmentation** (per-object COCO masks) running fully on the LiteRT `CompiledModel` GPU. [YOLACT](https://arxiv.org/abs/1904.02689) (ICCV 2019): the network (ResNet50 + FPN + protonet + heads) runs on the GPU; the lightweight decode (NMS + linear-combination masks) runs host-side — the RF-DETR raw-head pattern. First instance-segmentation model in the zoo.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| YOLACT-ResNet50 | [yolact.tflite + priors.bin](https://huggingface.co/litert-community/YOLACT-ResNet50-LiteRT) | 125 MB | Float32 [1, 3, 550, 550] NCHW (BGR) | loc [1,19248,4] + conf [1,19248,81] + mask [1,19248,32] + proto [1,138,138,32] | [dbolya/yolact](https://github.com/dbolya/yolact) | [MIT](https://github.com/dbolya/yolact/blob/master/LICENSE) | [yolact/](yolact/) |
+
+**Preprocessing**: BGR, resize 550×550, `(x - [103.94,116.78,123.68]) / [57.38,57.12,58.40]` (no /255), NCHW. **Decode (host-side)**: SSD box decode vs the baked 19248 priors (variances [0.1,0.2]) → per-class NMS (IoU 0.5) → lincomb masks `sigmoid(proto @ coeff)` cropped to each box.
+
+**Conversion** (`yolact/scripts/build_yolact.py`, litert-torch): base YOLACT (no deformable conv) is a pure CNN → fully GPU-compatible (**138/138 nodes on the delegate, 1 partition**; device corr 0.99999–1.0 on all 4 outputs, ~41 ms) with **one patch** — the ResNet50 stem `MaxPool2d(padding=1)` lowers to a `-inf` PADV2 (rejected by Mali), replaced by a 0-pad + unpadded maxpool (exact post-ReLU); the scripted FPN is made traceable by disabling YOLACT's JIT. The 3D `[1,19248,C]` head outputs survive the Mali delegate. CPU-exact vs PyTorch (corr 1.0).
+
+**Sample app**: [yolact/](yolact/) — live camera → YOLACT GPU → colored instance masks + boxes + COCO labels.
 
 # Segmentation
 
