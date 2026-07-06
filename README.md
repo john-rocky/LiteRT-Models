@@ -39,6 +39,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Background Removal**](#background-removal)
   - [RMBG-1.4 (ISNet)](#rmbg-14-isnet)
 
+- [**Portrait Matting**](#portrait-matting)
+  - [MODNet (trimap-free)](#modnet-trimap-free)
+
 - [**Inpainting**](#inpainting)
   - [LaMa-Dilated](#lama-dilated)
 
@@ -396,6 +399,22 @@ Converted via **litert-torch** from [briaai/RMBG-1.4](https://huggingface.co/bri
 **Preprocessing**: RGB normalized as `(pixel/255 - 0.5)`. NCHW planar layout.
 
 **Output format**: Sigmoid mask (0-1). Apply as alpha channel to original image for transparent background.
+
+# Portrait Matting
+
+### MODNet (trimap-free)
+
+Real-time **portrait matting** running fully on the LiteRT `CompiledModel` GPU. [MODNet](https://arxiv.org/abs/2011.11961) (AAAI 2022) predicts a **soft alpha matte** for a person — no trimap, no green screen — for background blur/replace (video calls, virtual backgrounds). ~79 ms/frame on a Pixel 8a. Distinct from RMBG background removal: MODNet targets soft human alpha (hair detail).
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| MODNet | [modnet.tflite](https://huggingface.co/litert-community/MODNet-LiteRT) | 26 MB | Float32 [1, 3, 512, 512] NCHW ([-1,1]) | Float32 [1, 1, 512, 512] alpha | [ZHKKKe/MODNet](https://github.com/ZHKKKe/MODNet) | [Apache-2.0](https://github.com/ZHKKKe/MODNet/blob/master/LICENSE) | [modnet/](modnet/) |
+
+**Preprocessing**: RGB, resize 512×512, normalize to [-1,1] (`(pixel/255 - 0.5)/0.5`), NCHW. **Output**: soft alpha matte 0–1; composite `fg·α + bg·(1-α)`.
+
+**Conversion** (`modnet/scripts/build_modnet.py`, litert-torch): pure CNN (MobileNetV2 backbone), 2 re-authoring patches → fully GPU-compatible (**0 tensors of rank > 4, 0 banned ops**): (1) SE block `Linear`→`1×1 conv` (the 2D-reshape confuses NCHW↔NHWC), (2) **fp16-safe hierarchical-mean InstanceNorm** — MODNet's IBNorm runs InstanceNorm over up to 512² spatial, whose variance `sum(dd²)` overflows fp16 on Mali (matte degrades, corr 0.94); computing the mean via a cascade of `/2` avg-pools (magnitude-bounded, exact) restores GPU corr **0.99994** with clean edges. CPU-exact vs PyTorch (corr 0.99999999999).
+
+**Sample app**: [modnet/](modnet/) — live camera → MODNet GPU → foreground composited over a replaceable background (tap to change).
 
 # Inpainting
 
