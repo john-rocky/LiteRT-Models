@@ -102,6 +102,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Face**](#face)
   - [3DDFA_V2 (3D face alignment)](#3ddfa_v2-3d-face-alignment)
+  - [BiSeNet (face parsing)](#bisenet-face-parsing)
 
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
@@ -962,6 +963,18 @@ the model wants **cv2 BGR** input, the BFM bases are **interleaved** (`reshape(3
 **Sample app**: [tddfa/](tddfa/) — pick a frontal-face photo → 68 3D landmarks.
 
 **Original project**: [cleardusk/3DDFA_V2](https://github.com/cleardusk/3DDFA_V2) (MIT)
+
+### BiSeNet (face parsing)
+
+Real-time **face parsing** running fully on the LiteRT `CompiledModel` GPU. [BiSeNet](https://arxiv.org/abs/1808.00897) ([zllrunning/face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch)) segments a face into the **19 CelebAMask-HQ classes** (skin, brows, eyes, nose, lips, ears, hair, hat, glasses, neck, cloth, …) for AR / beauty / makeup. ~22 ms/frame on a Pixel 8a. Pure CNN (ResNet18 backbone).
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| BiSeNet | [faceparsing.tflite](https://huggingface.co/litert-community/BiSeNet-Face-Parsing-LiteRT) | 53 MB | Float32 [1, 3, 512, 512] NCHW (ImageNet-norm) | Float32 [1, 19, 512, 512] logits | [zllrunning/face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch) | [MIT](https://github.com/zllrunning/face-parsing.PyTorch/blob/master/LICENSE) | [faceparsing/](faceparsing/) |
+
+**Conversion** (`faceparsing/scripts/build_faceparsing.py`, litert-torch): 3 re-authoring patches → fully GPU-compatible (**74/74 nodes on the delegate, 1 partition**; device corr 0.99999, argmax 99.96% vs PyTorch): (1) `align_corners=True`→`False`; (2) global `avg_pool2d(x, x.size()[2:])`→`mean([2,3])` (Mali rejects a full-spatial-kernel `AVERAGE_POOL_2D`); (3) **ZeroPadMaxPool** — the ResNet stem `MaxPool2d(padding=1)` lowers to a `-inf` PADV2 (`PADV2: src has wrong size` on Mali), replaced by an explicit 0-pad + unpadded maxpool (exact since the input is post-ReLU ≥ 0). These are **on-device-only** rejections — the op inventory is clean and CPU parity is 1.0, but the GPU delegate won't compile without them. CPU-exact vs PyTorch (corr 0.99999999999).
+
+**Sample app**: [faceparsing/](faceparsing/) — front camera → BiSeNet GPU → 19-class CelebAMask face-part overlay.
 
 # OCR
 
