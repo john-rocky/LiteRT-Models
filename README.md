@@ -44,6 +44,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Clothing Segmentation**](#clothing-segmentation)
   - [Cloth Segmentation (U²-Net)](#cloth-segmentation-u2net)
 
+- [**Face Liveness / Anti-Spoofing**](#face-liveness--anti-spoofing)
+  - [Silent-Face (MiniFASNetV2)](#silent-face-minifasnetv2)
+
 - [**Head Pose Estimation**](#head-pose-estimation)
   - [6DRepNet](#6drepnet)
 
@@ -423,6 +426,22 @@ Real-time **clothing segmentation** running fully on the LiteRT `CompiledModel` 
 **Conversion** (`clothseg/scripts/build_clothseg.py`, litert-torch): pure CNN → fully GPU-compatible (**254/254 nodes on the delegate, 1 partition**; device corr 0.999798, ~88 ms) with one defensive patch — `align_corners=True` → `False`. CPU-exact vs PyTorch (corr 1.0). ⚠ Strip the `module.` prefix when loading the checkpoint.
 
 **Sample app**: [clothseg/](clothseg/) — live camera → U²-Net GPU → clothing segments (upper/lower/full).
+
+# Face Liveness / Anti-Spoofing
+
+### Silent-Face (MiniFASNetV2)
+
+Real-time **face liveness / anti-spoofing** running fully on the LiteRT `CompiledModel` GPU. [Silent-Face-Anti-Spoofing](https://github.com/minivision-ai/Silent-Face-Anti-Spoofing) detects **presentation attacks** — a printed photo or a replayed screen shown to the camera — so a live face passes and a fake is rejected. The anti-fraud building block for face login / e-KYC. Tiny (1.85 MB).
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| Silent-Face (MiniFASNetV2) | [silentface.tflite](https://huggingface.co/litert-community/Silent-Face-Anti-Spoofing-LiteRT) | 1.85 MB | Float32 [1, 3, 80, 80] NCHW (BGR, /255, face crop) | Float32 [1, 3] softmax (class 1 = live) | [minivision-ai/Silent-Face-Anti-Spoofing](https://github.com/minivision-ai/Silent-Face-Anti-Spoofing) | [Apache-2.0](https://github.com/minivision-ai/Silent-Face-Anti-Spoofing/blob/master/LICENSE) | [liveness/](liveness/) |
+
+**Preprocessing**: face crop (~2.7× the face box), BGR, resize 80×80, `x/255`, NCHW. **Decode**: softmax; class 1 = live, 0 & 2 = spoof (print / replay); live score = `output[1]`.
+
+**Conversion** (`liveness/scripts/build_silentface.py`, litert-torch): pure CNN → fully GPU-compatible (**168/168 nodes on the delegate, 1 partition**; device corr 1.0, ~5 ms) with zero patches — PReLU lowers to GPU-clean relu ops. CPU-exact vs PyTorch (corr 1.0).
+
+**Sample app**: [liveness/](liveness/) — live camera → MiniFASNetV2 GPU → LIVE / SPOOF verdict.
 
 # Head Pose Estimation
 
