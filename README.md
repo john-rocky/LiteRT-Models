@@ -53,6 +53,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Head Pose Estimation**](#head-pose-estimation)
   - [6DRepNet](#6drepnet)
 
+- [**Camouflaged Object Detection**](#camouflaged-object-detection)
+  - [SINet-V2](#sinet-v2)
+
 - [**Instance Segmentation**](#instance-segmentation)
   - [YOLACT-ResNet50](#yolact-resnet50)
 
@@ -177,6 +180,19 @@ val result = outputBuffers[0].readFloat()
 ```kotlin
 implementation("com.google.ai.edge.litert:litert:2.1.3")
 ```
+
+## Shared components
+
+Utilities that recur across the sample apps live as canonical sources in
+[`common/`](common/README.md) (Kotlin: `CompiledModelRunner`, `ImageTensor`,
+`RealtimeCameraPipeline`, `AudioCapture`, `MathOps`). Each app keeps a vendored
+copy so it stays standalone; `python tools/sync_common.py --check` keeps the
+copies identical to the canonical.
+
+On the conversion side, the GPU-compatibility patches (fp16-safe norms,
+zero-stuff ConvTranspose, zero-pad MaxPool, GELU rewrites, …) are packaged in
+[`litert_gpu_toolkit/`](docs/LITERT_CONVERSION_GUIDE.md#litert_gpu_toolkit--canonical-patch-catalog)
+— import them instead of re-implementing per script.
 
 # Object Detection
 
@@ -477,6 +493,22 @@ Real-time **6-DoF head pose estimation** running fully on the LiteRT `CompiledMo
 **Conversion** (`sixdrepnet/scripts/build_6drepnet.py`, litert-torch): deploy-mode RepVGG (plain convs) → fully GPU-compatible (**36/36 nodes on the delegate, 1 partition**; device corr 0.9993, ~21 ms) with zero patches. Use the deploy weights (fused `rbr_reparam`). CPU-exact vs PyTorch (corr 1.0).
 
 **Sample app**: [sixdrepnet/](sixdrepnet/) — live camera → 6DRepNet GPU → 3D head-pose axes.
+
+# Camouflaged Object Detection
+
+### SINet-V2
+
+Real-time **camouflaged object detection** running fully on the LiteRT `CompiledModel` GPU. [SINet-V2](https://github.com/GewelsJI/SINet-V2) (TPAMI 2022) finds objects that **blend into their background** — hidden animals, concealed items, defect/polyp-style targets — where ordinary segmentation fails.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| SINet-V2 (Res2Net-50) | [sinet.tflite](https://huggingface.co/litert-community/SINet-V2-Camouflage-LiteRT) | 100 MB | Float32 [1, 3, 352, 352] NCHW (RGB, ImageNet-norm) | Float32 [1, 1, 352, 352] sigmoid | [GewelsJI/SINet-V2](https://github.com/GewelsJI/SINet-V2) | [Apache-2.0](https://github.com/GewelsJI/SINet-V2) | [sinet/](sinet/) |
+
+**Preprocessing**: RGB, resize 352×352, ImageNet-normalize, NCHW. **Output**: sigmoid map, high = concealed object; resize + threshold/overlay.
+
+**Conversion** (`sinet/scripts/build_sinet.py`, litert-torch): pure CNN → fully GPU-compatible (**2447/2447 nodes on the delegate, 1 partition**; device corr 0.994) with two patches — ZeroPadMaxPool for the Res2Net stem + `align_corners=False`. CPU-exact vs PyTorch (corr 0.997).
+
+**Sample app**: [sinet/](sinet/) — live camera → SINet-V2 GPU → concealed objects highlighted.
 
 # Instance Segmentation
 
