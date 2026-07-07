@@ -44,6 +44,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Clothing Segmentation**](#clothing-segmentation)
   - [Cloth Segmentation (U²-Net)](#cloth-segmentation-u2net)
 
+- [**Portrait Sketch**](#portrait-sketch)
+  - [U²-Net Portrait](#u2-net-portrait)
+
 - [**Face Liveness / Anti-Spoofing**](#face-liveness--anti-spoofing)
   - [Silent-Face (MiniFASNetV2)](#silent-face-minifasnetv2)
 
@@ -426,6 +429,22 @@ Real-time **clothing segmentation** running fully on the LiteRT `CompiledModel` 
 **Conversion** (`clothseg/scripts/build_clothseg.py`, litert-torch): pure CNN → fully GPU-compatible (**254/254 nodes on the delegate, 1 partition**; device corr 0.999798, ~88 ms) with one defensive patch — `align_corners=True` → `False`. CPU-exact vs PyTorch (corr 1.0). ⚠ Strip the `module.` prefix when loading the checkpoint.
 
 **Sample app**: [clothseg/](clothseg/) — live camera → U²-Net GPU → clothing segments (upper/lower/full).
+
+# Portrait Sketch
+
+### U²-Net Portrait
+
+Real-time **portrait sketch generation** running fully on the LiteRT `CompiledModel` GPU. The [U²-Net](https://github.com/xuebinqin/U-2-Net) portrait model turns a face photo into a **hand-drawn pencil line portrait** — a fun creative / AR filter.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| U²-Net Portrait | [portrait.tflite](https://huggingface.co/litert-community/U2Net-Portrait-Sketch-LiteRT) | 176 MB | Float32 [1, 3, 512, 512] NCHW (RGB, ImageNet-norm) | Float32 [1, 1, 512, 512] (0–1) | [xuebinqin/U-2-Net](https://github.com/xuebinqin/U-2-Net) | [Apache-2.0](https://github.com/xuebinqin/U-2-Net/blob/master/LICENSE) | [portrait/](portrait/) |
+
+**Preprocessing**: RGB, resize 512×512, `x/255` then ImageNet-normalize, NCHW. **Decode**: min-max normalize the output, then invert (`1−x`) for dark strokes on white paper.
+
+**Conversion** (`portrait/scripts/build_portrait.py`, litert-torch): pure CNN → fully GPU-compatible (**893/893 nodes on the delegate, 1 partition**; device corr 0.998683, ~12 ms) with one defensive patch — `align_corners=False`. CPU-exact vs PyTorch (corr 1.0).
+
+**Sample app**: [portrait/](portrait/) — live camera → U²-Net GPU → live pencil portrait.
 
 # Face Liveness / Anti-Spoofing
 
