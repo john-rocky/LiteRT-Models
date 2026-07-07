@@ -58,6 +58,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Background Removal**](#background-removal)
   - [RMBG-1.4 (ISNet)](#rmbg-14-isnet)
   - [ormbg (open, Apache-2.0)](#ormbg-open-apache-20)
+  - [DIS (high-precision cutout)](#dis-is-net-general-use)
 
 - [**Portrait Matting**](#portrait-matting)
   - [MODNet (trimap-free)](#modnet-trimap-free)
@@ -541,6 +542,20 @@ Converted via **litert-torch** from [briaai/RMBG-1.4](https://huggingface.co/bri
 | [ormbg.tflite](https://huggingface.co/litert-community/ormbg-LiteRT) | 176 MB | Float32 [1, 3, 1024, 1024] NCHW (RGB, /255) | Float32 [1, 1, 1024, 1024] alpha | [schirrmacher/ormbg](https://huggingface.co/schirrmacher/ormbg) | [Apache-2.0](https://huggingface.co/schirrmacher/ormbg) | [ormbg/](ormbg/) |
 
 **Preprocessing**: RGB, `x / 255` (no mean/std). **Output**: raw alpha matte — min-max normalize per frame before compositing.
+
+### DIS (IS-Net, general-use)
+
+[DIS](https://github.com/xuebinqin/DIS) (ECCV 2022): high-accuracy **dichotomous image segmentation** — cuts out the main object with fine structure detail (thin stems, petals, wires) for e-commerce product photos and graphics. IS-Net, fully on CompiledModel GPU, ~11 ms/frame on a Pixel 8a.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| DIS (IS-Net general-use) | [dis.tflite](https://huggingface.co/litert-community/DIS-ISNet-LiteRT) | 176 MB | Float32 [1, 3, 1024, 1024] NCHW (RGB, x/255−0.5) | Float32 [1, 1, 1024, 1024] alpha | [xuebinqin/DIS](https://github.com/xuebinqin/DIS) | [Apache-2.0](https://github.com/xuebinqin/DIS) | [dis/](dis/) |
+
+**Preprocessing**: RGB, resize 1024×1024, `x/255 − 0.5`, NCHW. **Output**: sigmoid alpha (0–1).
+
+**Conversion** (`dis/scripts/build_dis.py`, litert-torch): pure CNN → fully GPU-compatible (**247/247 nodes on the delegate, 1 partition**; device max|diff| 0.00034, ~11 ms) with one defensive patch — `align_corners=False`. CPU-exact vs PyTorch (max|diff| 0.0).
+
+**Sample app**: [dis/](dis/) — live camera → DIS GPU → high-precision cutout.
 
 **Conversion** (`ormbg/scripts/build_ormbg.py`, litert-torch): pure CNN → fully GPU-compatible (**246/246 nodes on the delegate, 1 partition**; device corr 0.999881, ~10 ms) with one defensive patch — `align_corners=True` → `False` on the bilinear upsamples. CPU-exact vs PyTorch (corr 0.9999999999).
 
