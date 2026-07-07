@@ -38,6 +38,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection)
   - [TwinLiteNet (drivable area + lanes)](#twinlitenet)
 
+- [**Super-Resolution**](#super-resolution)
+  - [EDSR (×4)](#edsr-4)
+
 - [**Head Pose Estimation**](#head-pose-estimation)
   - [6DRepNet](#6drepnet)
 
@@ -384,6 +387,22 @@ Real-time **drivable-area + lane-line segmentation** running fully on the LiteRT
 **Conversion** (`twinlite/scripts/build_twinlite.py`, litert-torch): pure CNN → fully GPU-compatible (**270/270 nodes on the delegate, 1 partition**; device corr 0.99997/0.99998, ~44 ms) with one patch — `ConvTranspose2d` → ZeroStuffConvT2d (Mali rejects `TRANSPOSE_CONV`). CPU-exact vs PyTorch (corr 1.0).
 
 **Sample app**: [twinlite/](twinlite/) — live camera → TwinLiteNet GPU → drivable area (green) + lanes (red).
+
+# Super-Resolution
+
+### EDSR (×4)
+
+Real-time **×4 single-image super-resolution** running fully on the LiteRT `CompiledModel` GPU. [EDSR](https://arxiv.org/abs/1707.02921) (CVPR 2017 winner) upscales a low-res image 4× with sharp detail. First super-resolution model in the zoo.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| EDSR-base (×4) | [edsr.tflite](https://huggingface.co/litert-community/EDSR-x4-LiteRT) | 7.7 MB | Float32 [1, 3, 128, 128] NCHW (RGB, /255) | Float32 [1, 3, 512, 512] (RGB 0–1) | [eugenesiow/edsr-base](https://huggingface.co/eugenesiow/edsr-base) | [Apache-2.0](https://github.com/eugenesiow/super-image/blob/main/LICENSE) | [edsr/](edsr/) |
+
+**Preprocessing**: RGB, `x/255`, NCHW. **Output**: clamp 0–1, ×255.
+
+**Conversion** (`edsr/scripts/build_edsr.py`, litert-torch): pure CNN, but the **PixelShuffle** upsampler lowers to rank-5/6 reshapes the Mali delegate rejects (the classic super-resolution wall). Exact fix — **PixelShuffle(r) ≡ a fixed-weight `ConvTranspose2d(stride=r)`** → ZeroStuffConvT2d. Result: **68/68 nodes on the delegate, 1 partition**; device corr 0.999946, ~23 ms. CPU-exact vs PyTorch (corr 1.0). This patch also unblocks other PixelShuffle SR models.
+
+**Sample app**: [edsr/](edsr/) — live camera → EDSR GPU → ×4 super-resolved center region.
 
 # Head Pose Estimation
 
