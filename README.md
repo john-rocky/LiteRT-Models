@@ -36,6 +36,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Lane Detection**](#lane-detection)
   - [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection)
+  - [TwinLiteNet (drivable area + lanes)](#twinlitenet)
 
 - [**Instance Segmentation**](#instance-segmentation)
   - [YOLACT-ResNet50](#yolact-resnet50)
@@ -366,6 +367,20 @@ Real-time **lane detection** running fully on the LiteRT `CompiledModel` GPU. [U
 **Conversion** (`ufld/scripts/build_ufld.py`, litert-torch): pure CNN → fully GPU-compatible (**41/41 nodes on the delegate, 1 partition**; device corr 0.999982, ~20 ms) with one patch — the ResNet18 stem `MaxPool2d(padding=1)` `-inf` PADV2 → 0-pad + unpadded maxpool (exact post-ReLU). CPU-exact vs PyTorch (corr 0.9999999999996).
 
 **Sample app**: [ufld/](ufld/) — live camera → UFLD GPU → per-lane points overlaid.
+
+### TwinLiteNet
+
+Real-time **drivable-area + lane-line segmentation** running fully on the LiteRT `CompiledModel` GPU. [TwinLiteNet](https://github.com/chequanghuy/TwinLiteNet) (2023) is an ultra-light ESPNet-based network with two segmentation heads — the ADAS "where can I drive" + "where are the lanes" building block. Only 3.1 MB.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| TwinLiteNet | [twinlite.tflite](https://huggingface.co/litert-community/TwinLiteNet-LiteRT) | 3.1 MB | Float32 [1, 3, 360, 640] NCHW (RGB, /255) | 2× [1, 2, 360, 640] (drivable area + lane line) | [chequanghuy/TwinLiteNet](https://github.com/chequanghuy/TwinLiteNet) | [MIT](https://github.com/chequanghuy/TwinLiteNet/blob/main/LICENSE) | [twinlite/](twinlite/) |
+
+**Preprocessing**: RGB, resize 640×360, `x/255`, NCHW. **Decode**: `argmax` over the 2 classes of each head → drivable-area mask + lane mask.
+
+**Conversion** (`twinlite/scripts/build_twinlite.py`, litert-torch): pure CNN → fully GPU-compatible (**270/270 nodes on the delegate, 1 partition**; device corr 0.99997/0.99998, ~44 ms) with one patch — `ConvTranspose2d` → ZeroStuffConvT2d (Mali rejects `TRANSPOSE_CONV`). CPU-exact vs PyTorch (corr 1.0).
+
+**Sample app**: [twinlite/](twinlite/) — live camera → TwinLiteNet GPU → drivable area (green) + lanes (red).
 
 # Instance Segmentation
 
