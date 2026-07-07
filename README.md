@@ -38,6 +38,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection)
   - [TwinLiteNet (drivable area + lanes)](#twinlitenet)
 
+- [**Head Pose Estimation**](#head-pose-estimation)
+  - [6DRepNet](#6drepnet)
+
 - [**Instance Segmentation**](#instance-segmentation)
   - [YOLACT-ResNet50](#yolact-resnet50)
 
@@ -381,6 +384,22 @@ Real-time **drivable-area + lane-line segmentation** running fully on the LiteRT
 **Conversion** (`twinlite/scripts/build_twinlite.py`, litert-torch): pure CNN → fully GPU-compatible (**270/270 nodes on the delegate, 1 partition**; device corr 0.99997/0.99998, ~44 ms) with one patch — `ConvTranspose2d` → ZeroStuffConvT2d (Mali rejects `TRANSPOSE_CONV`). CPU-exact vs PyTorch (corr 1.0).
 
 **Sample app**: [twinlite/](twinlite/) — live camera → TwinLiteNet GPU → drivable area (green) + lanes (red).
+
+# Head Pose Estimation
+
+### 6DRepNet
+
+Real-time **6-DoF head pose estimation** running fully on the LiteRT `CompiledModel` GPU. [6DRepNet](https://github.com/thohemp/6DRepNet) (ICIP 2022) regresses a continuous 6D rotation from a face crop — yaw / pitch / roll for driver-monitoring, AR, and attention. RepVGG (deploy) backbone.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| 6DRepNet | [6drepnet.tflite](https://huggingface.co/litert-community/6DRepNet-HeadPose-LiteRT) | 157 MB | Float32 [1, 3, 224, 224] NCHW (RGB, ImageNet-norm, face crop) | Float32 [1, 6] (6D rotation) | [thohemp/6DRepNet](https://github.com/thohemp/6DRepNet) | [MIT](https://github.com/thohemp/6DRepNet/blob/master/LICENSE) | [sixdrepnet/](sixdrepnet/) |
+
+**Preprocessing**: face crop, resize 224×224, RGB, ImageNet-normalize, NCHW. **Decode (host-side)**: Gram-Schmidt the 6D → 3×3 rotation matrix → Euler `pitch=atan2(R21,R22)`, `yaw=atan2(-R20,√(R00²+R10²))`, `roll=atan2(R10,R00)`.
+
+**Conversion** (`sixdrepnet/scripts/build_6drepnet.py`, litert-torch): deploy-mode RepVGG (plain convs) → fully GPU-compatible (**36/36 nodes on the delegate, 1 partition**; device corr 0.9993, ~21 ms) with zero patches. Use the deploy weights (fused `rbr_reparam`). CPU-exact vs PyTorch (corr 1.0).
+
+**Sample app**: [sixdrepnet/](sixdrepnet/) — live camera → 6DRepNet GPU → 3D head-pose axes.
 
 # Instance Segmentation
 
