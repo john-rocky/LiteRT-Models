@@ -44,7 +44,8 @@ S_RLN = 4.0  # RLN dd absmax measured <= 3.9 -> keeps (dd/S)^2 <= 1 in fp16
 
 def reflect_pad(x, l, r, t, b):
     """Exact 'reflect' padding built from slices+concats (GPU-clean)."""
-    W = int(x.shape[3]); H = int(x.shape[2])
+    W = int(x.shape[3])
+    H = int(x.shape[2])
     parts = []
     if l > 0:
         parts.append(torch.cat([x[:, :, :, k:k + 1] for k in range(l, 0, -1)], dim=3))
