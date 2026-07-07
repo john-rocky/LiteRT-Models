@@ -56,6 +56,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Camouflaged Object Detection**](#camouflaged-object-detection)
   - [SINet-V2](#sinet-v2)
 
+- [**Crowd Counting**](#crowd-counting)
+  - [DM-Count](#dm-count)
+
 - [**Instance Segmentation**](#instance-segmentation)
   - [YOLACT-ResNet50](#yolact-resnet50)
 
@@ -509,6 +512,22 @@ Real-time **camouflaged object detection** running fully on the LiteRT `Compiled
 **Conversion** (`sinet/scripts/build_sinet.py`, litert-torch): pure CNN → fully GPU-compatible (**2447/2447 nodes on the delegate, 1 partition**; device corr 0.994) with two patches — ZeroPadMaxPool for the Res2Net stem + `align_corners=False`. CPU-exact vs PyTorch (corr 0.997).
 
 **Sample app**: [sinet/](sinet/) — live camera → SINet-V2 GPU → concealed objects highlighted.
+
+# Crowd Counting
+
+### DM-Count
+
+Real-time **crowd counting** running fully on the LiteRT `CompiledModel` GPU. [DM-Count](https://github.com/cvlab-stonybrook/DM-Count) (NeurIPS 2020) regresses a person **density map** whose sum is the crowd size — it counts hundreds of people where detector-based counting saturates.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| DM-Count (VGG19, UCF-QNRF) | [dmcount.tflite](https://huggingface.co/litert-community/DM-Count-Crowd-LiteRT) | 86 MB | Float32 [1, 3, 512, 512] NCHW (RGB, ImageNet-norm) | Float32 [1, 1, 64, 64] density map | [cvlab-stonybrook/DM-Count](https://github.com/cvlab-stonybrook/DM-Count) | [MIT](https://github.com/cvlab-stonybrook/DM-Count/blob/master/LICENSE) | [crowdcount/](crowdcount/) |
+
+**Preprocessing**: RGB, resize 512×512, ImageNet-normalize, NCHW. **Output**: non-negative density map at 1/8 resolution; `sum(map)` = estimated person count, normalize per-frame for the heatmap overlay.
+
+**Conversion** (`crowdcount/scripts/build_dmcount.py`, litert-torch): pure CNN (VGG19 + conv regression head) → fully GPU-compatible (**30/30 nodes on the delegate, 1 partition**; device corr 0.99998, count within 0.4%) with **one exact rewrite** — the mid-graph `F.upsample_bilinear` (align_corners=True `RESIZE_BILINEAR`, banned on the delegate) is a linear operator, re-authored as two constant-matrix multiplies (→ `FULLY_CONNECTED`; the constant must be on the RHS — the delegate rejects `BATCH_MATMUL` with a constant LHS). Desktop corr vs PyTorch 1.000000.
+
+**Sample app**: [crowdcount/](crowdcount/) — live camera → DM-Count GPU → density heatmap + live person count.
 
 # Instance Segmentation
 
