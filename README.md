@@ -41,6 +41,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Super-Resolution**](#super-resolution)
   - [EDSR (×4)](#edsr-4)
 
+- [**Clothing Segmentation**](#clothing-segmentation)
+  - [Cloth Segmentation (U²-Net)](#cloth-segmentation-u2net)
+
 - [**Head Pose Estimation**](#head-pose-estimation)
   - [6DRepNet](#6drepnet)
 
@@ -403,6 +406,22 @@ Real-time **×4 single-image super-resolution** running fully on the LiteRT `Com
 **Conversion** (`edsr/scripts/build_edsr.py`, litert-torch): pure CNN, but the **PixelShuffle** upsampler lowers to rank-5/6 reshapes the Mali delegate rejects (the classic super-resolution wall). Exact fix — **PixelShuffle(r) ≡ a fixed-weight `ConvTranspose2d(stride=r)`** → ZeroStuffConvT2d. Result: **68/68 nodes on the delegate, 1 partition**; device corr 0.999946, ~23 ms. CPU-exact vs PyTorch (corr 1.0). This patch also unblocks other PixelShuffle SR models.
 
 **Sample app**: [edsr/](edsr/) — live camera → EDSR GPU → ×4 super-resolved center region.
+
+# Clothing Segmentation
+
+### Cloth Segmentation (U²-Net)
+
+Real-time **clothing segmentation** running fully on the LiteRT `CompiledModel` GPU. [cloth-segmentation](https://github.com/levindabhi/cloth-segmentation) is a U²-Net trained on iMaterialist-Fashion to segment **upper-body / lower-body / full-body clothing** — the building block for virtual try-on and fashion apps.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| Cloth Segmentation (U²-Net) | [clothseg.tflite](https://huggingface.co/litert-community/Cloth-Segmentation-U2Net-LiteRT) | 176 MB | Float32 [1, 3, 768, 768] NCHW (RGB, [-1,1]) | Float32 [1, 4, 768, 768] (argmax → clothing class) | [levindabhi/cloth-segmentation](https://github.com/levindabhi/cloth-segmentation) | [MIT](https://github.com/levindabhi/cloth-segmentation/blob/main/LICENSE) | [clothseg/](clothseg/) |
+
+**Preprocessing**: RGB, resize 768×768, `(x/255 - 0.5)/0.5`, NCHW. **Decode**: `argmax` over the 4 classes → 0 background, 1 upper body, 2 lower body, 3 full body.
+
+**Conversion** (`clothseg/scripts/build_clothseg.py`, litert-torch): pure CNN → fully GPU-compatible (**254/254 nodes on the delegate, 1 partition**; device corr 0.999798, ~88 ms) with one defensive patch — `align_corners=True` → `False`. CPU-exact vs PyTorch (corr 1.0). ⚠ Strip the `module.` prefix when loading the checkpoint.
+
+**Sample app**: [clothseg/](clothseg/) — live camera → U²-Net GPU → clothing segments (upper/lower/full).
 
 # Head Pose Estimation
 
