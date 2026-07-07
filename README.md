@@ -41,6 +41,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Super-Resolution**](#super-resolution)
   - [EDSR (×4)](#edsr-4)
 
+- [**Image Dehazing**](#image-dehazing)
+  - [DehazeFormer-MCT](#dehazeformer-mct)
+
 - [**Clothing Segmentation**](#clothing-segmentation)
   - [Cloth Segmentation (U²-Net)](#cloth-segmentation-u2net)
 
@@ -430,6 +433,22 @@ Real-time **×4 single-image super-resolution** running fully on the LiteRT `Com
 **Preprocessing**: RGB, `x/255`, NCHW. **Output**: clamp 0–1, ×255.
 
 **Conversion** (`edsr/scripts/build_edsr.py`, litert-torch): pure CNN, but the **PixelShuffle** upsampler lowers to rank-5/6 reshapes the Mali delegate rejects (the classic super-resolution wall). Exact fix — **PixelShuffle(r) ≡ a fixed-weight `ConvTranspose2d(stride=r)`** → ZeroStuffConvT2d. Result: **68/68 nodes on the delegate, 1 partition**; device corr 0.999946, ~23 ms. CPU-exact vs PyTorch (corr 1.0). This patch also unblocks other PixelShuffle SR models.
+
+# Image Dehazing
+
+### DehazeFormer-MCT
+
+Real-time **image dehazing** with the network fully on the LiteRT `CompiledModel` GPU. [DehazeFormer](https://github.com/IDKiro/DehazeFormer) (TIP 2023, MCT curve-mapping variant trained on a mixed dataset for real-world haze) removes fog / haze / smoke and restores contrast. The 256×256 network predicts 72 per-pixel curve parameters; the curves are applied to the **full-resolution** frame host-side, so output resolution is independent of network resolution.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| DehazeFormer-MCT (mixed) | [dehazeformer_base.tflite](https://huggingface.co/litert-community/DehazeFormer-MCT-LiteRT) | 17 MB | Float32 [1, 3, 256, 256] NCHW (RGB, [-1,1]) | Float32 [1, 72, 256, 256] curve params | [IDKiro/DehazeFormer](https://github.com/IDKiro/DehazeFormer) | [MIT](https://github.com/IDKiro/DehazeFormer/blob/main/LICENSE) | [dehaze/](dehaze/) |
+
+**Preprocessing**: RGB, `x/255*2-1`, NCHW at 256×256. **Decode (host-side)**: trilinear curve lookup per full-res pixel — `out[c] = Σᵢ trilinear(curve[c][i], depth=xᵢ, y, x)`, then `clamp(-1,1)*0.5+0.5` (exact official grid_sample mapping, replica corr 1.0).
+
+**Conversion** (`dehaze/scripts/build_dehaze.py`, litert-torch): Swin-style windowed attention re-authored with the established recipes — window partition/reverse ≤4D, qkv channel slices, baked relative-position bias, reflect pads → slice+concat (litert-torch lowers `reflection_pad2d` to banned `GATHER_ND`, **including padding=0 reflect convs**), SKFusion 5D→4D pairwise softmax, Conv+PixelShuffle → ZeroStuffConvT2d. ⭐New Mali finding: a single `MEAN` over C·H·W (1.5M elements) **overflows the fp16 accumulator** → NaN; RLN global norm + SKFusion global pool re-authored as **hierarchical means** (equal-window `avg_pool` stages, mathematically identical). Result: **2042/2042 nodes on the delegate, 1 partition**; device corr 0.999998, E2E vs the official pipeline corr 0.999997, ~255 ms/frame. Desktop corr vs PyTorch 1.0000000.
+
+**Sample app**: [dehaze/](dehaze/) — live camera → DehazeFormer GPU + host curve mapping → dehazed frame full-screen, tap to compare.
 
 **Sample app**: [edsr/](edsr/) — live camera → EDSR GPU → ×4 super-resolved center region.
 
