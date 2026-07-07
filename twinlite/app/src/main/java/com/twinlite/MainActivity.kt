@@ -91,7 +91,8 @@ class MainActivity : ComponentActivity() {
             }
         }
         ovBitmap.setPixels(ovPixels, 0, W, 0, 0, W, H)
-        overlayView.post { overlayView.setOverlay(ovBitmap) }
+        val bw = bmp.width; val bh = bmp.height
+        overlayView.post { overlayView.setOverlay(ovBitmap, bw, bh) }
         val fps = pipeline?.fps ?: 0
         statusText.post { statusText.text = "TwinLiteNet GPU  |  $fps FPS  |  ${ms}ms  |  drivable + lanes" }
     }

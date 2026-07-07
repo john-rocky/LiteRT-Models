@@ -13,6 +13,7 @@ class InstanceOverlayView(context: Context) : View(context) {
 
     private var masks: Bitmap? = null
     private var insts: List<Instance> = emptyList()
+    private var srcW = 1; private var srcH = 1
     private val src = Rect()
     private val dst = Rect()
     private val maskPaint = Paint(Paint.FILTER_BITMAP_FLAG)
@@ -21,23 +22,27 @@ class InstanceOverlayView(context: Context) : View(context) {
         color = Color.WHITE; textSize = 34f; setShadowLayer(4f, 0f, 0f, Color.BLACK)
     }
 
-    fun setResult(maskBitmap: Bitmap, instances: List<Instance>) {
-        masks = maskBitmap; insts = instances
+    /** [sw]x[sh] = the camera frame dimensions the masks/boxes were computed in. */
+    fun setResult(maskBitmap: Bitmap, instances: List<Instance>, sw: Int, sh: Int) {
+        masks = maskBitmap; insts = instances; srcW = sw; srcH = sh
         postInvalidateOnAnimation()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val b = masks ?: return
-        src.set(0, 0, b.width, b.height); dst.set(0, 0, width, height)
+        // FILL_CENTER: map the frame into the same rect PreviewView shows (scale=max, centered).
+        val scale = maxOf(width.toFloat() / srcW, height.toFloat() / srcH)
+        val rw = srcW * scale; val rh = srcH * scale
+        val l = (width - rw) / 2f; val t = (height - rh) / 2f
+        src.set(0, 0, b.width, b.height); dst.set(l.toInt(), t.toInt(), (l + rw).toInt(), (t + rh).toInt())
         canvas.drawBitmap(b, src, dst, maskPaint)
-        val sx = width.toFloat(); val sy = height.toFloat()
         for (ins in insts) {
             val col = Palette.color(ins.cls)
             boxPaint.color = col
-            canvas.drawRect(ins.x1 * sx, ins.y1 * sy, ins.x2 * sx, ins.y2 * sy, boxPaint)
+            canvas.drawRect(l + ins.x1 * rw, t + ins.y1 * rh, l + ins.x2 * rw, t + ins.y2 * rh, boxPaint)
             val label = "${CocoLabels.NAMES[ins.cls]} ${(ins.score * 100).toInt()}%"
-            canvas.drawText(label, ins.x1 * sx + 6, ins.y1 * sy + 34, textPaint)
+            canvas.drawText(label, l + ins.x1 * rw + 6, t + ins.y1 * rh + 34, textPaint)
         }
     }
 }

@@ -77,7 +77,8 @@ class MainActivity : ComponentActivity() {
     private fun runInference(bmp: Bitmap) {
         val d = detector ?: return
         val (points, ms) = d.detect(bmp)
-        overlayView.post { overlayView.setPoints(points) }
+        val bw = bmp.width; val bh = bmp.height
+        overlayView.post { overlayView.setPoints(points, bw, bh) }
         val fps = pipeline?.fps ?: 0
         statusText.post { statusText.text = "UFLD GPU  |  $fps FPS  |  ${ms}ms  |  ${points.size} lane pts" }
     }

@@ -91,7 +91,8 @@ class MainActivity : ComponentActivity() {
             for (i in m.indices) if (m[i]) overlayPixels[i] = col
         }
         overlayBitmap.setPixels(overlayPixels, 0, S, 0, 0, S, S)
-        overlayView.post { overlayView.setResult(overlayBitmap, instances) }
+        val bw = bmp.width; val bh = bmp.height
+        overlayView.post { overlayView.setResult(overlayBitmap, instances, bw, bh) }
         val fps = pipeline?.fps ?: 0
         statusText.post { statusText.text = "YOLACT GPU  |  $fps FPS  |  ${ms}ms  |  ${instances.size} inst" }
     }

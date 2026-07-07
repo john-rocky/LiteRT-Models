@@ -95,7 +95,8 @@ class MainActivity : ComponentActivity() {
             compPixels[i] = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
         }
         compBitmap.setPixels(compPixels, 0, O, 0, 0, O, O)
-        overlayView.post { overlayView.setComposite(compBitmap) }
+        val bw = bmp.width; val bh = bmp.height
+        overlayView.post { overlayView.setComposite(compBitmap, bw, bh) }
         val fps = pipeline?.fps ?: 0
         statusText.post { statusText.text = "DIS GPU  |  $fps FPS  |  ${ms}ms  |  cutout" }
     }

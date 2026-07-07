@@ -101,7 +101,8 @@ class MainActivity : ComponentActivity() {
             compPixels[i] = (0xFF shl 24) or (rr shl 16) or (gg shl 8) or bb
         }
         compBitmap.setPixels(compPixels, 0, O, 0, 0, O, O)
-        overlayView.post { overlayView.setComposite(compBitmap) }
+        val bw = bmp.width; val bh = bmp.height
+        overlayView.post { overlayView.setComposite(compBitmap, bw, bh) }
         val fps = pipeline?.fps ?: 0
         statusText.post { statusText.text = "ormbg GPU  |  $fps FPS  |  ${ms}ms  |  bg removed" }
     }

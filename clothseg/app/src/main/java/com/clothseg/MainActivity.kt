@@ -85,7 +85,8 @@ class MainActivity : ComponentActivity() {
         val (cls, ms) = s.segment(bmp)
         for (i in 0 until O * O) ovPixels[i] = COLORS[cls[i].toInt()]
         ovBitmap.setPixels(ovPixels, 0, O, 0, 0, O, O)
-        overlayView.post { overlayView.setOverlay(ovBitmap) }
+        val bw = bmp.width; val bh = bmp.height
+        overlayView.post { overlayView.setOverlay(ovBitmap, bw, bh) }
         val fps = pipeline?.fps ?: 0
         statusText.post { statusText.text = "Cloth Seg GPU  |  $fps FPS  |  ${ms}ms  |  upper=cyan lower=orange" }
     }
