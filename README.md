@@ -98,6 +98,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Vision-Language Model**](#vision-language-model)
   - [SmolVLM-256M](#smolvlm-256m)
 
+- [**Text Generation**](#text-generation)
+  - [RWKV-7 World 0.1B](#rwkv-7-world-01b)
+
 - [**Voice Assistant**](#voice-assistant)
   - [Whisper + SmolLM2 + Kokoro pipeline](#whisper--smollm2--kokoro-pipeline)
 
@@ -841,6 +844,22 @@ Vision encoder converted via **litert-torch** with SigLIP position embedding pre
 **Sample app**: [smolvlm/](smolvlm/) — Image picker + text prompt + streaming response.
 
 **Original project**: [HuggingFaceTB/SmolVLM-256M-Instruct](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct) | [Apache-2.0](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/blob/main/LICENSE)
+
+# Text Generation
+
+### RWKV-7 World 0.1B
+
+The first **autoregressive language model running its full forward pass on the LiteRT `CompiledModel` GPU delegate** (RNN mode, host-side state). [RWKV-7](https://github.com/BlinkDL/RWKV-LM) is an RNN: one token per step with a fixed-size recurrent state, so the whole model fits a single static GPU graph — no KV cache growth, no dynamic shapes, no CPU fallback for any op. (The earlier Qwen3 embedding/reranker ships were encoders; this is generation.)
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| RWKV-7 World 0.1B (step) | [rwkv7_step_fp16.tflite](https://huggingface.co/litert-community/RWKV-7-World-0.1B-LiteRT) | 282 MB | Float32 `x_emb[1,768]`, `att_shift[12,768]`, `ffn_shift[12,768]`, `wkv[144,64,64]` | Float32 `logits[1,65536]` + 3 updated states | [BlinkDL/rwkv-7-world](https://huggingface.co/BlinkDL/rwkv-7-world) | [Apache-2.0](https://huggingface.co/BlinkDL/rwkv-7-world) | [rwkv7/](rwkv7/) |
+
+**Host side**: token embedding row lookup from a memory-mapped fp16 table (~100 MB, GATHER is GPU-banned), greedy argmax over the 65536 logits, and recycling the three recurrent states into the next step. Prefill = the same step loop over the prompt. Tokenizer: RWKV World greedy longest-match trie (Kotlin port, fixture-tested against the Python reference).
+
+**Conversion** (`rwkv7/scripts/build_rwkv7_step.py`, litert-torch): wkv7 recurrence at T=1 re-authored as plain 4D BMM/elementwise; `GroupNorm(heads)` → manual per-head mean/var; `F.normalize` → `x·rsqrt(Σx²+eps)`; `softplus` → branch-free `relu(z)+log1p(exp(-|z|))` (stock lowering emits GREATER+SELECT); export inputs `.clone()`d. Result: **1863/1863 nodes on the delegate, 1 partition**, ~18 ms/token (fp16, Pixel 8a). Step-vs-GPT-mode parity corr 1.0000000; device 30-token greedy generation tracks desktop fp32 (28/30 identical, 2 near-tie rank-2 picks, prefill corr 0.99995).
+
+**Sample app**: [rwkv7/](rwkv7/) — prompt/chat UI with streaming tokens, greedy decoding, tok/s stats.
 
 # Voice Assistant
 
