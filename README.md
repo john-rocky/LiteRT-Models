@@ -36,6 +36,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Zero-Shot Classification**](#zero-shot-classification)
   - [CLIP ViT-B/32](#clip-vit-b32)
 
+- [**Image Classification**](#image-classification)
+  - [Vision-RWKV (VRWKV-S)](#vision-rwkv-vrwkv-s)
+
 - [**Surface Normal Estimation**](#surface-normal-estimation)
   - [DSINE](#dsine)
 
@@ -283,6 +286,22 @@ Converted via **litert-torch** (ViT architecture). Text embeddings pre-computed 
 **Sample app**: [clip/](clip/) — Image picker + top-10 classification results with confidence bars.
 
 **Original project**: [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) | [MIT](https://github.com/mlfoundations/open_clip/blob/main/LICENSE)
+
+# Image Classification
+
+### Vision-RWKV (VRWKV-S)
+
+The first **RWKV-style vision backbone running fully on the LiteRT `CompiledModel` GPU** — the vision companion to the RWKV-7 language model in [Text Generation](#rwkv-7-world-01b). [Vision-RWKV](https://github.com/OpenGVLab/Vision-RWKV) (ICLR 2025) swaps softmax self-attention for a **bidirectional WKV** linear-attention scan; this is the VRWKV-S ImageNet-1K classifier (80.1% top-1). ~28 ms/inference on a Pixel 8a.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| VRWKV-S (ImageNet-1K) | [vrwkv_s_fp16.tflite](https://huggingface.co/litert-community/Vision-RWKV-S-LiteRT) | 48 MB | Float32 `image[1,3,224,224]` NCHW (ImageNet-norm) + `dist[1,1,196,196]` | Float32 `logits[1,1000]` | [OpenGVLab/Vision-RWKV](https://github.com/OpenGVLab/Vision-RWKV) | [Apache-2.0](https://github.com/OpenGVLab/Vision-RWKV/blob/master/LICENSE) | [vrwkv/](vrwkv/) |
+
+**Preprocessing**: resize (short edge 256) → center-crop 224 → ImageNet normalization, NCHW. The second input is the constant token-distance matrix `dist[t,i] = |t-i|` (see below).
+
+**Conversion** (`vrwkv/scripts/build_vrwkv.py`, litert-torch): the bidirectional WKV (a CUDA kernel) is re-authored exactly — for the fixed 196-token grid it is a per-channel decay-biased attention `softmax_i(k[c,i] − (decay[c]/T)|t−i| + (first[c]/T)δ) · v`, i.e. plain 4D `softmax` + `matmul`, **no sequential scan**. ⭐The `[C,T,T]` decay bias `w·dist` would be const-folded into a 59 MB-per-block flatbuffer constant (an unshippable 1.5 GB model that fp16 can't shrink), so the token-distance matrix is fed as a **runtime input** (`eye = relu(1 − dist)`) and the bias is computed live → 48 MB. VRWKV-S is post-norm (LayerScale baked into the following norm); q-shift is pad+slice+concat (≤4D). Result: **1371/1371 nodes on the delegate, 1 partition**; device fp16 top-1 matches desktop fp32 (logits corr 0.9989).
+
+**Sample app**: [vrwkv/](vrwkv/) — pick a photo → top-5 ImageNet predictions.
 
 # Surface Normal Estimation
 
