@@ -36,6 +36,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Zero-Shot Classification**](#zero-shot-classification)
   - [CLIP ViT-B/32](#clip-vit-b32)
 
+- [**Dense Feature Visualization**](#dense-feature-visualization)
+  - [DINOv2 ViT-S/14](#dinov2-vit-s14)
+
 - [**Surface Normal Estimation**](#surface-normal-estimation)
   - [DSINE](#dsine)
 
@@ -283,6 +286,22 @@ Converted via **litert-torch** (ViT architecture). Text embeddings pre-computed 
 **Sample app**: [clip/](clip/) — Image picker + top-10 classification results with confidence bars.
 
 **Original project**: [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) | [MIT](https://github.com/mlfoundations/open_clip/blob/main/LICENSE)
+
+# Dense Feature Visualization
+
+### DINOv2 ViT-S/14
+
+Run the self-supervised [DINOv2](https://github.com/facebookresearch/dinov2) ViT-S/14 backbone fully on the LiteRT `CompiledModel` GPU and visualize its **dense patch features** — a top-3 PCA of the tokens mapped to RGB. Semantically similar patches (object parts vs background) land near each other in feature space, so they share a color and the object "pops out" with no labels or segmentation. The first self-supervised-backbone / feature-visualization demo in the zoo.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| DINOv2 ViT-S/14 | [dinov2_s_fp16.tflite](https://huggingface.co/litert-community/DINOv2-ViT-S14-LiteRT) | 45 MB | Float32 [1, 3, 448, 448] NCHW (ImageNet-norm) | Float32 [1, 1024, 384] patch tokens | [facebookresearch/dinov2](https://github.com/facebookresearch/dinov2) | [Apache-2.0](https://github.com/facebookresearch/dinov2/blob/main/LICENSE) | [dinov2/](dinov2/) |
+
+**Preprocessing**: resize 448×448, ImageNet normalization, NCHW. **Decode (host-side)**: top-3 PCA of the 1024×384 token matrix (power iteration on the 384×384 covariance) → per-patch RGB → upscaled overlay.
+
+**Conversion** (`dinov2/scripts/build_dinov2.py`, litert-torch): the proven ViT recipes — fused-qkv attention decomposed to 4D `[1,heads,N,d]` (C12), **SafeLayerNorm** (deviation scaled by 1/64 before squaring so the fp16 variance doesn't overflow on DINOv2's massive activations), **LayerScale** (`ls1`/`ls2`) baked into the projections, and **tanh-GELU** (`0.5x(1+tanh(…))`) — the sigmoid-GELU approximation drifts to feature corr 0.968 over 12 blocks, tanh → 0.99999. The pos_embed is baked at a fixed 448 grid by timm at model creation, so there is no runtime interpolation (no `GATHER_ND`). Result: **864/864 nodes on the delegate, 1 partition**, ~8 ms; device fp16 patch features vs desktop fp32 corr 0.996.
+
+**Sample app**: [dinov2/](dinov2/) — pick a photo → image and its DINOv2 feature-PCA side by side.
 
 # Surface Normal Estimation
 
