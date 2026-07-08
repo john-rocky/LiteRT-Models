@@ -28,6 +28,9 @@ for f in "${FILES[@]}"; do
     fi
 done
 
+# The private files dir may not exist until the app's first launch — create it.
+adb shell "run-as $PKG mkdir -p /data/data/$PKG/files"
+
 for f in "${FILES[@]}"; do
     echo "Moving $f into $PKG files dir..."
     adb shell "run-as $PKG cp /data/local/tmp/$f /data/data/$PKG/files/$f"
