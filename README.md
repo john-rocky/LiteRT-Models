@@ -148,6 +148,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Face**](#face)
   - [3DDFA_V2 (3D face alignment)](#3ddfa_v2-3d-face-alignment)
   - [BiSeNet (face parsing)](#bisenet-face-parsing)
+  - [HSEmotion (facial emotion recognition)](#hsemotion-facial-emotion-recognition)
 
 - [**OCR**](#ocr)
   - [PP-OCRv5](#pp-ocrv5)
@@ -1299,6 +1300,20 @@ Real-time **face parsing** running fully on the LiteRT `CompiledModel` GPU. [BiS
 **Conversion** (`faceparsing/scripts/build_faceparsing.py`, litert-torch): 3 re-authoring patches → fully GPU-compatible (**74/74 nodes on the delegate, 1 partition**; device corr 0.99999, argmax 99.96% vs PyTorch): (1) `align_corners=True`→`False`; (2) global `avg_pool2d(x, x.size()[2:])`→`mean([2,3])` (Mali rejects a full-spatial-kernel `AVERAGE_POOL_2D`); (3) **ZeroPadMaxPool** — the ResNet stem `MaxPool2d(padding=1)` lowers to a `-inf` PADV2 (`PADV2: src has wrong size` on Mali), replaced by an explicit 0-pad + unpadded maxpool (exact since the input is post-ReLU ≥ 0). These are **on-device-only** rejections — the op inventory is clean and CPU parity is 1.0, but the GPU delegate won't compile without them. CPU-exact vs PyTorch (corr 0.99999999999).
 
 **Sample app**: [faceparsing/](faceparsing/) — front camera → BiSeNet GPU → 19-class CelebAMask face-part overlay.
+
+### HSEmotion (facial emotion recognition)
+
+Recognize the **8 AffectNet emotions** (anger, contempt, disgust, fear, happiness, neutral, sadness, surprise) from a face, fully on the LiteRT `CompiledModel` GPU. [HSEmotion](https://github.com/av-savchenko/face-emotion-recognition) (EmotiEffLib, Apache-2.0) is an EfficientNet-B0 fine-tuned on AffectNet — the first emotion classifier in this zoo. ~2 ms/inference on a Pixel 8a.
+
+| Model | Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ----- | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| HSEmotion EfficientNet-B0 | [hsemotion_b0_fp16.tflite](https://huggingface.co/litert-community/HSEmotion-B0-LiteRT) | 8 MB | Float32 [1, 3, 224, 224] NCHW (ImageNet-norm) | Float32 [1, 8] emotion logits | [av-savchenko/face-emotion-recognition](https://github.com/av-savchenko/face-emotion-recognition) | [Apache-2.0](https://github.com/av-savchenko/face-emotion-recognition/blob/main/LICENSE) | [hsemotion/](hsemotion/) |
+
+**Preprocessing**: detect + crop the face (the app uses the built-in `android.media.FaceDetector`), resize 224×224, ImageNet normalization, NCHW.
+
+**Conversion** (`hsemotion/scripts/build_hsemotion.py`, litert-torch): the released weights are an **old-timm pickle** whose forward is broken under current timm, so the state dict is lifted into a fresh timm `tf_efficientnet_b0` (`classifier.0.*`→`classifier.*`) with a working forward. ⭐The one GPU fix — the **SqueezeExcite global mean** `x.mean((2,3))` over the 112×112 stem map is a single fp16 reduction whose partial sum overflows 65504 → **all-NaN device output** (the delegate computes it in fp16 even for an fp32 graph); replaced by a **hierarchical mean** (`avg_pool2d` over equal-size tiling windows ≤ 49 elements — mathematically identical, fp16-safe). Result: **342/342 nodes on the delegate, 1 partition**; device fp16 top-1 matches desktop fp32 (logits corr 0.99997). Desktop fp16 CPU corr vs PyTorch 1.0.
+
+**Sample app**: [hsemotion/](hsemotion/) — pick a face photo → detected face + emotion distribution.
 
 # OCR
 
