@@ -4,40 +4,68 @@ Auto-patching pipeline for GPU-incompatible PyTorch patterns.
 Each patch function returns the number of modifications made.
 """
 
+import logging
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import logging
 
 log = logging.getLogger("litert_gpu_toolkit")
 
 # ─── GELU → Sigmoid approximation ────────────────────────────────────────────
 
 class SigmoidGELU(nn.Module):
-    """GELU approximation: x * sigmoid(1.702 * x). Max error ~0.01."""
+    """GELU approximation: x * sigmoid(1.702 * x). Max error ~0.01.
+
+    No x^3 term → no fp16 overflow risk; the hardened default for classification /
+    feature backbones where a ~0.01 activation error is invisible.
+    """
     def forward(self, x):
         return x * torch.sigmoid(1.702 * x)
+
+
+class TanhGELU(nn.Module):
+    """GELU tanh approximation: 0.5x(1 + tanh(sqrt(2/pi)(x + 0.044715 x^3))).
+
+    GELU(erf) is banned on GPU (FlexErf); this is the closest GPU-clean form
+    (MUL/ADD/TANH, no POW). Use for regression heads (depth, normals, keypoints)
+    where SigmoidGELU's ~0.01 error visibly shifts the output. The x^3 term can
+    overflow fp16 for |x| > ~35 — check activation magnitudes first.
+    """
+    C = math.sqrt(2.0 / math.pi)
+
+    def forward(self, x):
+        return 0.5 * x * (1.0 + torch.tanh(self.C * (x + 0.044715 * x * x * x)))
 
 
 _original_gelu = F.gelu
 
 
-def patch_gelu(model: nn.Module) -> int:
-    """Replace all nn.GELU modules with SigmoidGELU.
+def patch_gelu(model: nn.Module, approximation: str = 'sigmoid') -> int:
+    """Replace GELU activations (nn.GELU and transformers' GELUActivation).
     Also monkey-patches F.gelu globally.
+
+    approximation='sigmoid' (default): fp16-safe, max error ~0.01.
+    approximation='tanh': near-exact shape, required for regression heads.
     Returns number of modules replaced.
     """
+    replacement_cls = TanhGELU if approximation == 'tanh' else SigmoidGELU
     count = 0
     for name, module in list(model.named_modules()):
         for child_name, child in list(module.named_children()):
-            if isinstance(child, nn.GELU):
-                setattr(module, child_name, SigmoidGELU())
+            if isinstance(child, nn.GELU) or type(child).__name__ == 'GELUActivation':
+                setattr(module, child_name, replacement_cls())
                 count += 1
 
-    F.gelu = lambda x, approximate='none': x * torch.sigmoid(1.702 * x)
+    if approximation == 'tanh':
+        c = TanhGELU.C
+        F.gelu = lambda x, approximate='none': 0.5 * x * (1.0 + torch.tanh(c * (x + 0.044715 * x * x * x)))
+    else:
+        F.gelu = lambda x, approximate='none': x * torch.sigmoid(1.702 * x)
 
     if count:
-        log.info(f"Patched {count} nn.GELU → SigmoidGELU")
+        log.info(f"Patched {count} GELU → {replacement_cls.__name__}")
     return count
 
 
@@ -414,27 +442,35 @@ def restore_grid_sample():
 
 # ─── SafeLayerNorm — fp16-overflow-safe channel reduction ─────────────────────
 
-def patch_safe_layernorm(scale: str = "adaptive", fixed_s: float = 128.0) -> None:
+def patch_safe_layernorm(scale: str = "adaptive_v2", fixed_s: float = 128.0) -> None:
     """Override nn.LayerNorm.forward with a down-scaled, numerically-exact reduction.
 
     The Mali ML Drift delegate computes reductions in fp16 even for an fp32 graph, so
     a LayerNorm over a large-magnitude activation overflows the channel sum-of-squares
     (>65504) -> wrong norm at full LITERT_CL residency (residency != correctness).
     Witnessed across deep ViT (PE-Core/SigLIP2/EoMT), deep-residual CNN (NAFNet), and
-    transformer detectors (RF-DETR). Fix: reduce in a down-scaled domain ``x/S`` then
-    rescale -- exact because LayerNorm is scale-invariant.
+    transformer detectors (RF-DETR). Fix: reduce in a down-scaled domain ``x/S`` --
+    exact because LayerNorm is scale-invariant.
 
-    scale="adaptive" (default): per-row ``S = max(1, amax/8)`` -- native (S=1) for
-      small-magnitude norms, scales only the spikes. REQUIRED when one graph mixes
-      norms at very different magnitudes (e.g. RF-DETR decoder |x|~8 .. ~1068); a
-      fixed large S squashes the small norms.
-    scale="fixed": a constant ``S = fixed_s`` (cheaper; fine when all norms are large,
+    scale="adaptive_v2" (default): per-row ``S = max(1, amax/8)``, normalize IN the
+      scaled domain (``y = dd * rsqrt(mean(dd^2) + eps)``). The two rescale MULs of
+      "adaptive" disappear from the graph, so no intermediate ever leaves the safe
+      range -- the fp16-safest form (Parakeet; supersedes the others). Caveat: eps
+      effectively acts as ``eps * S^2`` in original-domain terms (negligible when
+      var >> eps).
+    scale="adaptive": same S, but rescale back (``var*(S*S)``, ``d*S``) before the
+      rsqrt so eps acts at its true magnitude -- bit-faithful to stock LayerNorm.
+    scale="fixed": constant ``S = fixed_s`` (cheapest; fine when all norms are large,
       e.g. NAFNet S=128).
 
-    Assumes normalized_shape is the last dim (the common case). Opt-in (NOT in
-    apply_all_patches) -- only models that hit the device fp16 wall need it.
+    Both adaptive modes are REQUIRED over "fixed" when one graph mixes norms at very
+    different magnitudes (e.g. RF-DETR decoder |x|~8 .. ~1068); a fixed large S
+    squashes the small norms. Assumes normalized_shape is the last dim (the common
+    case). Opt-in (NOT in apply_all_patches) -- only models that hit the device fp16
+    wall need it.
     """
-    adaptive = scale == "adaptive"
+    adaptive = scale in ("adaptive", "adaptive_v2")
+    stay_scaled = scale == "adaptive_v2"
     s_const = float(fixed_s)
 
     def safe_ln_forward(self, x):
@@ -445,8 +481,11 @@ def patch_safe_layernorm(scale: str = "adaptive", fixed_s: float = 128.0) -> Non
         xs = x / S
         mu = xs.mean(-1, keepdim=True)
         d = xs - mu
-        var = (d * d).mean(-1, keepdim=True) * (S * S)
-        d = d * S
+        if stay_scaled:
+            var = (d * d).mean(-1, keepdim=True)
+        else:
+            var = (d * d).mean(-1, keepdim=True) * (S * S)
+            d = d * S
         y = d * torch.rsqrt(var + self.eps)
         if self.elementwise_affine:
             y = y * self.weight + self.bias
@@ -456,11 +495,342 @@ def patch_safe_layernorm(scale: str = "adaptive", fixed_s: float = 128.0) -> Non
     log.info(f"Patched nn.LayerNorm → SafeLayerNorm (scale={scale})")
 
 
-def apply_all_patches(model: nn.Module) -> dict:
-    """Apply all available patches. Returns summary of changes made.
+# ─── ConvTranspose → zero-stuff conv (TRANSPOSE_CONV rejected on device) ──────
 
-    Note: patch_grid_sample() and patch_safe_layernorm() are NOT applied here — they
-    are opt-in (call them directly for deformable / fp16-overflow-prone models).
+class ZeroStuffConvT1d(nn.Module):
+    """Exact GPU-clean ConvTranspose1d: nearest-upsample × zero-stuff mask + flipped
+    conv1d + crop.
+
+    The on-device ML Drift delegate rejects TRANSPOSE_CONV; this lowers to
+    RESIZE_NEAREST + MUL + CONV only. Numerically equivalent to nn.ConvTranspose1d
+    (grouped convs supported). The input length must be fixed at build time — use
+    patch_conv_transpose() to capture it with a dry run. The 1D nearest upsample is
+    expressed as a 2D interpolate (unsqueeze/squeeze) to avoid a dynamic 1D resize.
+    Device-proven in DAC, Matcha-TTS and Mimi decoders.
+    """
+
+    def __init__(self, ct: nn.ConvTranspose1d, input_length: int):
+        super().__init__()
+        self.stride = ct.stride[0]
+        self.kernel_size = ct.kernel_size[0]
+        self.pad = ct.padding[0]
+        self.output_padding = ct.output_padding[0]
+        self.input_length = input_length
+        self.groups = ct.groups
+        cin, cout, groups = ct.in_channels, ct.out_channels, ct.groups
+        # ConvT weight (Cin, Cout//G, K) → grouped conv1d weight (Cout, Cin//G, K), flipped.
+        w = ct.weight.detach()
+        w = w.view(groups, cin // groups, cout // groups, self.kernel_size)
+        w = w.permute(0, 2, 1, 3).reshape(cout, cin // groups, self.kernel_size)
+        self.register_buffer('w', w.flip(2).contiguous())
+        self.register_buffer('b', ct.bias.detach().clone() if ct.bias is not None
+                             else torch.zeros(cout))
+        mask = torch.zeros(input_length * self.stride)
+        mask[::self.stride] = 1.0
+        self.register_buffer('mask', mask[None, None])
+
+    def forward(self, x):
+        s, k, p = self.stride, self.kernel_size, self.pad
+        up = F.interpolate(x.unsqueeze(2), size=(1, self.input_length * s), mode='nearest').squeeze(2)
+        y = F.conv1d(up * self.mask, self.w, bias=self.b, padding=k - 1, groups=self.groups)
+        out_len = (self.input_length - 1) * s + k - 2 * p + self.output_padding
+        return y[:, :, p:p + out_len]
+
+
+class ZeroStuffConvT2d(nn.Module):
+    """Exact GPU-clean ConvTranspose2d (square k/s/p): nearest-upsample × zero-stuff
+    mask + flipped conv2d + crop.
+
+    Same rationale as ZeroStuffConvT1d: TRANSPOSE_CONV is rejected on device; this is
+    RESIZE_NEAREST + MUL + CONV_2D. Numerically equivalent to nn.ConvTranspose2d
+    (grouped convs supported). Fixed input H/W required — use patch_conv_transpose().
+    Device-proven in EDSR, PP-OCR, DewarpNet and TwinLiteNet decoders.
+    """
+
+    def __init__(self, ct: nn.ConvTranspose2d, in_h: int, in_w: int):
+        super().__init__()
+        self.stride = ct.stride[0]
+        self.kernel_size = ct.kernel_size[0]
+        self.pad = ct.padding[0]
+        self.output_padding = ct.output_padding[0]
+        self.in_h, self.in_w = in_h, in_w
+        self.groups = ct.groups
+        cin, cout, groups = ct.in_channels, ct.out_channels, ct.groups
+        k = self.kernel_size
+        # ConvT weight (Cin, Cout//G, k, k) → grouped conv2d weight (Cout, Cin//G, k, k), flipped.
+        w = ct.weight.detach()
+        w = w.view(groups, cin // groups, cout // groups, k, k)
+        w = w.permute(0, 2, 1, 3, 4).reshape(cout, cin // groups, k, k)
+        self.register_buffer('w', w.flip(2).flip(3).contiguous())
+        self.register_buffer('b', ct.bias.detach().clone() if ct.bias is not None
+                             else torch.zeros(cout))
+        mask = torch.zeros(in_h * self.stride, in_w * self.stride)
+        mask[::self.stride, ::self.stride] = 1.0
+        self.register_buffer('mask', mask[None, None])
+
+    def forward(self, x):
+        s, k, p = self.stride, self.kernel_size, self.pad
+        up = F.interpolate(x, size=(self.in_h * s, self.in_w * s), mode='nearest')
+        y = F.conv2d(up * self.mask, self.w, bias=self.b, padding=k - 1, groups=self.groups)
+        out_h = (self.in_h - 1) * s + k - 2 * p + self.output_padding
+        out_w = (self.in_w - 1) * s + k - 2 * p + self.output_padding
+        return y[:, :, p:p + out_h, p:p + out_w]
+
+
+def pixelshuffle_to_conv_transpose(upscale_factor: int, out_channels: int) -> nn.ConvTranspose2d:
+    """Rewrite nn.PixelShuffle(r) as a fixed one-hot ConvTranspose2d(k=r, stride=r).
+
+    litert-torch lowers PixelShuffle through a 6D reshape (GPU-banned: >4D). A
+    stride-r ConvTranspose2d whose kernel one-hot-selects each (channel, sub-pixel)
+    position is exact; patch_conv_transpose() then lowers it to the GPU-clean
+    zero-stuff form. Device-proven in EDSR x4.
+
+    Swap manually: ``head.upsample = pixelshuffle_to_conv_transpose(r, c_out)`` where
+    the PixelShuffle input has ``c_out * r * r`` channels.
+    """
+    r, c = upscale_factor, out_channels
+    ct = nn.ConvTranspose2d(c * r * r, c, kernel_size=r, stride=r, bias=False)
+    w = torch.zeros(c * r * r, c, r, r)
+    for ch in range(c):
+        for py in range(r):
+            for px in range(r):
+                w[ch * r * r + py * r + px, ch, py, px] = 1.0
+    ct.weight.data = w
+    return ct
+
+
+def patch_conv_transpose(model: nn.Module, dummy_input) -> int:
+    """Replace every reached ConvTranspose1d/2d with its exact zero-stuff equivalent.
+
+    Runs a dry forward pass with dummy_input to capture each layer's fixed input size
+    (forward pre-hooks), then swaps modules in place. Modules NOT reached by the dry
+    run (e.g. training-only branches) are left untouched. Skips dilated and
+    asymmetric-k/s/p 2D layers with a warning. Returns number of modules replaced.
+    """
+    captured = {}
+    hooks = []
+    for name, module in model.named_modules():
+        if isinstance(module, (nn.ConvTranspose1d, nn.ConvTranspose2d)):
+            def make_hook(layer_name):
+                def hook(mod, inputs):
+                    captured[layer_name] = inputs[0].shape
+                return hook
+            hooks.append(module.register_forward_pre_hook(make_hook(name)))
+    with torch.no_grad():
+        if isinstance(dummy_input, (tuple, list)):
+            model(*dummy_input)
+        else:
+            model(dummy_input)
+    for hook in hooks:
+        hook.remove()
+
+    count = 0
+    for name, module in list(model.named_modules()):
+        if name not in captured:
+            continue
+        if isinstance(module, nn.ConvTranspose2d):
+            symmetric = (module.kernel_size[0] == module.kernel_size[1]
+                         and module.stride[0] == module.stride[1]
+                         and module.padding[0] == module.padding[1])
+            if not symmetric or module.dilation != (1, 1):
+                log.warning(f"ConvTranspose2d at {name}: asymmetric k/s/p or dilation — skipped")
+                continue
+            replacement = ZeroStuffConvT2d(module, captured[name][-2], captured[name][-1])
+        elif isinstance(module, nn.ConvTranspose1d):
+            if module.dilation[0] != 1:
+                log.warning(f"ConvTranspose1d at {name}: dilation — skipped")
+                continue
+            replacement = ZeroStuffConvT1d(module, captured[name][-1])
+        else:
+            continue
+        parent = model
+        *path, last = name.split('.')
+        for part in path:
+            parent = getattr(parent, part)
+        setattr(parent, last, replacement)
+        count += 1
+    if count:
+        log.info(f"Patched {count} ConvTranspose → ZeroStuffConvT")
+    return count
+
+
+# ─── MaxPool2d(padding>0) → zero-pad + unpadded maxpool ───────────────────────
+
+class ZeroPadMaxPool(nn.Module):
+    """MaxPool2d with explicit zero padding instead of the -inf PADV2 lowering.
+
+    nn.MaxPool2d(padding=p) lowers to PADV2(-inf) + MAX_POOL_2D and the on-device
+    delegate rejects the -inf pad. Zero padding is exact when the pooled input is
+    non-negative (e.g. the post-ReLU ResNet stem) — the max is unaffected.
+    Device-proven in Places365, PlantNet, BiSeNet and SINet-V2 (ResNet stems).
+    """
+
+    def __init__(self, kernel_size: int = 3, stride: int = 2, padding: int = 1,
+                 ceil_mode: bool = False):
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.pad = padding
+        self.ceil_mode = ceil_mode
+
+    def forward(self, x):
+        x = F.pad(x, (self.pad, self.pad, self.pad, self.pad), value=0.0)
+        return F.max_pool2d(x, self.kernel_size, stride=self.stride, padding=0,
+                            ceil_mode=self.ceil_mode)
+
+
+def patch_maxpool_zeropad(model: nn.Module) -> int:
+    """Replace every padded nn.MaxPool2d with ZeroPadMaxPool.
+
+    Opt-in: only exact for non-negative inputs (post-ReLU/post-sigmoid) — verify
+    output parity after applying. Skips dilated and asymmetric pools with a warning.
+    Returns number of modules replaced.
+    """
+    def scalar(v):
+        return v[0] if isinstance(v, (tuple, list)) else v
+
+    count = 0
+    for name, module in list(model.named_modules()):
+        for child_name, child in list(module.named_children()):
+            if not isinstance(child, nn.MaxPool2d):
+                continue
+            k, s, p = child.kernel_size, child.stride, child.padding
+            if isinstance(k, (tuple, list)) and k[0] != k[1] or scalar(child.dilation) != 1:
+                log.warning(f"MaxPool2d at {name}.{child_name}: asymmetric or dilated — skipped")
+                continue
+            if scalar(p) == 0:
+                continue
+            setattr(module, child_name,
+                    ZeroPadMaxPool(scalar(k), scalar(s), scalar(p), child.ceil_mode))
+            count += 1
+    if count:
+        log.info(f"Patched {count} nn.MaxPool2d → ZeroPadMaxPool")
+    return count
+
+
+# ─── InstanceNorm → hierarchical-mean form (fp16 spatial-sum overflow) ────────
+
+def hierarchical_mean(x):
+    """Global spatial mean via a cascade of /2 average-pools, staying magnitude-safe.
+
+    A single global MEAN/SUM over a large map overflows the delegate's fp16
+    accumulator (it computes fp16 regardless of tensor dtype); each cascade stage
+    averages at most 4 values. The while-loop unrolls at trace time for a fixed input
+    size, so it converts to a static chain of AVERAGE_POOL_2D.
+
+    ONLY exact for power-of-two spatial dims: with odd extents the ceil_mode edge
+    windows average fewer elements and the bias is significant (max err ~0.2 measured
+    on 37x53 normalized outputs). Use with pow2-friendly maps, or pad first.
+    """
+    while x.shape[-1] > 1 or x.shape[-2] > 1:
+        kh = 2 if x.shape[-2] > 1 else 1
+        kw = 2 if x.shape[-1] > 1 else 1
+        x = F.avg_pool2d(x, (kh, kw), ceil_mode=True)
+    return x
+
+
+class SafeInstanceNorm2d(nn.Module):
+    """fp16-safe InstanceNorm2d: mean and variance via hierarchical_mean().
+
+    nn.InstanceNorm2d's full-map reductions overflow the on-device fp16 accumulator
+    at large spatial sizes. Device-proven in MODNet (512×512 mattes). Inherits
+    hierarchical_mean()'s power-of-two requirement — NOT exact for odd spatial dims.
+    """
+
+    def __init__(self, inorm: nn.InstanceNorm2d):
+        super().__init__()
+        self.eps = inorm.eps
+        if inorm.affine:
+            self.register_buffer('weight', inorm.weight.detach().clone())
+            self.register_buffer('bias', inorm.bias.detach().clone())
+        else:
+            self.weight = None
+            self.bias = None
+
+    def forward(self, x):
+        mean = hierarchical_mean(x)
+        d = x - mean
+        y = d * torch.rsqrt(hierarchical_mean(d * d) + self.eps)
+        if self.weight is not None:
+            c = y.shape[1]
+            y = y * self.weight.reshape(1, c, 1, 1) + self.bias.reshape(1, c, 1, 1)
+        return y
+
+
+def patch_instance_norm(model: nn.Module) -> int:
+    """Replace nn.InstanceNorm2d with fp16-safe SafeInstanceNorm2d.
+
+    Opt-in (fp16-wall fix). Skips track_running_stats=True instances (those normalize
+    with running statistics, not per-sample ones) with a warning.
+    Returns number of modules replaced.
+    """
+    count = 0
+    for name, module in list(model.named_modules()):
+        for child_name, child in list(module.named_children()):
+            if isinstance(child, nn.InstanceNorm2d):
+                if child.track_running_stats:
+                    log.warning(f"InstanceNorm2d at {name}.{child_name}: track_running_stats — skipped")
+                    continue
+                setattr(module, child_name, SafeInstanceNorm2d(child))
+                count += 1
+    if count:
+        log.info(f"Patched {count} nn.InstanceNorm2d → SafeInstanceNorm2d")
+    return count
+
+
+# ─── RMSNorm → fp16-safe max-normalized form ──────────────────────────────────
+
+def safe_rms(x, weight, eps: float = 1e-6):
+    """fp16-safe RMSNorm(x) * weight via per-row max-normalization.
+
+    The delegate computes fp16 regardless of dtype; in deep residual stacks the
+    stream grows large enough that mean(x^2) overflows (-> inf -> rsqrt = 0 -> the
+    whole output collapses to 0). Dividing each row by its own max first bounds x^2
+    in [0, 1] so the sum-of-squares never overflows. Mathematically identical to
+    standard RMSNorm: with m = max|x|, y = (x/m) * rsqrt(mean((x/m)^2) + eps/m^2) * w.
+    Device-proven in the 28-layer Qwen3 embedding/reranking stacks.
+    """
+    m = x.abs().amax(dim=-1, keepdim=True).clamp_min(1e-4)
+    xs = x / m
+    var = (xs * xs).mean(dim=-1, keepdim=True)
+    return xs * torch.rsqrt(var + eps / (m * m)) * weight
+
+
+def patch_rmsnorm(model: nn.Module) -> int:
+    """Rebind the forward of every *RMSNorm module to the fp16-safe safe_rms().
+
+    Matches any module whose class name contains "RMSNorm" and that carries a
+    ``weight`` plus an eps attribute (``variance_epsilon`` or ``eps`` — covers
+    transformers' per-model RMSNorm classes and torch.nn.RMSNorm). Opt-in
+    (fp16-wall fix). Returns number of modules patched.
+    """
+    count = 0
+    for name, module in model.named_modules():
+        if 'RMSNorm' in type(module).__name__ and hasattr(module, 'weight'):
+            eps = getattr(module, 'variance_epsilon', None)
+            if eps is None:
+                eps = getattr(module, 'eps', None)
+            if eps is None:
+                eps = 1e-6
+            module.forward = (lambda w, e: lambda x: safe_rms(x, w, e))(module.weight, eps)
+            count += 1
+    if count:
+        log.info(f"Patched {count} RMSNorm → safe_rms")
+    return count
+
+
+def apply_all_patches(model: nn.Module, dummy_input=None) -> dict:
+    """Apply all always-safe patches. Returns summary of changes made.
+
+    When dummy_input is given, ConvTranspose1d/2d layers are also lowered to their
+    exact zero-stuff form (the input sizes are captured with a dry forward pass).
+
+    Opt-in patches NOT applied here (apply directly when the model needs them):
+    patch_grid_sample() (deformable attention), patch_safe_layernorm() /
+    patch_rmsnorm() / patch_instance_norm() (device fp16-overflow walls),
+    patch_maxpool_zeropad() (exact only for non-negative inputs),
+    patch_gelu(model, approximation='tanh') (regression heads),
+    pixelshuffle_to_conv_transpose() (manual swap).
     """
     summary = {}
     summary['gelu'] = patch_gelu(model)
@@ -470,6 +840,8 @@ def apply_all_patches(model: nn.Module) -> dict:
     summary['deformable_conv'] = patch_deformable_conv(model)
     summary['window_attention'] = patch_window_attention(model)
     summary['patch_merging'] = patch_patch_merging(model)
+    if dummy_input is not None:
+        summary['conv_transpose'] = patch_conv_transpose(model, dummy_input)
     patch_interpolate()
     patch_normalize()
     patch_einops()

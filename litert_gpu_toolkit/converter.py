@@ -41,9 +41,9 @@ def convert_for_gpu(
 
     model.eval()
 
-    # Apply patches
+    # Apply patches (dummy_input lets ConvTranspose layers capture their fixed sizes)
     log.info("Applying GPU compatibility patches...")
-    summary = apply_all_patches(model)
+    summary = apply_all_patches(model, dummy_input)
     if verbose:
         active = {k: v for k, v in summary.items() if v}
         log.info(f"Patches applied: {active}")

@@ -109,6 +109,35 @@ Standard ViT (global attention) works because Q/K/V are always 4D: `(B, heads, t
 
 **On-device-only: ops on constant-only inputs are rejected.** Beyond the desktop op-blocklist, ML Drift's compiler rejects `MEAN` / `DIV` / `SELECT` (and similar) when **all their inputs are constants** (the desktop GPU_BAD-name check passes; the on-device *compile* fails with e.g. `MEAN: Expected 1 const input tensor(s), but node has 2 const input(s)`). Seen in EdgeTAM's perceiver: (a) `LayerNorm` applied to a constant `latents` parameter → `MEAN` over a const → **taint the constant to runtime** with `+ 1e-9 * x.mean()` (non-folding, numerically negligible); (b) softmax over a single-element sequence (1 token attending to itself) → `exp(0)/exp(0)` = `DIV` of a tensor by itself → **special-case `seq_len==1`** (the attention weight is identically 1.0, so the output is just the value); (c) a runtime `sine` position-encoding that emits `GATHER_ND`/>4D → **bake it to a constant** for the fixed feature size.
 
+## litert_gpu_toolkit — canonical patch catalog
+
+The patches described throughout this guide are packaged in `litert_gpu_toolkit/` at the
+repo root. **Import from the toolkit instead of re-implementing inline in a conversion
+script** — every re-authoring below is numerically verified against its PyTorch reference
+(`float-noise` level unless noted).
+
+`convert_for_gpu(model, dummy_input, output_path)` applies the always-safe set
+automatically. Everything else is opt-in:
+
+| Utility | Fixes | When to use | Proven in |
+|---|---|---|---|
+| `SigmoidGELU` / `patch_gelu` | `Erf` (FlexErf) ban | Default GELU replacement (fp16-safe, err ~0.01) | ViT backbones everywhere |
+| `TanhGELU` / `patch_gelu(m, approximation="tanh")` | same | Regression heads where 0.01 shifts output | Metric3D, D-FINE |
+| `ZeroStuffConvT1d/2d` / `patch_conv_transpose(m, dummy)` | `TRANSPOSE_CONV` rejected on device | Any deconv decoder; exact incl. grouped/output_padding | DAC, Matcha, Mimi, EDSR, PP-OCR, DewarpNet, TwinLiteNet |
+| `pixelshuffle_to_conv_transpose(r, c)` | PixelShuffle → 6D reshape | Swap manually, then `patch_conv_transpose` | EDSR x4 |
+| `ZeroPadMaxPool` / `patch_maxpool_zeropad` | PADV2(-inf) rejected | Padded MaxPool on non-negative input (ResNet stems) | Places365, PlantNet, BiSeNet, SINet-V2 |
+| `patch_safe_layernorm(scale=...)` | fp16 sum-of-squares overflow in LayerNorm | Device output wrong at full GPU residency; `adaptive_v2` default | Parakeet, RF-DETR, NAFNet, D-FINE |
+| `safe_rms` / `patch_rmsnorm` | fp16 overflow in RMSNorm (deep residual stacks) | Output collapses to 0 on device | Qwen3 embedding/reranking |
+| `hierarchical_mean` / `SafeInstanceNorm2d` / `patch_instance_norm` | fp16 overflow in global spatial reductions | Large maps; **pow2 spatial dims only** | MODNet |
+| `patch_grid_sample` | `grid_sample` → GATHER_ND | Deformable attention, fixed-size value maps | RF-DETR |
+| `ManualGroupNorm` / `patch_groupnorm` | GroupNorm unsupported | always-safe set | DSINE, Matcha |
+| `patch_window_attention` / `patch_patch_merging` | Swin GATHER_ND / 6D | always-safe set | Swin variants |
+| `patch_weight_standardization` | Conv2d_WS dynamic weight norm | always-safe set | DSINE |
+| `patch_interpolate` / `patch_normalize` / `patch_einops` | align_corners / div-broadcast / einops 6D | always-safe set (global monkey-patches) | various |
+
+After any fp16-wall patch (`safe_*`), re-verify on device — desktop CPU/GPU parity does
+not exercise the delegate's fp16 accumulation (residency ≠ correctness).
+
 ## Model-Specific Notes
 
 ### MobileSAM
