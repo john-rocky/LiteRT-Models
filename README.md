@@ -449,11 +449,13 @@ The first **diffusion text-to-image model generating a real image fully on the p
 | `zc_final` | final adaLN + projection | 1.2 MB | `[1,288,3840]` → `[1,288,64]` |
 | `zvae` | VAE decoder | 50 MB | `latent[1,16,32,32]` → `[1,3,256,256]` |
 
-The 6 GB monolithic DiT exceeds LiteRT's file-load limit and a phone's GPU budget, so it is **split into graphs that each compile fully on the GPU delegate and load one at a time** (peak footprint = a single sub-1 GB graph). The refined image/context tokens meet as one unified `[1,288,3840]` hidden state passed between chunks; the composition is bit-exact to the monolithic DiT (corr 1.000000 desktop, 0.966 on-device).
+The 6 GB monolithic DiT exceeds LiteRT's file-load limit and a phone's GPU budget, so it is **split into graphs that each compile fully on the GPU delegate and load one at a time** (peak footprint = a single sub-1 GB graph). The refined image/context tokens meet as one unified `[1,288,3840]` hidden state passed between chunks; the composition is bit-exact to the monolithic DiT (corr 1.000000 desktop).
 
 **GPU-delegate-only fixes** (invisible to the desktop op-checker): the learned pad-token substitution is a `MUL` right after the embed FC, which trips the Mali `bc coord for BATCH axis` compile wall (a C19 sibling) — moved to the **host** (`x*(1-pad)+pad_token*pad`), leaving graphs that are a bare FC or a refiner stack. The adaLN/attention path overflows fp16 to NaN → `GpuOptions(precision=FP32)`. A null `Environment` per `CompiledModel.create` leaks the OpenCL context and aborts after ~20 FP32 compiles → one shared `Environment`, with per-run `TensorBuffer` close.
 
-**Sample app**: [zimage/](zimage/) — the full 8-step denoising loop (cond + uncond) plus VAE run on the GPU and write the generated image; the host precomputes the encoder output, RoPE, per-step adaLN and scheduler sigmas (`zimage/scripts/gen_prep.py`). int8 renders a faithful image (on-device output corr 0.966 vs fp32; int4 is garbage).
+**Sample app**: [zimage/](zimage/) — the full 8-step denoising loop (cond + uncond) plus VAE run on the GPU and write the generated image; the host precomputes the encoder output, RoPE, per-step adaLN and scheduler sigmas (`zimage/scripts/gen_prep.py`). int8 renders a faithful image: the on-device output matches the fp32 reference at **PSNR 40.4 dB / corr 0.9994** (int4 is garbage).
+
+⭐ Two host-loop details that each cost a visible per-patch mesh if missed: the **cond and uncond prompts differ in length**, so each branch needs its own context RoPE (`cc/cs`) and cap-pad mask (the image branch is shared — same latent); and the latent must be **denormalized before the VAE** (`latents / 0.3611 + 0.1159`).
 
 # Super-Resolution
 

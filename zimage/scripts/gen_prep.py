@@ -58,6 +58,10 @@ def main():
             rec["adaln"].append(adaln.detach().clone())
             rec["xt"].append(xt[0][None].detach().clone())
             rec.setdefault("cap_branch", []).append(capf[0][None].detach().clone())
+            rec.setdefault("ctx", []).append(
+                (cc.detach().clone(), cs.detach().clone(), cpad.detach().clone()))
+            if len(rec.get("u0", [])) < 2:
+                rec.setdefault("u0", []).append(u[0].detach().clone())
             if rec["fixed"] is None:
                 rec["fixed"] = dict(
                     xc=xc.detach().clone(),
@@ -101,6 +105,30 @@ def main():
                guidance_scale=1.0, generator=g).images[0]
     img.save(f"{OUT}/ref_desktop.png")
 
+    # in-process determinism check: recompute the step-0 cond DiT output with the
+    # exact recorded inputs and the same dit object, compare to the saved u0.
+    f0 = rec["fixed"]
+    with torch.no_grad():
+        u_re = dit(rec["xt"][0], rec["cap_branch"][0], rec["adaln"][0],
+                   f0["xc"], f0["xs"], f0["cc"], f0["cs"], f0["xpad"], f0["cpad"])
+    print("[check] recompute u vs saved u0[cond]: corr "
+          f"{float(np.corrcoef(u_re.flatten(), rec['u0'][0].flatten())[0, 1]):.6f}, "
+          f"max|diff| {float((u_re[0] - rec['u0'][0]).abs().max()):.4f}")
+    save(rec["u0"][0][None], "u0_cond")
+    save(rec["u0"][1][None], "u0_unc")
+    cc1, cs1, cpad1 = rec["ctx"][1]
+    with torch.no_grad():
+        u_re1 = dit(rec["xt"][1], rec["cap_branch"][1], rec["adaln"][1],
+                    f0["xc"], f0["xs"], cc1, cs1, f0["xpad"], cpad1)
+    print("[check] uncond recompute (with UNCOND ctx) vs u0[unc]: corr "
+          f"{float(np.corrcoef(u_re1.flatten(), rec['u0'][1].flatten())[0, 1]):.6f}")
+    print("[check] xt[cond] vs xt[unc]: corr "
+          f"{float(np.corrcoef(rec['xt'][0].flatten(), rec['xt'][1].flatten())[0, 1]):.6f}, "
+          f"adaln[cond] vs adaln[unc]: corr "
+          f"{float(np.corrcoef(rec['adaln'][0].flatten(), rec['adaln'][1].flatten())[0, 1]):.6f}, "
+          f"cap[cond] vs cap[unc]: corr "
+          f"{float(np.corrcoef(rec['cap_branch'][0].flatten(), rec['cap_branch'][1].flatten())[0, 1]):.6f}")
+
     # scheduler deltas for the token-space Euler update
     sig = pipe.scheduler.sigmas.detach().cpu().numpy()
     dsigma = np.array([sig[i + 1] - sig[i] for i in range(STEPS)], dtype="<f4")
@@ -110,6 +138,11 @@ def main():
         save(v, k)
     uc = torch.cat([f["xc"], f["cc"]], dim=2); us = torch.cat([f["xs"], f["cs"]], dim=2)
     save(uc, "uc"); save(us, "us")
+    # cond and uncond prompts differ in length -> different context RoPE + cap pad
+    cc_u, cs_u, cpad_u = rec["ctx"][1]
+    save(cc_u, "cc_unc"); save(cs_u, "cs_unc"); save(cpad_u, "cpad_unc")
+    save(torch.cat([f["xc"], cc_u], dim=2), "uc_unc")
+    save(torch.cat([f["xs"], cs_u], dim=2), "us_unc")
     # CFG runs batch=2 (cond+uncond, identical adaln per step) -> dedupe to STEPS
     branches = 2 if len(rec["adaln"]) == 2 * STEPS else 1
     adaln8 = torch.cat(rec["adaln"][::branches], 0)

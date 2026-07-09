@@ -17,7 +17,7 @@ wooden table, studio lighting", 8 steps.*
   the path that runs on the GPU delegate; the weight-only-FLOAT path hangs/overflows
   on the GPU delegate, so it is NOT used here).
 - **Device-verified end-to-end** on a Pixel 8a: the full 8-step denoising loop plus
-  VAE decode run on the Mali GPU and produce the image above (≈ 27 min, FP32-compute,
+  VAE decode run on the Mali GPU and produce the image above (≈ 32 min, FP32-compute,
   recompile-per-step). The `scripts/` reproduce every graph and the exact host loop.
 
 ## How it fits an 8 GB phone: chunked sequential residency
@@ -39,7 +39,7 @@ single graph:
 
 The refined image/context tokens meet as one unified hidden state `[1,288,3840]`
 passed between chunks; the composition is bit-exact to the monolithic DiT
-(corr 1.000000 desktop, 0.966 on-device int8/FP32-GPU).
+(corr 1.000000 desktop).
 
 ## Device constraints solved (all GPU-delegate-only, invisible to the desktop checker)
 
@@ -70,7 +70,8 @@ reproduced exactly in `scripts/gen_prep.py` + `gen_verify.py`):
    **cond** and **uncond** prompts → combine with the Z-Image CFG
    `noise_pred = -(pos + guidance*(pos - neg))` → Euler update
    `latent += dsigma * noise_pred`. The image branch (`embx → refx`) is shared by
-   cond/uncond; the context branch (`embc → refc`) is step-independent (computed once).
+   cond/uncond (same latent); the context branch (`embc → refc`) is step-independent, but
+   cond and uncond each need their own (their prompts differ in length).
 4. Decode the final latent with the **VAE graph** → RGB.
 
 ⭐ Host-prep details that each cost a garbage image if wrong:
@@ -78,13 +79,17 @@ reproduced exactly in `scripts/gen_prep.py` + `gen_verify.py`):
 - The **pad-token substitution** at padded positions (arithmetic form, not SELECT).
 - The Z-Image CFG is `pos + g*(pos - neg)` **negated** (from `pipeline_z_image.py`),
   not the textbook `neg + g*(pos - neg)`; CFG is active for `guidance > 0` (batch 2).
+- The **cond and uncond prompts differ in length**, so each branch needs its *own* context
+  RoPE (`cc/cs`) and cap-pad mask (the image branch is shared — same latent). Reusing the
+  cond context for the uncond branch makes the uncond DiT wrong.
+- The latent must be **denormalized before the VAE**: `latents / scaling_factor +
+  shift_factor` (Z-Image: 0.3611, 0.1159).
 
 ## Quality / precision
 
-int8 (INTEGER-compute) is the GPU-runnable precision and renders a faithful image
-(desktop DiT-only PSNR 28.3 dB; on-device sequential-chunk output corr 0.966 vs the
-fp32 reference — a subtle grid texture, the apple clearly correct). int4 is garbage
-(PSNR 18), so int8 is the floor.
+int8 (INTEGER-compute) is the GPU-runnable precision and renders a faithful image: the
+on-device generated image matches the fp32 reference at **PSNR 40.4 dB (corr 0.9994)** —
+visually indistinguishable. int4 is garbage (PSNR 18), so int8 is the floor.
 
 ## Build & run
 
@@ -94,7 +99,7 @@ fp32 reference — a subtle grid texture, the apple clearly correct). int4 is ga
    python scripts/prep2.py --export              # z_embx / z_embc / refiners (host-mask split)
    python scripts/vae_deploy.py                  # zvae_int8_256.tflite
    python scripts/gen_prep.py                    # host inputs (gen_bins/) + fp32 reference image
-   python scripts/gen_verify.py                  # confirms the exact device loop (corr ~0.99)
+   python scripts/gen_verify.py                  # confirms the exact device loop (bit-exact)
    ```
 2. **Stage to device:** push the chunk `*.tflite` and `gen_bins/` to the app files dir
    (`install_to_device.sh`).
@@ -112,5 +117,5 @@ fp32 reference — a subtle grid texture, the apple clearly correct). int4 is ga
 - `MainActivity.kt` — Compose UI (generate on launch, show the image).
 
 > `scripts/` is ground truth; `gen_verify.py` reproduces the exact device loop in fp32
-> (corr 0.989 vs the diffusers pipeline). Per repo policy, functional validation is on
-> the device.
+> and matches the diffusers pipeline latents **bit-exactly** (max|diff| 0.0). Per repo
+> policy, functional validation is on the device.

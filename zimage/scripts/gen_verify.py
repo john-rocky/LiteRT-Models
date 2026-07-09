@@ -32,6 +32,8 @@ def main():
     xc = load("xc", (1, 1, 256, 64)); xs = load("xs", (1, 1, 256, 64))
     cc = load("cc", (1, 1, 32, 64)); cs = load("cs", (1, 1, 32, 64))
     xpad = load("xpad", (1, 256, 1)); cpad = load("cpad", (1, 32, 1))
+    cc_u = load("cc_unc", (1, 1, 32, 64)); cs_u = load("cs_unc", (1, 1, 32, 64))
+    cpad_u = load("cpad_unc", (1, 32, 1))
     dsigma = load("dsigma", (STEPS,))
     cap_cond = load("cap_b0", (1, 32, 2560)); cap_unc = load("cap_b1", (1, 32, 2560))
     uperm = torch.from_numpy(np.fromfile(f"{OUT}/unpatch_perm.bin", dtype="<i4")).long()
@@ -45,17 +47,19 @@ def main():
     def unpatch(u):
         return u.reshape(-1)[uperm].reshape(1, 16, 32, 32)
 
-    def dit_v(xt, cap, s):
-        return unpatch(dit(xt, cap, adaln[s:s + 1], xc, xs, cc, cs, xpad, cpad))
+    def dit_v(xt, cap, s, ccx, csx, cpadx):
+        return unpatch(dit(xt, cap, adaln[s:s + 1], xc, xs, ccx, csx, xpad, cpadx))
 
     with torch.no_grad():
         for s in range(STEPS):
             xt = patch(latent)
-            pos = dit_v(xt, cap_cond, s)
-            neg = dit_v(xt, cap_unc, s)
+            pos = dit_v(xt, cap_cond, s, cc, cs, cpad)          # cond context
+            neg = dit_v(xt, cap_unc, s, cc_u, cs_u, cpad_u)     # uncond context
             noise_pred = -(pos + GUID * (pos - neg))
             latent = latent + dsigma[s] * noise_pred
 
+    # VAE latent denormalization (pipeline: latents / scaling_factor + shift_factor)
+    latent = latent / pipe.vae.config.scaling_factor + pipe.vae.config.shift_factor
     print(f"[verify] final latents vs pipeline ref: corr {corr(latent, ref_latents):.6f}")
     img = pipe.vae.decode(latent).sample
     im = ((img[0].permute(1, 2, 0).clamp(-1, 1) + 1) * 127.5).round().byte().numpy()

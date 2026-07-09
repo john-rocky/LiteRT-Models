@@ -29,6 +29,8 @@ object ZImageGen {
     private const val DIM = 3840
     private const val LAT = 16 * 32 * 32
     private const val GUIDANCE = 1.0f
+    private const val VAE_SCALING = 0.3611f
+    private const val VAE_SHIFT = 0.1159f
 
     fun run(context: Context, log: (String) -> Unit): Bitmap =
         Environment.create().use { env -> generate(env, context, log) }
@@ -44,9 +46,12 @@ object ZImageGen {
 
         val capCond = bin("cap_b0"); val capUnc = bin("cap_b1")
         val adaln = bin("adaln")            // [8*256]
-        val xc = bin("xc"); val xs = bin("xs"); val cc = bin("cc"); val cs = bin("cs")
-        val uc = bin("uc"); val us = bin("us")
-        val xpad = bin("xpad"); val cpad = bin("cpad"); val xpt = bin("xpt"); val cpt = bin("cpt")
+        val xc = bin("xc"); val xs = bin("xs")
+        // cond and uncond prompts differ in length -> per-branch context RoPE + cap pad
+        val cc = bin("cc"); val cs = bin("cs"); val cpad = bin("cpad")
+        val ccUnc = bin("cc_unc"); val csUnc = bin("cs_unc"); val cpadUnc = bin("cpad_unc")
+        val uc = bin("uc"); val us = bin("us"); val ucUnc = bin("uc_unc"); val usUnc = bin("us_unc")
+        val xpad = bin("xpad"); val xpt = bin("xpt"); val cpt = bin("cpt")
         val dsigma = bin("dsigma")
         val patchPerm = ibin("patch_perm"); val unpatchPerm = ibin("unpatch_perm")
         var latent = bin("steps_0")         // initial noise [16*32*32]
@@ -55,14 +60,14 @@ object ZImageGen {
         val t0 = System.currentTimeMillis()
 
         // Context branch is step-independent: compute the refined cond/uncond context once.
-        fun contextRef(cap: FloatArray): FloatArray {
+        fun contextRef(cap: FloatArray, ccx: FloatArray, csx: FloatArray, cpadx: FloatArray): FloatArray {
             val cRaw = runner.gpu(env, "z_embc.tflite", dir, listOf(cap), log, cache)
-            val c = padMask(cRaw, cpad, cpt, NC)
-            return runner.gpu(env, "z_refc.tflite", dir, listOf(c, cc, cs), log, cache)
+            val c = padMask(cRaw, cpadx, cpt, NC)
+            return runner.gpu(env, "z_refc.tflite", dir, listOf(c, ccx, csx), log, cache)
         }
         log("precomputing context (cond + uncond)…")
-        val cRefCond = contextRef(capCond)
-        val cRefUnc = contextRef(capUnc)
+        val cRefCond = contextRef(capCond, cc, cs, cpad)
+        val cRefUnc = contextRef(capUnc, ccUnc, csUnc, cpadUnc)
 
         for (s in 0 until STEPS) {
             val ad = adaln.copyOfRange(s * 256, s * 256 + 256)
@@ -73,7 +78,7 @@ object ZImageGen {
             val xRef = runner.gpu(env, "z_refx.tflite", dir, listOf(x, xc, xs, ad), log, cache)
 
             val pos = branch(env, runner, dir, xRef, cRefCond, uc, us, ad, unpatchPerm, log, cache)
-            val neg = branch(env, runner, dir, xRef, cRefUnc, uc, us, ad, unpatchPerm, log, cache)
+            val neg = branch(env, runner, dir, xRef, cRefUnc, ucUnc, usUnc, ad, unpatchPerm, log, cache)
 
             // Z-Image CFG + flow-matching Euler update (host)
             for (i in 0 until LAT) {
@@ -83,6 +88,10 @@ object ZImageGen {
             log("step ${s + 1}/$STEPS done (${(System.currentTimeMillis() - t0) / 1000f}s)")
         }
 
+        // VAE latent denormalization (pipeline: latents / scaling_factor + shift_factor)
+        for (i in 0 until LAT) {
+            latent[i] = latent[i] / VAE_SCALING + VAE_SHIFT
+        }
         val image = runner.gpu(env, "zvae_int8_256.tflite", dir, listOf(latent), log, cache)
         log("VAE decoded (${(System.currentTimeMillis() - t0) / 1000f}s total)")
         return toBitmap(image)
