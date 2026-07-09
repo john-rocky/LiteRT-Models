@@ -38,6 +38,8 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection)
   - [TwinLiteNet (drivable area + lanes)](#twinlitenet)
 
+- [**Text-to-Image**](#text-to-image)
+  - [Z-Image-Turbo](#z-image-turbo)
 - [**Super-Resolution**](#super-resolution)
   - [EDSR (×4)](#edsr-4)
 
@@ -97,6 +99,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Text-to-Speech**](#text-to-speech)
   - [Kokoro-82M](#kokoro-82m)
   - [Matcha-TTS](#matcha-tts)
+  - [VibeVoice-Realtime-0.5B](#vibevoice-realtime-05b)
 
 - [**Vision-Language Model**](#vision-language-model)
   - [SmolVLM-256M](#smolvlm-256m)
@@ -429,6 +432,28 @@ Real-time **drivable-area + lane-line segmentation** running fully on the LiteRT
 **Conversion** (`twinlite/scripts/build_twinlite.py`, litert-torch): pure CNN → fully GPU-compatible (**270/270 nodes on the delegate, 1 partition**; device corr 0.99997/0.99998, ~44 ms) with one patch — `ConvTranspose2d` → ZeroStuffConvT2d (Mali rejects `TRANSPOSE_CONV`). CPU-exact vs PyTorch (corr 1.0).
 
 **Sample app**: [twinlite/](twinlite/) — live camera → TwinLiteNet GPU → drivable area (green) + lanes (red).
+
+# Text-to-Image
+
+### Z-Image-Turbo
+
+The first **diffusion text-to-image model generating a real image fully on the phone GPU** in this zoo, and — via chunked sequential residency — the first 6B generator verified end-to-end on a commodity 8 GB phone (Pixel 8a, Mali GPU). [Z-Image-Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) (Alibaba Tongyi-MAI, 6B, Apache-2.0) is a Single-Stream Diffusion Transformer (S3-DiT); the pipeline is Qwen3-4B text encoder → S3-DiT (8 steps, FlowMatchEuler + CFG) → VAE, exported as **INTEGER-int8** LiteRT graphs.
+
+<img src="zimage/docs/pixel8a_generated.png" width="256"> <br> *Generated on a Pixel 8a Mali GPU — "a red apple on a wooden table, studio lighting", 8 steps.*
+
+| Graph | Role | int8 size | I/O (256 px) |
+| ----- | ---- | --------- | ------------ |
+| `z_embx` / `z_refx` | image embed + noise refiner | 0.3 / 363 MB | `img[1,256,64]` → `[1,256,3840]` |
+| `z_embc` / `z_refc` | caption embed + context refiner | 10 / 355 MB | `cap[1,32,2560]` → `[1,32,3840]` |
+| `zc_main0..5` | 5 S3-DiT layers each (30 total) | 866 MB ×6 | `hidden[1,288,3840]` → `[1,288,3840]` |
+| `zc_final` | final adaLN + projection | 1.2 MB | `[1,288,3840]` → `[1,288,64]` |
+| `zvae` | VAE decoder | 50 MB | `latent[1,16,32,32]` → `[1,3,256,256]` |
+
+The 6 GB monolithic DiT exceeds LiteRT's file-load limit and a phone's GPU budget, so it is **split into graphs that each compile fully on the GPU delegate and load one at a time** (peak footprint = a single sub-1 GB graph). The refined image/context tokens meet as one unified `[1,288,3840]` hidden state passed between chunks; the composition is bit-exact to the monolithic DiT (corr 1.000000 desktop, 0.966 on-device).
+
+**GPU-delegate-only fixes** (invisible to the desktop op-checker): the learned pad-token substitution is a `MUL` right after the embed FC, which trips the Mali `bc coord for BATCH axis` compile wall (a C19 sibling) — moved to the **host** (`x*(1-pad)+pad_token*pad`), leaving graphs that are a bare FC or a refiner stack. The adaLN/attention path overflows fp16 to NaN → `GpuOptions(precision=FP32)`. A null `Environment` per `CompiledModel.create` leaks the OpenCL context and aborts after ~20 FP32 compiles → one shared `Environment`, with per-run `TensorBuffer` close.
+
+**Sample app**: [zimage/](zimage/) — the full 8-step denoising loop (cond + uncond) plus VAE run on the GPU and write the generated image; the host precomputes the encoder output, RoPE, per-step adaLN and scheduler sigmas (`zimage/scripts/gen_prep.py`). int8 renders a faithful image (on-device output corr 0.966 vs fp32; int4 is garbage).
 
 # Super-Resolution
 
@@ -845,6 +870,23 @@ Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN tim
 **Sample app**: [matcha/](matcha/) — type text, synthesize on the GPU, AudioTrack PCM_FLOAT playback.
 
 **Original project**: [shivammehta25/Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS) | [MIT](https://github.com/shivammehta25/Matcha-TTS/blob/main/LICENSE)
+
+### VibeVoice-Realtime-0.5B
+
+VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-diffusion** TTS — the first streaming AR-diffusion TTS and the first **real-attention autoregressive decoder with an on-device KV cache** in this zoo. The 24-layer Qwen2.5-0.5B backbone is split into a 4-layer text LM and a 20-layer TTS LM; each token, the TTS LM's hidden state conditions a 4-layer DDPM head that a 5-step DPM-Solver++ loop denoises into a 64-d acoustic latent, which a convolutional **σ-VAE decoder** turns into 24 kHz audio. **FFT-free** (the σ-VAE is all `Conv1d`, like the DAC codec). Runs **hybrid GPU/CPU** by device-verified placement: the diffusion head runs on the ML Drift GPU, while the two LMs and the σ-VAE decoder run as **fp32 graphs on CPU** — the LMs because Mali rejects their KV-step `FULLY_CONNECTED` shape (and fp16 collapses the 20-layer stack on ARM XNNPACK), the decoder because ML Drift **miscomputes** it (a graph-assembly buffer/scheduling bug: single-output probes show every op — conv, norm, depthwise, FFN — is bit-exact on GPU, but the assembled ConvNeXt block is wrong; identical on OpenCL/OpenGL and at fp32 — no model-side workaround). The two LMs keep their KV cache **host-side** as a packed `[1, L·nkv, Pmax, 64]` tensor fed in/out each step (the ML-Drift-safe "state as graph I/O" pattern); the voice is a precomputed prompt KV cache.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Base text LM (4L) | build via [vibevoice/scripts](vibevoice/) | 239 MB | x [1,1,896] + cos,sin [1,1,1,64] + mask [1,1,1,129] + pk,pv [1,8,128,64] | hidden [1,1,896] + k,v [1,8,1,64] | CompiledModel CPU (fp32) |
+| TTS LM (20L) | build via [vibevoice/scripts](vibevoice/) | 1193 MB | x [1,1,896] + cos,sin [1,1,1,64] + mask [1,1,1,385] + pk,pv [1,40,384,64] | hidden [1,1,896] + k,v [1,40,1,64] | CompiledModel CPU (fp32) |
+| Diffusion head | build via [vibevoice/scripts](vibevoice/) | 84 MB | noisy [1,64] + t_freq [1,256] + cond [1,896] | v [1,64] | CompiledModel GPU |
+| σ-VAE decoder | build via [vibevoice/scripts](vibevoice/) | 1378 MB | latent [1,64,128] | wav [1,1,409600] @ 24 kHz | CompiledModel CPU (fp32) |
+
+**Conversion** (litert-torch): token embedding is `GATHER` → host lookup from an mmapped fp16 table; the autoregressive KV cache is packed 4D (all layers on dim 1) with the current token **concatenated at the tail** + an additive mask over the padding slots (no in-graph scatter, keys stored post-RoPE); `scaled_dot_product_attention` → manual matmul + softmax, GQA (14 Q / 2 KV) expanded by `cat`; RoPE cos/sin fed per step from the host; `RMSNorm` → max-normalized safe form; σ-VAE `ConvTranspose1d` → `ZeroStuffConvT1d` (no `TRANSPOSE_CONV`), ConvNeXt GELU → tanh-GELU; diffusion-head sinusoidal timestep on the host, `chunk` → slicing (no `SPLIT`). Per-graph tflite-vs-torch corr 1.0; the decoder reproduces reference audio from real latents at corr 1.0. See [vibevoice/README.md](vibevoice/README.md) and [GPU Compatibility Notes](#gpu-compatibility-notes).
+
+**Sample app**: [vibevoice/](vibevoice/) — type text, synthesize on-device, AudioTrack PCM_FLOAT playback. The voice is a bundled preset (`en-Emma_woman`); the realtime checkpoint is decoder-only, so voices are exported offline (not cloned on-device).
+
+**Original project**: [microsoft/VibeVoice-Realtime-0.5B](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [MIT](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
 
 # Vision-Language Model
 

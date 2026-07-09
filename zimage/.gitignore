@@ -1,0 +1,6 @@
+.gradle/
+build/
+local.properties
+*.tflite
+app/src/main/assets/*.bin
+.idea/
