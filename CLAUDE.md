@@ -30,6 +30,8 @@ Each top-level directory listed below is **its own independent Gradle project** 
 | `real-esrgan/`     | —                           | Real-ESRGAN x4v3 super resolution                   |
 | `moge/`            | `com.moge`                  | MoGe-2 ViT-S monocular geometry (points, normals, depth, 3D) |
 | `yolo-tracking/`   | `com.yolotracking`          | YOLO11n + OSNet x0.25 DeepSORT multi-object tracking |
+| `zimage/`          | `com.zimage`                | Z-Image-Turbo 6B text-to-image (chunked int8 DiT)   |
+| `klein/`           | `com.klein`                 | FLUX.2-klein-4B text-to-image (12 chunked int8 graphs) |
 | `musicgen/`        | —                           | (work in progress)                                  |
 
 Each module's `app/src/main/java/com/<module>/` typically contains a `MainActivity.kt`, a model wrapper (e.g. `ObjectDetector.kt`, `MobileSAMSegmenter.kt`, `WhisperTranscriber.kt`), and a custom view for visualization. The voice assistant deliberately bundles its own copies of `WhisperTranscriber.kt`, `KokoroSynthesizer.kt`, etc. instead of cross-referencing other modules — see `voiceassistant/README.md` for the rationale (each module must remain standalone and independently runnable).

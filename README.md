@@ -40,6 +40,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Text-to-Image**](#text-to-image)
   - [Z-Image-Turbo](#z-image-turbo)
+  - [FLUX.2-klein-4B](#flux2-klein-4b)
 - [**Super-Resolution**](#super-resolution)
   - [EDSR (×4)](#edsr-4)
 
@@ -456,6 +457,32 @@ The 6 GB monolithic DiT exceeds LiteRT's file-load limit and a phone's GPU budge
 **Sample app**: [zimage/](zimage/) — the full 8-step denoising loop (cond + uncond) plus VAE run on the GPU and write the generated image; the host precomputes the encoder output, RoPE, per-step adaLN and scheduler sigmas (`zimage/scripts/gen_prep.py`). int8 renders a faithful image: the on-device output matches the fp32 reference at **PSNR 40.4 dB / corr 0.9994** (int4 is garbage).
 
 ⭐ Two host-loop details that each cost a visible per-patch mesh if missed: the **cond and uncond prompts differ in length**, so each branch needs its own context RoPE (`cc/cs`) and cap-pad mask (the image branch is shared — same latent); and the latent must be **denormalized before the VAE** (`latents / 0.3611 + 0.1159`).
+
+### FLUX.2-klein-4B
+
+[FLUX.2 [klein] 4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) (Black Forest Labs, Apache-2.0) is a 4B rectified-flow transformer, **step-wise distilled** — 4 steps, and `is_distilled` means the pipeline runs **no classifier-free guidance** at all, so a step is a single DiT pass rather than two. BFL's card advertises it as running "on consumer GPUs with as little as 13 GB VRAM"; here the same weights run on a Pixel 8a's Mali-G610. Pipeline: Qwen3-4B text encoder (hidden states tapped at layers 9 / 18 / 27) → DiT (5 double-stream + 20 single-stream blocks) → VAE, all **INTEGER-int8** LiteRT graphs, all on `Accelerator.GPU`.
+
+<img src="klein/docs/pixel8a_generated.png" width="256"> <br> *Generated on a Pixel 8a Mali GPU — "a red apple on a wooden table, studio lighting", 4 steps.*
+
+| Graph | Role | int8 size | I/O (256 px) |
+| ----- | ---- | --------- | ------------ |
+| `ke_enc0..2` | Qwen3-4B layers 1-9 / 10-18 / 19-27 | 912 MB ×3 | `[1,512,2560]` → `[1,512,2560]` |
+| `kc_prep` | image + context embedders, 3 modulation FCs | 166 MB | `img[1,256,128]`, `txt[1,512,7680]` → hidden + 3 mods |
+| `kc_double0/1` | 3 + 2 double-stream blocks | 739 / 492 MB | `[1,256,3072]`, `[1,512,3072]` → same |
+| `kc_single0..3` | 5 single-stream blocks each (20 total) | 615 MB ×4 | `joint[1,768,3072]` → `[1,768,3072]` |
+| `kc_final` | adaLN-continuous norm + projection | 19 MB | `[1,768,3072]` → `[1,256,128]` |
+| `kv_vae` | VAE decoder | 50 MB | `latent[1,32,32,32]` → `[1,3,256,256]` |
+
+Same chunked sequential residency as Z-Image: 6.2 GB of graphs, one resident at a time, peak footprint a single ~912 MB graph. The three encoder taps land exactly on 9-layer chunk boundaries, so each chunk's output is both the next chunk's input and one third of the conditioning. The tail — `unpack by position ids` → per-channel batch-norm denorm → 2×2 `unpatchify` — is two **pure permutations** around one elementwise op, so both ship as int32 gather maps recovered with an `arange` probe through the stock pipeline functions.
+
+⭐ **Two GPU-delegate-only walls, both new** (the desktop op-checker passes and the CPU reference is exact):
+
+1. **`BROADCAST_TO` is rejected outright** ("Operation is not supported") — and `Tensor.expand` lowers to it. Grouped-query attention's `repeat_kv` hits this *and* the >4D rule in one expression; it has to become a `CONCATENATION` of per-KV-head slices.
+2. **A broadcast `ADD` whose left operand is a `BATCH_MATMUL` result is silently miscomputed.** That is `softmax(q @ kᵀ * scale + mask[1,1,S,S])` — every masked attention. No error, no NaN: the probabilities still sum to 1 and still honour the causal and padding masks, but the logits are wrong and the image is structured garbage. **Fix: pre-expand the mask to `[1, num_heads, S, S]`** (zero extra ops, formula unchanged). The diagnostic signature is that **token 0 is bit-exact and every later token is wrong** — token 0 attends only to key 0, so it is the one row insensitive to key mixing.
+
+**Sample app**: [klein/](klein/) — the 4-step loop and the VAE run on the GPU; the host does tokenization, `embed_tokens`, the mask, both rotary tables and the scheduler (`klein/scripts/gen_prep_klein.py`). On-device output matches the fp32 `diffusers` pipeline at **PSNR 36.8 dB / corr 0.9987**, in **306 s** (encoder 35 s, ~70 s/step, VAE 7 s).
+
+⭐ The **desktop int8 gate is pessimistic**: the same graphs score 36.4 dB through the host CPU int8 path and 44.1 dB on the device. Don't reject a quantization recipe on desktop emulation alone.
 
 # Super-Resolution
 
