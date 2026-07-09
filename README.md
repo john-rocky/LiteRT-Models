@@ -67,6 +67,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
+  - [SAM 2.1 (Hiera-Tiny)](#sam-21-hiera-tiny)
   - [EdgeTAM (SAM2)](#edgetam-sam2)
   - [EdgeTAM Video (SAM2 tracking)](#edgetam-video-sam2-tracking)
 
@@ -596,6 +597,27 @@ Encoder converted via **litert-torch** (the only converter that preserves Vision
 **Sample app**: [mobilesam/](mobilesam/) — Image picker + tap-to-segment with mask overlay.
 
 **Original project**: [ChaoningZhang/MobileSAM](https://github.com/ChaoningZhang/MobileSAM) | [Apache-2.0](https://github.com/ChaoningZhang/MobileSAM/blob/master/LICENSE)
+
+### SAM 2.1 (Hiera-Tiny)
+
+The **full** SAM 2.1 (Meta) — the Hiera hierarchical ViT, not the distilled EdgeTAM — running entirely on **CompiledModel GPU**. Tap a point, get a mask. The heavy Hiera image encoder runs once per image; the tiny mask decoder runs per tap. Also the subject of a cross-framework benchmark: **[LiteRT vs MLX on the same Apple GPU](sam2/BENCHMARK.md)**.
+
+Converted with **litert-torch** from the `transformers` `Sam2Model`. The SAM 2 mask decoder converts unchanged; the Hiera encoder needs three numerically-exact rewrites (parity held at corr 1.0 after each): **bake the windowed positional embedding** (constant for a fixed 1024² input — removes the bicubic `GATHER_ND` and the tiled `BROADCAST_TO`), **4-D window partition/unpartition** (the upstream 6-D `view`+`permute` becomes split-H→transpose→split-W; ML Drift rejects >4-D tensors), and **4-D multi-scale attention** (the fused 5-D `qkv` reshape becomes a channel-wise q/k/v slice). Result: `banned ops = NONE`, `>4-D tensors = 0` for both graphs.
+
+> ⚠ **Keep the batch dim in attention.** A rank-3 attention (`q/k/v` shaped `[heads, N, d]`) compiles, delegates every node, passes the op gate and matches PyTorch on the host — yet ML Drift **silently mis-computes it** (corr 0.265 vs CPU on a Pixel 8a; still 0.473 with fp32 GPU compute forced, so it is a correctness bug, not an fp16 wall). See [GPU Compatibility Notes](#gpu-compatibility-notes).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Encoder | [sam2_encoder.tflite](https://huggingface.co/mlboydaisuke/SAM2-hiera-tiny-LiteRT) | 80 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 4194304] (ie \| fpn0 \| fpn1) | CompiledModel GPU |
+| Decoder | [sam2_decoder.tflite](https://huggingface.co/mlboydaisuke/SAM2-hiera-tiny-LiteRT) | 17 MB | Float32 [1, 4194816] (ie \| sparse \| fpn0 \| fpn1) | Masks [1, 3, 256, 256] | CompiledModel GPU |
+
+**Preprocessing**: resize to 1024×1024, divide by 255, ImageNet mean/std `[0.485,0.456,0.406]`/`[0.229,0.224,0.225]`, NCHW planar. The point→token prompt encoder runs in Kotlin/Swift from `sam2_prompt.bin`.
+
+**Fidelity**: converted graphs match the PyTorch model at corr **1.0** (mask IoU 1.0/0.997/1.0). Device (all `fullyGPU`, mask foreground ≈ the 64.9k-px reference): Pixel 8a GPU enc **610 ms** / dec **76 ms**; iPhone 17 Pro (Metal) enc **248 ms** / dec **16 ms**.
+
+**Sample apps**: [sam2/](sam2/) (Android, tap-to-segment + headless benchmark), [sam2-ios/](sam2-ios/) (iOS, LiteRT `CompiledModel` C API on Metal), [sam2-mlx-ios/](sam2-mlx-ios/) (iOS, a full **mlx-swift** port of the MLX SAM 2 image path, corr 1.0 vs the Python reference — used as the MLX side of the benchmark). Conversion: [sam2/scripts/convert_sam2.py](sam2/scripts/convert_sam2.py).
+
+**Original project**: [facebook/sam2.1-hiera-tiny](https://huggingface.co/facebook/sam2.1-hiera-tiny) ([facebookresearch/sam2](https://github.com/facebookresearch/sam2)) | [Apache-2.0](https://github.com/facebookresearch/sam2/blob/main/LICENSE)
 
 ### EdgeTAM (SAM2)
 
@@ -1434,6 +1456,7 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 - All tensors must be 4D or less
 - No dynamic dimensions (-1) in reshape
 - Avoid: TOPK_V2, GATHER, GATHER_ND, CAST (float-int), GELU, PACK, SPLIT
+- ⚠ **Never collapse the batch dim of an attention / batched-matmul chain.** A rank-3 SDPA (`q/k/v` as `[heads, N, d]`) compiles, delegates every node, passes the op gate and matches the host exactly — yet ML Drift **silently returns wrong values** (SAM 2.1 mask decoder: corr **0.265** vs CPU on a Pixel 8a; still **0.473** with fp32 GPU compute forced, so it is a correctness bug, not an fp16 wall). Keep tensors at rank 4 (`[1, heads, N, d]`) — that also ran ~20% faster here. **Full GPU residency + a clean op gate + desktop parity do not imply correctness**; only a numeric GPU-vs-CPU check on device catches this.
 
 **Proven conversion paths**:
 1. **SavedModel → TFLiteConverter** — Eliminates PACK/SPLIT ops (used for YOLO11)

@@ -1,0 +1,22 @@
+# Build outputs
+build/
+.gradle/
+local.properties
+.idea/
+
+# Model files (downloaded / converted, never committed)
+*.tflite
+*.onnx
+*.pt
+*.pth
+*.bin
+app/src/main/assets/*.tflite
+app/src/main/assets/test.jpg
+scripts/output/
+scripts/__pycache__/
+scripts/.cache/
+
+# Gradle wrapper binary / scripts (not committed)
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
