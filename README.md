@@ -97,6 +97,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Text-to-Speech**](#text-to-speech)
   - [Kokoro-82M](#kokoro-82m)
   - [Matcha-TTS](#matcha-tts)
+  - [Dia2-1B (dialogue)](#dia2-1b-dialogue)
 
 - [**Vision-Language Model**](#vision-language-model)
   - [SmolVLM-256M](#smolvlm-256m)
@@ -845,6 +846,29 @@ Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN tim
 **Sample app**: [matcha/](matcha/) — type text, synthesize on the GPU, AudioTrack PCM_FLOAT playback.
 
 **Original project**: [shivammehta25/Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS) | [MIT](https://github.com/shivammehta25/Matcha-TTS/blob/main/LICENSE)
+
+### Dia2-1B (dialogue)
+
+Dia2-1B: two-speaker **dialogue** TTS built as a Moshi-style **RQ-Transformer** — the first dialogue TTS and the first RQ-Transformer in this zoo. Once per 12.5 Hz frame a 30-layer *temporal* transformer emits a word-timing action plus Mimi codebook 0; a 3-layer *depformer* then autoregressively fills the remaining 31 codebooks for that same frame. Mimi (32 quantizers) decodes the codes to 24 kHz audio.
+
+All graphs run on **CPU (fp32)**: the Mali ML Drift delegate rejects the LMs' KV-step `FULLY_CONNECTED` weight shapes, and fp16 collapses these deep stacks on ARM XNNPACK. The KV caches, RoPE, embedding sums, depformer projections and all sampling are host-side Kotlin; the graphs are pure step functions. Classifier-free guidance (`cfg_scale = 2.0`) runs a second, unconditional branch each frame, so a frame costs 2 temporal steps and 2x31 depformer stages.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Temporal transformer | dia2_temporal_fp32.tflite | 3.0 GB | emb [1,1,1024] + RoPE cos/sin + mask + packed KV | hidden [1,1,1024], action [1,1,2], cb0 [1,1,2050], new KV | LiteRT CompiledModel (CPU) |
+| Depformer x3 | dia2_depformer_wi{0,1,2}_fp32.tflite | 164 MB each | dep_in [1,1,1024] + RoPE + mask + packed KV | hidden [1,1,1024], new KV | LiteRT CompiledModel (CPU) |
+| Mimi RVQ decode | dia2_mimi_dequant.tflite | 68 MB | codes [1,32,1] float | latent [1,512,1] | LiteRT CompiledModel (CPU) |
+| Mimi decoder | dia2_mimi_decode_t256.tflite | 164 MB | latent [1,512,256] | audio [1,1,491520] @ 24 kHz | LiteRT CompiledModel (CPU) |
+
+**Three things that are easy to get wrong.** (1) Both text streams carry **real word tokens**, not new-word/pad markers: on a new word the main stream emits the word's first token while the second stream emits `NEW_WORD`, and during the padding frames that follow, the main stream drains the rest of the word while the second stream drains a two-word lookahead. (2) Each codebook lags the aligned timeline by a **delay** (16 frames for cb0, 18 for the rest) that must be undone before decoding, or the audio comes out muffled. (3) Mimi's decode path is upsample -> **causal** decoder transformer -> SEANet, so its receptive field is unbounded; decoding in chunks costs ~13% relative error, while one 256-frame window with a zeroed tail is exact (corr **0.999999**).
+
+**The speaker is sampled.** With no voice prefix Dia2 draws a new speaker every run (median F0 wanders over a ~120 Hz range); classifier-free guidance does not fix that, it only steadies levels. The model's own remedy is a **voice prefix**, which normally needs Whisper word timings and a Mimi *encoder*. Both are host-only, so `scripts/bake_prefix.py` precomputes the prompt offline into a 13 kB JSON (aligned Mimi codes, `new_word_steps`, prefix entries); on device only the warm-up runs, replaying the prompt through the temporal transformer to prime both KV caches. On-device the speakers then track their prompts (S1 214 Hz / S2 114 Hz against prompts of 247 Hz / 88 Hz).
+
+A 4-second utterance takes ~190 s on a Pixel 8a and peaks at ~4.6 GB RSS — close other apps.
+
+**Sample app**: [dia2/](dia2/) — type a `[S1]`/`[S2]` script, generate, AudioTrack playback.
+
+**Original project**: [nari-labs/Dia2-1B](https://huggingface.co/nari-labs/Dia2-1B) | [Apache-2.0](https://huggingface.co/nari-labs/Dia2-1B)
 
 # Vision-Language Model
 
