@@ -81,3 +81,23 @@ Most of these patches are pre-packaged in `litert_gpu_toolkit` — prefer `conve
 - Keep the repo small. Do not commit CoreML models, build outputs, or other large/derived files.
 - **Build testing is done on the actual device** — do not run `./gradlew assemble` etc. as a validation step. Edit, then hand off.
 - Code comments and UI strings are in **English**, even though the user often communicates in Japanese.
+
+## Google style guide — strict SECOND PASS (Shuangfeng requirement, 2026-07-07)
+
+All code destined for litert-samples PRs is **teaching material** ("high quality codes to share with humans to learn") and must END UP strictly following https://google.github.io/styleguide/. But the workflow is **two-phase, by the user's explicit policy**:
+
+1. **Draft phase — write freely.** While solving the problem (conversion debugging, app wiring, device iteration), do NOT constrain the writing with style rules; that risks regressing the agent's problem-solving. Quick names, scratch logging, long functions are all fine here.
+2. **Style pass — before commit/PR.** Once it works, rewrite to strict Google style (rules below) as a dedicated pass. Nothing reaches a PR without this pass.
+
+**Kotlin (Android Kotlin style guide):**
+- KDoc on every public class/function/property; explain the *why* for non-obvious logic.
+- Descriptive names (no `tmp`, `ret`, `x2`); constants as `private const val UPPER_SNAKE`; no magic numbers inline.
+- No wildcard imports, no dead code, no commented-out blocks, no debug `Log.d` leftovers.
+- Short focused functions — split anything doing more than one job; 4-space indent, 100-col limit.
+- License header identical to the existing Google-authored samples in the repo.
+
+**Python (Google Python Style Guide):**
+- Module docstring, Google-format function docstrings (Args/Returns/Raises), type hints on public functions.
+- Top-level UPPER_SNAKE constants; `if __name__ == "__main__":` guard; 4-space indent, 80-col target.
+
+**Verification for multi-file refactors (user-approved exception 2026-07-07):** before pushing a style-only sweep commit, run a compile check (`./gradlew compileDebugKotlin` for the touched app, `python -m py_compile` for scripts). This is breakage-verification, not build testing — the on-device rule still stands for functional validation.
