@@ -30,6 +30,10 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Pose Estimation**](#pose-estimation)
   - [YOLO26n-pose](#yolo26n-pose)
+  - [RTMPose-s](#rtmpose-s)
+  - [RTMW-m (whole-body, 133 keypoints)](#rtmw-m-whole-body-133-keypoints)
+  - [RTMPose-Hand (21 keypoints)](#rtmpose-hand-21-keypoints)
+  - [RTMPose-Animal (AP-10K, 17 keypoints)](#rtmpose-animal-ap-10k-17-keypoints)
 
 - [**Document Dewarping**](#document-dewarping)
   - [DewarpNet](#dewarpnet)
@@ -67,6 +71,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
+  - [SAM 2.1 (Hiera-Tiny)](#sam-21-hiera-tiny)
   - [EdgeTAM (SAM2)](#edgetam-sam2)
   - [EdgeTAM Video (SAM2 tracking)](#edgetam-video-sam2-tracking)
 
@@ -80,9 +85,11 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Inpainting**](#inpainting)
   - [LaMa-Dilated](#lama-dilated)
+  - [MI-GAN (mobile inpainting / object removal)](#mi-gan-mobile-inpainting--object-removal)
 
 - [**Zero-Shot Classification**](#zero-shot-classification)
   - [CLIP ViT-B/32](#clip-vit-b32)
+  - [Places365 ResNet18 (scene recognition)](#places365-resnet18-scene-recognition)
 
 - [**Dense Feature Visualization**](#dense-feature-visualization)
   - [DINOv2 ViT-S/14](#dinov2-vit-s14)
@@ -93,10 +100,12 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Speech Recognition**](#speech-recognition)
   - [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc)
   - [Whisper-tiny](#whisper-tiny)
+  - [wav2vec2-CTC (fully-GPU, single-pass)](#wav2vec2-ctc-fully-gpu-single-pass)
 
 - [**Text-to-Speech**](#text-to-speech)
   - [Kokoro-82M](#kokoro-82m)
   - [Matcha-TTS](#matcha-tts)
+  - [Dia2-1B (dialogue)](#dia2-1b-dialogue)
   - [VibeVoice-Realtime-0.5B](#vibevoice-realtime-05b)
 
 - [**Vision-Language Model**](#vision-language-model)
@@ -163,6 +172,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Monocular Geometry Estimation**](#monocular-geometry-estimation)
   - [MoGe-2 ViT-S](#moge-2-vit-s)
   - [Depth Anything 3 ViT-S (Small)](#depth-anything-3-vit-s-small)
+  - [Metric3D v2 ViT-S](#metric3d-v2-vit-s)
 
 - [**Text Embedding (RAG)**](#text-embedding-rag)
   - [Qwen3-Embedding-0.6B](#qwen3-embedding-06b)
@@ -173,6 +183,28 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [Llama-3.2-3B-Instruct](#llama-32-3b-instruct)
   - [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512)
   - [SmolLM3-3B](#smollm3-3b)
+
+- [**Face Detection**](#face-detection)
+  - [YuNet](#yunet)
+  - [RTMPose-Face (WFLW, 98-point face alignment)](#rtmpose-face-wflw-98-point-face-alignment)
+
+- [**Gaze Estimation**](#gaze-estimation)
+  - [L2CS-Net](#l2cs-net)
+
+- [**Saliency Prediction**](#saliency-prediction)
+  - [UniSal](#unisal)
+
+- [**Line Detection**](#line-detection)
+  - [M-LSD-tiny](#m-lsd-tiny)
+
+- [**Style Transfer**](#style-transfer)
+  - [Fast Neural Style (4 styles)](#fast-neural-style-4-styles)
+
+- [**Low-Light Enhancement**](#low-light-enhancement)
+  - [CPGA-Net](#cpga-net)
+
+- [**Image Restoration**](#image-restoration)
+  - [NAFNet (deblur)](#nafnet-deblur)
 
 # How to use
 
@@ -384,6 +416,58 @@ Converted via **litert-torch** by wrapping the head with `end2end=False, export=
 **Preprocessing**: RGB normalized to 0-1 (divide by 255), planar NCHW layout. No ImageNet mean/std.
 
 **Sample app**: [yolo-pose/](yolo-pose/) — Camera / Image / Video mode toggle, skeleton overlay matching either FILL_CENTER (camera) or FIT_CENTER (image/video).
+
+### RTMPose-s
+
+RTMPose-s (mmpose, CSPNeXt + RTMCC/SimCC head): the SOTA real-time **top-down** 2D human pose model — 17 COCO keypoints for a centered person — running **fully on the GPU** (`256/256` LITERT_CL on a Pixel 8a, **~4 ms**, fp16 **11.1 MB**). Apache-2.0 (vs the YOLO pose model's AGPL), device-vs-PyTorch SimCC corr **0.999**, keypoints within **0.3 px**.
+
+Converted via **litert-torch** with two numerically-exact, on-device-only re-authorings (both pass the desktop op-check yet were needed for a correct Mali result — *residency ≠ correctness*): (1) the RTMCC **`ScaleNorm` (RMS)** input reaches ≈|274| so its `Σx²`≈3.6M **overflows fp16** on Mali → `norm=∞` → all-zero head; fixed by scaling `x` down before squaring (same class as the NAFNet SafeLayerNorm). (2) The GAU attention **`act@act` BMM** → broadcast-multiply + reduce-sum (K=17 tokens).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtmpose_s_fp16.tflite](https://huggingface.co/litert-community/RTMPose-s-LiteRT) | 11.1 MB | Float32 [1, 3, 256, 192] NCHW | simcc_x [1,17,384], simcc_y [1,17,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmpose/](rtmpose/) |
+
+**Output format**: two 1D SimCC distributions per keypoint; argmax over the bins (÷ split=2) → pixel x/y. **Preprocessing**: center-crop to 3:4, resize 192×256, ImageNet 0-255 normalize, NCHW. Top-down (one centered person).
+
+**Sample app**: [rtmpose/](rtmpose/) — image picker + COCO skeleton overlay.
+
+
+### RTMW-m (whole-body, 133 keypoints)
+
+RTMW-m (mmpose, CSPNeXt + CSPNeXtPAFPN neck + RTMW/SimCC head): **whole-body** 2D pose — **133 COCO-WholeBody keypoints** (17 body + 6 feet + 68 face + 42 hands) for a centered person. The model ControlNet/animation pipelines use. Runs **fully on the GPU** (`531/531` LITERT_CL on a Pixel 8a, **~6 ms**, fp16 **66 MB**), device-vs-PyTorch SimCC corr **0.999**, keypoints within **0.2 px**.
+
+Converted via **litert-torch** with the RTMPose-family re-authorings (SafeRMSNorm for the `ScaleNorm` fp16 overflow + GAU `act@act` BMM → broadcast-reduce) **plus** `nn.PixelShuffle` → depth-to-space `ZeroStuffConvT2d` (the RTMW head's PixelShuffle upsample lowers to a 6D tensor; the fixed depth-to-space `ConvTranspose2d` keeps it 4D — reused from NAFNet/Metric3D).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtmw_fp16.tflite](https://huggingface.co/litert-community/RTMW-m-WholeBody-LiteRT) | 66 MB | Float32 [1, 3, 256, 192] NCHW | simcc_x [1,133,384], simcc_y [1,133,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmw/](rtmw/) |
+
+**Sample app**: [rtmw/](rtmw/) — image picker + whole-body skeleton (body/feet/face/hands color-coded).
+
+
+### RTMPose-Hand (21 keypoints)
+
+RTMPose-m hand (mmpose, CSPNeXt + RTMCC/SimCC head): **hand** pose — the **21 standard hand keypoints** (wrist + 4 joints × 5 fingers) for a centered hand. Runs **fully on the GPU** (`333/333` LITERT_CL on a Pixel 8a, **~4 ms**, fp16 **28 MB**), device-vs-PyTorch SimCC corr **0.999**. Same RTMPose-family re-authorings as the body model (no PixelShuffle — no neck).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtmhand_fp16.tflite](https://huggingface.co/litert-community/RTMPose-Hand-LiteRT) | 28 MB | Float32 [1, 3, 256, 256] NCHW | simcc_x [1,21,512], simcc_y [1,21,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmhand/](rtmhand/) |
+
+**Sample app**: [rtmhand/](rtmhand/) — image picker + 21-keypoint hand skeleton (per-finger color).
+
+
+### RTMPose-Animal (AP-10K, 17 keypoints)
+
+[RTMPose](https://github.com/open-mmlab/mmpose) (mmpose, Apache-2.0) **animal pose** trained on **AP-10K**: 17 animal keypoints (eyes, nose, neck, tail root, and the four limbs) for pets / wildlife. The **same model family** as RTMPose-s above — only the config/checkpoint change to AP-10K, and the two on-device Mali fixes (SafeRMSNorm + GAU broadcast-reduce) transfer **unchanged**. Runs **fully on the GPU** (`333/333` LITERT_CL on a Pixel 8a, **~5 ms**, device-vs-PyTorch SimCC corr **0.999**, 17/17 keypoints).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtm_animal_fp16.tflite](https://huggingface.co/litert-community/RTMPose-Animal-AP10K-LiteRT) | 27.5 MB | Float32 [1, 3, 256, 256] NCHW | simcc_x [1,17,512], simcc_y [1,17,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmanimal/](rtmanimal/) |
+
+**Output**: output[0] = simcc_x, output[1] = simcc_y; each keypoint = `argmax` over its 1D SimCC (bins = pixels × 2). **Preprocessing**: center-crop to square, resize 256×256, mmpose mean/std (RGB, 0-255).
+
+**Sample app**: [rtmanimal/](rtmanimal/) — image picker + 17-keypoint AP-10K animal skeleton.
+
 
 # Document Dewarping
 
@@ -598,6 +682,27 @@ Encoder converted via **litert-torch** (the only converter that preserves Vision
 
 **Original project**: [ChaoningZhang/MobileSAM](https://github.com/ChaoningZhang/MobileSAM) | [Apache-2.0](https://github.com/ChaoningZhang/MobileSAM/blob/master/LICENSE)
 
+### SAM 2.1 (Hiera-Tiny)
+
+The **full** SAM 2.1 (Meta) — the Hiera hierarchical ViT, not the distilled EdgeTAM — running entirely on **CompiledModel GPU**. Tap a point, get a mask. The heavy Hiera image encoder runs once per image; the tiny mask decoder runs per tap. Also the subject of a cross-framework benchmark: **[LiteRT vs MLX on the same Apple GPU](sam2/BENCHMARK.md)**.
+
+Converted with **litert-torch** from the `transformers` `Sam2Model`. The SAM 2 mask decoder converts unchanged; the Hiera encoder needs three numerically-exact rewrites (parity held at corr 1.0 after each): **bake the windowed positional embedding** (constant for a fixed 1024² input — removes the bicubic `GATHER_ND` and the tiled `BROADCAST_TO`), **4-D window partition/unpartition** (the upstream 6-D `view`+`permute` becomes split-H→transpose→split-W; ML Drift rejects >4-D tensors), and **4-D multi-scale attention** (the fused 5-D `qkv` reshape becomes a channel-wise q/k/v slice). Result: `banned ops = NONE`, `>4-D tensors = 0` for both graphs.
+
+> ⚠ **Keep the batch dim in attention.** A rank-3 attention (`q/k/v` shaped `[heads, N, d]`) compiles, delegates every node, passes the op gate and matches PyTorch on the host — yet ML Drift **silently mis-computes it** (corr 0.265 vs CPU on a Pixel 8a; still 0.473 with fp32 GPU compute forced, so it is a correctness bug, not an fp16 wall). See [GPU Compatibility Notes](#gpu-compatibility-notes).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Encoder | [sam2_encoder.tflite](https://huggingface.co/mlboydaisuke/SAM2-hiera-tiny-LiteRT) | 80 MB | Float32 [1, 3, 1024, 1024] NCHW | Float32 [1, 4194304] (ie \| fpn0 \| fpn1) | CompiledModel GPU |
+| Decoder | [sam2_decoder.tflite](https://huggingface.co/mlboydaisuke/SAM2-hiera-tiny-LiteRT) | 17 MB | Float32 [1, 4194816] (ie \| sparse \| fpn0 \| fpn1) | Masks [1, 3, 256, 256] | CompiledModel GPU |
+
+**Preprocessing**: resize to 1024×1024, divide by 255, ImageNet mean/std `[0.485,0.456,0.406]`/`[0.229,0.224,0.225]`, NCHW planar. The point→token prompt encoder runs in Kotlin/Swift from `sam2_prompt.bin`.
+
+**Fidelity**: converted graphs match the PyTorch model at corr **1.0** (mask IoU 1.0/0.997/1.0). Device (all `fullyGPU`, mask foreground ≈ the 64.9k-px reference): Pixel 8a GPU enc **610 ms** / dec **76 ms**; iPhone 17 Pro (Metal) enc **248 ms** / dec **16 ms**.
+
+**Sample apps**: [sam2/](sam2/) (Android, tap-to-segment + headless benchmark), [sam2-ios/](sam2-ios/) (iOS, LiteRT `CompiledModel` C API on Metal), [sam2-mlx-ios/](sam2-mlx-ios/) (iOS, a full **mlx-swift** port of the MLX SAM 2 image path, corr 1.0 vs the Python reference — used as the MLX side of the benchmark). Conversion: [sam2/scripts/convert_sam2.py](sam2/scripts/convert_sam2.py).
+
+**Original project**: [facebook/sam2.1-hiera-tiny](https://huggingface.co/facebook/sam2.1-hiera-tiny) ([facebookresearch/sam2](https://github.com/facebookresearch/sam2)) | [Apache-2.0](https://github.com/facebookresearch/sam2/blob/main/LICENSE)
+
 ### EdgeTAM (SAM2)
 
 EdgeTAM (Meta, CVPR 2025): on-device Segment Anything 2. Tap an object to segment it. RepViT backbone + FPN neck encoder (runs once per image) and a SAM2 mask decoder (runs per tap) — **both on CompiledModel GPU**. Image-segment mode only (the novel 2D Spatial Perceiver lives in the video-memory path, skipped). 9.1M params.
@@ -712,6 +817,21 @@ Pre-converted TFLite from [Qualcomm AI Hub](https://aihub.qualcomm.com/models/la
 
 **Sample app**: [lama/](lama/) — Image picker + finger drawing mask + inpainting with before/after toggle.
 
+### MI-GAN (mobile inpainting / object removal)
+
+[MI-GAN](https://github.com/Picsart-AI-Research/MI-GAN) (Picsart AI Research, **ICCV 2023**, MIT): a "magic eraser" — paint over an object and it is removed and inpainted. A mobile-designed StyleGAN-style generator (separable convs, nearest-upsample, **no norm**) — far smaller/faster than LaMa above. Verified **fully on the GPU** (`509/509` LITERT_CL on a Pixel 8a, **~6 ms** at 512×512, device-vs-PyTorch corr **0.99998**, **16.3 MB** fp16).
+
+Converted via **litert-torch** with **no re-authoring** — the inference generator is already GPU-clean (depthwise-separable conv, `nn.Upsample(nearest)` + FIR-filter grouped conv, leaky-ReLU clamp → `MAXIMUM`/`MINIMUM`, no normalization). The FFT-free, norm-free generator lane.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [migan_fp16.tflite](https://huggingface.co/litert-community/MI-GAN-512-Places2-LiteRT) | 16.3 MB | Float32 [1, 4, 512, 512] NCHW (`concat(mask−0.5, rgb·mask)`) | Float32 [1, 3, 512, 512] ([−1,1]) | [Picsart-AI-Research/MI-GAN](https://github.com/Picsart-AI-Research/MI-GAN) | [MIT](https://github.com/Picsart-AI-Research/MI-GAN/blob/main/LICENSE) | [migan/](migan/) |
+
+**I/O**: input `concat(mask−0.5, rgb·mask)` (rgb ∈ [−1,1], mask = 1 keep / 0 erase); composite back as `rgb·mask + out·(1−mask)`. **Preprocessing**: center-crop, resize 512×512.
+
+**Sample app**: [migan/](migan/) — image picker + finger-paint mask + on-device erase.
+
+
 # Zero-Shot Classification
 
 ### CLIP ViT-B/32
@@ -732,6 +852,21 @@ Converted via **litert-torch** (ViT architecture). Text embeddings pre-computed 
 **Sample app**: [clip/](clip/) — Image picker + top-10 classification results with confidence bars.
 
 **Original project**: [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) | [MIT](https://github.com/mlfoundations/open_clip/blob/main/LICENSE)
+
+### Places365 ResNet18 (scene recognition)
+
+ResNet18 trained on [Places365](http://places2.csail.mit.edu/) (CSAILVision, MIT): **scene/place recognition** across **365 categories** (beach, kitchen, forest, office, restaurant, …) — a distinct task from object classification (it answers *what kind of place* a photo is). Pure CNN → runs **fully on the GPU** (`61/61` LITERT_CL on a Pixel 8a, **~2 ms**, fp16 **22.8 MB**, device-vs-PyTorch corr **1.0**, top-1 match).
+
+Converted via **litert-torch** with two numerically-exact re-authorings: the global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`, and the ResNet stem `MaxPool2d(3,s2,p1)` → **zero-pad + valid max-pool** (PyTorch's max-pool pads with `-inf` → a `PADV2` the Mali delegate won't delegate; since the pool follows a ReLU, a 0-pad is exactly equivalent and emits a delegatable `PAD`).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [places_fp16.tflite](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT) | 22.8 MB | Float32 [1, 3, 224, 224] NCHW | Logits [1, 365] | [CSAILVision/places365](https://github.com/CSAILVision/places365) | [MIT](https://github.com/CSAILVision/places365/blob/master/LICENSE) | [places365/](places365/) |
+
+**Preprocessing**: center-crop, resize to 224×224, /255, ImageNet mean/std, NCHW. Output 365-class scene logits; softmax + argmax for top-k.
+
+**Sample app**: [places365/](places365/) — image picker + top-5 scene categories.
+
 
 # Dense Feature Visualization
 
@@ -804,6 +939,23 @@ Encoder converted via **litert-torch** with SigmoidGELU patch. Decoder exported 
 
 **Original project**: [openai/whisper](https://github.com/openai/whisper) | [MIT](https://github.com/openai/whisper/blob/main/LICENSE)
 
+### wav2vec2-CTC (fully-GPU, single-pass)
+
+[wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) (Facebook, Apache-2.0) running **fully on the CompiledModel GPU**. Unlike Whisper's encoder–decoder, the **CTC** head needs **no autoregressive decoder** — it's one GPU graph, a **single forward pass** (`997/997` LITERT_CL on a Pixel 8a, **~22 ms** for a 10 s clip, device-vs-PyTorch corr **0.99998**, **exact** transcription). CTC greedy decode runs on the host. **Zero FFT** — raw 16 kHz waveform → 1D-conv feature extractor → 12-layer transformer → CTC head.
+
+Re-authorings (all numerically-equivalent): GELU → tanh-GELU; feature-extractor `GroupNorm` → 4D reshape `(B,G,C//G,T)` mean/var (kills `GATHER_ND`; wav2vec2's GroupNorm is per-channel-over-time, so fp16-precise on Mali — unlike a `GroupNorm(1)` joint reduction, which fp16-walls); fold the `pos_conv` weight-norm; bidirectional mask → None.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| wav2vec2-CTC | [w2v2_ctc_fp16.tflite](https://huggingface.co/litert-community/wav2vec2-base-960h-CTC-LiteRT) | 190 MB FP16 | waveform [1, 160000] @ 16 kHz | logits [1, 499, 32] | CompiledModel GPU |
+
+**Preprocessing**: mono 16 kHz, zero-mean / unit-variance, padded/truncated to 10 s. **Decoding**: CTC greedy (argmax per frame → collapse repeats → drop blanks) in Kotlin.
+
+**Sample app**: [asr/](asr/) — "Hold to Talk" mic + bundled sample clip + transcription display.
+
+**Original project**: [facebook/wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) | [Apache-2.0](https://github.com/facebookresearch/fairseq/blob/main/LICENSE)
+
+
 # Text-to-Speech
 
 ### Kokoro-82M
@@ -847,6 +999,29 @@ Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN tim
 
 **Original project**: [shivammehta25/Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS) | [MIT](https://github.com/shivammehta25/Matcha-TTS/blob/main/LICENSE)
 
+### Dia2-1B (dialogue)
+
+Dia2-1B: two-speaker **dialogue** TTS built as a Moshi-style **RQ-Transformer** — the first dialogue TTS and the first RQ-Transformer in this zoo. Once per 12.5 Hz frame a 30-layer *temporal* transformer emits a word-timing action plus Mimi codebook 0; a 3-layer *depformer* then autoregressively fills the remaining 31 codebooks for that same frame. Mimi (32 quantizers) decodes the codes to 24 kHz audio.
+
+All graphs run on **CPU (fp32)**: the Mali ML Drift delegate rejects the LMs' KV-step `FULLY_CONNECTED` weight shapes, and fp16 collapses these deep stacks on ARM XNNPACK. The KV caches, RoPE, embedding sums, depformer projections and all sampling are host-side Kotlin; the graphs are pure step functions. Classifier-free guidance (`cfg_scale = 2.0`) runs a second, unconditional branch each frame, so a frame costs 2 temporal steps and 2x31 depformer stages.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Temporal transformer | dia2_temporal_fp32.tflite | 3.0 GB | emb [1,1,1024] + RoPE cos/sin + mask + packed KV | hidden [1,1,1024], action [1,1,2], cb0 [1,1,2050], new KV | LiteRT CompiledModel (CPU) |
+| Depformer x3 | dia2_depformer_wi{0,1,2}_fp32.tflite | 164 MB each | dep_in [1,1,1024] + RoPE + mask + packed KV | hidden [1,1,1024], new KV | LiteRT CompiledModel (CPU) |
+| Mimi RVQ decode | dia2_mimi_dequant.tflite | 68 MB | codes [1,32,1] float | latent [1,512,1] | LiteRT CompiledModel (CPU) |
+| Mimi decoder | dia2_mimi_decode_t256.tflite | 164 MB | latent [1,512,256] | audio [1,1,491520] @ 24 kHz | LiteRT CompiledModel (CPU) |
+
+**Three things that are easy to get wrong.** (1) Both text streams carry **real word tokens**, not new-word/pad markers: on a new word the main stream emits the word's first token while the second stream emits `NEW_WORD`, and during the padding frames that follow, the main stream drains the rest of the word while the second stream drains a two-word lookahead. (2) Each codebook lags the aligned timeline by a **delay** (16 frames for cb0, 18 for the rest) that must be undone before decoding, or the audio comes out muffled. (3) Mimi's decode path is upsample -> **causal** decoder transformer -> SEANet, so its receptive field is unbounded; decoding in chunks costs ~13% relative error, while one 256-frame window with a zeroed tail is exact (corr **0.999999**).
+
+**The speaker is sampled.** With no voice prefix Dia2 draws a new speaker every run (median F0 wanders over a ~120 Hz range); classifier-free guidance does not fix that, it only steadies levels. The model's own remedy is a **voice prefix**, which normally needs Whisper word timings and a Mimi *encoder*. Both are host-only, so `scripts/bake_prefix.py` precomputes the prompt offline into a 13 kB JSON (aligned Mimi codes, `new_word_steps`, prefix entries); on device only the warm-up runs, replaying the prompt through the temporal transformer to prime both KV caches. On-device the speakers then track their prompts (S1 214 Hz / S2 114 Hz against prompts of 247 Hz / 88 Hz).
+
+A 4-second utterance takes ~190 s on a Pixel 8a and peaks at ~4.6 GB RSS — close other apps.
+
+**Sample app**: [dia2/](dia2/) — type a `[S1]`/`[S2]` script, generate, AudioTrack playback.
+
+**Original project**: [nari-labs/Dia2-1B](https://huggingface.co/nari-labs/Dia2-1B) | [Apache-2.0](https://huggingface.co/nari-labs/Dia2-1B)
+
 ### VibeVoice-Realtime-0.5B
 
 VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-diffusion** TTS — the first streaming AR-diffusion TTS and the first **real-attention autoregressive decoder with an on-device KV cache** in this zoo. The 24-layer Qwen2.5-0.5B backbone is split into a 4-layer text LM and a 20-layer TTS LM; each token, the TTS LM's hidden state conditions a 4-layer DDPM head that a 5-step DPM-Solver++ loop denoises into a 64-d acoustic latent, which a convolutional **σ-VAE decoder** turns into 24 kHz audio. **FFT-free** (the σ-VAE is all `Conv1d`, like the DAC codec). Runs **hybrid GPU/CPU** by device-verified placement: the diffusion head runs on the ML Drift GPU, while the two LMs and the σ-VAE decoder run as **fp32 graphs on CPU** — the LMs because Mali rejects their KV-step `FULLY_CONNECTED` shape (and fp16 collapses the 20-layer stack on ARM XNNPACK), the decoder because ML Drift **miscomputes** it (a graph-assembly buffer/scheduling bug: single-output probes show every op — conv, norm, depthwise, FFN — is bit-exact on GPU, but the assembled ConvNeXt block is wrong; identical on OpenCL/OpenGL and at fp32 — no model-side workaround). The two LMs keep their KV cache **host-side** as a packed `[1, L·nkv, Pmax, 64]` tensor fed in/out each step (the ML-Drift-safe "state as graph I/O" pattern); the voice is a precomputed prompt KV cache.
@@ -863,6 +1038,7 @@ VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-di
 **Sample app**: [vibevoice/](vibevoice/) — type text, synthesize on-device, AudioTrack PCM_FLOAT playback. The voice is a bundled preset (`en-Emma_woman`); the realtime checkpoint is decoder-only, so voices are exported offline (not cloned on-device).
 
 **Original project**: [microsoft/VibeVoice-Realtime-0.5B](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [MIT](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
+
 
 # Vision-Language Model
 
@@ -1445,6 +1621,156 @@ Converted via **litert-torch** with nine GPU-compat patches: RoPE data-dependent
 
 **Original project**: [ByteDance-Seed/Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) | Apache-2.0
 
+### Metric3D v2 ViT-S
+
+Metric3D v2 (CVPR/TPAMI 2024): **metric** (absolute, in-meters) monocular depth from a single RGB image — a different output domain from Depth Anything (relative) / MoGe (affine) / DSINE (normals). DINOv2 ViT-S/14 + register tokens encoder with a **RAFT-DPT** iterative decoder (4 iters). Runs **fully on the GPU** (encoder *and* RAFT decoder) — `2447/2447` LITERT_CL on a Pixel 8a, ~44 ms, depth corr **0.96** vs the original.
+
+Converted via **litert-torch** at a fixed 448×448. Encoder = the MoGe-2 DINOv2 ViT-S suite (fused-QKV→4D attention, LayerScale baked into Linear, baked pos-embed). RAFT decoder re-authoring: the **convex upsample (6/7-D)** → a **depth-to-space `ZeroStuffConvT2d`** (16 softmax-over-9 subpixel combines → fixed `ConvTranspose2d(96→6,k4,s4)`); the naive nearest-upsample + in-block mask gives correct desktop output but **corr 0.57 on Mali** (ML Drift `RESIZE_NEAREST` half-pixel differs at non-stride positions) — `ZeroStuffConvT2d` masks only stride-aligned positions and places the offset via the conv kernel. **GELU → accurate tanh approximation, not `x·sigmoid(1.702x)`**: at the coarse top of the 0.1–200 m log-depth bins the sigmoid error collapses depth corr to 0.51; the tanh form restores 0.96. `Token2Feature ConvTranspose2d` → `ZeroStuffConvT2d`; `elu`→SELECT-free; the DPT `ConvBlock`'s `inplace=True` leading ReLU mutates the residual (`relu(x)+convs`) and is replicated exactly.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [metric3d_fp16.tflite](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT) | 78 MB | Float32 [1, 3, 448, 448] NCHW | Depth [1, 1, 448, 448] (meters) | [YvanYin/Metric3D](https://github.com/YvanYin/Metric3D) | [BSD-2-Clause](https://github.com/YvanYin/Metric3D/blob/main/LICENSE) (DINOv2: Apache-2.0) | [metric3d/](metric3d/) |
+
+**Preprocessing**: center-crop to square, resize to 448×448, ImageNet normalize in 0–255 scale `(px − [123.675,116.28,103.53]) / [58.395,57.12,57.375]`, NCHW planar. Output is canonical-camera metric depth; multiply by `fx/1000` for a calibrated camera.
+
+**Sample app**: [metric3d/](metric3d/) — image picker + depth colormap with near/far metric range.
+
+**Original project**: [YvanYin/Metric3D](https://github.com/YvanYin/Metric3D) | BSD-2-Clause
+
+
+# Face Detection
+
+### YuNet
+
+[YuNet](https://github.com/ShiqiYu/libfacedetection) (ShiqiYu/libfacedetection, BSD-3-Clause): a tiny, fast **face detector** (faces + 5 landmarks). At **0.076 M params / 0.3 MB fp16** it is the **smallest model in this repo**. Runs **fully on the GPU** (`146/146` LITERT_CL on a Pixel 8a, **~4 ms** at 640×640, device-vs-PyTorch corr **0.9999**).
+
+Pure CNN (depthwise-separable `ConvDPUnit`) + a **nearest-upsample** neck (→ `RESIZE_NEAREST_NEIGHBOR`, no transposed conv); non-padded `MaxPool` (no `PADV2`). No re-authoring — banned ops NONE, ≤4D. The head's `permute/reshape/sigmoid` per stride is baked in (12 outputs: cls/obj/bbox/kps × strides {8,16,32}); decode (priors + center/exp box + landmarks + NMS) runs in the app.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [yunet_fp16.tflite](https://huggingface.co/litert-community/YuNet-Face-LiteRT) | 0.3 MB | Float32 [1, 3, 640, 640] NCHW (BGR, 0-255) | 12 × (cls/obj/bbox/kps per stride) | [ShiqiYu/libfacedetection](https://github.com/ShiqiYu/libfacedetection) | [BSD-3-Clause](https://github.com/ShiqiYu/libfacedetection/blob/master/LICENSE) | [yunet/](yunet/) |
+
+**Decode**: score = `cls·obj`; box = `center + exp(wh)·stride`; 5 landmarks; NMS (IoU 0.45). **Preprocessing**: letterbox to 640×640, **BGR, 0-255 (no normalization)**.
+
+**Sample app**: [yunet/](yunet/) — image picker + face boxes + 5 landmarks.
+
+
+### RTMPose-Face (WFLW, 98-point face alignment)
+
+[RTMPose](https://github.com/open-mmlab/mmpose) (mmpose, Apache-2.0) **face alignment** trained on **WFLW**: **98 dense facial landmarks** (contour, eyebrows, eyes, nose, mouth, pupils) — the dense complement to YuNet's 5 points (detect a face, then align). The **same model family** as RTMPose-s above; only the config/checkpoint change to WFLW, and the two Mali fixes (SafeRMSNorm + GAU broadcast-reduce) transfer **unchanged**. Runs **fully on the GPU** (`333/333` LITERT_CL on a Pixel 8a, **~4 ms**, device-vs-PyTorch SimCC corr **0.9995**).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [rtm_face_fp16.tflite](https://huggingface.co/litert-community/RTMPose-Face-WFLW-LiteRT) | 33.6 MB | Float32 [1, 3, 256, 256] NCHW | simcc_x [1,98,512], simcc_y [1,98,512] | [open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) | [Apache-2.0](https://github.com/open-mmlab/mmpose/blob/main/LICENSE) | [rtmface/](rtmface/) |
+
+**Output**: output[0] = simcc_x, output[1] = simcc_y; each landmark = `argmax` over its 1D SimCC (bins = pixels × 2). **Preprocessing**: center-crop to a face, resize 256×256, mmpose mean/std (RGB, 0-255).
+
+**Sample app**: [rtmface/](rtmface/) — image picker + 98-point face mesh.
+
+
+# Gaze Estimation
+
+### L2CS-Net
+
+[L2CS-Net](https://github.com/Ahmednull/L2CS-Net) (Ahmednull, MIT): **gaze estimation** — predicts where a centered face is looking (yaw/pitch), for attention/AR/accessibility. ResNet50 backbone trained on Gaze360. Runs **fully on the GPU** (`139/139` LITERT_CL on a Pixel 8a, **~3 ms**, fp16 **47.9 MB**, device-vs-PyTorch corr **0.9999**).
+
+Converted via **litert-torch** with the two ResNet fixes: the stem `MaxPool2d(3,s2,p1)` → **zero-pad + valid max-pool** (PyTorch's max-pool pads with `-inf` → a `PADV2` the Mali delegate won't delegate; since the pool follows a ReLU, a 0-pad is exactly equivalent → `PAD`), and the global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`. The angle-bin softmax is baked in.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [gaze_fp16.tflite](https://huggingface.co/litert-community/L2CS-Gaze360-LiteRT) | 47.9 MB | Float32 [1, 3, 448, 448] NCHW | yaw [1,90], pitch [1,90] (softmax bins) | [Ahmednull/L2CS-Net](https://github.com/Ahmednull/L2CS-Net) | [MIT](https://github.com/Ahmednull/L2CS-Net/blob/main/LICENSE) | [gaze/](gaze/) |
+
+**Output / decode**: 90 angle bins spanning [-180,180]° (4° each); the gaze angle is the softmax expectation `Σ p_i·i · 4 − 180`. **Preprocessing**: center-crop to a (centered) face, resize 448×448, /255, ImageNet mean/std, NCHW.
+
+**Sample app**: [gaze/](gaze/) — image picker + gaze-direction arrow.
+
+
+# Saliency Prediction
+
+### UniSal
+
+[UniSal](https://github.com/rdroste/unisal) (rdroste, Apache-2.0): **visual saliency** — predicts a heatmap of *where humans look* in an image. MobileNetV2 encoder + bilinear decoder, **3.71 M params**. Runs **fully on the GPU** (`158/158` LITERT_CL on a Pixel 8a, **~3 ms** at 256×256, device-vs-PyTorch corr **0.9998**, **6.5 MB** fp16).
+
+Three numerically-exact GPU fixes: the MobileNetV2 strided subsample `x[..., ::2, ::2]` → `F.avg_pool2d(x, 1, 2)` (same pixels, avoids `GATHER_ND`); the 16 Gaussian prior maps **baked** to constants (size-only; avoids `GATHER_ND`/`BROADCAST_TO`); and the 41×41 Gaussian-smoothing `replicate`-pad → 0-pad. For static images the Bypass-RNN path is used + the SALICON domain pinned.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [unisal_fp16.tflite](https://huggingface.co/litert-community/UniSal-Saliency-LiteRT) | 6.5 MB | Float32 [1, 3, 256, 256] NCHW | saliency [1, 1, 256, 256] | [rdroste/unisal](https://github.com/rdroste/unisal) | [Apache-2.0](https://github.com/rdroste/unisal/blob/master/LICENSE) | [saliency/](saliency/) |
+
+**Preprocessing**: center-crop, resize 256×256, /255, ImageNet mean/std, NCHW. The app min-max normalizes the saliency and overlays a jet heatmap.
+
+**Sample app**: [saliency/](saliency/) — image picker + saliency heatmap overlay.
+
+
+# Line Detection
+
+### M-LSD-tiny
+
+[M-LSD](https://github.com/navervision/mlsd) (NAVER, AAAI 2022): light-weight real-time **line segment detection** — straight line segments for building edges, document borders, wireframes, and room layout. The **tiny** variant (MobileNetV2 backbone, 0.62M params) runs **fully on the GPU** (`99/99` LITERT_CL on a Pixel 8a, **~2 ms**, device-vs-PyTorch corr **0.997**). At **1.4 MB** fp16 it is the **smallest model in this zoo**.
+
+Converted via **litert-torch** with a single re-authoring: the decoder's `F.interpolate(bilinear, align_corners=True)` → `align_corners=False` (the delegate bans `align_corners=True`). MobileNetV2 has no max-pool (strided convs → no `PADV2`) and the upsample is `RESIZE_BILINEAR` (not a transposed conv) → fully GPU-clean. The output is a "TP map" (center heatmap + displacement); the decode (sigmoid + NMS + displacement → endpoints) runs in the app.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [mlsd_fp16.tflite](https://huggingface.co/litert-community/M-LSD-tiny-LiteRT) | 1.4 MB | Float32 [1, 4, 512, 512] NCHW (RGB + ones) | tpMap [1, 9, 256, 256] | [navervision/mlsd](https://github.com/navervision/mlsd) | [Apache-2.0](https://github.com/navervision/mlsd/blob/main/LICENSE) | [mlsd/](mlsd/) |
+
+**Preprocessing**: resize to 512×512, append a 4th channel of ones, scale `(x/127.5)-1`, NCHW. **Decode**: sigmoid center map → 3×3 max NMS → displacement → endpoints (×2 to 512-space).
+
+**Sample app**: [mlsd/](mlsd/) — image picker + line-segment overlay.
+
+
+# Style Transfer
+
+### Fast Neural Style (4 styles)
+
+Fast neural **style transfer** ([PyTorch examples](https://github.com/pytorch/examples/tree/main/fast_neural_style) `TransformerNet`, Johnson et al.): applies an artistic style to a photo — **4 styles** (candy / mosaic / rain_princess / udnie), each a **3.5 MB** fp16 graph. Runs **fully on the GPU** (`350/350` LITERT_CL on a Pixel 8a, **~9 ms** @ 256×256, device-vs-PyTorch corr **0.9998–0.9999** for all styles).
+
+Converted via **litert-torch** with three numerically-exact re-authorings: (1) `ReflectionPad2d` → zero-pad (`GATHER_ND` → `PAD`); (2) the large conv activations (≈|5000|) lose fp16 precision on Mali (corr 0.34 at full residency) → **scale the conv weights down (InstanceNorm is scale-invariant → exact)** so the fp16 accumulation stays precise; (3) `InstanceNorm` → **SafeInstanceNorm** (down-scaled-domain spatial reduction, fp16-safe). Upsample is `interpolate(nearest)` (no ZeroStuff).
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [Fast-Neural-Style-LiteRT](https://huggingface.co/litert-community/Fast-Neural-Style-LiteRT) | 3.5 MB ×4 | Float32 [1, 3, 256, 256] NCHW (RGB 0-255) | [1, 3, 256, 256] (RGB 0-255) | [pytorch/examples](https://github.com/pytorch/examples) | [BSD-3-Clause](https://github.com/pytorch/examples/blob/main/LICENSE) | [neuralstyle/](neuralstyle/) |
+
+**Preprocessing**: center-crop, resize to 256×256, RGB 0–255 (no normalization), NCHW. Output 0–255 RGB (clamp).
+
+**Sample app**: [neuralstyle/](neuralstyle/) — image picker + 4 tappable style buttons.
+
+
+# Low-Light Enhancement
+
+### CPGA-Net
+
+[CPGA-Net](https://github.com/Shyandram/CPGA-Net-Pytorch) (Shyandram, IJPRAI, MIT): **low-light image enhancement** (brighten dark photos) via Channel Prior + Gamma Correction. At **0.025 M params / 0.1 MB fp16** it is the **smallest model in this repo**. Runs **fully on the GPU** (`135/135` LITERT_CL on a Pixel 8a, **~2 ms** at 256×256, device-vs-PyTorch corr **0.99999**).
+
+Three numerically-exact GPU fixes: the gamma correction `x^γ` → `exp(γ·log x)` (avoids the banned `POW`); the CBAM/gamma global pools → `mean(3).mean(2)` and `F.max_pool2d(x,(H,W))`; the dark/bright channel prior stays as `REDUCE_MAX`/`REDUCE_MIN`. The guided-filter post-process is disabled.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [cpga_fp16.tflite](https://huggingface.co/litert-community/CPGA-Net-LowLight-LiteRT) | 0.1 MB | Float32 [1, 3, 256, 256] NCHW ([0,1]) | enhanced [1, 3, 256, 256] ([0,1]) | [Shyandram/CPGA-Net-Pytorch](https://github.com/Shyandram/CPGA-Net-Pytorch) | [MIT](https://github.com/Shyandram/CPGA-Net-Pytorch/blob/main/LICENSE) | [lowlight/](lowlight/) |
+
+**Preprocessing**: center-crop, resize 256×256, RGB scaled to [0,1], NCHW.
+
+**Sample app**: [lowlight/](lowlight/) — image picker + enhanced view (press-and-hold to compare).
+
+
+# Image Restoration
+
+### NAFNet (deblur)
+
+NAFNet (Nonlinear Activation Free Network, ECCV 2022): image restoration — a U-Net of **NAFBlocks** with **no activation functions at all** (SimpleGate = channel-split multiply). The **GoPro-width32** variant removes motion blur. Pure CNN → runs **fully on the GPU** (`2179/2179` LITERT_CL on a Pixel 8a, ~42 ms at 256×256, device output **== PyTorch corr 1.0**).
+
+Converted via **litert-torch** with three numerically-exact re-authorings: the custom `LayerNorm2d` → an **fp16-safe channel LayerNorm** (NAFNet's residual stream reaches |x|≈175, so the LayerNorm channel-sum `Σ_c(x−μ)²` ~15M **overflows fp16** (max 65504) on the Mali delegate — which computes in fp16 regardless of model dtype — giving a grid artifact; doing the reduction in a down-scaled `x/S` domain and rescaling is exact); the Simplified Channel Attention `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`; and the upsample `PixelShuffle(2)` → depth-to-space `ZeroStuffConvT2d`.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [nafnet_fp16.tflite](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT) (deblur) | 38 MB | Float32 [1, 3, 256, 256] NCHW | Float32 [1, 3, 256, 256] (RGB [0,1]) | [megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) | [MIT](https://github.com/megvii-research/NAFNet/blob/main/LICENSE) | [nafnet/](nafnet/) |
+| [nafnet_sidd_width32_fp16.tflite](https://huggingface.co/litert-community/NAFNet-SIDD-width32-LiteRT) (denoise) | 62 MB | Float32 [1, 3, 256, 256] NCHW | Float32 [1, 3, 256, 256] (RGB [0,1]) | [megvii-research/NAFNet](https://github.com/megvii-research/NAFNet) | [MIT](https://github.com/megvii-research/NAFNet/blob/main/LICENSE) | [nafnet/](nafnet/) |
+
+**Preprocessing**: RGB normalized to 0-1 (divide by 255), NCHW planar. Output is the restored RGB image in [0,1].
+
+**Sample app**: [nafnet/](nafnet/) — image picker showing input | restored (GoPro deblur; the same app runs the SIDD **denoise** model via `scripts/build_sidd.py`, device-verified corr 0.999999).
+
+
 # GPU Compatibility Notes
 
 CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
@@ -1452,6 +1778,7 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 - All tensors must be 4D or less
 - No dynamic dimensions (-1) in reshape
 - Avoid: TOPK_V2, GATHER, GATHER_ND, CAST (float-int), GELU, PACK, SPLIT
+- ⚠ **Never collapse the batch dim of an attention / batched-matmul chain.** A rank-3 SDPA (`q/k/v` as `[heads, N, d]`) compiles, delegates every node, passes the op gate and matches the host exactly — yet ML Drift **silently returns wrong values** (SAM 2.1 mask decoder: corr **0.265** vs CPU on a Pixel 8a; still **0.473** with fp32 GPU compute forced, so it is a correctness bug, not an fp16 wall). Keep tensors at rank 4 (`[1, heads, N, d]`) — that also ran ~20% faster here. **Full GPU residency + a clean op gate + desktop parity do not imply correctness**; only a numeric GPU-vs-CPU check on device catches this.
 
 **Proven conversion paths**:
 1. **SavedModel → TFLiteConverter** — Eliminates PACK/SPLIT ops (used for YOLO11)
@@ -1584,3 +1911,4 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 # License
 
 MIT (sample apps). Model licenses follow their original projects.
+

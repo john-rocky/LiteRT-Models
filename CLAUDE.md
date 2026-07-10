@@ -30,6 +30,7 @@ Each top-level directory listed below is **its own independent Gradle project** 
 | `real-esrgan/`     | —                           | Real-ESRGAN x4v3 super resolution                   |
 | `moge/`            | `com.moge`                  | MoGe-2 ViT-S monocular geometry (points, normals, depth, 3D) |
 | `yolo-tracking/`   | `com.yolotracking`          | YOLO11n + OSNet x0.25 DeepSORT multi-object tracking |
+| `dia2/`            | `com.dia2`                  | Dia2-1B two-speaker dialogue TTS (RQ-Transformer, CPU) |
 | `vibevoice/`       | `com.vibevoice`             | VibeVoice-Realtime-0.5B streaming AR-diffusion TTS   |
 | `musicgen/`        | —                           | (work in progress)                                  |
 

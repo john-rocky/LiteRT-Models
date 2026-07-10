@@ -583,3 +583,274 @@ in two processes, each ending `os._exit(0)`. Host log-mel matches NeMo's preproc
 Scripts: `parakeet/scripts/` (`build_parakeet_ship.py`, `build_parakeet_tap.py` = the per-layer tap/ablation
 harness that nailed the SafeLayerNorm v2 fix). Model:
 [`litert-community/Parakeet-tdt-ctc-110m-LiteRT`](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT).
+
+### Metric3D v2 (DINOv2 ViT-S + RAFT-DPT) — fully-GPU metric depth, and three device-only gotchas
+
+Metric3D v2 ViT-S (BSD-2) = DINOv2 ViT-S/14+reg encoder + RAFTDepthNormalDPT5 decoder (4 iters) → absolute
+metric depth. Fixed 448×448. Encoder reuses the MoGe-2 ViT-S suite (fused-QKV→4D attention, LayerScale baked
+into Linear, baked 32×32 pos-embed). It converts GPU-clean and runs **fully on the GPU** (`2447/2447`
+LITERT_CL, Pixel 8a ~44 ms, fp16 78 MB), but desktop fp16 (corr 0.9999) hides **three issues that only the
+on-device run reveals** — each one is reusable:
+
+1. **Convex upsample → depth-to-space via `ZeroStuffConvT2d`, NOT nearest+in-block-mask.** The RAFT convex
+   upsample is `mask.view(N,1,9,r,r,H,W)` softmax + unfold (6/7-D). Re-author as 16 per-subpixel
+   softmax-over-9-neighbour combines (each 4D via pad+slice), `cat → [N, D·r², H, W]` (channel = `s·D+d`),
+   then a **fixed `ConvTranspose2d(D·r²→D, k=r, s=r)`** with `weight[s·D+d, d, i, j]=1` (`s=i·r+j`) wrapped in
+   `ZeroStuffConvT2d`. The intuitive alternative — nearest-upsample ×r then multiply by a mask selecting the
+   in-block `(i,j)` position — is exact on desktop but gives **device corr 0.57** (fp32 too): the Mali ML
+   Drift `RESIZE_NEAREST_NEIGHBOR` uses a different half-pixel/rounding convention at **non-stride-aligned**
+   output positions, so the mask grabs the wrong replicated pixel. `ZeroStuffConvT2d` masks **only
+   stride-aligned positions** (`[::s,::s]`, exact under any nearest convention) and the conv kernel supplies
+   the in-block offset. **Rule: never rely on `RESIZE_NEAREST` replication at non-stride outputs on Mali;
+   route the offset through a conv kernel.** Broadcast vs full-2D mask is irrelevant — it's the position.
+
+2. **tanh-GELU is mandatory for wide-range regression heads (not `x·sigmoid(1.702x)`).** Metric3D regresses
+   depth via a softmax-expectation over log-spaced bins to **200 m**. The standard sigmoid GELU approximation
+   tanks far-depth fidelity → **orig-vs-reauth corr 0.51** on an outdoor 11–200 m scene (flat indoor scenes
+   hide it at 0.98); the accurate tanh GELU `0.5x(1+tanh(0.7978845608(x + 0.044715x³)))` (x³ = x·x·x, POW-free,
+   GPU-clean) restores **0.96**. The coarse top-of-range bins amplify the GELU error — use tanh.
+
+3. **`nn.ReLU(inplace=True)` mutates the residual.** The DPT `ConvBlock.forward` does `out = self.act(x)`
+   (inplace) then `return x + out`, so the residual is **`relu(x) + convs`, not `x + convs`**. If you replace
+   that leading ReLU with a non-inplace op (to dodge its `where(x>0,x,0)` → `SELECT` lowering), you silently
+   change the residual → corr 0.22. Replicate exactly: `xr = relu(x); return xr + convs(xr)`.
+
+`norm_normalize`'s `F.elu` (→ `SELECT`) is rewritten SELECT-free as `exp(−relu(−k)) + relu(k) + min_κ` (exact
+identity). `Token2Feature`'s `ConvTranspose2d` (2× upsample) → `ZeroStuffConvT2d`. Input = ImageNet norm in
+0–255 scale; output is canonical-camera depth (× `fx/1000` for a calibrated camera, host-side). Scripts:
+`metric3d/scripts/build_m3d.py`. Models: [`mlboydaisuke/Metric3D-v2-LiteRT`](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT).
+
+### NAFNet (image restoration) — pure CNN, and the SafeLayerNorm fp16-overflow fix
+
+NAFNet (ECCV 2022, MIT) = a U-Net of NAFBlocks, **no activation functions** (SimpleGate = channel-split
+multiply). Pure CNN → Bucket-1. GoPro-width32 (deblur, 17M). Converts GPU-clean and runs fully on the GPU
+(`2179/2179` LITERT_CL, Pixel 8a ~42 ms, fp16 38 MB), **device-vs-torch corr 1.0** — but only after the
+SafeLayerNorm fix. Three numerically-exact re-authorings: `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`;
+`Conv2d(1×1)+PixelShuffle(2)` → Conv2d + depth-to-space `ZeroStuffConvT2d`; and:
+
+**SafeLayerNorm — fp16 channel-sum overflow (the headline; reusable for any deep-residual CNN/ViT).** NAFNet's
+residual stream grows large (`|x|≈175` at the bottleneck — the `beta`/`gamma`-scaled residuals accumulate over
+the 28-block deep encoder). A channel LayerNorm reduces over C: `Σ_c x` (~90k over 512 channels) and
+`Σ_c (x−μ)²` (~15M) both **exceed fp16's max 65504 → overflow** on the **Mali ML Drift delegate, which computes
+in fp16 regardless of the model's dtype** (so a "fp32 model" does NOT help — fp32-device == fp16-device ==
+garbage; do not use the fp32-device test to rule out precision). Symptom: the output looks ~right (corr 0.98,
+because restoration output is input-dominated) but the **learned residual is destroyed (corr 0.016)** → a
+periodic **grid artifact** (the decoder upsamples garbage deep features). Diagnosis: tap a **shallow** block
+(32 ch, `|x|≈6` → corr 0.9999) vs the **deep middle** (`|x|≈175` → corr 0.109): divergence ∝ activation
+magnitude ⇒ fp16 reduction overflow, not op-semantics. **Always check the residual/structural corr, not just
+output corr.** Fix — do the reductions in a **down-scaled domain** (numerically EXACT, LayerNorm is
+scale-invariant): `xs=x/S; mu=xs.mean(1); d=xs−mu; var=(d*d).mean(1)*S*S; d=d*S; y=d*rsqrt(var+eps)`. `S=128`
+keeps both sums < 65504 up to ~3× the observed magnitude; eps stays in the original domain so shallow blocks
+are unchanged → corr 1.0 everywhere. (This is *also* why the channel-attention pool must be `mean(3).mean(2)`
+and not a single `mean((2,3))`: the two-step split keeps each single-axis sum small; a 65536-element spatial
+sum would overflow the same way.) Scripts: `nafnet/scripts/build_nafnet.py`. Weights:
+[`nyanko7/nafnet-models`](https://huggingface.co/nyanko7/nafnet-models). Model:
+[`litert-community/NAFNet-GoPro-width32-LiteRT`](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT).
+
+### RTMPose-s (mmpose top-down pose) — SafeRMSNorm, GAU broadcast-reduce, and the mm-stack build
+
+mmpose RTMPose-s (CSPNeXt backbone + RTMCC/SimCC head, 5.5M params, Apache-2.0). Top-down 2D human pose, 17
+COCO keypoints. Converts GPU-clean and runs fully on the GPU (`256/256` LITERT_CL, Pixel 8a **~4 ms**, **fp16
+11.1 MB**), **device-vs-torch SimCC corr 0.999, keypoints within 0.3 px**. The CSPNeXt backbone (SiLU) and the
+diffusers-free RTMCC head are GPU-clean, but two **on-device-only** Mali issues had to be fixed (both passed
+the desktop op-check and reported full LITERT_CL residency — the canonical *residency ≠ correctness* trap):
+
+1. **`ScaleNorm` (RMS norm) fp16 overflow → all-zero head (SafeRMSNorm).** The RTMCC `ScaleNorm`
+   (`x / (√(Σx²)·dim^-0.5) · g`) input reaches **≈ |274|**, so its channel `Σ x²` ≈ 3.6M **overflows fp16
+   (65504)** on the Mali delegate (which reduces in fp16 even for an fp32 graph) → `norm = ∞` → `x/∞ = 0` →
+   the **entire head outputs exactly zero** (every keypoint argmax → bin 0). This is the same class as the
+   NAFNet SafeLayerNorm fix, here in an RMS norm, with a *total-collapse* symptom (vs NAFNet's grid artifact).
+   Fix = scale `x` down by S=64 **before** squaring, then rescale (math-identical):
+   `xs=x/64; norm=√((xs·xs).sum(-1))·64·scale; x/norm.clamp(eps)·g`. ⚠ Replacing `torch.norm` with a manual
+   sum-of-squares ALONE does **not** fix it (the manual sum still overflows at |274|) — *scale-before-square*
+   is the essential ingredient. Diagnosis = bisect-tap: backbone OK (0.9998) → ScaleNorm out 100% zero →
+   input ±274 ⇒ overflow.
+2. **GAU attention `act@act` BMM → broadcast-reduce.** The Gated Attention Unit's `q@kᵀ` and `kernel@v` are
+   activation×activation batch-matmuls the Mali delegate mis-computes; at K=17 tokens the exact replacement is
+   `(q[:,:,None,:]·k[:,None,:,:]).sum(-1)`. (Kept as hardening — it alone did not fix the zero; ScaleNorm did.)
+
+**mm-stack build (no compiled mmcv):** `pip install mmengine mmcv-lite mmpose --no-deps munkres json_tricks`,
+then **stub** `xtcocotools` (Cython build fails; COCO-eval only) and `mmdet`/`mmdet.utils`/`mmcv.ops` (the
+heads `__init__` eagerly imports RTMOHead→mmdet and EDPoseHead→compiled `mmcv.ops`, neither used by RTMPose)
+with a robust `_Stub(ModuleType)` (`__file__="<stub>"`, dunder-safe `__getattr__`) plus an
+`inspect.getsourcefile` exception guard. Build via `mmpose.apis.init_model(cfg, ckpt_url)`; wrap as
+`head(backbone(img))` → `(simcc_x[1,17,384], simcc_y[1,17,512])`; argmax÷split=2 → pixel in the app.
+Scripts: `rtmpose/scripts/build_rtmpose.py`. Model:
+[`litert-community/RTMPose-s-LiteRT`](https://huggingface.co/litert-community/RTMPose-s-LiteRT).
+
+The **whole-body (RTMW-m, 133 kpts)** and **hand (RTMPose-m, 21 kpts)** variants reuse this exact recipe
+(SafeRMSNorm + GAU broadcast-reduce transfer unchanged — the patches are on the shared `ScaleNorm`/`RTMCCBlock`
+classes). RTMW adds a CSPNeXtPAFPN **neck** (handle it in the export wrapper: `head(neck(backbone(x)))`) and an
+`nn.PixelShuffle` in its head that lowers to a **6D** tensor (>4D, GPU-rejected) → replace with a fixed
+**depth-to-space `ConvTranspose2d`** (the PixelShuffle channel→space permutation as the kernel) wrapped in
+`ZeroStuffConvT2d` (same fix as NAFNet/Metric3D). Both device-verified Pixel 8a fully-GPU (RTMW 531/531 ~6ms
+fp16 66MB corr 0.999; hand 333/333 ~4ms fp16 28MB corr 0.999). Models:
+[`litert-community/RTMW-m-WholeBody-LiteRT`](https://huggingface.co/litert-community/RTMW-m-WholeBody-LiteRT),
+[`litert-community/RTMPose-Hand-LiteRT`](https://huggingface.co/litert-community/RTMPose-Hand-LiteRT).
+
+### Places365 ResNet18 (scene recognition) — the ResNet-stem `MaxPool` `-inf`-pad fix
+
+ResNet18 trained on Places365 (CSAILVision, MIT, 365 scene categories). Pure CNN, runs fully on the GPU
+(`61/61` LITERT_CL, Pixel 8a **~2 ms**, **fp16 22.8 MB**, device-vs-torch corr **1.0**, top-1 match). Two
+numerically-exact re-authorings — the second is a **NEW reusable Mali fix for ResNet-style stems**:
+
+1. global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)` (the usual multi-axis-pool fix).
+2. **ResNet stem `MaxPool2d(3, stride=2, padding=1)` → zero-pad + valid max-pool.** PyTorch's max-pool pads
+   with **`-inf`**, which litert-torch lowers to a **`PADV2`** op (pad with a non-zero constant). The Mali ML
+   Drift delegate **does not delegate `PADV2`** → it splits the graph into CPU partitions (`Replacing 36 out
+   of 61 node(s) … 2 partitions`) and then **fails to compile the whole model** (`Failed to compile model`,
+   no op-blocklist hit — desktop op-check passes). Because the stem max-pool always follows a ReLU (inputs
+   ≥ 0), padding with **0** is numerically identical (a 0-pad never wins the max over a ≥0 cell, and with
+   `padding=1`/`kernel=3` every window has a real cell), and `F.pad(x, …, value=0)` emits a delegatable
+   **`PAD`** → `61/61` full GPU residency. Replace `nn.MaxPool2d(3,2,1)` with
+   `F.max_pool2d(F.pad(x,(1,1,1,1),value=0.), 3, stride=2)`. Reusable for any ResNet/Places/ImageNet stem.
+
+Result: banned ops NONE, all tensors ≤4D, tflite-vs-torch corr 1.0, device-vs-torch corr 1.0. Scripts:
+`places365/scripts/build_places.py`. Model:
+[`litert-community/Places365-ResNet18-LiteRT`](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT).
+
+### Fast Neural Style (TransformerNet) — conv-weight scaling via norm scale-invariance (large-activation fp16 fix)
+
+PyTorch examples `TransformerNet` style transfer (BSD-3, 4 styles). Pure CNN encoder-decoder (interpolate-
+nearest upsample, no transposed conv → no ZeroStuff). Runs fully on the GPU (`350/350` LITERT_CL, Pixel 8a
+**~9 ms**, fp16 **3.5 MB**/style, device-vs-torch corr **0.9999**) after three numerically-exact re-authorings:
+
+1. **`ReflectionPad2d` → zero-pad.** Reflection padding lowers to **`GATHER_ND`** (the reflect index gather,
+   banned). Fold a `F.pad(value=0)` into each conv → emits `PAD`. Border-only cosmetic difference.
+2. **⭐ Large conv activations → conv-weight scaling (exploit normalization scale-invariance).** The conv
+   outputs reach **≈ |5000|**, where the **Mali delegate's fp16 conv accumulation loses precision** → garbage
+   (device corr **0.34** at `350/350` full residency; desktop fp16 = 1.0 — the canonical *residency ≠
+   correctness*). This is NOT a reduction overflow (SafeInstanceNorm alone made it WORSE, 0.16) — it's the conv
+   itself accumulating imprecisely at large magnitude. **Fix: scale each conv's weight+bias down so its output
+   is ≈ |10|.** Because every such conv is immediately followed by an `InstanceNorm` (which is
+   **scale-invariant**: `IN(a·x) = IN(x)`), this is **mathematically exact** (the IN output is unchanged) yet
+   keeps the fp16 accumulation in a precise range. Measure each conv's output max once (the scales are
+   independent — the IN between convs decouples them), bake `weight /= max/10`. **General rule: when a
+   large-activation CNN garbles on Mali fp16 despite full residency, and a normalization follows the big conv,
+   rescale the conv via the norm's scale-invariance.** (Reusable for any IN/BN/LN-normalized generator.)
+3. **`InstanceNorm` → SafeInstanceNorm.** Spatial mean/var over 256×256 overflows fp16; two single-axis means
+   in a down-scaled domain are fp16-safe and exact (SafeLayerNorm class). Needed in addition to (2).
+
+Scripts: `neuralstyle/scripts/build_style.py`. Model:
+[`litert-community/Fast-Neural-Style-LiteRT`](https://huggingface.co/litert-community/Fast-Neural-Style-LiteRT).
+
+### L2CS-Net (gaze estimation) — ResNet50 ZeroPadMaxPool reused; new "Gaze Estimation" task
+
+L2CS-Net (Ahmednull, MIT) gaze estimation — ResNet50 + 2 FC heads (yaw/pitch, 90 angle bins each), Gaze360.
+Pure CNN, runs fully on the GPU (`139/139` LITERT_CL, Pixel 8a **~3 ms**, fp16 47.9 MB, device-vs-torch corr
+**0.9999**). The two fixes are the standard ResNet pair — confirming the Places365 ResNet recipe transfers to
+**any torchvision-ResNet-backed regression/classification head** (also relevant to L2CS variants, face-rec,
+gaze, age/expression on a ResNet stem):
+
+1. **stem `MaxPool2d(3,s2,p1)` → zero-pad + valid max-pool** (the `-inf`-pad `PADV2` Mali won't delegate; 0-pad
+   is exact post-ReLU → `PAD`). 2. **global `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`**.
+
+Decode: bake the softmax over the 90 bins into the graph; the host does the expectation `deg = Σ p_i·i·4 − 180`
+(no `TOPK`/`GATHER`). Weights: `L2CSNet_gaze360.pkl` is on HF (`tianfxc/l2cs`, `py-feat/l2cs`) — avoids the
+upstream gdrive-folder download (which `gdown` silently fails on). Load the L2CS `model.py` via importlib (the
+`l2cs` package `__init__` pulls `face_detection`). Scripts: `gaze/scripts/build_gaze.py`. Model:
+[`litert-community/L2CS-Gaze360-LiteRT`](https://huggingface.co/litert-community/L2CS-Gaze360-LiteRT).
+
+### MI-GAN (mobile image inpainting / object removal) — the norm-free generator lane (zero re-authoring)
+
+MI-GAN (Picsart, ICCV 2023, MIT, 5.97M) — a mobile "magic eraser". Its **inference** generator
+(`migan_inference.py`, the re-parametrized deployable model, NOT the StyleGAN training `.pkl`) converts
+**GPU-clean in ONE shot, zero re-authoring**: device-vs-torch corr **0.99998**, `509/509` LITERT_CL, Pixel 8a
+**~6 ms** at 512×512, fp16 16.3 MB. Why it's free: the mobile generator is **StyleGAN-style with NO
+normalization** (no InstanceNorm/GroupNorm → none of the SafeNorm/conv-scaling fixes the style-transfer /
+AnimeGAN generators needed), upsampling is `nn.Upsample(nearest)` + a fixed FIR-filter grouped conv (→
+`RESIZE_NEAREST_NEIGHBOR` + `CONV_2D`, **no ConvTranspose → no ZeroStuff 0-byte risk**), convs are
+depthwise-separable, and the activation is a leaky-ReLU with gain+clamp (→ `LEAKY_RELU` + `MAXIMUM`/`MINIMUM`,
+not `SELECT`). So: **a norm-free, FFT-free, transpose-free generator is the cleanest GPU lane** — contrast the
+normalized generators (style transfer, AnimeGAN) that hit the large-activation fp16 conv-accumulation wall.
+
+**I/O contract:** input is 4ch `concat(mask−0.5, rgb·mask)` (rgb ∈ [−1,1], mask 1=keep/0=erase); output [−1,1];
+composite `rgb·mask + out·(1−mask)`. Weights `migan_512_places2.pt` = the inference-model state_dict, load
+directly into `migan_inference.Generator(resolution=512)` (the repo's `export_inference_model.py` is only for
+converting a source `.pkl` → inference model; not needed here). gdown-folder worked for the weights. Scripts:
+`migan/scripts/build_migan.py`. Model:
+[`litert-community/MI-GAN-512-Places2-LiteRT`](https://huggingface.co/litert-community/MI-GAN-512-Places2-LiteRT).
+
+### YuNet (face detection) — the smallest model in the zoo, zero re-authoring
+
+YuNet (ShiqiYu/libfacedetection, BSD-3, 0.076M params) — a tiny anchor-free face detector. Converts
+**GPU-clean in ONE shot, zero re-authoring**: `146/146` LITERT_CL, Pixel 8a **~4 ms** at 640×640, **fp16 0.3 MB
+(smallest in the zoo)**, device-vs-torch corr **0.9999**. Pure CNN (depthwise-separable `ConvDPUnit`) + a TFPN
+neck whose upsample is **`F.interpolate(mode="nearest")` → `RESIZE_NEAREST_NEIGHBOR`** (no transposed conv → no
+ZeroStuff) + non-padded `MaxPool2d` (no `-inf` pad → no `PADV2`). Wrap the head's per-stride
+`permute(0,2,3,1).reshape(B,-1,C)` (+ `.sigmoid()` on cls/obj) so the model emits 12 decode-ready tensors
+(cls/obj/bbox/kps × strides {8,16,32}, output order identity). **Preprocessing = BGR, 0-255, NO normalization**
+(`Normalize(mean=0,std=1,to_rgb=False)`). Decode host-side: anchor-free priors `px=col·s, py=row·s` (offset 0),
+score=`cls·obj`, box=`(bbox₀₁·s+prior, exp(bbox₂₃)·s)` center+wh, 5 landmarks `kps·s+prior`, then NMS.
+Weights `weights/yunet_n.pth` ship in the libfacedetection.train repo. Scripts: `yunet/scripts/build_yunet.py`.
+Model: [`litert-community/YuNet-Face-LiteRT`](https://huggingface.co/litert-community/YuNet-Face-LiteRT).
+
+### UniSal (visual saliency) — the strided-slice→avg_pool fix, gaussian-prior bake, and "smoothing isn't cosmetic"
+
+UniSal (rdroste, Apache, 3.71M) — saliency prediction (where humans look). MobileNetV2 + bilinear decoder.
+Converts GPU-clean (`158/158` LITERT_CL, Pixel 8a **~3 ms**, fp16 6.5 MB, device-vs-torch corr **0.9998**) with
+three exact fixes:
+
+1. **⭐ Strided subsample `x[..., ::2, ::2]` → `F.avg_pool2d(x, kernel_size=1, stride=2)`** (NEW reusable). A
+   stride-2 channel-preserving subsample lowers to **`GATHER_ND`** (banned). A kernel-1 stride-2 average-pool
+   selects the *exact same* pixels (kernel 1 = no averaging) and emits `AVERAGE_POOL_2D` — numerically identical.
+   (Same class as the EdgeTAM `x[:, :, i::w, j::w]`→grouped-conv finding, but for a simple 2× subsample.)
+2. **Bake the Gaussian prior maps.** `_get_gaussian_maps` (meshgrid + per-gaussian `exp`) emits `GATHER_ND` +
+   `BROADCAST_TO`; the maps depend ONLY on the (fixed) feature size + learned params, so precompute once (run on a
+   zero input of the right size) and concatenate the constant buffer.
+3. **`F.pad(mode="replicate")` → 0-pad** for the 41×41 Gaussian smoothing (replicate → `GATHER_ND`).
+
+**⚠ Lesson: the smoothing is NOT cosmetic.** Dropping the 41×41 smoothing made the saliency *anti-correlate*
+(−0.56) with the real model — the smoothing **suppresses border/corner artifacts** that otherwise become the
+spurious global max. Verify a re-authored pipeline against the FULL reference's *argmax/spatial pattern*, not
+just an internal device-vs-tflite corr (which was 1.0 even while the output was wrong). Static-image path:
+Bypass-RNN + pin one domain (SALICON) so the domain-specific BatchNorm/smoothing fold to constants; final spatial
+log-softmax → host. Scripts: `saliency/scripts/build_unisal.py`. Model:
+[`litert-community/UniSal-Saliency-LiteRT`](https://huggingface.co/litert-community/UniSal-Saliency-LiteRT).
+
+### CPGA-Net (low-light enhancement) — the POW→exp/log gamma fix; the smallest model in the zoo
+
+CPGA-Net (Shyandram, MIT, IJPRAI, 0.025M params) — low-light image enhancement (Channel Prior + Gamma
+Correction). Converts **GPU-clean in ONE cycle**: `135/135` LITERT_CL, Pixel 8a **~2 ms**, **fp16 0.1 MB
+(SMALLEST in the zoo)**, device-vs-torch corr **0.99999**. **This finally ships the low-light task** (Bread
+parked on the Mali composition-delegation wall; SCI/PairLIE were no-license — CPGA-Net is MIT + tiny). Three
+exact fixes:
+
+1. **⭐ Gamma correction `torch.pow(x, γ)` → `exp(γ · log x)`** (NEW reusable). `POW` is banned on Mali; the
+   identity `x^γ = exp(γ·log x)` is exact (clamp the base to [1e-9, 1] first) and emits native `EXP` + `LOG`
+   (both delegatable — `LOG` confirmed GPU-clean here, `EXP` already proven). Works for a learned scalar γ
+   (broadcast). Reusable for any gamma/power op.
+2. **CBAM + gamma global pools**: `AdaptiveAvgPool2d(1)` → `mean(3).mean(2)`; `AdaptiveMaxPool2d(1)` →
+   `F.max_pool2d(x, kernel_size=(H,W))` (use max-pool, NOT `torch.amax`, which has no NHWC rewriter in
+   litert-torch).
+3. The dark/bright **channel prior** (`torch.max`/`torch.min` over dim=1) lowers to `REDUCE_MAX`/`REDUCE_MIN` —
+   GPU-clean (small 3-channel reduction).
+
+`isdgf=False` (no FastGuidedFilter → no bicubic). Stub `guided_filter_pytorch` (imported at module level, unused).
+Scripts: `lowlight/scripts/build_cpga.py`. Model:
+[`litert-community/CPGA-Net-LowLight-LiteRT`](https://huggingface.co/litert-community/CPGA-Net-LowLight-LiteRT).
+
+### wav2vec2-CTC (fully-GPU ASR) + the GroupNorm-reduction-extent fp16 rule (Moonshine park)
+
+wav2vec2-base-960h CTC (Facebook, Apache) — on-device **speech recognition, fully GPU, single forward pass**
+(no autoregressive decoder; CTC greedy decode on the host). Device-verified Pixel 8a: `997/997` LITERT_CL
+(single graph), **~22 ms** / 10 s, device-vs-torch corr **0.99998**, **exact** transcription. **Zero FFT** (raw
+16 kHz waveform → 1D-conv frontend). Reuses the shipped wav2vec2-KWS recipe (TanhGELU + GN4D + fold pos_conv
+weight-norm + bidirectional-mask→None); only the head changes (classification → CTC `lm_head`), output = logits
+`[1, T', 32]`. fp16 190 MB → filesDir push. Scripts: `asr/scripts/build_w2v2_ctc.py`. Model:
+[`litert-community/wav2vec2-base-960h-CTC-LiteRT`](https://huggingface.co/litert-community/wav2vec2-base-960h-CTC-LiteRT).
+
+**⭐ NEW reusable Mali rule — manual GroupNorm fp16-precision depends on the REDUCTION EXTENT.** Moonshine-tiny
+(the fresh 2024 on-device ASR) was attempted first and **parked**: its conv-stem `GroupNorm(num_groups=1)`
+reduces over the **joint C×T** feature map (288 × 1248 ≈ 360k elements). A manual GN over that extent is
+**fp16-imprecise on Mali** (device corr 0.55 at the GN tap, even with a down-scaled explicit sum *or* a staged
+native mean — fp16 accumulation error over ~360k terms), and the 0.55 compounds through the 6 transformer layers
+to a **constant** output. By contrast wav2vec2's GroupNorm is `num_groups=512` = **per-channel over time only**
+(a small ~T reduction) → fp16-precise → ships. **Rule: a manual GroupNorm/LayerNorm whose reduction spans a large
+joint (channel×spatial/time) extent will lose fp16 precision on the Mali delegate even when down-scaled; group/
+instance norms that reduce over a single small axis are safe.** (conv1 itself was corr 1.0 on device — isolate
+norm collapses with a per-stage device tap.) Moonshine encoder otherwise converted GPU-clean via the standard
+RoPE recipe: interleaved `rotate_half` → fixed `q @ P` matmul + baked cos/sin (kills the `x[...,0::2]` GATHER_ND
++ the `stack` 5D), tanh-GELU, mask→None. `~/Downloads/meeting/asr-work/build_moonshine.py` (reusable RoPE recipe).
+
+

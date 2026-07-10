@@ -1,0 +1,6 @@
+*.xcodeproj
+.build/
+DerivedData/
+build/
+*.safetensors
+Resources/*.safetensors
