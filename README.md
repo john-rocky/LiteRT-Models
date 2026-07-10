@@ -460,9 +460,13 @@ The 6 GB monolithic DiT exceeds LiteRT's file-load limit and a phone's GPU budge
 
 ### FLUX.2-klein-4B
 
-[FLUX.2 [klein] 4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) (Black Forest Labs, Apache-2.0) is a 4B rectified-flow transformer, **step-wise distilled** — 4 steps, and `is_distilled` means the pipeline runs **no classifier-free guidance** at all, so a step is a single DiT pass rather than two. BFL's card advertises it as running "on consumer GPUs with as little as 13 GB VRAM"; here the same weights run on a Pixel 8a's Mali-G610. Pipeline: Qwen3-4B text encoder (hidden states tapped at layers 9 / 18 / 27) → DiT (5 double-stream + 20 single-stream blocks) → VAE, all **INTEGER-int8** LiteRT graphs, all on `Accelerator.GPU`.
+[FLUX.2 [klein] 4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) (Black Forest Labs, Apache-2.0) is a 4B rectified-flow transformer, **step-wise distilled** — 4 steps, and `is_distilled` means the pipeline runs **no classifier-free guidance** at all, so a step is a single DiT pass rather than two. BFL's card advertises it as running "on consumer GPUs with as little as 13 GB VRAM"; here the same weights run on a Pixel 8a's Mali-G715. Pipeline: Qwen3-4B text encoder (hidden states tapped at layers 9 / 18 / 27) → DiT (5 double-stream + 20 single-stream blocks) → VAE, all **INTEGER-int8** LiteRT graphs, all on `Accelerator.GPU`.
 
 <img src="klein/docs/pixel8a_generated.png" width="256"> <br> *Generated on a Pixel 8a Mali GPU — "a red apple on a wooden table, studio lighting", 4 steps.*
+
+**It also edits.** `Flux2KleinPipeline.__call__` takes `image` as its first argument — klein is natively an image-editing model, and text-to-image is the `image=None` case. Editing VAE-encodes the reference on device and appends its latent tokens to the noise tokens each step, growing the joint sequence 768 → 1024. The weights are unchanged, so the editing graphs (`kce_*`) are the same tensors re-exported at the longer shape; on a Pixel 8a peak memory grows 2% and wall-clock about 7%. PSNR 44.3 dB / SSIM 0.9998 vs the fp32 `diffusers` pipeline.
+
+<img src="klein/docs/app_edit_compare.png" width="768"> <br> *Source, the fp32 `diffusers` edit, and the same edit on a Pixel 8a — "turn the apple into a green apple".*
 
 | Graph | Role | int8 size | I/O (256 px) |
 | ----- | ---- | --------- | ------------ |

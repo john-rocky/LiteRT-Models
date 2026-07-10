@@ -1,17 +1,51 @@
-# FLUX.2-klein-4B on LiteRT GPU
+# FLUX.2-klein-4B on LiteRT GPU — text-to-image and image editing
 
-Text-to-image with **FLUX.2 [klein] 4B** (Apache-2.0) running end-to-end on a phone
-GPU through LiteRT `CompiledModel` (ML Drift). Black Forest Labs ship klein as the
+Text-to-image **and prompt-driven image editing** with **FLUX.2 [klein] 4B**
+(Apache-2.0), running end-to-end on a phone GPU through LiteRT `CompiledModel`
+(ML Drift). Black Forest Labs ship klein as the
 model that "runs on consumer GPUs with as little as 13 GB VRAM" — this module runs
-the same weights on a Pixel 8a's Mali-G610, which has no VRAM at all.
+the same weights on a Pixel 8a's Mali-G715, which has no VRAM at all.
 
 Nothing runs on the CPU: the Qwen3-4B text encoder, the 4B rectified-flow DiT and
-the VAE decoder are all `Accelerator.GPU` graphs.
+both VAE halves are all `Accelerator.GPU` graphs.
 
 ![generated on a Pixel 8a](docs/pixel8a_generated.png)
 
 *"a red apple on a wooden table, studio lighting" — 4 steps, 256x256, generated on
 a Pixel 8a. PSNR 36.8 dB against the fp32 `diffusers` pipeline.*
+
+![edited on a Pixel 8a](docs/app_edit_compare.png)
+
+*Editing: source, the fp32 `diffusers` edit, and the same edit on a Pixel 8a.
+"turn the apple into a green apple" — PSNR 44.3 dB / SSIM 0.9998, 328-369 s.*
+
+## Image editing
+
+`Flux2KleinPipeline.__call__` takes `image` as its first argument: klein is natively
+an editing model, and text-to-image is the `image=None` case. Editing VAE-encodes the
+reference and appends its latent tokens to the noise tokens before every step
+(`cat([latents, image_latents], dim=1)`), separated on the rotary `T` axis (noise
+`T=0`, reference `T=10`). Only the noise half of the prediction is stepped.
+
+That grows the joint sequence 768 -> 1024, so editing runs the `kce_*` graphs: the
+same weights re-exported at the longer shape, byte-identical in size. On a Pixel 8a
+peak RSS grows 2%, per-step GPU time 1.6x, shader compile 1.0-1.2x — and since
+compilation dominates, editing costs about +7% end-to-end.
+
+```bash
+cd scripts
+python chunked_export_klein.py --edit --export           # kce_*
+python vae_encode_klein.py --export                      # kv_vae_enc
+python gen_prep_klein.py --edit --bins klein_bins_edit
+python gen_verify_klein.py --edit --bins klein_bins_edit           # host gate
+python gen_verify_klein.py --edit --bins klein_bins_edit --device  # phone GPU
+
+cd ..
+./install_to_device.sh scripts scripts/klein_bins scripts/klein_bins_edit
+```
+
+The app then shows an **Edit an image** button that opens the photo picker. The edit
+prompt is baked into the staged tensors, so changing it means re-running gen_prep.
 
 | | |
 |---|---|
@@ -21,7 +55,7 @@ a Pixel 8a. PSNR 36.8 dB against the fp32 `diffusers` pipeline.*
 | Steps | 4 (step-wise distilled — **no classifier-free guidance**) |
 | Output | 256 x 256 |
 | Deploy graphs | 12 x int8, 6.2 GB total, largest 912 MB |
-| Device | Pixel 8a (Mali-G610), 306 s: encoder 35 s, ~70 s/step, VAE 7 s |
+| Device | Pixel 8a (Mali-G715), 306 s: encoder 35 s, ~70 s/step, VAE 7 s |
 | Quality | PSNR 36.8 dB / corr 0.9987 vs the fp32 `diffusers` pipeline |
 
 ## How a 6.2 GB model fits in a phone

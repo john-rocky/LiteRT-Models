@@ -6,7 +6,7 @@ import com.google.ai.edge.litert.Environment
 import java.io.File
 
 /**
- * Full on-device FLUX.2-klein-4B text-to-image generation.
+ * Full on-device FLUX.2-klein-4B text-to-image generation and image editing.
  *
  * The 4B DiT and the Qwen3-4B text encoder are split into twelve int8 LiteRT
  * graphs, each under the ~1 GB size where the ML Drift OpenCL delegate compiles
@@ -19,6 +19,15 @@ import java.io.File
  * classifier-free guidance, no sign flip, a straight flow-matching Euler update
  *     latents += dsigma[step] * noise_pred
  * and a per-channel batch-norm denormalization before the VAE.
+ *
+ * Passing a reference bitmap switches to editing. `Flux2KleinPipeline` appends
+ * the reference's VAE latent tokens to the noise tokens every step
+ *     latent_model_input = cat([latents, image_latents], dim=1)
+ * which doubles the image sequence (256 -> 512 tokens, joint 768 -> 1024) and
+ * needs the `kce_*` graphs re-exported at that shape. The weights are identical,
+ * so only the activations grow. Only the first [N_IMG] output tokens are the
+ * noise prediction; the reference half is discarded, exactly as the pipeline's
+ * `noise_pred[:, :latents.size(1)]` does.
  */
 object KleinGen {
 
@@ -35,14 +44,23 @@ object KleinGen {
     private const val LATENT_HW = 32
     private const val IMAGE_SIZE = 256
 
-    /** Generates one image; the shared [Environment] is closed on the way out. */
-    fun run(context: Context, log: (String) -> Unit): Bitmap =
-        Environment.create().use { env -> generate(env, context, log) }
+    /**
+     * Generates one image; the shared [Environment] is closed on the way out.
+     *
+     * @param reference when non-null, the picked image is edited rather than a
+     *     new one generated. It is squared and resized to [IMAGE_SIZE] first.
+     */
+    fun run(context: Context, reference: Bitmap? = null, log: (String) -> Unit): Bitmap =
+        Environment.create().use { env -> generate(env, context, reference, log) }
 
-    private fun generate(env: Environment, context: Context, log: (String) -> Unit): Bitmap {
+    private fun generate(env: Environment, context: Context, reference: Bitmap?,
+                         log: (String) -> Unit): Bitmap {
+        val editing = reference != null
+        val prefix = if (editing) "kce" else "kc"
+        val binsDir = if (editing) "klein_bins_edit" else "klein_bins"
         val dir = context.getExternalFilesDir(null)!!
-        fun bin(name: String) = readFloats(File(dir, "klein_bins/$name.bin"))
-        fun indexBin(name: String) = readInts(File(dir, "klein_bins/$name.bin"))
+        fun bin(name: String) = readFloats(File(dir, "$binsDir/$name.bin"))
+        fun indexBin(name: String) = readInts(File(dir, "$binsDir/$name.bin"))
 
         val inputsEmbeds = bin("inputs_embeds")
         val encMask = bin("enc_mask")
@@ -61,6 +79,13 @@ object KleinGen {
         val startMillis = System.currentTimeMillis()
         fun elapsed() = (System.currentTimeMillis() - startMillis) / 1000f
 
+        val imageLatents = reference?.let {
+            log("encoding reference image…")
+            val tokens = encodeReference(env, dir, it, indexBin("patch_perm"), bnMean, bnStd)
+            log("reference encoded (${elapsed()}s)")
+            tokens
+        }
+
         log("encoding prompt…")
         val promptEmbeds = encodeText(env, dir, inputsEmbeds, encMask, encCos, encSin)
         log("prompt encoded (${elapsed()}s)")
@@ -68,7 +93,9 @@ object KleinGen {
         val tembSize = temb.size / STEPS
         for (step in 0 until STEPS) {
             val stepTemb = temb.copyOfRange(step * tembSize, (step + 1) * tembSize)
-            val noisePred = denoiseStep(env, dir, latents, promptEmbeds, stepTemb, cos, sin)
+            val tokens = if (imageLatents == null) latents else latents + imageLatents
+            val noisePred = denoiseStep(env, dir, prefix, tokens, promptEmbeds,
+                stepTemb, cos, sin)
             for (i in latents.indices) {
                 latents[i] += dsigma[step] * noisePred[i]
             }
@@ -79,6 +106,54 @@ object KleinGen {
         val image = ChunkRunner.gpu(env, "kv_vae.tflite", dir, listOf(latent))[0]
         log("VAE decoded (${elapsed()}s total)")
         return toBitmap(image)
+    }
+
+    /**
+     * VAE-encodes the reference image into the DiT's packed latent tokens.
+     *
+     * Mirrors `Flux2KleinPipeline._encode_vae_image`: encode to the latent mean,
+     * patchify 2x2 (a pure permutation, precomputed), batch-norm normalize per
+     * packed channel, then pack [PACKED_CH, 16, 16] into [256, PACKED_CH] tokens.
+     */
+    private fun encodeReference(env: Environment, dir: File, reference: Bitmap,
+                                patchPerm: IntArray, bnMean: FloatArray,
+                                bnStd: FloatArray): FloatArray {
+        val latent = ChunkRunner.gpu(env, "kv_vae_enc.tflite", dir,
+            listOf(toPlanarRgb(reference)))[0]          // [LATENT_CH, 32, 32]
+        val packed = gather(latent, patchPerm)          // [PACKED_CH, 16, 16]
+        val plane = PACKED_HW * PACKED_HW
+        for (channel in 0 until PACKED_CH) {
+            val base = channel * plane
+            for (i in 0 until plane) {
+                packed[base + i] = (packed[base + i] - bnMean[channel]) / bnStd[channel]
+            }
+        }
+        val tokens = FloatArray(plane * PACKED_CH)      // [256, PACKED_CH]
+        for (channel in 0 until PACKED_CH) {
+            for (i in 0 until plane) {
+                tokens[i * PACKED_CH + channel] = packed[channel * plane + i]
+            }
+        }
+        return tokens
+    }
+
+    /** Center-crops, resizes and converts to planar RGB in [-1,1]. */
+    private fun toPlanarRgb(source: Bitmap): FloatArray {
+        val side = minOf(source.width, source.height)
+        val square = Bitmap.createBitmap(source, (source.width - side) / 2,
+            (source.height - side) / 2, side, side)
+        val scaled = Bitmap.createScaledBitmap(square, IMAGE_SIZE, IMAGE_SIZE, true)
+        val plane = IMAGE_SIZE * IMAGE_SIZE
+        val pixels = IntArray(plane)
+        scaled.getPixels(pixels, 0, IMAGE_SIZE, 0, 0, IMAGE_SIZE, IMAGE_SIZE)
+        val out = FloatArray(3 * plane)
+        for (p in 0 until plane) {
+            val pixel = pixels[p]
+            out[p] = ((pixel shr 16 and 0xFF) / 127.5f) - 1f
+            out[plane + p] = ((pixel shr 8 and 0xFF) / 127.5f) - 1f
+            out[2 * plane + p] = ((pixel and 0xFF) / 127.5f) - 1f
+        }
+        return out
     }
 
     /**
@@ -108,12 +183,19 @@ object KleinGen {
         return out
     }
 
-    /** One DiT step: prep -> double blocks -> host concat -> single blocks -> final. */
-    private fun denoiseStep(env: Environment, dir: File, latents: FloatArray,
-                            promptEmbeds: FloatArray, temb: FloatArray,
-                            cos: FloatArray, sin: FloatArray): FloatArray {
-        val prep = ChunkRunner.gpu(env, "kc_prep.tflite", dir,
-            listOf(latents, promptEmbeds, temb))
+    /**
+     * One DiT step: prep -> double blocks -> host concat -> single blocks -> final.
+     *
+     * [tokens] is the noise tokens for text-to-image, or the noise tokens followed
+     * by the reference tokens when editing. The returned prediction is trimmed to
+     * the noise half by the caller's loop bounds.
+     */
+    private fun denoiseStep(env: Environment, dir: File, prefix: String,
+                            tokens: FloatArray, promptEmbeds: FloatArray,
+                            temb: FloatArray, cos: FloatArray,
+                            sin: FloatArray): FloatArray {
+        val prep = ChunkRunner.gpu(env, "${prefix}_prep.tflite", dir,
+            listOf(tokens, promptEmbeds, temb))
         var hidden = prep[0]
         var encoder = prep[1]
         val modImage = prep[2]
@@ -121,7 +203,7 @@ object KleinGen {
         val modSingle = prep[4]
 
         for (i in 0 until DOUBLE_CHUNKS) {
-            val out = ChunkRunner.gpu(env, "kc_double$i.tflite", dir,
+            val out = ChunkRunner.gpu(env, "${prefix}_double$i.tflite", dir,
                 listOf(hidden, encoder, cos, sin, modImage, modText))
             hidden = out[0]
             encoder = out[1]
@@ -129,10 +211,10 @@ object KleinGen {
         // The single-stream blocks attend over one joint sequence: text then image.
         var joint = encoder + hidden
         for (i in 0 until SINGLE_CHUNKS) {
-            joint = ChunkRunner.gpu(env, "kc_single$i.tflite", dir,
+            joint = ChunkRunner.gpu(env, "${prefix}_single$i.tflite", dir,
                 listOf(joint, cos, sin, modSingle))[0]
         }
-        return ChunkRunner.gpu(env, "kc_final.tflite", dir, listOf(joint, temb))[0]
+        return ChunkRunner.gpu(env, "${prefix}_final.tflite", dir, listOf(joint, temb))[0]
     }
 
     /**

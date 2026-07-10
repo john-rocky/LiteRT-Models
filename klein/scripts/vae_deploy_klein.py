@@ -17,7 +17,7 @@ import torch.nn as nn
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from probe_vae import patch_groupnorm_nd
+from vae_patches import patch_groupnorm_nd
 
 REPO = "black-forest-labs/FLUX.2-klein-4B"
 LATENT_CH = 32
@@ -36,6 +36,7 @@ class DecoderOnly(nn.Module):
 
 
 def main():
+    """Checks the decoder rewrite, then optionally exports it."""
     from diffusers import AutoencoderKLFlux2
 
     torch.manual_seed(0)
@@ -62,7 +63,8 @@ def main():
     if "--export" in sys.argv:
         import litert_torch
         from litert_torch.generative.quantize import quant_recipes as qrs
-        from litert_torch.generative.quantize.quant_attrs import Dtype, Granularity
+        from litert_torch.generative.quantize.quant_attrs import Dtype
+        from litert_torch.generative.quantize.quant_attrs import Granularity
         from check_ops import check_ops
         cfg = qrs.full_dynamic_recipe(weight_dtype=Dtype.INT8,
                                       granularity=Granularity.CHANNELWISE)
