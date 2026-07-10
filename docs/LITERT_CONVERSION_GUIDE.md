@@ -853,4 +853,46 @@ norm collapses with a per-stage device tap.) Moonshine encoder otherwise convert
 RoPE recipe: interleaved `rotate_half` → fixed `q @ P` matmul + baked cos/sin (kills the `x[...,0::2]` GATHER_ND
 + the `stack` 5D), tanh-GELU, mask→None. `~/Downloads/meeting/asr-work/build_moonshine.py` (reusable RoPE recipe).
 
+### SSDLite320-MobileNetV3 (torchvision detector)
+
+Converter: **litert-torch, patch-free** (no model-internal op rewrite). The fast clean
+CompiledModel-GPU detector — 0.59 GMACs, BSD-3, FP16 7.2 MB. Device-verified on Pixel 8a
+(Tensor G3): CompiledModel GPU delegates **all 286 nodes to OpenCL** (`Replacing 286 out of
+286 node(s) with delegate (LITERT_CL)`, 1 partition, no CPU fallback), **~30 FPS** live camera.
+
+**Two techniques make it convert clean — both are output/IO choices, not model patches:**
+
+1. **4D-head-tap.** SSD's built-in postprocess (`DefaultBoxGenerator` + box decode + NMS)
+   lowers to `GATHER_ND`/`TOPK`/`>4D` (GPU-rejected), and the naive head wrapper emits
+   transient 5D `view(N,A,K,H,W)` tensors. Instead, return each feature level's **raw head
+   conv outputs** (4D, NCHW): `cls[i] = [1, A·91, H, W]`, `box[i] = [1, A·4, H, W]` for the 6
+   levels (H = 20,10,5,3,2,1), and move decode + NMS to app code. Same "choose the output
+   point" move as YOLOX raw-head / U²-Net `d0`.
+
+   ```python
+   feats = list(m.backbone(x).values())
+   ch = m.head.classification_head.module_list
+   rh = m.head.regression_head.module_list
+   return tuple(t for i, f in enumerate(feats) for t in (ch[i](f), rh[i](f)))  # 12 × 4D
+   ```
+
+2. **Keep NCHW I/O — do NOT use `to_channel_last_io`.** Its channel-last pass turns
+   MobileNetV3's 8 `SqueezeExcitation` global-avg-pools into `GATHER_ND×8 + 5D`. With NCHW
+   input the model converts stock-clean (`BANNED NONE, ≤4D, Flex NONE`); the SE pools lower to
+   plain `SUM` (×8) which Mali ML Drift accepts. **Lesson: before patching a model, check the
+   "needed patch" isn't an artifact of a convenience transform.** (Clean NHWC input would need a
+   converter-side fix for channel-last × global-pool, not a model monkeypatch.)
+
+**Preprocessing gotcha (cost an hour):** SSDLite320 normalizes **mean = std = 0.5** →
+`pixel/127.5 - 1` ∈ [-1, 1], **NOT ImageNet**. ImageNet-norm silently caps scores (top 0.31 vs
+0.74 correct). Verify your preprocessing against `m.transform([t]).tensors`. Resize = bilinear
+**stretch** to 320×320 (`fixed_size`, not letterbox).
+
+**Kotlin decode** mirrors `SSD.postprocess_detections` + `BoxCoder(weights=10,10,5,5)`: rebuild
+the 3234 default boxes from the `DefaultBoxGenerator` formula (scales 0.2–0.95, ar {1,2,3,½,⅓};
+matches the export to 3e-5), softmax over 91 → best non-background → threshold → decode against
+the anchor → per-class NMS. The tflite output order is `(cls, box)` per level; NCHW channel =
+`a·K + k` (cls) / `a·4 + j` (box). FP16 end-to-end matches stock torchvision **298/300 boxes @
+IoU 0.99**. FP16 recipe = `ai_edge_quantizer` `AlgorithmName.FLOAT_CASTING` +
+`ComputePrecision.FLOAT` (the inline `op_config` dict throws `KeyError: compute_precision`).
 
