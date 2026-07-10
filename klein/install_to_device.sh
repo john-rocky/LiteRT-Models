@@ -10,6 +10,10 @@
 #   edit_bins_dir  optional; the bins written by gen_prep_klein.py --edit.
 #                  Supplying it also stages the nine editing graphs.
 #
+# If <graphs_dir>/klein_tokenizer exists (scripts/export_tokenizer_klein.py) it is
+# staged too, and the app lets you type the prompt instead of using the baked one.
+# That adds the 778 MB fp16 Qwen3 embedding table.
+#
 # Text-to-image needs 6.2 GB of graphs; adding editing brings it to 10.1 GB. They
 # are never committed. The app reads them from its external files dir with the
 # file-path CompiledModel.create overload.
@@ -58,6 +62,12 @@ if [ -n "${EDIT_BINS}" ]; then
   adb push "${EDIT_BINS}/." "${DEST}/klein_bins_edit/"
   adb shell chmod 777 "${DEST}/klein_bins_edit"
   adb shell 'chmod 666 '"${DEST}"'/klein_bins_edit/*.bin'
+fi
+
+if [ -d "${GRAPHS}/klein_tokenizer" ]; then
+  echo "staging the tokenizer + embedding table (778 MB) ..."
+  adb push "${GRAPHS}/klein_tokenizer/." "${DEST}/"
+  adb shell 'chmod 666 '"${DEST}"'/qwen_*'
 fi
 
 # adb-created dirs are group-owned by shell; make them app-traversable.

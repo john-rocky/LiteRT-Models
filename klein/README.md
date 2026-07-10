@@ -44,8 +44,27 @@ cd ..
 ./install_to_device.sh scripts scripts/klein_bins scripts/klein_bins_edit
 ```
 
-The app then shows an **Edit an image** button that opens the photo picker. The edit
-prompt is baked into the staged tensors, so changing it means re-running gen_prep.
+The app then shows an **Edit an image** button that opens the photo picker.
+
+## Typing the prompt
+
+Only two staged tensors depend on the words — `inputs_embeds` and `enc_mask` — so the
+app can encode a typed prompt itself. Stage the tokenizer and the fp16 embedding table:
+
+```bash
+cd scripts
+python export_tokenizer_klein.py --out klein_tokenizer   # 778 MB embedding + vocab/merges
+cd ..
+./install_to_device.sh scripts scripts/klein_bins scripts/klein_bins_edit
+```
+
+`install_to_device.sh` stages `klein_tokenizer/` when it exists, and the app then shows
+**editable prompt fields** instead of the baked prompt. It carries a faithful
+`Qwen2Tokenizer` port (`QwenTokenizer.kt`, fixture-tested byte-for-byte against Python)
+and looks token rows up in a memory-mapped fp16 copy of the Qwen3 embedding table — a
+`GATHER` over 151936 rows is not a GPU op, and the row is the graph's input anyway.
+Tokenizing and embedding takes about 1 s. Device-verified: a typed "a blue ceramic teapot
+on a marble counter, morning light" generates the teapot, not the baked apple.
 
 | | |
 |---|---|
@@ -162,7 +181,8 @@ tool to reach for when a device result is wrong but nothing errors.
 
 ## Notes
 
-- The prompt is baked into `scripts/gen_prep_klein.py`; changing it means re-running
+- With `klein_tokenizer/` staged the prompt is typed in the app. Otherwise it is baked
+  into `scripts/gen_prep_klein.py`; changing the baked one means re-running
   step 2 (the tokenizer and Qwen3 embedding table stay on the host).
 - Each graph is recompiled every time it is loaded:
   `GpuOptions(serializeProgramCache = true)` aborts the ML Drift OpenCL delegate on

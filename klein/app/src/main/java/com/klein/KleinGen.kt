@@ -49,12 +49,19 @@ object KleinGen {
      *
      * @param reference when non-null, the picked image is edited rather than a
      *     new one generated. It is squared and resized to [IMAGE_SIZE] first.
+     * @param prompt when non-null, it is tokenized and embedded on device instead
+     *     of the prompt baked into the staged .bin files being used.
      */
-    fun run(context: Context, reference: Bitmap? = null, log: (String) -> Unit): Bitmap =
-        Environment.create().use { env -> generate(env, context, reference, log) }
+    fun run(context: Context, reference: Bitmap? = null, prompt: String? = null,
+            log: (String) -> Unit): Bitmap =
+        Environment.create().use { env -> generate(env, context, reference, prompt, log) }
+
+    /** True when the tokenizer and the embedding table have been staged. */
+    fun isPromptEditable(context: Context): Boolean =
+        PromptEncoder.isStaged(context.getExternalFilesDir(null)!!)
 
     private fun generate(env: Environment, context: Context, reference: Bitmap?,
-                         log: (String) -> Unit): Bitmap {
+                         prompt: String?, log: (String) -> Unit): Bitmap {
         val editing = reference != null
         val prefix = if (editing) "kce" else "kc"
         val binsDir = if (editing) "klein_bins_edit" else "klein_bins"
@@ -62,8 +69,10 @@ object KleinGen {
         fun bin(name: String) = readFloats(File(dir, "$binsDir/$name.bin"))
         fun indexBin(name: String) = readInts(File(dir, "$binsDir/$name.bin"))
 
-        val inputsEmbeds = bin("inputs_embeds")
-        val encMask = bin("enc_mask")
+        // The prompt is the only thing the graphs cannot derive: the rotary tables,
+        // the schedule and the permutations all depend on positions, not on words.
+        var inputsEmbeds = bin("inputs_embeds")
+        var encMask = bin("enc_mask")
         val encCos = bin("enc_cos")
         val encSin = bin("enc_sin")
         val cos = bin("cos")
@@ -78,6 +87,16 @@ object KleinGen {
 
         val startMillis = System.currentTimeMillis()
         fun elapsed() = (System.currentTimeMillis() - startMillis) / 1000f
+
+        if (prompt != null) {
+            log("tokenizing prompt…")
+            PromptEncoder(dir).use { encoder ->
+                val tokens = encoder.tokenize(prompt)
+                inputsEmbeds = encoder.embed(tokens)
+                encMask = encoder.attentionMask(tokens)
+                log("prompt: ${tokens.realCount} tokens (${elapsed()}s)")
+            }
+        }
 
         val imageLatents = reference?.let {
             log("encoding reference image…")
