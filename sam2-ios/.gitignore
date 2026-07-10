@@ -1,0 +1,11 @@
+# Generated Xcode project (regenerate with `xcodegen`)
+*.xcodeproj
+.build/
+DerivedData/
+build/
+
+# Model files (converted, never committed)
+*.tflite
+*.bin
+Resources/*.tflite
+Resources/*.bin

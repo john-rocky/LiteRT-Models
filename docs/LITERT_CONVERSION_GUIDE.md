@@ -109,6 +109,35 @@ Standard ViT (global attention) works because Q/K/V are always 4D: `(B, heads, t
 
 **On-device-only: ops on constant-only inputs are rejected.** Beyond the desktop op-blocklist, ML Drift's compiler rejects `MEAN` / `DIV` / `SELECT` (and similar) when **all their inputs are constants** (the desktop GPU_BAD-name check passes; the on-device *compile* fails with e.g. `MEAN: Expected 1 const input tensor(s), but node has 2 const input(s)`). Seen in EdgeTAM's perceiver: (a) `LayerNorm` applied to a constant `latents` parameter → `MEAN` over a const → **taint the constant to runtime** with `+ 1e-9 * x.mean()` (non-folding, numerically negligible); (b) softmax over a single-element sequence (1 token attending to itself) → `exp(0)/exp(0)` = `DIV` of a tensor by itself → **special-case `seq_len==1`** (the attention weight is identically 1.0, so the output is just the value); (c) a runtime `sine` position-encoding that emits `GATHER_ND`/>4D → **bake it to a constant** for the fixed feature size.
 
+## litert_gpu_toolkit — canonical patch catalog
+
+The patches described throughout this guide are packaged in `litert_gpu_toolkit/` at the
+repo root. **Import from the toolkit instead of re-implementing inline in a conversion
+script** — every re-authoring below is numerically verified against its PyTorch reference
+(`float-noise` level unless noted).
+
+`convert_for_gpu(model, dummy_input, output_path)` applies the always-safe set
+automatically. Everything else is opt-in:
+
+| Utility | Fixes | When to use | Proven in |
+|---|---|---|---|
+| `SigmoidGELU` / `patch_gelu` | `Erf` (FlexErf) ban | Default GELU replacement (fp16-safe, err ~0.01) | ViT backbones everywhere |
+| `TanhGELU` / `patch_gelu(m, approximation="tanh")` | same | Regression heads where 0.01 shifts output | Metric3D, D-FINE |
+| `ZeroStuffConvT1d/2d` / `patch_conv_transpose(m, dummy)` | `TRANSPOSE_CONV` rejected on device | Any deconv decoder; exact incl. grouped/output_padding | DAC, Matcha, Mimi, EDSR, PP-OCR, DewarpNet, TwinLiteNet |
+| `pixelshuffle_to_conv_transpose(r, c)` | PixelShuffle → 6D reshape | Swap manually, then `patch_conv_transpose` | EDSR x4 |
+| `ZeroPadMaxPool` / `patch_maxpool_zeropad` | PADV2(-inf) rejected | Padded MaxPool on non-negative input (ResNet stems) | Places365, PlantNet, BiSeNet, SINet-V2 |
+| `patch_safe_layernorm(scale=...)` | fp16 sum-of-squares overflow in LayerNorm | Device output wrong at full GPU residency; `adaptive_v2` default | Parakeet, RF-DETR, NAFNet, D-FINE |
+| `safe_rms` / `patch_rmsnorm` | fp16 overflow in RMSNorm (deep residual stacks) | Output collapses to 0 on device | Qwen3 embedding/reranking |
+| `hierarchical_mean` / `SafeInstanceNorm2d` / `patch_instance_norm` | fp16 overflow in global spatial reductions | Large maps; **pow2 spatial dims only** | MODNet |
+| `patch_grid_sample` | `grid_sample` → GATHER_ND | Deformable attention, fixed-size value maps | RF-DETR |
+| `ManualGroupNorm` / `patch_groupnorm` | GroupNorm unsupported | always-safe set | DSINE, Matcha |
+| `patch_window_attention` / `patch_patch_merging` | Swin GATHER_ND / 6D | always-safe set | Swin variants |
+| `patch_weight_standardization` | Conv2d_WS dynamic weight norm | always-safe set | DSINE |
+| `patch_interpolate` / `patch_normalize` / `patch_einops` | align_corners / div-broadcast / einops 6D | always-safe set (global monkey-patches) | various |
+
+After any fp16-wall patch (`safe_*`), re-verify on device — desktop CPU/GPU parity does
+not exercise the delegate's fp16 accumulation (residency ≠ correctness).
+
 ## Model-Specific Notes
 
 ### MobileSAM
@@ -459,6 +488,102 @@ host-side (Kotlin). **Env note:** `import _stub_propack` FIRST — a NARROW stub
 matcha `_stub` over-stubs scipy.optimize and breaks any librosa/scipy.signal user. Scripts:
 `ppocr/scripts/{build_det,build_rec}.py`. Models: [`litert-community/PP-OCRv5-LiteRT`](https://huggingface.co/litert-community/PP-OCRv5-LiteRT).
 
+### RF-DETR Nano (Roboflow / LW-DETR 2025) — first transformer/DETR detector fully on GPU (2-graph split + SafeLayerNorm)
+
+Converter: **litert-torch** (`pip install rfdetr`, Apache-2.0). RF-DETR is a transformer detector
+(windowed DINOv2-S backbone + deformable-attention DETR decoder, two-stage, 30.5M). The off-the-shelf
+Qualcomm/onnx2tf export is GPU-incompatible (deformable `grid_sample`→GATHER_ND, windowed attn 5D/6D,
+TOPK/GATHER) — but with litert-torch re-authoring + a 2-graph split it runs **100% on CompiledModel GPU**.
+Device-verified Pixel 8a: Graph A 1381/1381 + Graph B 404/404 LITERT_CL, ≈27 ms; on a real image the
+device chain reproduces the PyTorch detections at **IoU 0.98–0.99, same class** (the original
+"RF-DETR does NOT ride CompiledModel cleanly" verdict is superseded).
+
+**Re-authoring (per-graph tflite-vs-torch corr 1.0):**
+1. **Windowed DINOv2 backbone** — 6D window-partition → a 5-step ≤4D reshape/permute (+ exact inverse for
+   un-windowing); SDPA→manual 4D attn; `interpolate_pos_encoding` baked; cls `repeat`→`cat`; tanh-GELU.
+   Only **3 of 12 layers are global attention** (rest windowed, 144-token) → backbone survives Mali fp16
+   (corr 0.9998), unlike full-global DINOv2 (DA-V2 walled at 0.63). The windowing IS the fp16 mitigation.
+2. **Deformable `grid_sample` → GATHER/CAST-free tent-matmul**: `wx=relu(1-|ix-px|)` over `arange(W)`,
+   `W=outer(wy,wx)`, `out=input_flat @ W_flat.T` BMM — numerically exact incl. zeros-pad OOB, all ≤4D
+   (replaces RF-DETR's own `_bilinear_grid_sample` which uses `.long()`+gather = banned).
+3. **MSDeformAttn** re-authored ≤4D (n_levels=1, no 6D sampling tensors); **sine pos-embed** `dim_t` baked
+   (kills POW/FLOOR_DIV) + strided interleave `[...,0::2]`→`reshape(d//2,2)` (kills GATHER_ND).
+4. torch.export friction: `torch._shape_as_tensor`→const, `torch._assert`→no-op, `net.export()`.
+
+**2-graph split (the ship path — standard for two-stage DETR on edge).** The query selection (top-300
+proposals = TOPK_V2+GATHER) has no GPU op, but the proposal **grid is image-independent**, so split there:
+- **Graph A (GPU)** = backbone(encoder+projector) + flatten + proposal-grid + enc heads → enc_class[1,576,91],
+  enc_coord[1,576,4], memory[1,576,256]. Bake the grid as a const buffer (meshgrid→BROADCAST_TO else). The
+  24² grid is all-valid so the validity masked_fill is a no-op (skip it; host needs no validity mask).
+- **host (Kotlin)** = top-300 by `max(enc_class,-1)` (descending = torch.topk order) → gather enc_coord → ts.
+  `memory_ts`/`boxes_ts` (hs_enc/ref_enc) are **dead at inference** (decoder tgt = learned query_feat; topk
+  feeds only the reference points) → host does coord-gather only.
+- **Graph B (GPU)** = two-stage reparam combine + 2-layer decoder + bbox/class heads → boxes[1,300,4]+logits.
+  lite_refpoint_refine=True → decoder.bbox_embed=None → ref_unsigmoid = the input combined refpoint.
+
+**⭐ fp16 hardening = SafeLayerNorm in BOTH the projector AND the decoder (device-only, not desktop):**
+- The **MultiScaleProjector** fuses 4 backbone maps; ConvX outputs hit |x|~440 → channels-first LN channel
+  sum-of-squares 256·440² OVERFLOWS fp16 (>65504) on Mali → device memory corr 1.0→0.58. Fix = projector LN
+  → NAFNet SafeLayerNorm (down-scale by S=128 before reduce, exact) → 0.9999.
+- Decoder layer-0 `nn.MultiheadAttention` output |x|~1068 (trained out_proj amplifies ~222×) → residual into
+  norm1/norm3 overflows. Fix = nn.LayerNorm → **ADAPTIVE SafeLayerNorm** `S=max(1, amax/8)` per row. A FIXED
+  large S squashes the small norms (final norm ~8 → logits 0.88→0.32) — adaptiveness is essential.
+- The decoder logits still cap at device corr ~0.88 (transformer fp16 wall: near-one-hot attention scores
+  ~300 → fp16 argmax flips per low-conf query; survivable at 2 layers) — but **real detections are perfect**
+  (IoU 0.98–0.99). ⇒ ship criterion for detectors = detection IoU/class on a REAL image, NOT raw output corr.
+
+Preprocessing: square resize 384×384, RGB, ImageNet mean/std, NCHW. Host: sigmoid + threshold + cxcywh→xyxy
++ per-class NMS (light, removes fp16 near-duplicate queries). Scripts: `rfdetr/scripts/build_rfdetr_split.py`
+(imports build_rfdetr_full → build_rfdetr_bb). Models: [`litert-community/RF-DETR-Nano-LiteRT`](https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT).
+
+### Parakeet (NVIDIA FastConformer-CTC, ASR) — SafeLayerNorm **v2** (never rebuild the variance)
+
+`parakeet-tdt_ctc-110m` (CTC branch, CC-BY-4.0): the 17-layer FastConformer encoder + CTC head run **fully on
+the CompiledModel GPU** — the first big global-attention transformer in this zoo to survive the Mali fp16 path
+end to end. On-device transcript matches PyTorch exactly (real-frame logits corr 0.99997), 3105/3105 ops on
+LITERT_CL.
+
+**The key finding — SafeLayerNorm v2.** The first device run gave corr 0.44 and a *blank* transcript, looking
+exactly like the EoMT/DA-V2 "deep global-attention transformers wall on Mali fp16" verdict. A per-layer device
+tap proved otherwise: N=0 (subsampling + pos only) = corr 1.0 but **|x| ≈ 7000**; N=1 (one conformer block) =
+0.20, and *every* ablation (drop attention / conv / FFN / rel-shift / plain-LN) stayed 0.20 → a single block
+already broken ⇒ a structural fault, not precision compounding. The dw-striding subsampling front-end
+legitimately emits |x| ≈ 7000, so the first LayerNorm must normalize it — and **even the adaptive SafeLayerNorm
+above overflows here**, because it *rebuilds* the variance: `var = mean(d²)·S²` with `S ≈ amax/8 ≈ 918` gives
+`S² ≈ 8.4e5` and `var ≈ 2.5e7`, both **> fp16 max 65504** → `var = ∞` → `y = 0` → output = bias → corr 0.20.
+
+Fix — **stay entirely in the down-scaled domain and never reconstruct the large variance** (the scale cancels
+in `y = d/√var`):
+
+```python
+def safe_layernorm_v2(x, weight, bias, eps):           # x: [..., C]
+    amax = x.abs().amax(-1, keepdim=True)
+    S    = (amax * 0.125).clamp(min=1.0)               # per-row; native S=1 for small norms
+    xs   = x / S                                       # down-scaled, O(1)
+    mu   = xs.mean(-1, keepdim=True)
+    d    = xs - mu
+    var  = (d * d).mean(-1, keepdim=True)              # down-scaled variance — NEVER ·S²
+    return d * torch.rsqrt(var + eps) * weight + bias  # exact; fp16-safe at any magnitude
+```
+
+Every intermediate stays `O(1)…O(amax)`, so it is overflow-free for any input magnitude — **use v2 in place of
+the `var = mean(d²)·S²` form going forward.** After this, all encoder taps N=1..17 → device corr 1.0 and the
+model ships. Diagnostic lesson: a "fp16 wall" that produces an **all-zero / all-blank** collapse, plus a tap
+showing even *one* block broken, is a Safe-norm **overflow** (variance reconstruction), not precision
+compounding (which starts near 1.0 and decays gradually). DA-V2 (|x| = 21.6) was a genuine precision wall and
+stayed parked; Parakeet's was this overflow → fixable and shipped.
+
+Other re-authoring: `RelPositionMultiHeadAttention` → manual ≤4D matmuls (no SDPA/cache); GLU → `a·sigmoid(b)`
+(SPLIT banned); BatchNorm folds; CausalConv1d symmetric zero-pad; CTC `ConvASRDecoder` (Conv1d 512→1025) fused
+into the graph. Variable length = a fixed 16 s window with the encoder masking folded into a **GPU-clean
+additive attention bias** (`scores += (1-mask)·-3e4`) + a conv frame-mask, so audio ≤16 s is zero-padded
+without contaminating real frames. NeMo and litert-torch cannot share a process (a jax/torch mutex) → convert
+in two processes, each ending `os._exit(0)`. Host log-mel matches NeMo's preprocessor (note: the model uses
+**preemphasis 0.97** even though the config says `None`); greedy-CTC + SentencePiece decode on the host.
+Scripts: `parakeet/scripts/` (`build_parakeet_ship.py`, `build_parakeet_tap.py` = the per-layer tap/ablation
+harness that nailed the SafeLayerNorm v2 fix). Model:
+[`litert-community/Parakeet-tdt-ctc-110m-LiteRT`](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT).
+
 ### Metric3D v2 (DINOv2 ViT-S + RAFT-DPT) — fully-GPU metric depth, and three device-only gotchas
 
 Metric3D v2 ViT-S (BSD-2) = DINOv2 ViT-S/14+reg encoder + RAFTDepthNormalDPT5 decoder (4 iters) → absolute
@@ -727,3 +852,4 @@ instance norms that reduce over a single small axis are safe.** (conv1 itself wa
 norm collapses with a per-stage device tap.) Moonshine encoder otherwise converted GPU-clean via the standard
 RoPE recipe: interleaved `rotate_half` → fixed `q @ P` matmul + baked cos/sin (kills the `x[...,0::2]` GATHER_ND
 + the `stack` 5D), tanh-GELU, mask→None. `~/Downloads/meeting/asr-work/build_moonshine.py` (reusable RoPE recipe).
+
