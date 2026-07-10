@@ -18,9 +18,18 @@ This is the first dialogue TTS and the first RQ-Transformer in this zoo.
 
 ## Device placement
 
-Everything runs on **CPU (fp32)**. The Mali ML Drift delegate rejects the language models'
-KV-step `FULLY_CONNECTED` weight shapes, and fp16 collapses these deep stacks on ARM XNNPACK —
-the same wall documented for the other autoregressive LMs in this repo.
+Everything runs on **CPU (fp32)** as filed, because this sample pins LiteRT **2.1.3**. Two separate
+reasons, both re-examined on 2026-07-10 — and the first one turned out not to be a wall at all:
+
+* **Not the delegate.** An earlier version of this file said the Mali ML Drift delegate rejects the
+  language models' KV-step `FULLY_CONNECTED` weight shapes. That rejection is real on LiteRT 2.1.3
+  and **fixed in 2.1.5**. The depformer's own failure was in *our* graph: a rank-5 reshape inside the
+  fused-QKV authoring (the GPU's maximum rank is 4). Slicing the last dimension into thirds instead
+  gives **237/237 nodes delegated at 4–7 ms/stage**, and expanding the attention mask host-side from
+  `[1,1,1,D]` to `[1,NH,1,D]` (the known BMM + broadcast-`ADD` bug) brings it to **corr 1.000000**
+  against the desktop CPU reference. The depformer is GPU-ready; the 3.0 GB temporal graph has not
+  been evaluated on GPU yet.
+* **fp16 really does collapse these deep stacks** on ARM XNNPACK, so the CPU graphs ship as fp32.
 
 | Graph | Shape | Notes |
 |---|---|---|
