@@ -18,18 +18,32 @@ This is the first dialogue TTS and the first RQ-Transformer in this zoo.
 
 ## Device placement
 
-Everything runs on **CPU (fp32)** as filed, because this sample pins LiteRT **2.1.3**. Two separate
-reasons, both re-examined on 2026-07-10 — and the first one turned out not to be a wall at all:
+Everything runs on **CPU (fp32)**. Two reasons, both re-examined on 2026-07-10 — and neither is the
+one this file used to give:
 
-* **Not the delegate.** An earlier version of this file said the Mali ML Drift delegate rejects the
-  language models' KV-step `FULLY_CONNECTED` weight shapes. That rejection is real on LiteRT 2.1.3
-  and **fixed in 2.1.5**. The depformer's own failure was in *our* graph: a rank-5 reshape inside the
-  fused-QKV authoring (the GPU's maximum rank is 4). Slicing the last dimension into thirds instead
-  gives **237/237 nodes delegated at 4–7 ms/stage**, and expanding the attention mask host-side from
-  `[1,1,1,D]` to `[1,NH,1,D]` (the known BMM + broadcast-`ADD` bug) brings it to **corr 1.000000**
-  against the desktop CPU reference. The depformer is GPU-ready; the 3.0 GB temporal graph has not
-  been evaluated on GPU yet.
-* **fp16 really does collapse these deep stacks** on ARM XNNPACK, so the CPU graphs ship as fp32.
+* **fp16 collapses these deep stacks** on ARM XNNPACK, so the CPU graphs ship as fp32. Unchanged.
+* **The GPU is not blocked — it simply does not pay.** An earlier version of this file said the Mali
+  ML Drift delegate rejects the language models' KV-step `FULLY_CONNECTED` weight shapes. That
+  rejection is real on LiteRT 2.1.3 and **fixed in 2.1.5**; the depformer's own compile failure was a
+  rank-5 reshape in *our* fused-QKV authoring (the GPU's maximum rank is 4). With the last dimension
+  sliced into thirds and the attention mask pre-expanded from `[1,1,1,D]` to `[1,NH,1,D]` (the known
+  BMM + broadcast-`ADD` bug), all three weight sets delegate **237/237 nodes**, and the generated
+  audio is **bit-identical to the CPU path** — 4288/4288 codebook tokens equal, waveform correlation
+  1.000000, RMS difference 0.000000 over a 133-frame utterance.
+
+  It is still **not worth shipping**, because it is not faster. Per-graph timing on a Pixel 8a, same
+  seed, 3906 depformer calls:
+
+  | | KV upload | small inputs | `run()` | output readback | depformer total |
+  |---|---|---|---|---|---|
+  | CPU | 0.45 s | 0.28 s | 75.8 s | 0.58 s | **76.4 s** |
+  | GPU | 2.0 s | 2.2 s | 17.1 s | 61.2 s | **78.3 s** |
+
+  `CompiledModel.run()` only *enqueues*; the GPU work is actually paid inside the first
+  `readFloat()`, which is why the naive reading of `run()` alone suggests a 4.4× win that does not
+  exist. Per call the GPU costs 21.1 ms against the CPU's 19.7 ms: a 3-layer, single-token step graph
+  is far too small to amortise dispatch and synchronisation. The temporal transformer (30 layers) is
+  the graph worth moving, but at 3.0 GB fp32 it does not fit in GPU memory as exported.
 
 | Graph | Shape | Notes |
 |---|---|---|
