@@ -106,6 +106,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [Kokoro-82M](#kokoro-82m)
   - [Matcha-TTS](#matcha-tts)
   - [Dia2-1B (dialogue)](#dia2-1b-dialogue)
+  - [VibeVoice-Realtime-0.5B](#vibevoice-realtime-05b)
 
 - [**Vision-Language Model**](#vision-language-model)
   - [SmolVLM-256M](#smolvlm-256m)
@@ -1021,6 +1022,24 @@ A 4-second utterance takes ~190 s on a Pixel 8a and peaks at ~4.6 GB RSS — clo
 
 **Original project**: [nari-labs/Dia2-1B](https://huggingface.co/nari-labs/Dia2-1B) | [Apache-2.0](https://huggingface.co/nari-labs/Dia2-1B)
 
+### VibeVoice-Realtime-0.5B
+
+VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-diffusion** TTS — the first streaming AR-diffusion TTS and the first **real-attention autoregressive decoder with an on-device KV cache** in this zoo. The 24-layer Qwen2.5-0.5B backbone is split into a 4-layer text LM and a 20-layer TTS LM; each token, the TTS LM's hidden state conditions a 4-layer DDPM head that a 5-step DPM-Solver++ loop denoises into a 64-d acoustic latent, which a convolutional **σ-VAE decoder** turns into 24 kHz audio. **FFT-free** (the σ-VAE is all `Conv1d`, like the DAC codec). Runs **hybrid GPU/CPU** by device-verified placement: the diffusion head runs on the ML Drift GPU, while the two LMs and the σ-VAE decoder run as **fp32 graphs on CPU** — the LMs because Mali rejects their KV-step `FULLY_CONNECTED` shape (and fp16 collapses the 20-layer stack on ARM XNNPACK), the decoder because ML Drift **miscomputes** it (a graph-assembly buffer/scheduling bug: single-output probes show every op — conv, norm, depthwise, FFN — is bit-exact on GPU, but the assembled ConvNeXt block is wrong; identical on OpenCL/OpenGL and at fp32 — no model-side workaround). The two LMs keep their KV cache **host-side** as a packed `[1, L·nkv, Pmax, 64]` tensor fed in/out each step (the ML-Drift-safe "state as graph I/O" pattern); the voice is a precomputed prompt KV cache.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Base text LM (4L) | build via [vibevoice/scripts](vibevoice/) | 239 MB | x [1,1,896] + cos,sin [1,1,1,64] + mask [1,1,1,129] + pk,pv [1,8,128,64] | hidden [1,1,896] + k,v [1,8,1,64] | CompiledModel CPU (fp32) |
+| TTS LM (20L) | build via [vibevoice/scripts](vibevoice/) | 1193 MB | x [1,1,896] + cos,sin [1,1,1,64] + mask [1,1,1,385] + pk,pv [1,40,384,64] | hidden [1,1,896] + k,v [1,40,1,64] | CompiledModel CPU (fp32) |
+| Diffusion head | build via [vibevoice/scripts](vibevoice/) | 84 MB | noisy [1,64] + t_freq [1,256] + cond [1,896] | v [1,64] | CompiledModel GPU |
+| σ-VAE decoder | build via [vibevoice/scripts](vibevoice/) | 1378 MB | latent [1,64,128] | wav [1,1,409600] @ 24 kHz | CompiledModel CPU (fp32) |
+
+**Conversion** (litert-torch): token embedding is `GATHER` → host lookup from an mmapped fp16 table; the autoregressive KV cache is packed 4D (all layers on dim 1) with the current token **concatenated at the tail** + an additive mask over the padding slots (no in-graph scatter, keys stored post-RoPE); `scaled_dot_product_attention` → manual matmul + softmax, GQA (14 Q / 2 KV) expanded by `cat`; RoPE cos/sin fed per step from the host; `RMSNorm` → max-normalized safe form; σ-VAE `ConvTranspose1d` → `ZeroStuffConvT1d` (no `TRANSPOSE_CONV`), ConvNeXt GELU → tanh-GELU; diffusion-head sinusoidal timestep on the host, `chunk` → slicing (no `SPLIT`). Per-graph tflite-vs-torch corr 1.0; the decoder reproduces reference audio from real latents at corr 1.0. See [vibevoice/README.md](vibevoice/README.md) and [GPU Compatibility Notes](#gpu-compatibility-notes).
+
+**Sample app**: [vibevoice/](vibevoice/) — type text, synthesize on-device, AudioTrack PCM_FLOAT playback. The voice is a bundled preset (`en-Emma_woman`); the realtime checkpoint is decoder-only, so voices are exported offline (not cloned on-device).
+
+**Original project**: [microsoft/VibeVoice-Realtime-0.5B](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [MIT](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
+
+
 # Vision-Language Model
 
 ### SmolVLM-256M
@@ -1892,3 +1911,4 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 # License
 
 MIT (sample apps). Model licenses follow their original projects.
+

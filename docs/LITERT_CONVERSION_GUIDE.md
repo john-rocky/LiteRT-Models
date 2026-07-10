@@ -853,3 +853,4 @@ norm collapses with a per-stage device tap.) Moonshine encoder otherwise convert
 RoPE recipe: interleaved `rotate_half` → fixed `q @ P` matmul + baked cos/sin (kills the `x[...,0::2]` GATHER_ND
 + the `stack` 5D), tanh-GELU, mask→None. `~/Downloads/meeting/asr-work/build_moonshine.py` (reusable RoPE recipe).
 
+

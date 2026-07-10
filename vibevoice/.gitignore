@@ -1,0 +1,17 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+# model files are pushed to the device, never committed
+*.tflite
+
+# baked fp16 tables are pushed to the device, never committed
+*.f16
+*.f32
+*.bin
