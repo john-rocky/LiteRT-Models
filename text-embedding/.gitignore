@@ -1,0 +1,14 @@
+build/
+.gradle/
+.kotlin/
+local.properties
+.idea/
+*.tflite
+*.bin
+app/src/main/assets/*.tflite
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+scripts/output/
+scripts/__pycache__/
+Qwen3-Embedding-0.6B/

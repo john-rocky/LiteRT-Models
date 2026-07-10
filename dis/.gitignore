@@ -1,0 +1,8 @@
+*.tflite
+*.bin
+.gradle/
+build/
+/local.properties
+.idea/
+*.iml
+.DS_Store
