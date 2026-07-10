@@ -29,9 +29,10 @@ not just by desktop parity:
 ML Drift rejects the KV-step `FULLY_CONNECTED` weights shape, so autoregressive attention decoders
 cannot run on it. Re-probed with the same graphs, varying only the LiteRT version: on **2.1.3** they
 fail with `INVALID_ARGUMENT: Unsupported weights shape` (`fully_connected.cc:1070`); on **2.1.5** the
-4-layer base LM delegates **313/313 nodes at 10 ms/step** (hidden corr 0.999964 vs CPU) and the
-20-layer TTS LM **1559/1559 nodes at 48 ms/step** (corr 0.999852). Moving them onto the GPU is in
-progress. The fp16 collapse on ARM XNNPACK is a separate, still-valid finding about the *CPU* path.
+4-layer base LM delegates **313/313 nodes at 27 ms/step** (hidden corr 0.999964 vs CPU) and the
+20-layer TTS LM **1559/1559 nodes at 65 ms/step** (corr 0.999852). Both timings are `run()` plus the
+output readback: `CompiledModel.run()` only *enqueues*, so timing it alone reports a misleading 3 ms
+and 23 ms. Moving the LMs onto the GPU is in progress. The fp16 collapse on ARM XNNPACK is a separate, still-valid finding about the *CPU* path.
 
 **The σ-VAE decoder is a confirmed ML Drift correctness bug, not a conversion problem.** On-device
 probing with **single-output** sub-graphs (immune to the delegate's known output-buffer aliasing, so
