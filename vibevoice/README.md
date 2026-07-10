@@ -19,19 +19,29 @@ autoregressive decoder with an on-device KV cache in this zoo.
 Each graph runs on whichever accelerator produces correct output on the device — verified on-device,
 not just by desktop parity:
 
-| Graph | Runs on | Why |
-|---|---|---|
-| base / TTS LM | **CPU (fp32)**, as filed | This sample pins LiteRT 2.1.3, whose Mali delegate rejects the KV-step `FULLY_CONNECTED` weights shape. **That is fixed in 2.1.5** — see below. fp16 separately collapses the 20-layer stack to noise on ARM XNNPACK, so the CPU graphs ship as **fp32**. |
-| diffusion head | **GPU (fp32 precision)** | Small, compiles and computes correctly on ML Drift. |
-| σ-VAE decoder | **CPU (fp32)** | Compiles on GPU but ML Drift **miscomputes** it — see below. |
+| Graph | Runs on | Nodes delegated | Why |
+|---|---|---|---|
+| base LM (4L, KV step) | **GPU (fp32 precision)** | 313 / 313 | Needs LiteRT ≥ 2.1.5 — see below. |
+| TTS LM (20L, KV step) | **GPU (fp32 precision)** | 1559 / 1559 | Same. |
+| diffusion head | **GPU (fp32 precision)** | 167 / 167 | Small, compiles and computes correctly on ML Drift. |
+| σ-VAE decoder | **CPU (fp32)** | — | Compiles on GPU but ML Drift **miscomputes** it — see below. |
 
-**Correction (2026-07-10): the LMs are not blocked by the GPU.** An earlier version of this file said
-ML Drift rejects the KV-step `FULLY_CONNECTED` weights shape, so autoregressive attention decoders
-cannot run on it. Re-probed with the same graphs, varying only the LiteRT version: on **2.1.3** they
-fail with `INVALID_ARGUMENT: Unsupported weights shape` (`fully_connected.cc:1070`); on **2.1.5** the
-4-layer base LM delegates **313/313 nodes at 10 ms/step** (hidden corr 0.999964 vs CPU) and the
-20-layer TTS LM **1559/1559 nodes at 48 ms/step** (corr 0.999852). Moving them onto the GPU is in
-progress. The fp16 collapse on ARM XNNPACK is a separate, still-valid finding about the *CPU* path.
+**The LMs need LiteRT ≥ 2.1.5** (and therefore Kotlin ≥ 2.2, whose metadata version the 2.1.5 AAR
+requires). LiteRT 2.1.3's Mali delegate rejected their KV-step `FULLY_CONNECTED` weights shape with
+`INVALID_ARGUMENT: Unsupported weights shape` (`fully_connected.cc:1070`); an earlier version of this
+file recorded that as a permanent wall on autoregressive attention decoders, which was wrong. On
+2.1.5 the same graphs delegate every node. On a Pixel 8a, a 3.6 s utterance:
+
+| LM placement | Generation | Waveform corr vs CPU |
+|---|---|---|
+| CPU (fp32 graphs) | 72.0 s | — (reference) |
+| GPU, fp16 default | 32.1 s | 0.991886 |
+| **GPU, `Precision.FP32`** | **33.3 s** | **1.000000** (RMS diff 4e-6) |
+
+FP32 precision costs 3.9% and makes the end-to-end waveform bit-identical to the CPU reference, so
+that is what ships. The graphs stay **fp32 on disk** because the CPU fallback path needs them so:
+Android ARM XNNPACK computes native fp16 and collapses a 20-layer residual stream to noise, while
+desktop XNNPACK upcasts and hides it. That finding is about the CPU path and is unchanged.
 
 **The σ-VAE decoder is a confirmed ML Drift correctness bug, not a conversion problem.** On-device
 probing with **single-output** sub-graphs (immune to the delegate's known output-buffer aliasing, so

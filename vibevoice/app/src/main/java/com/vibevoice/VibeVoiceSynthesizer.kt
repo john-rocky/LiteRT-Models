@@ -23,23 +23,28 @@ import kotlin.math.sqrt
  *
  *   text --BPE--> ids
  *        --host: per text token-->  embed_tokens(host) -> base_lm_kv(CPU)
- *                                     -> +type -> tts_lm_kv(CPU) -> cond
+ *                                     -> +type -> tts_lm_kv(GPU) -> cond
  *        --host: per speech token (6/window)-->
  *              5-step DPM-Solver++ loop:  diffusion_head(GPU) x2 (cond + null)
  *                                          -> CFG -> v -> latent[64]
- *              acoustic_connector(host) + type -> tts_lm_kv(CPU) & neg tts_lm_kv(CPU) -> next cond
+ *              acoustic_connector(host) + type -> tts_lm_kv(GPU) & neg tts_lm_kv(GPU) -> next cond
  *              EOS classifier(host) stops generation
  *        --host: accumulate latents-->  acoustic_decoder(CPU) -> 24 kHz waveform
  *
- * Placement is dictated by the Pixel 8a Mali ML Drift delegate *at the LiteRT version this sample
- * pins* (2.1.3): the two Qwen2 LMs are rejected on GPU with "unsupported FULLY_CONNECTED weights
- * shape", which LiteRT 2.1.5 fixes — on 2.1.5 both LMs delegate every node and match the CPU
- * reference to corr >= 0.9998. Until this sample moves to that version they run as fp32 graphs on
- * CPU, which fp16 independently requires anyway (fp16 collapses their 20-layer stack on ARM
- * XNNPACK). The σ-VAE decoder compiles on GPU but ML Drift
- * miscomputes it (a graph-assembly buffer bug — every op is bit-exact in isolation, but the
- * assembled ConvNeXt block is wrong), so it too runs as an fp32 graph on CPU. Only the tiny
- * diffusion head runs on GPU (fp32 precision).
+ * Placement is dictated by the Pixel 8a Mali ML Drift delegate. Everything runs on the GPU except
+ * the σ-VAE decoder, which compiles there but which ML Drift miscomputes (a graph-assembly
+ * buffer bug — every op is bit-exact in isolation, but the assembled ConvNeXt block is wrong),
+ * so it runs as an fp32 graph on CPU.
+ *
+ * The two Qwen2 LMs need LiteRT >= 2.1.5: 2.1.3's delegate rejected their KV-step FULLY_CONNECTED
+ * weights shape ("Unsupported weights shape"). On 2.1.5 they delegate every node — 313/313 and
+ * 1559/1559 — and generation drops from 72.0 s to 33.3 s for a 3.6 s utterance on a Pixel 8a.
+ *
+ * All GPU graphs request [CompiledModel.GpuOptions.Precision.FP32]. For the LMs that costs 3.9%
+ * (32.1 s at the fp16 default) and buys an end-to-end waveform bit-identical to the CPU reference
+ * (corr 1.000000, against 0.991886 at fp16). The graphs themselves stay fp32 on disk, because the
+ * CPU fallback path needs them so: Android ARM XNNPACK computes native fp16 and collapses a
+ * 20-layer residual stream to noise, while desktop XNNPACK upcasts and hides it.
  *
  * The two Qwen2 LMs keep their KV cache host-side (packed `[1, L*nkv, Pmax, 64]` tensors fed in and
  * read back each step — the ML-Drift-safe "state as graph I/O" pattern). The voice is a
@@ -104,13 +109,13 @@ class VibeVoiceSynthesizer(private val context: Context) : Closeable {
         return CompiledModel.create(f.absolutePath, opts, null)
     }
 
-    // The two Qwen2 LMs run on CPU because LiteRT 2.1.3's Mali delegate rejects a FULLY_CONNECTED
-    // weights shape in the KV-cache step graph ("Unsupported weights shape"); 2.1.5 fixes that, and
-    // fp16 collapses their 20-layer stack on ARM XNNPACK, so they ship as fp32. The σ-VAE decoder
-    // runs on CPU because ML Drift miscomputes it on every version tried. Only the small diffusion
-    // head stays on the GPU (at fp32 precision).
-    private val baseLm = load(BASE_LM, Accelerator.CPU)
-    private val ttsLm = load(TTS_LM, Accelerator.CPU)
+    // The two Qwen2 LMs run on the GPU at fp32 precision. LiteRT 2.1.3's Mali delegate rejected the
+    // KV-step FULLY_CONNECTED weights shape; 2.1.5 fixes it, and both LMs then delegate every node.
+    // fp32 precision costs 3.9% and buys an end-to-end waveform bit-identical to the CPU reference
+    // (corr 1.000000, vs 0.9919 at the fp16 default). The σ-VAE decoder stays on CPU because ML
+    // Drift miscomputes it on every version tried.
+    private val baseLm = load(BASE_LM, Accelerator.GPU, gpuFp32 = true)
+    private val ttsLm = load(TTS_LM, Accelerator.GPU, gpuFp32 = true)
     private val head = load(HEAD, Accelerator.GPU, gpuFp32 = true)
     private val decoder = load(DECODER, Accelerator.CPU)
 

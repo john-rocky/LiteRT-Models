@@ -29,6 +29,6 @@ android {
     }
 }
 dependencies {
-    implementation("com.google.ai.edge.litert:litert:2.1.3")
+    implementation("com.google.ai.edge.litert:litert:2.1.5")
     implementation("androidx.core:core-ktx:1.15.0")
 }
