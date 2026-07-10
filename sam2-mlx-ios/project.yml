@@ -6,7 +6,7 @@ options:
 packages:
   mlx-swift:
     url: https://github.com/ml-explore/mlx-swift
-    from: 0.31.3
+    exactVersion: 0.31.3
 targets:
   SAM2MLX:
     type: application

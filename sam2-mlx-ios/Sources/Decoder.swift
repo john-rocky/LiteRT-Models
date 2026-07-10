@@ -173,8 +173,8 @@ final class PositionEmbeddingRandom: Module {
 
 final class PromptEncoder: Module {
     let embedDim = 256
-    let imageEmbeddingSize = (64, 64)
-    let inputImageSize = (1024, 1024)
+    let imageEmbeddingSize: (Int, Int)
+    let inputImageSize: (Int, Int)
     @ModuleInfo(key: "pe_layer") var peLayer: PositionEmbeddingRandom
     @ModuleInfo(key: "point_embeddings") var pointEmbeddings: [Embedding]
     @ModuleInfo(key: "not_a_point_embed") var notAPoint: Embedding
@@ -186,7 +186,9 @@ final class PromptEncoder: Module {
     @ModuleInfo(key: "mask_downscaling_4") var maskDown4: LayerNorm2d
     @ModuleInfo(key: "mask_downscaling_6") var maskDown6: Conv2d
 
-    override init() {
+    init(imageSize: Int) {
+        self.imageEmbeddingSize = (imageSize / 16, imageSize / 16)
+        self.inputImageSize = (imageSize, imageSize)
         self._peLayer.wrappedValue = PositionEmbeddingRandom(numPosFeats: 128)
         self._pointEmbeddings.wrappedValue = (0 ..< 4).map { _ in Embedding(embeddingCount: 1, dimensions: 256) }
         self._notAPoint.wrappedValue = Embedding(embeddingCount: 1, dimensions: 256)
@@ -263,9 +265,9 @@ final class MaskDecoder: Module {
         [convNCHW(convS0, fpn[0]), convNCHW(convS1, fpn[1])]
     }
 
-    /// Returns the 3 multimask logits [B, 3, 256, 256].
+    /// Returns (3 multimask logits [B,3,S/4,S/4], iou_scores [B,3], object_score_logits [B,1]).
     func callAsFunction(_ imageEmbeddings: MLXArray, _ imagePE: MLXArray, _ sparse: MLXArray,
-                        _ dense: MLXArray, _ highRes: [MLXArray]) -> MLXArray {
+                        _ dense: MLXArray, _ highRes: [MLXArray]) -> (MLXArray, MLXArray, MLXArray) {
         var outputTokens = concatenated([objScoreToken.weight, iouToken.weight, maskTokens.weight], axis: 0)
         outputTokens = broadcast(outputTokens.expandedDimensions(axis: 0),
                                  to: [sparse.dim(0), outputTokens.dim(0), outputTokens.dim(1)])
@@ -274,6 +276,8 @@ final class MaskDecoder: Module {
         let posSrc = broadcast(imagePE, to: src.shape)
         let (b, c, h, w) = (src.dim(0), src.dim(1), src.dim(2), src.dim(3))
         let (hs, srcTokens) = transformer(src, posSrc, tokens)
+        let iouTokenOut = hs[0..., 1, 0...]
+        let objTokenOut = hs[0..., 0, 0...]
         let maskTokensOut = hs[0..., 2 ..< 6, 0...]
         let srcImg = srcTokens.transposed(0, 2, 1).reshaped([b, c, h, w])
 
@@ -289,7 +293,9 @@ final class MaskDecoder: Module {
         let hyper = stacked(hyperList, axis: 1)  // [B, 4, 32]
         let (_, uc, uh, uw) = (upscaled.dim(0), upscaled.dim(1), upscaled.dim(2), upscaled.dim(3))
         let masks = hyper.matmul(upscaled.reshaped([b, uc, uh * uw])).reshaped([b, -1, uh, uw])
-        return masks[0..., 1 ..< 4, 0..., 0...]  // multimask: drop the single-mask token
+        let iou = iouHead(iouTokenOut)[0..., 1 ..< 4]
+        let objScore = objScoreHead(objTokenOut)
+        return (masks[0..., 1 ..< 4, 0..., 0...], iou, objScore)
     }
 }
 
@@ -307,14 +313,17 @@ final class Sam2ImageSegmenter: Module {
     @ParameterInfo(key: "no_mem_embed") var noMemEmbed: MLXArray
     let scalp = 1
 
-    init(config: HieraCfg) {
+    let imageSize: Int
+
+    init(config: HieraCfg, imageSize: Int) {
+        self.imageSize = imageSize
         self._trunk.wrappedValue = Hiera(
             embedDim: config.embedDim, numHeads: config.numHeads, stages: config.stages,
             globalAttBlocks: config.globalAttBlocks, windowSpec: config.windowSpec,
             qPool: config.qPool, qStride: config.qStride, mlpRatio: config.mlpRatio,
             dimMul: config.dimMul, headMul: config.headMul, posEmbedHW: config.posEmbedHW)
         self._neck.wrappedValue = FpnNeck(backboneChannels: config.backboneChannels, dModel: 256, fpnTopDown: [2, 3])
-        self._promptEncoder.wrappedValue = PromptEncoder()
+        self._promptEncoder.wrappedValue = PromptEncoder(imageSize: imageSize)
         self._maskDecoder.wrappedValue = MaskDecoder()
         self._noMemEmbed.wrappedValue = MLXArray.zeros([1, 1, 256])
     }
@@ -327,8 +336,9 @@ final class Sam2ImageSegmenter: Module {
         return (features.last!, highRes)
     }
 
-    /// Returns the 3 multimask logits for one positive point.
-    func predict(_ visionFeatures: MLXArray, _ highRes: [MLXArray], _ coords: MLXArray, _ labels: MLXArray) -> MLXArray {
+    /// Returns (3 multimask logits, iou_scores [1,3], object_score_logits [1,1]) for one positive point.
+    func predict(_ visionFeatures: MLXArray, _ highRes: [MLXArray], _ coords: MLXArray, _ labels: MLXArray)
+        -> (MLXArray, MLXArray, MLXArray) {
         let (sparse, dense) = promptEncoder(coords, labels)
         let imageEmbeddings = visionFeatures + noMemEmbed.transposed(0, 2, 1).reshaped([1, 256, 1, 1])
         return maskDecoder(imageEmbeddings, promptEncoder.denseePE(), sparse, dense, highRes)
