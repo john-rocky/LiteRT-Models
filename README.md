@@ -1062,6 +1062,33 @@ VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-di
 **Original project**: [microsoft/VibeVoice-Realtime-0.5B](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [MIT](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
 
 
+### KittenTTS nano 0.8 (dynamic length)
+
+KittenTTS nano (KittenML, 15M params, StyleTTS2 + ISTFTNet + mini-ALBERT, 8 voices, 24 kHz, Apache-2.0), the **first dynamic-sequence-length TTS in this zoo** — any sentence length runs on the same graphs, no padding buckets. Upstream is ONNX-only; this port **re-authors the model in TF/Keras from the ONNX weights** and converts with the official `TFLiteConverter`, whose **fused dynamic-length TFLite LSTM kernels** clear the wall that keeps torch-path TTS exports fixed-length (torch.export specializes the LSTM time axis; litert-torch additionally bakes trace lengths into RESHAPEs on any dynamic graph). CPU/XNNPACK target (Raspberry Pi class); Mac M-series RTF **0.017** (fp32 or fp16). Fidelity sits inside the reference's own stochastic noise floor: log-mel corr **0.984** vs the deterministic ONNX, where two runs of the stochastic ONNX itself agree only to 0.983. Streaming: sentence-level = exact; chunked vocoder = approximate (AdaIN whole-utterance statistics), log-mel 0.970.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Predictor | build via [kittentts/scripts](kittentts/) | 33.8 / 17.0 MB (fp32/fp16) | input_ids [1,N] int32 + style [1,256] + speed [1] | d [1,N,256] + t_en [1,N,128] + durations [N] int32 | Interpreter CPU |
+| Prosody + harmonics | build via [kittentts/scripts](kittentts/) | 3.3 / 1.7 MB | en [1,T,256] + style | f0 [1,2T] + n [1,2T] + har [1,120T+1,22] | Interpreter CPU |
+| Vocoder (ISTFTNet) | build via [kittentts/scripts](kittentts/) | 26.4 / 13.4 MB | asr [1,T,128] + f0 + n + har + style | wav [1,600T] @ 24 kHz | Interpreter CPU |
+
+Host glue is ~10 lines of numpy (`repeat` expansion — bit-exact vs the ONNX in-graph `Loop`). Text frontend is espeak-ng IPA (GPL — run out-of-process, or reuse the kokoro DeepPhonemizer G2P). See [kittentts/README.md](kittentts/README.md).
+
+**Original project**: [KittenML/KittenTTS](https://github.com/KittenML/KittenTTS) | [Apache-2.0](https://huggingface.co/KittenML/kitten-tts-nano-0.8-fp32)
+
+### Inflect-Nano-v2 (dynamic length, exact streaming)
+
+Inflect-Nano-v2 (4.0M params, VITS-family end-to-end TTS, English, fixed male voice, 24 kHz, Apache-2.0) — the **smallest TTS in the zoo (8.2 MB fp16)** and the one with **exact intra-sentence streaming**: the decoder is fully convolutional with no normalization layers, so overlap-discard chunking reproduces the full decode at corr **1.000000** (first chunk 25–32 ms on Mac). Converted by re-authoring the VITS inference graph in TF from the released torch checkpoint (2-graph split, both axes dynamic; use_sdp=false so duration prediction is deterministic convs). Decoder wav corr vs PyTorch: **1.000000** (maxerr 2.6e-5). Mac M-series RTF **0.020**.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Text encoder | build via [inflect/scripts](inflect/) | 3.5 / 1.8 MB (fp32/fp16) | tokens [1,N] int32 | m_p, logs_p [1,N,128] + logw [1,N,1] | Interpreter CPU |
+| Decoder (flow + HiFi-GAN) | build via [inflect/scripts](inflect/) | 12.6 / 6.4 MB | z_p [1,T,128] | wav [1,256·T] @ 24 kHz | Interpreter CPU |
+
+Host: `durations = ceil(exp(logw)/speed)`, `np.repeat` expansion, `z_p = m_p + randn·exp(logs_p)·variation`. See [inflect/README.md](inflect/README.md).
+
+**Original project**: [owensong/Inflect-Nano-v2](https://huggingface.co/owensong/Inflect-Nano-v2) | [Apache-2.0](https://huggingface.co/owensong/Inflect-Nano-v2)
+
 # Vision-Language Model
 
 ### SmolVLM-256M

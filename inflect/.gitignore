@@ -1,0 +1,5 @@
+checkpoint/
+*.tflite
+*.wav
+out/
+*.npz
