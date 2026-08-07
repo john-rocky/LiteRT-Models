@@ -56,3 +56,7 @@ mobile_sam.pt
 CLIENT_QUESTIONS.md
 INVESTIGATION.md
 REALTIME_REPORT.md
+real-esrgan/.idea/
+yolo/.idea/
+yolo-tracking/.idea/
+yolo-tracking/calibration_image_sample_data_20x128x128x3_float32.npy

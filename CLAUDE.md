@@ -32,6 +32,8 @@ Each top-level directory listed below is **its own independent Gradle project** 
 | `yolo-tracking/`   | `com.yolotracking`          | YOLO11n + OSNet x0.25 DeepSORT multi-object tracking |
 | `dia2/`            | `com.dia2`                  | Dia2-1B two-speaker dialogue TTS (RQ-Transformer, CPU) |
 | `vibevoice/`       | `com.vibevoice`             | VibeVoice-Realtime-0.5B streaming AR-diffusion TTS   |
+| `zimage/`          | `com.zimage`                | Z-Image-Turbo 6B text-to-image (chunked int8 DiT)   |
+| `klein/`           | `com.klein`                 | FLUX.2-klein-4B text-to-image (12 chunked int8 graphs) |
 | `musicgen/`        | —                           | (work in progress)                                  |
 
 Each module's `app/src/main/java/com/<module>/` typically contains a `MainActivity.kt`, a model wrapper (e.g. `ObjectDetector.kt`, `MobileSAMSegmenter.kt`, `WhisperTranscriber.kt`), and a custom view for visualization. The voice assistant deliberately bundles its own copies of `WhisperTranscriber.kt`, `KokoroSynthesizer.kt`, etc. instead of cross-referencing other modules — see `voiceassistant/README.md` for the rationale (each module must remain standalone and independently runnable).
@@ -83,3 +85,59 @@ Most of these patches are pre-packaged in `litert_gpu_toolkit` — prefer `conve
 - Keep the repo small. Do not commit CoreML models, build outputs, or other large/derived files.
 - **Build testing is done on the actual device** — do not run `./gradlew assemble` etc. as a validation step. Edit, then hand off.
 - Code comments and UI strings are in **English**, even though the user often communicates in Japanese.
+
+## Google style guide — strict SECOND PASS (Shuangfeng requirement, 2026-07-07)
+
+All code destined for litert-samples PRs is **teaching material** ("high quality codes to share with humans to learn") and must END UP strictly following https://google.github.io/styleguide/. But the workflow is **two-phase, by the user's explicit policy**:
+
+1. **Draft phase — write freely.** While solving the problem (conversion debugging, app wiring, device iteration), do NOT constrain the writing with style rules; that risks regressing the agent's problem-solving. Quick names, scratch logging, long functions are all fine here.
+2. **Style pass — before commit/PR.** Once it works, rewrite to strict Google style (rules below) as a dedicated pass. Nothing reaches a PR without this pass.
+
+**Kotlin (Android Kotlin style guide):**
+- KDoc on every public class/function/property; explain the *why* for non-obvious logic.
+- Descriptive names (no `tmp`, `ret`, `x2`); constants as `private const val UPPER_SNAKE`; no magic numbers inline.
+- No wildcard imports, no dead code, no commented-out blocks, no debug `Log.d` leftovers.
+- Short focused functions — split anything doing more than one job.
+- **Formatting = `ktfmt --google-style` (2-space indent), which IS this repo's formatter.** Verified 2026-07-09: it leaves the reference `compiled_model_api/image_segmentation` sources byte-unchanged. Do not hand-format to 4 spaces. Run it on the app's Kotlin as the last step of the style pass:
+  `java -jar ktfmt.jar --google-style <app>/src/main/java/**/*.kt`
+- License header identical to the existing Google-authored samples in the repo.
+
+**Python (Google Python Style Guide):**
+- Module docstring, Google-format function docstrings (Args/Returns/Raises), type hints on public functions.
+- Top-level UPPER_SNAKE constants; `if __name__ == "__main__":` guard; 4-space indent, 80-col target.
+
+**Verification for multi-file refactors (user-approved exception 2026-07-07):** before pushing a style-only sweep commit, run a compile check (`./gradlew compileDebugKotlin` for the touched app, `python -m py_compile` for scripts). This is breakage-verification, not build testing — the on-device rule still stands for functional validation.
+
+### Sample app STRUCTURE — also a SECOND pass, never a draft-phase constraint (2026-07-09)
+
+Same two-phase rule as the style guide, for the same reason: **while getting the model to run on device, scaffold the app however is fastest** (one Activity, hardcoded strings, whatever). Structure constraints during debugging regress problem-solving. Then, **before the litert-samples PR**, restructure to the canonical shape — the reviewer's named reference is `compiled_model_api/image_segmentation/kotlin_cpu_gpu`.
+
+**Pick the template by OUTPUT TYPE** (all three are device-verified, in-repo):
+
+| Output | Template to copy | Notes |
+|---|---|---|
+| Boxes drawn live over an image | `object_detection/d_fine_kotlin_gpu` | Compose `Canvas` overlay of a `DetectionBox` list. Needs `import androidx.compose.ui.graphics.drawscope.drawIntoCanvas` (a static review will miss this; only a real compile catches it). |
+| One displayable result Bitmap (segmentation, matting, classification, pose, instance-seg, OCR, piano-roll…) | `dichotomous_segmentation/dis_kotlin_gpu` | Annotate onto a **bitmap copy with `android.graphics.Canvas`** in the ViewModel, then `Image(resultImage.asImageBitmap())`. No Compose Canvas needed. |
+| Text in → text out (embedding, rerank, LLM, streaming) | `semantic_similarity/kotlin_cpu_gpu` | `OutlinedTextField` + Button + results. Streaming = `_uiState.update { … }` per token/frame so the UI grows live. |
+
+**Canonical file set** (per sample package):
+- `MainActivity.kt` — thin `ComponentActivity`: `by viewModels { MainViewModel.getFactory(this) }`, `collectAsStateWithLifecycle()`, `ApplicationTheme { <Task>Screen(...) }`, gallery via `rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia())`.
+- `MainViewModel.kt` — owns the helper; **confine every model call to `Dispatchers.Default.limitedParallelism(1)`** (LiteRT helpers reuse native in/out buffers → concurrent calls corrupt them); load the model from `filesDir` and surface an inline "model not found — run install_to_device.sh" `errorMessage`; `onCleared()` closes the helper.
+- `UiState.kt` — `@Immutable data class`.
+- `ImageUtils.kt` — `decodeAssetBitmap` / `loadOrientedBitmap` (EXIF) / `squareResize` / `toRgbFloatArray` (image samples only).
+- `view/` — `<Task>Screen.kt`, `Theme.kt` (`ApplicationTheme`), `Color.kt`.
+- `res/values/{strings,themes,colors}.xml` — **no hardcoded UI strings**; manifest uses `@string/app_name` + `@style/Theme.<Name>`.
+- `gradle/libs.versions.toml` — version catalog; `alias(libs.plugins.…)` in both `build.gradle.kts`.
+
+**Non-negotiables learned the hard way:**
+- **Never touch the inference helper** (`<Model>.kt`, palettes, label tables, tokenizers). Move the old MainActivity's render/decode math into the ViewModel **verbatim** — do not re-derive it.
+- Compose **Material 1** (`androidx.compose.material.*`), not material3 — that is what `image_segmentation` uses.
+- `Scaffold(modifier = modifier.statusBarsPadding(), …)` — targetSdk 35 is edge-to-edge, so without this the `TopAppBar` renders **under** the status bar.
+- Models stay in `filesDir` via the sample's `install_to_device.sh` (too big for assets). Don't switch to `download_model.gradle`.
+- Keep the sample's litert version pinned to whatever actually delegates on device — e.g. MoViNet needs `litert = "2.1.3"` because the 2.1.5 GPU delegate dropped `RELU_0_TO_1` and `CompiledModel` (full-residency) then hard-fails.
+
+**Definition of done before a sample PR:**
+1. `./gradlew :app:compileDebugKotlin` → BUILD SUCCESSFUL.
+2. **Device-verify**: push the model, launch, screenshot; confirm GPU residency in logcat (`Replacing N out of N node(s) with delegate (LITERT_CL)`).
+3. `ktfmt --google-style` on the app's Kotlin (scope it to **this sample's package only** — a repo-wide `find` will silently reformat unrelated samples).
+4. README: an `## App architecture` note + a refreshed Files table.
