@@ -95,8 +95,10 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Speech Recognition**](#speech-recognition)
   - [Zipformer (CR-CTC)](#zipformer-cr-ctc)
+  - [Japanese Zipformer (ReazonSpeech)](#japanese-zipformer-reazonspeech)
   - [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc)
   - [Whisper-tiny](#whisper-tiny)
+  - [wav2vec2 (char-CTC)](#wav2vec2-char-ctc)
 
 - [**Text-to-Speech**](#text-to-speech)
   - [Kokoro-82M](#kokoro-82m)
@@ -831,9 +833,13 @@ Zipformer medium CR-CTC (k2/icefall, LibriSpeech, 64M, WER 2.12/4.62 greedy): th
 
 Converted via **litert-torch**, all rewrites numerically exact (tflite vs PyTorch corr 1.000000): Swoosh-L/R → guard-free stable softplus (the `logaddexp` lowering emits inf-guard SELECTs); rel-position shift `as_strided` → pad+reshape+slice; padding masks folded into per-rate additive attention-bias inputs; `SimpleUpsample/Downsample` `expand` → concat repetition; downsample weight softmax baked (a live rank-1 SOFTMAX on a constant fails the on-device GPU compile); final LogSoftmax moved host-side (greedy CTC is argmax-invariant).
 
-| Model | Download Link | Size | Input | Output | API |
-| ----- | ------------- | ---- | ----- | ------ | --- |
-| Encoder + CTC | [zipformer_ctc_fp16.tflite](https://huggingface.co/litert-community/Zipformer-medium-CR-CTC-LiteRT) | 132 MB | fbank [1, 1600, 80] + 4 mask biases | CTC logits [1, 398, 500] | CompiledModel GPU |
+All three CR-CTC variants ship with **identical I/O signatures** (drop-in interchangeable in the same app; small 124 ms / large 220 ms per 16 s window on the Pixel 8a):
+
+| Model | Download Link | Size | WER (greedy) | Input | Output | API |
+| ----- | ------------- | ---- | ------------ | ----- | ------ | --- |
+| small (23M) | [zipformer_ctc_small_fp16.tflite](https://huggingface.co/litert-community/Zipformer-medium-CR-CTC-LiteRT) | 46 MB | 2.57 / 5.95 | fbank [1, 1600, 80] + 4 mask biases | CTC logits [1, 398, 500] | CompiledModel GPU |
+| medium (64M) | [zipformer_ctc_fp16.tflite](https://huggingface.co/litert-community/Zipformer-medium-CR-CTC-LiteRT) | 132 MB | 2.12 / 4.62 | fbank [1, 1600, 80] + 4 mask biases | CTC logits [1, 398, 500] | CompiledModel GPU |
+| large (148M) | [zipformer_ctc_large_fp16.tflite](https://huggingface.co/litert-community/Zipformer-medium-CR-CTC-LiteRT) | 298 MB | 2.03 / 4.37 | fbank [1, 1600, 80] + 4 mask biases | CTC logits [1, 398, 500] | CompiledModel GPU |
 
 **Preprocessing**: 16 kHz mono in [-1, 1] → kaldi fbank (80 mel, povey window, snip_edges=false, high_freq −400, dither 0, no CMN), computed in Kotlin (verified vs torchaudio, corr 1.0). Audio up to 16 s is padded with log(1e-10) frames; padding enters the graph as additive attention biases (0 real / −1000 pad) at rates 796/398/199/100.
 
@@ -842,6 +848,24 @@ Converted via **litert-torch**, all rewrites numerically exact (tflite vs PyTorc
 **Sample app**: [zipformer/](zipformer/) — Microphone recording + bundled sample + transcription display.
 
 **Original project**: [k2-fsa/icefall zipformer recipe](https://github.com/k2-fsa/icefall) / [checkpoint](https://huggingface.co/Zengwei/icefall-asr-librispeech-zipformer-medium-cr-ctc-20241018) | [Apache-2.0](https://github.com/k2-fsa/icefall/blob/master/LICENSE)
+
+### Japanese Zipformer (ReazonSpeech)
+
+[japanese-zipformer-base](https://huggingface.co/reazon-research/japanese-zipformer-base-k2-rs35kh-bpe) (reazon-research, ReazonSpeech, 96.5M, avg CER 11.46%): **first Japanese ASR in this zoo**, running fully on CompiledModel GPU with **zero FFT anywhere** — raw waveform → wav2vec2-style conv frontend (stride 320 → 50 Hz) → Zipformer encoder (6 stacks) → CTC, one GPU graph. Device-verified on a Pixel 8a: per-frame argmax agreement 98.5–100% vs PyTorch, transcripts identical, GPU compile 2.4 s, **621 ms** per 16 s window (RTF ≈ 0.04). Greedy no-LM decode is phonetically exact (occasional kanji homophone swaps, e.g. 選挙→占拠).
+
+Conversion = the Zipformer CR-CTC re-authoring set + the wav2vec2-frontend recipe (tanh-GELU, 4D group-norm), applied to the repo's bundled zipformer code; tflite vs PyTorch corr 1.000000.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Frontend + Encoder + CTC | [ja_zipformer_ctc_fp16.tflite](https://huggingface.co/litert-community/japanese-zipformer-base-LiteRT) | 197 MB | waveform [1, 256000] + 4 mask biases | CTC logits [1, 799, 3004] | CompiledModel GPU |
+
+**Preprocessing**: none — 16 kHz mono PCM in [-1, 1], 0.5 s zero lead pad (upstream convention), zero-padded to the 16 s window; additive bias masks (0 real / −1000 pad) at rates 799/400/200/100.
+
+**Decoding**: greedy CTC (blank id 0 — labeled `<unk>` in vocab.json but it behaves as the icefall CTC blank) + BPE-3004 detokenize, on the host.
+
+**Sample app**: [zipformer-ja/](zipformer-ja/) — Microphone recording + bundled CC0 sample + transcription display.
+
+**Original project**: [reazon-research/japanese-zipformer-base-k2-rs35kh-bpe](https://huggingface.co/reazon-research/japanese-zipformer-base-k2-rs35kh-bpe) | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ### Parakeet (FastConformer-CTC)
 
@@ -879,6 +903,23 @@ Encoder converted via **litert-torch** with SigmoidGELU patch. Decoder exported 
 **Sample app**: [whisper/](whisper/) — Microphone recording + audio file picker + language selector + transcription display.
 
 **Original project**: [openai/whisper](https://github.com/openai/whisper) | [MIT](https://github.com/openai/whisper/blob/main/LICENSE)
+
+### wav2vec2 (char-CTC)
+
+[wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) full speech-to-text running **fully on CompiledModel GPU** with **zero FFT anywhere** — the raw 16 kHz waveform goes straight into the 1D-conv feature extractor (no mel/fbank even host-side). Character-level CTC, greedy decode (no LM — expect the model's known spelling quirks on hard words). Ships as **2 GPU graphs** (the fused graph exceeds the Mali whole-graph shader-compile limit, the same finding as the KWS ship). Device-verified on a Pixel 8a: valid-region logits corr 0.9928 vs PyTorch, 448 + 391 ms per 16 s window (RTF ≈ 0.05).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Frontend | [w2v2_asr_frontend_fp16.tflite](https://huggingface.co/litert-community/wav2vec2-base-960h-LiteRT) | 9 MB | waveform [1, 256000] | features [1, 799, 768] | CompiledModel GPU |
+| Encoder + CTC | [w2v2_asr_head_fp16.tflite](https://huggingface.co/litert-community/wav2vec2-base-960h-LiteRT) | 180 MB | features [1, 799, 768] | CTC logits [1, 799, 32] | CompiledModel GPU |
+
+**Preprocessing**: none — 16 kHz mono PCM in [-1, 1], zero-padded to the fixed 16 s window.
+
+**Decoding**: greedy char-CTC over the valid frames (blank id 0, `|` → space), on the host.
+
+**Sample app**: [wav2vec2-asr/](wav2vec2-asr/) — Microphone recording + bundled sample + transcription display.
+
+**Original project**: [facebook/wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) | [Apache-2.0](https://github.com/facebookresearch/fairseq/blob/main/LICENSE)
 
 # Text-to-Speech
 
@@ -939,6 +980,33 @@ VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-di
 **Sample app**: [vibevoice/](vibevoice/) — type text, synthesize on-device, AudioTrack PCM_FLOAT playback. The voice is a bundled preset (`en-Emma_woman`); the realtime checkpoint is decoder-only, so voices are exported offline (not cloned on-device).
 
 **Original project**: [microsoft/VibeVoice-Realtime-0.5B](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [MIT](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
+
+### KittenTTS nano 0.8 (dynamic length)
+
+KittenTTS nano (KittenML, 15M params, StyleTTS2 + ISTFTNet + mini-ALBERT, 8 voices, 24 kHz, Apache-2.0), the **first dynamic-sequence-length TTS in this zoo** — any sentence length runs on the same graphs, no padding buckets. Upstream is ONNX-only; this port **re-authors the model in TF/Keras from the ONNX weights** and converts with the official `TFLiteConverter`, whose **fused dynamic-length TFLite LSTM kernels** clear the wall that keeps torch-path TTS exports fixed-length (torch.export specializes the LSTM time axis; litert-torch additionally bakes trace lengths into RESHAPEs on any dynamic graph). CPU/XNNPACK target (Raspberry Pi class); Mac M-series RTF **0.017** (fp32 or fp16). Fidelity sits inside the reference's own stochastic noise floor: log-mel corr **0.984** vs the deterministic ONNX, where two runs of the stochastic ONNX itself agree only to 0.983. Streaming: sentence-level = exact; chunked vocoder = approximate (AdaIN whole-utterance statistics), log-mel 0.970.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Predictor | build via [kittentts/scripts](kittentts/) | 33.8 / 17.0 MB (fp32/fp16) | input_ids [1,N] int32 + style [1,256] + speed [1] | d [1,N,256] + t_en [1,N,128] + durations [N] int32 | Interpreter CPU |
+| Prosody + harmonics | build via [kittentts/scripts](kittentts/) | 3.3 / 1.7 MB | en [1,T,256] + style | f0 [1,2T] + n [1,2T] + har [1,120T+1,22] | Interpreter CPU |
+| Vocoder (ISTFTNet) | build via [kittentts/scripts](kittentts/) | 26.4 / 13.4 MB | asr [1,T,128] + f0 + n + har + style | wav [1,600T] @ 24 kHz | Interpreter CPU |
+
+Host glue is ~10 lines of numpy (`repeat` expansion — bit-exact vs the ONNX in-graph `Loop`). Text frontend is espeak-ng IPA (GPL — run out-of-process, or reuse the kokoro DeepPhonemizer G2P). See [kittentts/README.md](kittentts/README.md).
+
+**Original project**: [KittenML/KittenTTS](https://github.com/KittenML/KittenTTS) | [Apache-2.0](https://huggingface.co/KittenML/kitten-tts-nano-0.8-fp32)
+
+### Inflect-Nano-v2 (dynamic length, exact streaming)
+
+Inflect-Nano-v2 (4.0M params, VITS-family end-to-end TTS, English, fixed male voice, 24 kHz, Apache-2.0) — the **smallest TTS in the zoo (8.2 MB fp16)** and the one with **exact intra-sentence streaming**: the decoder is fully convolutional with no normalization layers, so overlap-discard chunking reproduces the full decode at corr **1.000000** (first chunk 25–32 ms on Mac). Converted by re-authoring the VITS inference graph in TF from the released torch checkpoint (2-graph split, both axes dynamic; use_sdp=false so duration prediction is deterministic convs). Decoder wav corr vs PyTorch: **1.000000** (maxerr 2.6e-5). Mac M-series RTF **0.020**.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Text encoder | build via [inflect/scripts](inflect/) | 3.5 / 1.8 MB (fp32/fp16) | tokens [1,N] int32 | m_p, logs_p [1,N,128] + logw [1,N,1] | Interpreter CPU |
+| Decoder (flow + HiFi-GAN) | build via [inflect/scripts](inflect/) | 12.6 / 6.4 MB | z_p [1,T,128] | wav [1,256·T] @ 24 kHz | Interpreter CPU |
+
+Host: `durations = ceil(exp(logw)/speed)`, `np.repeat` expansion, `z_p = m_p + randn·exp(logs_p)·variation`. See [inflect/README.md](inflect/README.md).
+
+**Original project**: [owensong/Inflect-Nano-v2](https://huggingface.co/owensong/Inflect-Nano-v2) | [Apache-2.0](https://huggingface.co/owensong/Inflect-Nano-v2)
 
 # Vision-Language Model
 
