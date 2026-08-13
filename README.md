@@ -94,6 +94,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [DSINE](#dsine)
 
 - [**Speech Recognition**](#speech-recognition)
+  - [Zipformer (CR-CTC)](#zipformer-cr-ctc)
   - [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc)
   - [Whisper-tiny](#whisper-tiny)
 
@@ -823,6 +824,24 @@ Converted via **litert-torch** with encoder + decoder initial prediction only (C
 **Output format**: `[1, 3, 480, 640]` — unit normal vectors (X, Y, Z) in [-1, 1]. Visualize as `RGB = (normal + 1) / 2 * 255`.
 
 # Speech Recognition
+
+### Zipformer (CR-CTC)
+
+Zipformer medium CR-CTC (k2/icefall, LibriSpeech, 64M, WER 2.12/4.62 greedy): the **first Zipformer architecture on the LiteRT CompiledModel GPU** — 6-stack multi-rate encoder + CTC head as a single GPU graph. Device-verified on a Pixel 8a: valid-region logits corr 0.9993 vs PyTorch, transcripts identical on the test sweep, GPU compile 1.8 s, **156 ms** run+readback per 16 s window (RTF ≈ 0.01).
+
+Converted via **litert-torch**, all rewrites numerically exact (tflite vs PyTorch corr 1.000000): Swoosh-L/R → guard-free stable softplus (the `logaddexp` lowering emits inf-guard SELECTs); rel-position shift `as_strided` → pad+reshape+slice; padding masks folded into per-rate additive attention-bias inputs; `SimpleUpsample/Downsample` `expand` → concat repetition; downsample weight softmax baked (a live rank-1 SOFTMAX on a constant fails the on-device GPU compile); final LogSoftmax moved host-side (greedy CTC is argmax-invariant).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Encoder + CTC | [zipformer_ctc_fp16.tflite](https://huggingface.co/litert-community/Zipformer-medium-CR-CTC-LiteRT) | 132 MB | fbank [1, 1600, 80] + 4 mask biases | CTC logits [1, 398, 500] | CompiledModel GPU |
+
+**Preprocessing**: 16 kHz mono in [-1, 1] → kaldi fbank (80 mel, povey window, snip_edges=false, high_freq −400, dither 0, no CMN), computed in Kotlin (verified vs torchaudio, corr 1.0). Audio up to 16 s is padded with log(1e-10) frames; padding enters the graph as additive attention biases (0 real / −1000 pad) at rates 796/398/199/100.
+
+**Decoding**: greedy CTC (blank id 0, drop repeats) + BPE-500 detokenize, on the host.
+
+**Sample app**: [zipformer/](zipformer/) — Microphone recording + bundled sample + transcription display.
+
+**Original project**: [k2-fsa/icefall zipformer recipe](https://github.com/k2-fsa/icefall) / [checkpoint](https://huggingface.co/Zengwei/icefall-asr-librispeech-zipformer-medium-cr-ctc-20241018) | [Apache-2.0](https://github.com/k2-fsa/icefall/blob/master/LICENSE)
 
 ### Parakeet (FastConformer-CTC)
 
