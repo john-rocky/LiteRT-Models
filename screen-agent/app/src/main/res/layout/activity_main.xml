@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="#F5F6FA"
+    android:forceDarkAllowed="false">
+
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Looking for a model…"
+        android:textColor="#6B7280"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+        <RadioGroup
+            android:id="@+id/rg_backend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton
+                android:id="@+id/rb_gpu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GPU"
+                android:checked="true"
+                android:textColor="#30323A" />
+            <RadioButton
+                android:id="@+id/rb_cpu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CPU"
+                android:layout_marginStart="12dp"
+                android:textColor="#30323A" />
+        </RadioGroup>
+        <Button
+            android:id="@+id/btn_load"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="Load"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#5B4FC4" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <RadioGroup
+            android:id="@+id/rg_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton
+                android:id="@+id/rb_point"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Point"
+                android:checked="true"
+                android:textColor="#30323A" />
+            <RadioButton
+                android:id="@+id/rb_tap"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tap"
+                android:layout_marginStart="12dp"
+                android:textColor="#30323A" />
+            <RadioButton
+                android:id="@+id/rb_agent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Agent"
+                android:layout_marginStart="10dp"
+                android:textColor="#30323A" />
+            <RadioButton
+                android:id="@+id/rb_act"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Act"
+                android:layout_marginStart="10dp"
+                android:textColor="#30323A" />
+            <RadioButton
+                android:id="@+id/rb_ask"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ask"
+                android:layout_marginStart="10dp"
+                android:textColor="#30323A" />
+        </RadioGroup>
+        <Button
+            android:id="@+id/btn_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Show agent"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2F6FEB" />
+        <Button
+            android:id="@+id/btn_accessibility"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Enable tapping"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#C0392B" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="6dp"
+        android:background="#FFFFFF">
+
+        <com.edgeagent.lab.OverlayView
+            android:id="@+id/overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Shown whenever there is no result on the canvas, which is most of
+             the time. An empty white rectangle says nothing; the agent standing
+             in it, answering what you typed, says what the app is. -->
+        <LinearLayout
+            android:id="@+id/robot_panel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="24dp">
+            <com.edgeagent.lab.AgentFace
+                android:id="@+id/face"
+                android:layout_width="220dp"
+                android:layout_height="220dp" />
+            <TextView
+                android:id="@+id/tv_speech"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:gravity="center"
+                android:text="Type a goal, then press Run."
+                android:textColor="#30323A"
+                android:textSize="17sp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="#6A6E7A"
+        android:textSize="12sp"
+        android:maxLines="5"
+        android:ellipsize="end" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:gravity="bottom">
+        <EditText
+            android:id="@+id/et_instruction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Where should I tap?"
+            android:text="Point to the Notifications row."
+            android:textColor="#30323A"
+            android:textColorHint="#8A8D98"
+            android:background="#FFFFFF"
+            android:padding="10dp"
+            android:maxLines="2"
+            android:inputType="textMultiLine" />
+        <Button
+            android:id="@+id/btn_capture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Run"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2F7D5B" />
+    </LinearLayout>
+</LinearLayout>
