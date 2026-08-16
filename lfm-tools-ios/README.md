@@ -1,5 +1,7 @@
 # LFM Tools — an on-device agent behind Apple's Foundation Models API
 
+**This is a personal project, not a Google product.**
+
 An iPhone app where `LanguageModelSession` — Apple's own API — is driven by
 **LFM2.5 running on the device through LiteRT-LM**, not by Apple's system model.
 It is given 27 tools onto iOS and asked to use them.

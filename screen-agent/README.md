@@ -1,11 +1,16 @@
 # Screen Agent — LFM2.5-VL-3B
 
+**This is a personal project, not a Google product.**
+
 An Android app that operates the phone by looking at it. It takes a screenshot,
 sends it to LFM2.5-VL running on the device, gets back the coordinates to press,
 and presses them. The app being driven needs no integration — no accessibility
 tree, no selectors, no test hooks, no cooperation of any kind.
 
-Everything runs on the phone. The app holds no `INTERNET` permission.
+Everything runs on the phone. The app holds no `INTERNET` permission, and both
+capabilities it does use — screen capture and input — are permissions the user
+grants by hand: MediaProjection through the system consent dialog every session,
+and the accessibility service from Settings. No root, and nothing is bypassed.
 
 | | |
 |---|---|
