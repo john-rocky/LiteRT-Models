@@ -185,6 +185,8 @@ final class StageModel {
       }
     }
     RunLog.startNewRun()
+    // A take is minutes of nobody touching the screen; auto-lock would end it.
+    UIApplication.shared.isIdleTimerDisabled = true
     let tools: [any FoundationModels.Tool]
     switch Self.scenarioName {
     case "photo": tools = ToolBox.photoStage

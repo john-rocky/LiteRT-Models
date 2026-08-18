@@ -11,6 +11,7 @@ import Foundation
 import FoundationModels
 import LiteRTLM
 import LiteRTLMFoundationModels
+import UIKit
 
 @available(iOS 27.0, *)
 enum BenchRunner {
@@ -29,6 +30,18 @@ enum BenchRunner {
     let out = JSONLWriter(
       url: documents.appendingPathComponent(
         "toolbench-\(Int(Date().timeIntervalSince1970)).jsonl"))
+    // A backgrounded app generates nothing and its timers stop with it — two
+    // runs froze ~20 s in with no error line, exactly what an auto-lock or a
+    // stray tap on the home screen looks like from the Mac. Keep the screen
+    // awake, and if the app is sent to the background anyway, say so in the
+    // log rather than leaving a silence to diagnose.
+    UIApplication.shared.isIdleTimerDisabled = true
+    let backgrounded = NotificationCenter.default.addObserver(
+      forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
+    ) { _ in
+      out.write(["type": "background", "at": ISO8601DateFormatter().string(from: Date())])
+    }
+    defer { NotificationCenter.default.removeObserver(backgrounded) }
     // The Mac script waits for this sentinel in the file *listing* — pulling a
     // growing file repeatedly returns devicectl's stale cached copy; a fresh
     // name that only appears when the run is over dodges that. Deferred so an
