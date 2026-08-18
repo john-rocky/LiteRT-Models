@@ -99,8 +99,13 @@ enum BenchRunner {
         return
       }
     }
+    // The run's own date, so `dateResolvesTo` can be re-scored offline:
+    // "tomorrow" only means something relative to the day the run happened.
+    let dayFormatter = DateFormatter()
+    dayFormatter.dateFormat = "yyyy-MM-dd"
     out.write([
       "type": "run", "model": modelName, "cases": cases.count, "toolset": toolsetName,
+      "date": dayFormatter.string(from: Date()),
     ])
 
     var passed = 0
