@@ -104,8 +104,9 @@ enum BenchRunner {
         // iOS kills the process for.
         let context = bytes > 1_000_000_000 ? 1024 : 2048
         liteRTModel = try LiteRTLanguageModel(
-          modelPath: url.path, backend: .cpu(), maxTokens: context, toolListStyle: .bare,
-          thinkingTokenBudget: 32)
+          modelPath: url.path, backend: .cpu(),
+          visionBackend: url.lastPathComponent.uppercased().contains("-VL-") ? .cpu() : nil,
+          maxTokens: context, toolListStyle: .bare, thinkingTokenBudget: 32)
         modelName = url.deletingPathExtension().lastPathComponent
       } catch {
         out.write(["type": "error", "what": "model load: \(error)"])
@@ -124,9 +125,20 @@ enum BenchRunner {
     var passed = 0
     var failed = 0
     for benchCase in cases {
-      if benchCase.image != nil {
-        out.write(["type": "skip", "case": benchCase.id, "why": "image cases need the VLM stage"])
-        continue
+      // An image case names a fixture pushed next to the cases file; it goes
+      // into the prompt as an attachment and becomes "the photo" for the
+      // tools, exactly as on the stage. A missing fixture is a skip, not a
+      // fail — the model never saw the case.
+      var attached: CGImage?
+      if let fixture = benchCase.image {
+        let url = documents.appendingPathComponent("toolbench-fixtures/\(fixture)")
+        guard let data = try? Data(contentsOf: url), let image = UIImage(data: data)?.cgImage
+        else {
+          out.write(["type": "skip", "case": benchCase.id, "why": "fixture \(fixture) not found"])
+          continue
+        }
+        attached = image
+        PhotoEditBox.shared.load(image)
       }
       // A fresh session per case: no history, no carried KV, every case pays
       // the same prefill. Cross-turn behavior is a different benchmark.
@@ -148,9 +160,19 @@ enum BenchRunner {
         // Detached for the same reason as the stage: `respond` runs on the
         // caller's executor. Raced against a deadline — one transient engine
         // hang has been observed, and it must cost one case, not the run.
+        let input = benchCase.input
+        let attached = attached  // a let for the Sendable closure
         answer = try await firstToFinish(within: 180) {
           try await Task.detached(priority: .userInitiated) {
-            try await session.respond(to: benchCase.input).content
+            if let attached {
+              return try await session.respond(
+                to: Prompt {
+                  input
+                  Attachment(attached)
+                }
+              ).content
+            }
+            return try await session.respond(to: input).content
           }.value
         }
       } catch let timeout as DeadlinePassed {
