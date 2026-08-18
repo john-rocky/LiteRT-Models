@@ -101,6 +101,14 @@ final class StageModel {
 
   static var scenarioIsPhoto: Bool { scenarioName == "photo" }
 
+  /// `--voice`: the beats come from the microphone instead of the script.
+  /// The scenario still sets the tool set and the timeline length; what is
+  /// said is up to the person holding the phone. Speech is the vaguest
+  /// interface there is, and the whole point of the recording.
+  static var voiceDriven: Bool { CommandLine.arguments.contains("--voice") }
+  private(set) var listening = false
+  private let voice = VoiceInput()
+
 
 
   private(set) var question = ""
@@ -260,18 +268,36 @@ final class StageModel {
 
   private func run() async {
     guard let session else { return }
-    for (index, prompt) in Self.scenarioBeats.enumerated() {
+    for (index, scripted) in Self.scenarioBeats.enumerated() {
       RunLog.flushStream()  // beat N's tail was landing at the head of beat N+1
-      RunLog.write("BEAT \(index + 1) \(prompt)")
       beatIndex = index
       question = ""
       typed = ""
       set(.typing)
-      // Typed out rather than announced: on screen this has to read as somebody
-      // instructing the phone, not as a chapter heading.
-      for character in prompt {
-        typed.append(character)
-        try? await Task.sleep(for: .milliseconds(28))
+      let prompt: String
+      if Self.voiceDriven {
+        // The person speaks the beat. An empty take (a cough, a false start)
+        // just listens again; a broken recognizer ends the run — looping on
+        // it would record a phone listening to nothing.
+        var spoken = ""
+        while spoken.isEmpty {
+          guard let heard = await listenForOneUtterance() else {
+            RunLog.write("VOICE stopped: \(voice.problem ?? "no transcript")")
+            return
+          }
+          spoken = heard
+        }
+        prompt = spoken
+        RunLog.write("BEAT \(index + 1) (spoken) \(prompt)")
+      } else {
+        RunLog.write("BEAT \(index + 1) \(scripted)")
+        // Typed out rather than announced: on screen this has to read as
+        // somebody instructing the phone, not as a chapter heading.
+        for character in scripted {
+          typed.append(character)
+          try? await Task.sleep(for: .milliseconds(28))
+        }
+        prompt = scripted
       }
       try? await Task.sleep(for: .milliseconds(450))
       question = prompt
@@ -333,6 +359,31 @@ final class StageModel {
       beatIndex = index + 1
       try? await Task.sleep(for: .seconds(3))
     }
+  }
+
+  /// One spoken beat: listen until the words stop changing. There is no cap on
+  /// the silence before the first word — the speaker decides when the beat
+  /// starts — and 1.6 s of unchanged text after it ends the utterance. Returns
+  /// nil only when the recognizer itself failed.
+  private func listenForOneUtterance() async -> String? {
+    listening = true
+    defer { listening = false }
+    await voice.start()
+    guard voice.problem == nil else { return nil }
+    var last = ""
+    var changedAt = Date()
+    while voice.problem == nil {
+      try? await Task.sleep(for: .milliseconds(100))
+      if voice.heard != last {
+        last = voice.heard
+        changedAt = Date()
+        typed = last  // the words land in the composer as they are said
+      }
+      if !last.isEmpty, Date().timeIntervalSince(changedAt) > 1.6 { break }
+    }
+    let text = await voice.stop()
+    typed = text
+    return voice.problem == nil ? text : nil
   }
 
   private func set(_ next: Phase) {

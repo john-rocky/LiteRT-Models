@@ -126,6 +126,11 @@ struct StageView: View {
   private var composer: some View {
     HStack(spacing: 10) {
       HStack(spacing: 2) {
+        if stage.listening && stage.typed.isEmpty {
+          Text("Listening…")
+            .font(.system(size: 19, weight: .medium, design: .rounded))
+            .foregroundStyle(.white.opacity(0.4))
+        }
         Text(stage.typed)
           .font(.system(size: 19, weight: .medium, design: .rounded))
           .foregroundStyle(.white)
@@ -139,9 +144,12 @@ struct StageView: View {
       .padding(.horizontal, 14)
       .padding(.vertical, 11)
       .background(Color.white.opacity(0.10), in: Capsule())
-      Image(systemName: "arrow.up.circle.fill")
+      // A live microphone while listening, the send arrow otherwise: the
+      // recording has to show that the words came in through the air.
+      Image(systemName: stage.listening ? "mic.fill" : "arrow.up.circle.fill")
         .font(.system(size: 32))
-        .foregroundStyle(Color.accentColor)
+        .foregroundStyle(stage.listening ? Color.red : Color.accentColor)
+        .symbolEffect(.pulse, isActive: stage.listening)
     }
     .padding(.bottom, 10)
     .transition(.move(edge: .bottom).combined(with: .opacity))

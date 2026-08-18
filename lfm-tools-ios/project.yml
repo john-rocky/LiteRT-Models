@@ -40,7 +40,8 @@ targets:
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Counts what is in your photo library.
         INFOPLIST_KEY_NSCameraUsageDescription: Switches the rear flashlight on and off.
         INFOPLIST_KEY_NSMotionUsageDescription: Reads step count, compass heading and air pressure.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: Measures how loud the room is.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Hears what you ask, and measures how loud the room is.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: Turns what you say into a request, on the device.
         INFOPLIST_KEY_NSAlarmKitUsageDescription: Sets timers and alarms you asked for.
         INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Saves edited copies of your photos.
         "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64

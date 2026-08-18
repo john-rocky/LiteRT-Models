@@ -23,6 +23,7 @@ struct LFMToolsApp: App {
 @available(iOS 27.0, *)
 struct ChatView: View {
   @State private var chat = ChatModel()
+  @State private var voice = VoiceInput()
   @State private var input = ""
   @State private var showingTools = false
 
@@ -215,17 +216,49 @@ struct ChatView: View {
   }
 
   private var composer: some View {
-    HStack(spacing: 8) {
-      TextField("Ask it to do something", text: composerText, axis: .vertical)
+    VStack(alignment: .leading, spacing: 4) {
+      if let problem = voice.problem {
+        Text(problem).font(.caption).foregroundStyle(.red)
+      }
+      HStack(spacing: 8) {
+        TextField(
+          voice.listening ? "Listening…" : "Ask it to do something",
+          text: composerText, axis: .vertical
+        )
         .textFieldStyle(.roundedBorder)
         .lineLimit(1...4)
-        .disabled(chat.thinking)
+        .disabled(chat.thinking || voice.listening)
         .onSubmit(send)
-      Button(action: send) { Image(systemName: "arrow.up.circle.fill").font(.title2) }
-        .disabled(input.isEmpty || chat.thinking)
+        Button(action: toggleVoice) {
+          Image(systemName: voice.listening ? "mic.fill" : "mic")
+            .font(.title2)
+            .foregroundStyle(voice.listening ? Color.red : Color.accentColor)
+            .symbolEffect(.pulse, isActive: voice.listening)
+        }
+        .disabled(chat.thinking)
+        Button(action: send) { Image(systemName: "arrow.up.circle.fill").font(.title2) }
+          .disabled(input.isEmpty || chat.thinking || voice.listening)
+      }
     }
     .padding()
     .background(.bar)
+    // The words appear in the composer as they are spoken — the recognizer
+    // editing itself mid-sentence is the visible half of voice input.
+    .onChange(of: voice.heard) {
+      if voice.listening { input = voice.heard }
+    }
+  }
+
+  /// One button, two states: start a take, or finish it and leave the final
+  /// transcript in the composer for the same send path typing uses.
+  private func toggleVoice() {
+    Task {
+      if voice.listening {
+        input = await voice.stop()
+      } else {
+        await voice.start()
+      }
+    }
   }
 
   /// While the script is running the composer shows the line about to be sent,
