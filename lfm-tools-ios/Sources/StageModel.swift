@@ -57,18 +57,37 @@ final class StageModel {
     "Save it.",
   ]
 
-  /// `--scenario photo` swaps the stage to the photo pack; default stays the
+  /// The focus cut: one sentence at a time steering notifications, a timer
+  /// and the screen itself. The dim beat is the visible one; the last beat is
+  /// the compound — two tools out of one sentence, written in call order
+  /// because the models that chain follow the sentence.
+  static let focusBeats = [
+    "Set a timer for 25 minutes.",
+    "Remind me to stretch in half an hour.",
+    "What notifications are coming up?",
+    "Remember this: I stopped at page 128.",
+    "Dim the screen — I need to focus.",
+    "Silence all my notifications and set a one-hour focus timer.",
+  ]
+
+  /// `--scenario photo|focus` swaps the stage to that pack; default stays the
   /// coffee run. Beats and tools travel together, same as the bench.
   static var scenarioBeats: [String] {
-    scenarioIsPhoto ? photoBeats : beats
+    switch scenarioName {
+    case "photo": return photoBeats
+    case "focus": return focusBeats
+    default: return beats
+    }
   }
 
-  static var scenarioIsPhoto: Bool {
+  static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
       CommandLine.arguments.indices.contains(flag + 1)
-    else { return false }
-    return CommandLine.arguments[flag + 1].lowercased() == "photo"
+    else { return "coffee" }
+    return CommandLine.arguments[flag + 1].lowercased()
   }
+
+  static var scenarioIsPhoto: Bool { scenarioName == "photo" }
 
 
 
@@ -146,7 +165,12 @@ final class StageModel {
       }
     }
     RunLog.startNewRun()
-    let tools = Self.scenarioIsPhoto ? ToolBox.photoStage : ToolBox.demo
+    let tools: [any FoundationModels.Tool]
+    switch Self.scenarioName {
+    case "photo": tools = ToolBox.photoStage
+    case "focus": tools = ToolBox.focus
+    default: tools = ToolBox.demo
+    }
     toolCount = tools.count
     switch Self.backend {
     case .system:

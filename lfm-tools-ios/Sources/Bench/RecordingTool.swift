@@ -65,6 +65,9 @@ enum BenchToolBox {
     RecordingTool(base: BlurPhotoTool(), canned: "done: blurred — the result is on screen"),
     RecordingTool(
       base: AutoEnhancePhotoTool(), canned: "done: auto-enhanced — the result is on screen"),
+    RecordingTool(
+      base: CutOutSubjectTool(),
+      canned: "done: remove the background — the result is on screen"),
     RecordingTool(base: UndoPhotoEditTool(), canned: "undid the last edit"),
     RecordingTool(
       base: ResetPhotoEditsTool(),
@@ -73,11 +76,33 @@ enum BenchToolBox {
       base: SavePhotoTool(), canned: "saved a copy with 2 edits to the photo library"),
   ]
 
+  /// The focus pack, neutralized. One fixed world again: two notifications
+  /// pending, one note remembered — so list/read cases have something real-
+  /// shaped to answer from and cancel has something to claim it cancelled.
+  static let focus: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: TimerTool(), canned: "timer set — it will ring in the system, not in this app"),
+    RecordingTool(base: BrightnessTool(), canned: "brightness set"),
+    RecordingTool(base: ReadBrightnessTool(), canned: "35%"),
+    RecordingTool(base: NotificationTool(), canned: "notification scheduled"),
+    RecordingTool(base: CancelNotificationsTool(), canned: "cancelled 2"),
+    RecordingTool(
+      base: PendingNotificationsTool(),
+      canned: "- Stretch in 1800s\n- Stand up in 2700s"),
+    RecordingTool(base: WriteNoteTool(), canned: "noted"),
+    RecordingTool(
+      base: ReadNotesTool(),
+      canned: "2026-08-18T09:12:00Z  the wifi password is 4471"),
+    RecordingTool(base: TorchTool(), canned: "torch on"),
+    RecordingTool(base: HapticTool(), canned: "played the success haptic"),
+  ]
+
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {
     switch name {
     case "demo": return demo
     case "photo": return photo
+    case "focus": return focus
     default: return nil
     }
   }

@@ -77,6 +77,16 @@ enum ToolBox {
     $0.name != "undo_photo_edit"
   }
 
+  /// The focus scenario pack: one vague sentence fanning out into
+  /// notifications, a timer and the screen. The discrimination axes are the
+  /// `set_` prefix neighbors (timer/brightness/torch), the get/set brightness
+  /// pair, and remind-vs-remember (schedule_notification vs write_note).
+  static let focus: [any FoundationModels.Tool] = [
+    TimerTool(), BrightnessTool(), ReadBrightnessTool(),
+    NotificationTool(), CancelNotificationsTool(), PendingNotificationsTool(),
+    WriteNoteTool(), ReadNotesTool(), TorchTool(), HapticTool(),
+  ]
+
   static let all: [any FoundationModels.Tool] = ambient + actions + personal + photoEditing
 
   /// The set the scripted run uses.
