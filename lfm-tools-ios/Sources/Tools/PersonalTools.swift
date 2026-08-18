@@ -10,8 +10,10 @@ import Photos
 @available(iOS 27.0, *)
 enum EventStoreBox {
   /// One store for the whole app: `EKEventStore` re-prompts and drops its
-  /// authorization if a new instance is made per call.
-  static let shared = EKEventStore()
+  /// authorization if a new instance is made per call. `EKEventStore` is not
+  /// `Sendable`, and its own calls are thread-safe, so the global is marked
+  /// unsafe rather than wrapped in an actor that would buy nothing.
+  nonisolated(unsafe) static let shared = EKEventStore()
 }
 
 @available(iOS 27.0, *)
@@ -83,13 +85,15 @@ struct ListRemindersTool: Tool {
     }
     let predicate = EventStoreBox.shared.predicateForIncompleteReminders(
       withDueDateStarting: nil, ending: nil, calendars: nil)
-    let reminders: [EKReminder] = await withCheckedContinuation { continuation in
+    // The titles cross the continuation, not the reminders: `EKReminder` is not
+    // `Sendable`, so reading it has to finish inside the callback.
+    let titles: [String] = await withCheckedContinuation { continuation in
       EventStoreBox.shared.fetchReminders(matching: predicate) { found in
-        continuation.resume(returning: found ?? [])
+        continuation.resume(returning: (found ?? []).prefix(20).map { $0.title ?? "untitled" })
       }
     }
-    guard !reminders.isEmpty else { return "no open reminders" }
-    return reminders.prefix(20).map { "- \($0.title ?? "untitled")" }.joined(separator: "\n")
+    guard !titles.isEmpty else { return "no open reminders" }
+    return titles.map { "- \($0)" }.joined(separator: "\n")
   }
 }
 
@@ -156,7 +160,7 @@ struct SearchContactsTool: Tool {
 @available(iOS 27.0, *)
 struct PhotoLibraryTool: Tool {
   let name = "photo_library_summary"
-  let description = "How many photos and videos are in the library, and how recent."
+  let description = "How many photos and videos."
 
   func call(arguments: NoArguments) async throws -> String {
     let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)

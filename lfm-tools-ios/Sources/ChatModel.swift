@@ -2,6 +2,7 @@
 import Foundation
 import FoundationModels
 import LiteRTLM
+import LiteRTLMFoundationModels
 import Observation
 
 @available(iOS 27.0, *)
@@ -14,6 +15,8 @@ final class ChatModel {
     let kind: Kind
     let text: String
     let detail: String?
+    /// What the tools drew for this answer, shown under the bubble.
+    var artifact: Artifact?
   }
 
   enum Status: Equatable {
@@ -26,14 +29,20 @@ final class ChatModel {
   private(set) var status: Status = .noModel
   private(set) var lines: [Line] = []
   private(set) var thinking = false
-  var backend: Backend = .cpu()
+  // The engine's Metal path is the one LiteRT-LM ships for iOS; --gpu selects it
+  // when the CPU path is what a failure has to be isolated from.
+  var backend: Backend = CommandLine.arguments.contains("--gpu") ? .gpu : .cpu()
   var enabledGroups: Set<String> = ["ambient", "actions", "personal"]
 
   private var session: LanguageModelSession?
   private var model: LiteRTLanguageModel?
 
-  var tools: [any Tool] {
-    var tools: [any Tool] = []
+  var tools: [any FoundationModels.Tool] {
+    // --no-tools isolates the engine from the tool path when a turn fails: a
+    // plain session exercises neither the router nor constrained decoding.
+    if CommandLine.arguments.contains("--no-tools") { return [] }
+    if CommandLine.arguments.contains("--autorun") { return ToolBox.demo }
+    var tools: [any FoundationModels.Tool] = []
     if enabledGroups.contains("ambient") { tools += ToolBox.ambient }
     if enabledGroups.contains("actions") { tools += ToolBox.actions }
     if enabledGroups.contains("personal") { tools += ToolBox.personal }
@@ -52,13 +61,23 @@ final class ChatModel {
       let files = try? FileManager.default.contentsOfDirectory(
         at: root, includingPropertiesForKeys: nil)
     else { return [] }
-    return files.filter { $0.pathExtension == "litertlm" }.sorted { $0.path < $1.path }
+    // Newest first: pushing a new bundle should be enough to switch to it.
+    return files.filter { $0.pathExtension == "litertlm" }.sorted {
+      let a = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+      let b = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+      return a > b
+    }
   }
 
   func load(_ url: URL) async {
     status = .loading(url.lastPathComponent)
     do {
-      let model = try LiteRTLanguageModel(modelPath: url.path, backend: backend)
+      // 27 tool descriptions and their argument schemas go into the system
+      // prompt on every turn, and the adapter rebuilds the conversation from the
+      // whole transcript each time. The convenience default of 2048 is spent
+      // before the first question arrives.
+      let model = try LiteRTLanguageModel(
+        modelPath: url.path, backend: backend, maxTokens: 4096, toolListStyle: .bare)
       self.model = model
       startSession()
       status = .ready(url.lastPathComponent)
@@ -82,21 +101,99 @@ final class ChatModel {
     guard let session else { return }
     let prompt = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !prompt.isEmpty, !thinking else { return }
-    lines.append(Line(kind: .user, text: prompt, detail: nil))
+    lines.append(Line(kind: .user, text: prompt, detail: nil, artifact: nil))
+    _ = ArtifactBox.shared.take()  // drop anything left over from a failed turn
+    live = ""
     thinking = true
     defer { thinking = false }
 
     let before = session.transcript.count
     do {
-      let response = try await session.respond(to: prompt)
+      // Off the main actor on purpose. The FM executor protocol declares
+      // `respond` as `nonisolated(nonsending)`, so it runs on the *caller's*
+      // executor — and this class is @MainActor. Left alone, the LiteRT-LM
+      // engine's blocking work lands on the main thread and its callback pool
+      // times out (DEADLINE_EXCEEDED), which surfaces as missing output
+      // TensorBuffers. `LanguageModelSession` is @unchecked Sendable, so a
+      // detached task is the supported way out.
+      let response = try await Task.detached(priority: .userInitiated) {
+        try await session.respond(to: prompt)
+      }.value
       // Tool calls are not part of the reply text — they are transcript entries
       // the session made on its own. Reading them back is the only way to show
       // what the model actually did.
       appendToolTrace(from: session.transcript, after: before)
-      lines.append(Line(kind: .assistant, text: response.content, detail: nil))
+      // The card belongs to the answer, not to the tool line: it should appear
+      // as the reply lands, the way something prepared while you waited does.
+      lines.append(
+        Line(
+          kind: .assistant, text: response.content, detail: nil,
+          artifact: ArtifactBox.shared.take()))
     } catch {
       appendToolTrace(from: session.transcript, after: before)
-      lines.append(Line(kind: .error, text: error.localizedDescription, detail: nil))
+      lines.append(
+        Line(
+          kind: .error, text: error.localizedDescription, detail: nil,
+          artifact: ArtifactBox.shared.take()))
+    }
+  }
+
+  // MARK: Scripted run
+
+  /// A fixed sequence, so a recording of the app is reproducible and so the
+  /// demo does not depend on someone typing while the model is loading.
+  static let script = [
+    // Act 1 — what the phone knows about right now.
+    "Where am I?",
+    "What is my compass heading?",
+    "Am I moving?",
+    "How many steps have I walked today?",
+    // Act 2 — out of the app and into the rest of the phone.
+    "Find a coffee shop near me.",
+    "Put coffee in my calendar at 3pm today for 30 minutes.",
+    "Remind me in 40 seconds that the demo is running.",
+    // Act 3 — read, understand, translate, speak.
+    "Read the text in my latest photo.",
+    // The photo is English so the OCR card reads at a glance; the translation
+    // beat brings its own Japanese, so the output is still English.
+    "Translate 'お腹が空きました。ラーメンが食べたい。' into English.",
+    "Say the translation out loud.",
+    // Act 4 — leave something behind.
+    "Make a black and white copy of that photo.",
+    "Chart my steps for the last 7 days.",
+    // Last on purpose: this one sends the app to the background, and iOS stops
+    // generating there — nothing after it would run.
+    "Show the first coffee shop on the map.",
+  ]
+
+  private(set) var scriptedPrompt: String?
+
+  /// What the model is emitting right now, before anything is parsed. On a
+  /// phone a turn takes long enough that a spinner is indistinguishable from a
+  /// hang; the raw tokens are the only honest progress indicator.
+  private(set) var live = ""
+
+  private(set) var lastRate: Double = 0
+
+  func startTrace() {
+    LiteRTFMTrace.onChunk = { [weak self] piece in
+      Task { @MainActor in self?.live += piece }
+    }
+    LiteRTFMTrace.onRate = { [weak self] rate in
+      Task { @MainActor in self?.lastRate = rate }
+    }
+  }
+
+  func runScript() async {
+    for prompt in Self.script {
+      guard session != nil else { return }
+      // Show the line in the composer for a beat before it is sent: on a video
+      // it has to be obvious that a question went in before anything happened.
+      scriptedPrompt = prompt
+      try? await Task.sleep(for: .milliseconds(900))
+      scriptedPrompt = nil
+      await send(prompt)
+      try? await Task.sleep(for: .milliseconds(600))
     }
   }
 
@@ -106,13 +203,16 @@ final class ChatModel {
       case .toolCalls(let calls):
         for call in calls {
           lines.append(
-            Line(kind: .tool, text: "called \(call.toolName)", detail: String(describing: call.arguments)))
+            Line(
+              kind: .tool, text: "called \(call.toolName)",
+              detail: String(describing: call.arguments), artifact: nil))
         }
       case .toolOutput(let output):
         let text = output.segments.compactMap { segment -> String? in
           if case .text(let t) = segment { return t.content } else { return nil }
         }.joined()
-        lines.append(Line(kind: .tool, text: "\(output.toolName) returned", detail: text))
+        lines.append(
+          Line(kind: .tool, text: "\(output.toolName) returned", detail: text, artifact: nil))
       default:
         break
       }

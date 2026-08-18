@@ -14,7 +14,7 @@ import UIKit
 @available(iOS 27.0, *)
 struct CurrentTimeTool: Tool {
   let name = "get_current_time"
-  let description = "The current date and time on this device."
+  let description = "What time it is now, and the date."
 
   @Generable struct Arguments {
     @Guide(description: "IANA time zone such as Asia/Tokyo. Omit for the device's own zone.")
@@ -28,6 +28,7 @@ struct CurrentTimeTool: Tool {
     if let name = arguments.timeZone, let zone = TimeZone(identifier: name) {
       formatter.timeZone = zone
     }
+    ArtifactBox.shared.post(.clock(date: Date(), zone: formatter.timeZone.identifier))
     return "\(formatter.string(from: Date())) (\(formatter.timeZone.identifier))"
   }
 }
@@ -35,7 +36,7 @@ struct CurrentTimeTool: Tool {
 @available(iOS 27.0, *)
 struct DeviceInfoTool: Tool {
   let name = "get_device_info"
-  let description = "Model, system version and name of this device."
+  let description = "Model and iOS version."
 
   func call(arguments: NoArguments) async throws -> String {
     await MainActor.run {
@@ -48,7 +49,7 @@ struct DeviceInfoTool: Tool {
 @available(iOS 27.0, *)
 struct BatteryTool: Tool {
   let name = "get_battery"
-  let description = "Battery percentage and whether the device is charging."
+  let description = "Battery level and charging state."
 
   func call(arguments: NoArguments) async throws -> String {
     await MainActor.run {
@@ -63,6 +64,10 @@ struct BatteryTool: Tool {
       case .unplugged: state = "on battery"
       default: state = "unknown"
       }
+      if percent >= 0 {
+        ArtifactBox.shared.post(
+          .gauge(title: "Battery", value: Double(percent), unit: "%", caption: state))
+      }
       return percent < 0 ? "battery level unavailable (\(state))" : "\(percent)%, \(state)"
     }
   }
@@ -71,7 +76,7 @@ struct BatteryTool: Tool {
 @available(iOS 27.0, *)
 struct StorageTool: Tool {
   let name = "get_storage"
-  let description = "Free and total storage on this device."
+  let description = "Free and total storage."
 
   func call(arguments: NoArguments) async throws -> String {
     let url = URL(fileURLWithPath: NSHomeDirectory())
@@ -89,7 +94,7 @@ struct StorageTool: Tool {
 @available(iOS 27.0, *)
 struct PowerStateTool: Tool {
   let name = "get_power_state"
-  let description = "Thermal state, Low Power Mode, uptime and processor count."
+  let description = "Thermal state, Low Power Mode, uptime."
 
   func call(arguments: NoArguments) async throws -> String {
     let info = ProcessInfo.processInfo
@@ -114,7 +119,7 @@ struct PowerStateTool: Tool {
 @available(iOS 27.0, *)
 struct LocaleTool: Tool {
   let name = "get_locale"
-  let description = "Language, region, currency and calendar this device is set to."
+  let description = "Language, region, currency."
 
   func call(arguments: NoArguments) async throws -> String {
     let locale = Locale.current
@@ -129,7 +134,7 @@ struct LocaleTool: Tool {
 @available(iOS 27.0, *)
 struct NetworkTool: Tool {
   let name = "get_network_status"
-  let description = "Whether the device is online, and over which interface."
+  let description = "Online state and interface."
 
   func call(arguments: NoArguments) async throws -> String {
     let monitor = NWPathMonitor()
@@ -159,7 +164,7 @@ struct NetworkTool: Tool {
 }
 
 /// Guards a continuation that a callback may fire more than once.
-private final class OnceBox: @unchecked Sendable {
+final class OnceBox: @unchecked Sendable {
   private let lock = NSLock()
   private var used = false
   func claim() -> Bool {
@@ -174,7 +179,7 @@ private final class OnceBox: @unchecked Sendable {
 @available(iOS 27.0, *)
 struct CalculateTool: Tool {
   let name = "calculate"
-  let description = "Evaluate an arithmetic expression, e.g. (17+25)*3."
+  let description = "Work out an arithmetic expression."
 
   @Generable struct Arguments {
     @Guide(description: "Arithmetic only: digits, + - * / and parentheses.")
@@ -192,6 +197,8 @@ struct CalculateTool: Tool {
     guard let value = NSExpression(format: arguments.expression).expressionValue(
       with: nil, context: nil) as? NSNumber
     else { return "could not evaluate \(arguments.expression)" }
+    ArtifactBox.shared.post(
+      .equation(expression: arguments.expression, result: "\(value)"))
     return "\(arguments.expression) = \(value)"
   }
 }

@@ -9,20 +9,45 @@ import MapKit
 @available(iOS 27.0, *)
 struct LocationTool: Tool {
   let name = "get_location"
-  let description = "The device's current latitude and longitude."
+  // Tool descriptions and @Guide strings on the demo set are written to be
+  // paid for: on the LiteRT path they are prefilled into every turn, and the
+  // tool list was 84% of the prefill. Words that do not help the model route
+  // or fill arguments are dropped.
+  let description = "Where the device is: town or district."
 
+  /// Town-level, on purpose. The precise fix is what the phone has, but a
+  /// screen recording of it is somebody's home address — so neither the model
+  /// nor the card ever sees the coordinates.
   func call(arguments: NoArguments) async throws -> String {
-    let location = try await LocationBox.shared.current()
-    return String(
-      format: "%.5f, %.5f (±%.0f m)", location.coordinate.latitude,
-      location.coordinate.longitude, location.horizontalAccuracy)
+    try await withDeadline(12, "location") {
+      let location = try await LocationBox.shared.current()
+      var place = "somewhere with a GPS fix"
+      if let request = MKReverseGeocodingRequest(location: location),
+        let item = try? await request.mapItems.first
+      {
+        let address = item.address?.shortAddress ?? item.address?.fullAddress
+        place = address.map { Self.coarse($0) } ?? place
+      }
+      ArtifactBox.shared.post(
+        .area(
+          place: place, accuracy: Int(location.horizontalAccuracy),
+          coordinate: location.coordinate))
+      return "\(place) (fix to ±\(Int(location.horizontalAccuracy)) m)"
+    }
+  }
+
+  /// Keep the last two components of an address — district and city — and drop
+  /// the street and the number.
+  private static func coarse(_ address: String) -> String {
+    let parts = address.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+    return parts.suffix(2).joined(separator: ", ")
   }
 }
 
 @available(iOS 27.0, *)
 struct PlaceNameTool: Tool {
   let name = "describe_location"
-  let description = "The street address of where the device is now."
+  let description = "The current street address."
 
   func call(arguments: NoArguments) async throws -> String {
     let location = try await LocationBox.shared.current()
@@ -41,13 +66,12 @@ struct PlaceNameTool: Tool {
 @available(iOS 27.0, *)
 struct SearchPlacesTool: Tool {
   let name = "search_places"
-  let description = "Find nearby places by name or category, e.g. coffee, pharmacy."
+  let description = "Find shops, cafes or other places near the user."
 
+  // `query` alone. A `limit` argument was one more thing for a 1.2B to decode
+  // and to get wrong, and no request in practice named a count.
   @Generable struct Arguments {
-    @Guide(description: "What to look for.")
     var query: String
-    @Guide(description: "How many results to return, 1 to 5.")
-    var limit: Int
   }
 
   func call(arguments: Arguments) async throws -> String {
@@ -57,11 +81,17 @@ struct SearchPlacesTool: Tool {
     request.region = MKCoordinateRegion(
       center: location.coordinate, latitudinalMeters: 3000, longitudinalMeters: 3000)
     let response = try await MKLocalSearch(request: request).start()
-    let limit = min(5, max(1, arguments.limit))
-    let items = response.mapItems.prefix(limit).map { item -> String in
-      let metres = Int(location.distance(from: item.location))
-      return "- \(item.name ?? "unnamed") (\(metres) m)"
+    let limit = 3
+    let found = response.mapItems.prefix(limit).map { item in
+      Artifact.Place(
+        name: item.name ?? "unnamed",
+        metres: Int(location.distance(from: item.location)),
+        category: item.pointOfInterestCategory?.rawValue
+          .replacingOccurrences(of: "MKPOICategory", with: ""),
+        coordinate: item.location.coordinate)
     }
+    if !found.isEmpty { ArtifactBox.shared.post(.places(Array(found))) }
+    let items = found.map { "- \($0.name) (\($0.metres) m)" }
     return items.isEmpty ? "nothing found for \(arguments.query)" : items.joined(separator: "\n")
   }
 }

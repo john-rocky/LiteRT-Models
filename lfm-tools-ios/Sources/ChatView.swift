@@ -1,12 +1,22 @@
 import FoundationModels
 import LiteRTLM
+import Photos
+import LiteRTLMFoundationModels
 import SwiftUI
 
 @available(iOS 27.0, *)
 @main
 struct LFMToolsApp: App {
   var body: some Scene {
-    WindowGroup { ChatView() }
+    WindowGroup {
+      // --autorun is the recorded demo: one beat at a time, full screen. The
+      // chat stays for driving it by hand.
+      if CommandLine.arguments.contains("--autorun") {
+        StageView()
+      } else {
+        ChatView()  // also the host for --export-video
+      }
+    }
   }
 }
 
@@ -29,8 +39,97 @@ struct ChatView: View {
         ToolbarItem(placement: .topBarTrailing) {
           Button { showingTools = true } label: { Image(systemName: "wrench.and.screwdriver") }
         }
+        ToolbarItem(placement: .topBarLeading) {
+          Button { Task { await chat.runScript() } } label: { Image(systemName: "play.circle") }
+            .disabled(chat.thinking)
+        }
       }
       .sheet(isPresented: $showingTools) { ToolSheet(chat: chat) }
+      .task { await autostart() }
+    }
+  }
+
+  /// With one model on the device there is nothing to choose, so load it. With
+  /// `--autorun` (how the demo is recorded) the script starts as soon as it is
+  /// ready — no taps, so the recording is the app working rather than someone
+  /// operating it.
+  /// `--bench` turns the app into a measuring harness: every bundle in
+  /// Documents, on both backends, with the same token counts as the desktop CLI
+  /// so the numbers line up with it.
+  private func runBenchmarks() async {
+    for url in ChatModel.availableModels() {
+      for backend in [Backend.cpu(), .gpu] {
+        let label = "\(url.lastPathComponent) \(backend.rawValue)"
+        do {
+          let info = try await benchmark(
+            modelPath: url.path, backend: backend, prefillTokens: 256, decodeTokens: 256,
+            cacheDir: FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.path)
+          print(
+            "BENCH \(label) prefill=\(String(format: "%.2f", info.lastPrefillTokensPerSecond)) "
+              + "decode=\(String(format: "%.2f", info.lastDecodeTokensPerSecond)) "
+              + "init=\(String(format: "%.2f", info.initTimeInSecond))s "
+              + "ttft=\(String(format: "%.3f", info.timeToFirstTokenInSecond))s")
+        } catch {
+          print("BENCH \(label) FAILED: \(error)")
+        }
+      }
+    }
+    print("BENCH done")
+  }
+
+  /// `--export-video` copies the newest video out of the photo library into the
+  /// app's Documents, where `devicectl device copy from` can reach it. The
+  /// screen recording itself has to be started from Control Center — neither
+  /// devicectl nor AVFoundation can record this device — but getting the file
+  /// back to the Mac should not also be manual.
+  private func exportNewestVideo() async {
+    let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+    guard status == .authorized || status == .limited else {
+      print("EXPORT no photo permission")
+      return
+    }
+    let options = PHFetchOptions()
+    options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+    options.fetchLimit = 1
+    guard let asset = PHAsset.fetchAssets(with: .video, options: options).firstObject else {
+      print("EXPORT no video in the library")
+      return
+    }
+    let resources = PHAssetResource.assetResources(for: asset)
+    guard let resource = resources.first(where: { $0.type == .video }) ?? resources.first else {
+      print("EXPORT no resource")
+      return
+    }
+    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let destination = documents.appendingPathComponent("screen-recording.mov")
+    try? FileManager.default.removeItem(at: destination)
+    let options2 = PHAssetResourceRequestOptions()
+    options2.isNetworkAccessAllowed = true
+    do {
+      try await PHAssetResourceManager.default().writeData(
+        for: resource, toFile: destination, options: options2)
+      let size = (try? destination.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+      print("EXPORT wrote screen-recording.mov (\(size) bytes)")
+    } catch {
+      print("EXPORT failed: \(error)")
+    }
+  }
+
+  private func autostart() async {
+    if CommandLine.arguments.contains("--export-video") {
+      await exportNewestVideo()
+      return
+    }
+    if CommandLine.arguments.contains("--bench") {
+      await runBenchmarks()
+      return
+    }
+    chat.startTrace()
+    guard case .noModel = chat.status else { return }
+    guard let newest = ChatModel.availableModels().first else { return }
+    await chat.load(newest)
+    if CommandLine.arguments.contains("--autorun") {
+      await chat.runScript()
     }
   }
 
@@ -70,10 +169,27 @@ struct ChatView: View {
             LineView(line: line).id(line.id)
           }
           if chat.thinking {
-            HStack(spacing: 8) {
-              ProgressView()
-              Text("thinking on-device…").font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+              HStack(spacing: 8) {
+                ProgressView()
+                Text(
+                  chat.lastRate > 0
+                    ? "generating on-device · \(Int(chat.lastRate)) chars/s"
+                    : "generating on-device…"
+                )
+                .font(.caption).foregroundStyle(.secondary)
+              }
+              if !chat.live.isEmpty {
+                // Only the tail: a router pass can run to hundreds of
+                // characters, and what matters on screen is what it is
+                // producing now.
+                Text(String(chat.live.suffix(320)))
+                  .font(.system(.footnote, design: .monospaced))
+                  .foregroundStyle(.green)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+              }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .id("thinking")
           }
         }
@@ -82,12 +198,17 @@ struct ChatView: View {
       .onChange(of: chat.lines.count) {
         withAnimation { proxy.scrollTo(chat.lines.last?.id, anchor: .bottom) }
       }
+      // Tokens arrive faster than lines do; without this the green text runs
+      // off the bottom of the screen and the run looks stalled.
+      .onChange(of: chat.live) {
+        proxy.scrollTo("thinking", anchor: .bottom)
+      }
     }
   }
 
   private var composer: some View {
     HStack(spacing: 8) {
-      TextField("Ask it to do something", text: $input, axis: .vertical)
+      TextField("Ask it to do something", text: composerText, axis: .vertical)
         .textFieldStyle(.roundedBorder)
         .lineLimit(1...4)
         .disabled(chat.thinking)
@@ -97,6 +218,15 @@ struct ChatView: View {
     }
     .padding()
     .background(.bar)
+  }
+
+  /// While the script is running the composer shows the line about to be sent,
+  /// so a recording shows a question going in rather than answers appearing.
+  private var composerText: Binding<String> {
+    if let scripted = chat.scriptedPrompt {
+      return .constant(scripted)
+    }
+    return $input
   }
 
   private func send() {
@@ -120,10 +250,18 @@ private struct LineView: View {
           .background(Color.accentColor.opacity(0.15), in: .rect(cornerRadius: 12))
       }
     case .assistant:
-      Text(line.text)
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.12), in: .rect(cornerRadius: 12))
+      VStack(alignment: .leading, spacing: 8) {
+        Text(line.text)
+        if let artifact = line.artifact {
+          ArtifactView(artifact: artifact)
+            .transition(.asymmetric(
+              insertion: .scale(scale: 0.92, anchor: .top).combined(with: .opacity),
+              removal: .opacity))
+        }
+      }
+      .padding(10)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(Color.secondary.opacity(0.12), in: .rect(cornerRadius: 12))
     case .tool:
       // The point of the demo: what the model actually reached for, and what
       // came back. Shown inline rather than in a log nobody opens.
@@ -207,7 +345,7 @@ private struct ToolSheet: View {
     }
   }
 
-  private func toggle(_ key: String, _ title: String, _ tools: [any Tool]) -> some View {
+  private func toggle(_ key: String, _ title: String, _ tools: [any FoundationModels.Tool]) -> some View {
     Toggle(
       isOn: Binding(
         get: { chat.enabledGroups.contains(key) },

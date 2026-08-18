@@ -20,6 +20,7 @@ struct BrightnessTool: Tool {
     let clamped = min(100, max(0, arguments.percent))
     guard let screen = await activeScreen() else { return "no screen to dim" }
     await MainActor.run { screen.brightness = CGFloat(clamped) / 100 }
+    ArtifactBox.shared.post(.brightness(percent: clamped))
     return "brightness set to \(clamped)%"
   }
 }
@@ -71,7 +72,7 @@ struct TorchTool: Tool {
 @available(iOS 27.0, *)
 struct SpeakTool: Tool {
   let name = "speak"
-  let description = "Say something out loud through the device speaker."
+  let description = "Say something out loud."
 
   @Generable struct Arguments {
     @Guide(description: "The text to speak.")
@@ -86,6 +87,7 @@ struct SpeakTool: Tool {
       utterance.voice = AVSpeechSynthesisVoice(language: language)
     }
     await SpeechBox.shared.speak(utterance)
+    ArtifactBox.shared.post(.speaking(text: arguments.text))
     return "spoke: \(arguments.text)"
   }
 }
@@ -101,12 +103,48 @@ final class SpeechBox {
 }
 
 @available(iOS 27.0, *)
+struct SpeakLastAnswerTool: Tool {
+  // Named for the verb the demo speaks: "Speak that out loud." routed to
+  // nothing as `read_last_answer_aloud` — the 1.2B matches names, not
+  // paraphrases.
+  let name = "speak_out_loud"
+  let description = "Speak the previous answer out loud."
+
+  func call(arguments: NoArguments) async throws -> String {
+    let text = LastAnswer.shared.value
+    guard !text.isEmpty else { return "there is nothing to read yet" }
+    let utterance = AVSpeechUtterance(string: text)
+    await SpeechBox.shared.speak(utterance)
+    ArtifactBox.shared.post(.speaking(text: text))
+    return "spoke: \(text)"
+  }
+}
+
+/// The last thing the assistant said, so a tool can read it back without the
+/// model having to copy it into an argument.
+final class LastAnswer: @unchecked Sendable {
+  static let shared = LastAnswer()
+  private let lock = NSLock()
+  private var stored = ""
+  var value: String {
+    lock.lock()
+    defer { lock.unlock() }
+    return stored
+  }
+  func set(_ text: String) {
+    lock.lock()
+    stored = text
+    lock.unlock()
+  }
+}
+
+@available(iOS 27.0, *)
 struct HapticTool: Tool {
   let name = "vibrate"
   let description = "Play a haptic tap the user can feel."
 
   @Generable struct Arguments {
-    @Guide(description: "One of: success, warning, error.")
+    @Guide(description: "Which haptic.", .anyOf(["success", "warning", "error"]))
     var kind: String
   }
 
@@ -146,6 +184,7 @@ struct WriteClipboardTool: Tool {
 
   func call(arguments: Arguments) async throws -> String {
     await MainActor.run { UIPasteboard.general.string = arguments.text }
+    ArtifactBox.shared.post(.note(text: arguments.text))
     return "copied \(arguments.text.count) characters"
   }
 }
@@ -153,7 +192,7 @@ struct WriteClipboardTool: Tool {
 @available(iOS 27.0, *)
 struct OpenURLTool: Tool {
   let name = "open_url"
-  let description = "Open a link, or an app URL scheme such as tel: or maps:."
+  let description = "Open a link or app URL."
 
   @Generable struct Arguments {
     @Guide(description: "A full URL including the scheme, e.g. https://example.com")
@@ -162,22 +201,60 @@ struct OpenURLTool: Tool {
 
   func call(arguments: Arguments) async throws -> String {
     guard let url = URL(string: arguments.url) else { return "not a URL: \(arguments.url)" }
-    let opened = await UIApplication.shared.open(url)
+    // The default `options:` dictionary is not Sendable, so the call has to be
+    // made on the main actor rather than awaited across one.
+    let opened = await MainActor.run { UIApplication.shared.canOpenURL(url) }
+      ? await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+        Task { @MainActor in
+          UIApplication.shared.open(url, options: [:]) { continuation.resume(returning: $0) }
+        }
+      }
+      : false
     return opened ? "opened \(arguments.url)" : "nothing can open \(arguments.url)"
+  }
+}
+
+@available(iOS 27.0, *)
+struct OpenMapsTool: Tool {
+  let name = "open_in_maps"
+  let description = "Open Apple Maps showing a named place."
+
+  @Generable struct Arguments {
+    @Guide(description: "Place name, exactly as given.")
+    var place: String
+  }
+
+  func call(arguments: Arguments) async throws -> String {
+    // The URL is built here, not by the model: asked to compose a maps: link a
+    // small model invents a plausible website instead, and the demo lands in
+    // Safari on a domain nobody chose.
+    let query = arguments.place.addingPercentEncoding(
+      withAllowedCharacters: .urlQueryAllowed) ?? arguments.place
+    guard let url = URL(string: "http://maps.apple.com/?q=\(query)") else {
+      return "could not build a map link for \(arguments.place)"
+    }
+    let opened = await MainActor.run { UIApplication.shared.canOpenURL(url) }
+      ? await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+        Task { @MainActor in
+          UIApplication.shared.open(url, options: [:]) { continuation.resume(returning: $0) }
+        }
+      }
+      : false
+    return opened ? "opened \(arguments.place) in Maps" : "Maps did not open"
   }
 }
 
 @available(iOS 27.0, *)
 struct NotificationTool: Tool {
   let name = "schedule_notification"
-  let description = "Schedule a local notification a number of seconds from now."
+  let description = "Schedule a notification."
 
   @Generable struct Arguments {
     @Guide(description: "Notification title.")
     var title: String
     @Guide(description: "Notification body.")
     var body: String
-    @Guide(description: "How many seconds from now to fire it. Minimum 1.")
+    @Guide(description: "How many seconds from now to fire it.", .range(1...3600))
     var seconds: Int
   }
 
@@ -195,6 +272,8 @@ struct NotificationTool: Tool {
         identifier: UUID().uuidString, content: content,
         trigger: UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(delay), repeats: false)
       ))
+    ArtifactBox.shared.post(
+      .notice(title: arguments.title, body: arguments.body, seconds: delay))
     return "notification scheduled for \(delay)s from now"
   }
 }
