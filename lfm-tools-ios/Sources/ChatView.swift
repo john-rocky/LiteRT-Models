@@ -124,6 +124,10 @@ struct ChatView: View {
       await BenchRunner.run()
       return
     }
+    if CommandLine.arguments.contains("--photocheck") {
+      await PhotoCheck.run()
+      return
+    }
     if CommandLine.arguments.contains("--bench") {
       await runBenchmarks()
       return

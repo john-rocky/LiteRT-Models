@@ -86,6 +86,11 @@ final class PhotoEditBox: @unchecked Sendable {
     guard let cgImage = context.createCGImage(image, from: image.extent) else { return nil }
     return UIImage(cgImage: cgImage)
   }
+
+  /// The working image as pixels, for `--photocheck`'s eyes-on verification.
+  func currentRendered() -> UIImage? {
+    sync { current }.flatMap { render($0) }
+  }
 }
 
 // MARK: - Geometry (crop / resize / zoom are near-neighbors on purpose)
@@ -320,7 +325,10 @@ struct WarmthPhotoTool: Tool {
       let filter = CIFilter.temperatureAndTint()
       filter.inputImage = image
       filter.neutral = CIVector(x: 6500, y: 0)
-      filter.targetNeutral = CIVector(x: 6500 + CGFloat(amount) * 30, y: 0)
+      // A LOWER target temperature warms the image (verified by pixel: with
+      // +30/unit the "warm" result measured R-B ≈ -21, i.e. blue). Backwards
+      // is the natural way to hold this filter; --photocheck is the guard.
+      filter.targetNeutral = CIVector(x: 6500 - CGFloat(amount) * 30, y: 0)
       return filter.outputImage
     }
   }
