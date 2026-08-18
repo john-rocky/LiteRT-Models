@@ -1,6 +1,7 @@
 import FoundationModels
 import LiteRTLM
 import Photos
+import PhotosUI
 import LiteRTLMFoundationModels
 import SwiftUI
 
@@ -26,6 +27,7 @@ struct ChatView: View {
   @State private var voice = VoiceInput()
   @State private var input = ""
   @State private var showingTools = false
+  @State private var pickedPhoto: PhotosPickerItem?
 
   var body: some View {
     NavigationStack {
@@ -229,7 +231,35 @@ struct ChatView: View {
       if let problem = voice.problem {
         Text(problem).font(.caption).foregroundStyle(.red)
       }
+      if let thumbnail = chat.attachedThumbnail {
+        // The photo about to go in, with a way out. A message can be the
+        // photo alone.
+        HStack(spacing: 6) {
+          Image(uiImage: thumbnail)
+            .resizable().scaledToFill()
+            .frame(width: 44, height: 44)
+            .clipShape(.rect(cornerRadius: 8))
+          Text("photo attached").font(.caption).foregroundStyle(.secondary)
+          Button { chat.detachImage() } label: { Image(systemName: "xmark.circle.fill") }
+            .foregroundStyle(.secondary)
+        }
+      }
       HStack(spacing: 8) {
+        Menu {
+          Button {
+            Task { if let image = try? await PhotoBox.latestImage() { chat.attach(image) } }
+          } label: {
+            Label("Latest photo", systemImage: "photo.on.rectangle")
+          }
+          // Wrapped in a Menu item via the picker's own label; the picker
+          // sheet opens on tap.
+          PhotosPicker(selection: $pickedPhoto, matching: .images) {
+            Label("Choose a photo…", systemImage: "photo.stack")
+          }
+        } label: {
+          Image(systemName: "paperclip").font(.title2)
+        }
+        .disabled(chat.thinking)
         TextField(
           voice.listening ? "Listening…" : "Ask it to do something",
           text: composerText, axis: .vertical
@@ -246,7 +276,8 @@ struct ChatView: View {
         }
         .disabled(chat.thinking)
         Button(action: send) { Image(systemName: "arrow.up.circle.fill").font(.title2) }
-          .disabled(input.isEmpty || chat.thinking || voice.listening)
+          .disabled(
+            (input.isEmpty && chat.attachedThumbnail == nil) || chat.thinking || voice.listening)
       }
     }
     .padding()
@@ -255,6 +286,17 @@ struct ChatView: View {
     // editing itself mid-sentence is the visible half of voice input.
     .onChange(of: voice.heard) {
       if voice.listening { input = voice.heard }
+    }
+    .onChange(of: pickedPhoto) {
+      guard let item = pickedPhoto else { return }
+      Task {
+        if let data = try? await item.loadTransferable(type: Data.self),
+          let image = UIImage(data: data)?.cgImage
+        {
+          chat.attach(image)
+        }
+        pickedPhoto = nil
+      }
     }
   }
 
@@ -295,9 +337,17 @@ private struct LineView: View {
     case .user:
       HStack {
         Spacer(minLength: 40)
-        Text(line.text)
-          .padding(10)
-          .background(Color.accentColor.opacity(0.15), in: .rect(cornerRadius: 12))
+        VStack(alignment: .trailing, spacing: 6) {
+          if let image = line.image {
+            Image(uiImage: image)
+              .resizable().scaledToFit()
+              .frame(maxHeight: 180)
+              .clipShape(.rect(cornerRadius: 10))
+          }
+          if !line.text.isEmpty { Text(line.text) }
+        }
+        .padding(10)
+        .background(Color.accentColor.opacity(0.15), in: .rect(cornerRadius: 12))
       }
     case .assistant:
       VStack(alignment: .leading, spacing: 8) {
@@ -405,6 +455,7 @@ private struct ToolSheet: View {
           toggle("actions", "Changes something", ToolBox.actions)
           toggle("personal", "Asks permission", ToolBox.personal)
           toggle("photo", "Photo editing", ToolBox.photoEditing)
+          toggle("compound", "One call, several things", ToolBox.compound)
         } footer: {
           Text("Changing the set starts a new conversation; the model is kept loaded.")
         }

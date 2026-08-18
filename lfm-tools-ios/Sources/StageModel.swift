@@ -108,9 +108,28 @@ final class StageModel {
     "Note this: the gate code is 2281.",
   ]
 
-  /// `--scenario photo|focus|report|briefing|sensors|handoff` swaps the stage
-  /// to that pack; default stays the coffee run. Beats and tools travel
-  /// together, same as the bench.
+  /// One sentence, several calls. Written so the second call depends on
+  /// nothing the first returned (torch + battery) or on exactly what it
+  /// returned (cafe → Maps, OCR → translate): both kinds of chain.
+  static let chainBeats = [
+    "Turn the flashlight on and tell me how much battery I have.",
+    "Where am I, and how loud is it here?",
+    "What time is it in Tokyo, and in London?",
+    "Read the text in my latest photo and translate it into Japanese.",
+    "Find a cafe near me and open the first one in Maps.",
+  ]
+
+  /// One sentence, one call, several things happen — the compound tools.
+  static let compoundBeats = [
+    "I need to focus for 20 minutes.",
+    "Give me my morning briefing.",
+    "Copy where I am so I can send it to someone.",
+    "Read my latest photo and keep the text as a note.",
+  ]
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound`
+  /// swaps the stage to that pack; default stays the coffee run. Beats and
+  /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
     switch scenarioName {
     case "photo": return photoBeats
@@ -119,6 +138,8 @@ final class StageModel {
     case "briefing": return briefingBeats
     case "sensors": return sensorBeats
     case "handoff": return handoffBeats
+    case "chains": return chainBeats
+    case "compound": return compoundBeats
     default: return beats
     }
   }
@@ -232,6 +253,10 @@ final class StageModel {
     case "briefing": tools = ToolBox.briefing
     case "sensors": tools = ToolBox.sensors
     case "handoff": tools = ToolBox.handoff
+    case "chains": tools = ToolBox.chains
+    // The compound pack carries the single tools too: the point on screen is
+    // that the model picks the one call over the three, when one exists.
+    case "compound": tools = ToolBox.compound + ToolBox.focus + ToolBox.briefing
     default: tools = ToolBox.demo
     }
     toolCount = tools.count

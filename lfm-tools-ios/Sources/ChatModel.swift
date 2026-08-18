@@ -1,9 +1,11 @@
 // The session, the transcript, and the model file behind them.
+import CoreGraphics
 import Foundation
 import FoundationModels
 import LiteRTLM
 import LiteRTLMFoundationModels
 import Observation
+import UIKit
 
 @available(iOS 27.0, *)
 @MainActor
@@ -17,6 +19,25 @@ final class ChatModel {
     let detail: String?
     /// What the tools drew for this answer, shown under the bubble.
     var artifact: Artifact?
+    /// The picture that went in with a user line, shown in its bubble.
+    var image: UIImage?
+  }
+
+  /// A photo waiting to go in with the next message. iOS 27's prompt
+  /// `Attachment` carries it: Apple's model reads it natively, and the LiteRT
+  /// adapter turns it into image content for a vision bundle. The image is the
+  /// vaguest input after speech — "what's this?" with no words at all.
+  private(set) var attachedImage: CGImage?
+  private(set) var attachedThumbnail: UIImage?
+
+  func attach(_ image: CGImage) {
+    attachedImage = image
+    attachedThumbnail = UIImage(cgImage: image)
+  }
+
+  func detachImage() {
+    attachedImage = nil
+    attachedThumbnail = nil
   }
 
   enum Status: Equatable {
@@ -32,7 +53,7 @@ final class ChatModel {
   // The engine's Metal path is the one LiteRT-LM ships for iOS; --gpu selects it
   // when the CPU path is what a failure has to be isolated from.
   var backend: Backend = CommandLine.arguments.contains("--gpu") ? .gpu : .cpu()
-  var enabledGroups: Set<String> = ["ambient", "actions", "personal"]
+  var enabledGroups: Set<String> = ["ambient", "actions", "personal", "compound"]
 
   private var session: LanguageModelSession?
   private var model: LiteRTLanguageModel?
@@ -51,6 +72,7 @@ final class ChatModel {
     if enabledGroups.contains("actions") { tools += ToolBox.actions }
     if enabledGroups.contains("personal") { tools += ToolBox.personal }
     if enabledGroups.contains("photo") { tools += ToolBox.photoEditing }
+    if enabledGroups.contains("compound") { tools += ToolBox.compound }
     return tools
   }
 
@@ -81,8 +103,13 @@ final class ChatModel {
       // prompt on every turn, and the adapter rebuilds the conversation from the
       // whole transcript each time. The convenience default of 2048 is spent
       // before the first question arrives.
+      // A vision bundle (LFM2.5-VL-*) needs its encoder tower given a backend,
+      // or the adapter reports no vision capability and image attachments are
+      // dropped on the floor. Named by convention; the bundle does not say.
+      let isVision = url.lastPathComponent.uppercased().contains("-VL-")
       let model = try LiteRTLanguageModel(
-        modelPath: url.path, backend: backend, maxTokens: 4096, toolListStyle: .bare)
+        modelPath: url.path, backend: backend, visionBackend: isVision ? .cpu() : nil,
+        maxTokens: 4096, toolListStyle: .bare, thinkingTokenBudget: 32)
       self.model = model
       usingSystemModel = false
       startSession()
@@ -125,8 +152,13 @@ final class ChatModel {
   func send(_ text: String) async {
     guard let session else { return }
     let prompt = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !prompt.isEmpty, !thinking else { return }
-    lines.append(Line(kind: .user, text: prompt, detail: nil, artifact: nil))
+    // A photo alone is a message: "what's this?" without the words.
+    guard !prompt.isEmpty || attachedImage != nil, !thinking else { return }
+    let image = attachedImage
+    let thumbnail = attachedThumbnail
+    detachImage()
+    lines.append(
+      Line(kind: .user, text: prompt, detail: nil, artifact: nil, image: thumbnail))
     _ = ArtifactBox.shared.take()  // drop anything left over from a failed turn
     live = ""
     thinking = true
@@ -142,7 +174,14 @@ final class ChatModel {
       // TensorBuffers. `LanguageModelSession` is @unchecked Sendable, so a
       // detached task is the supported way out.
       let response = try await Task.detached(priority: .userInitiated) {
-        try await session.respond(to: prompt)
+        if let image {
+          return try await session.respond(
+            to: Prompt {
+              prompt
+              Attachment(image)
+            })
+        }
+        return try await session.respond(to: prompt)
       }.value
       // Tool calls are not part of the reply text — they are transcript entries
       // the session made on its own. Reading them back is the only way to show

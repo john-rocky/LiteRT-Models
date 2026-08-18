@@ -163,7 +163,24 @@ enum ToolBox {
     BrightnessTool(),
   ]
 
-  static let all: [any FoundationModels.Tool] = ambient + actions + personal + photoEditing
+  /// Tools that are several tools (Tools/CompoundTools.swift). One name to
+  /// say, one call, the app walks the steps — for the jobs that are always
+  /// the same three steps, and for the models that cannot chain.
+  static let compound: [any FoundationModels.Tool] = [
+    FocusSessionTool(), MorningBriefingTool(), ShareLocationTool(), PhotoTextToNoteTool(),
+  ]
+
+  /// The chains pack: every beat wants two or three calls out of one
+  /// sentence, on tools that have nothing to do with each other. Apple FM
+  /// chains; the 1.2B stops after one; this is where that shows.
+  static let chains: [any FoundationModels.Tool] = [
+    TorchTool(), BatteryTool(), LocationTool(), SearchPlacesTool(), OpenMapsTool(),
+    CurrentTimeTool(), ReadPhotoTextTool(), TranslateTool(), SoundLevelTool(),
+    WriteNoteTool(),
+  ]
+
+  static let all: [any FoundationModels.Tool] =
+    ambient + actions + personal + photoEditing + compound
 
   /// The set the scripted run uses.
   ///
