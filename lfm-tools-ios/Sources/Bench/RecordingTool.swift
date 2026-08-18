@@ -67,6 +67,9 @@ enum BenchToolBox {
       base: AutoEnhancePhotoTool(), canned: "done: auto-enhanced — the result is on screen"),
     RecordingTool(base: UndoPhotoEditTool(), canned: "undid the last edit"),
     RecordingTool(
+      base: ResetPhotoEditsTool(),
+      canned: "discarded all edits — back to the original photo"),
+    RecordingTool(
       base: SavePhotoTool(), canned: "saved a copy with 2 edits to the photo library"),
   ]
 

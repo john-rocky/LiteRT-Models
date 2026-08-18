@@ -7,6 +7,7 @@ import FoundationModels
 import LiteRTLM
 import LiteRTLMFoundationModels
 import Observation
+import UIKit
 
 @available(iOS 27.0, *)
 @MainActor
@@ -40,6 +41,35 @@ final class StageModel {
     "Open CAFE LA in Apple Maps.",
   ]
 
+  /// The photo-editing cut: edits stacking on edits, a mistake talked back
+  /// out of existence, and a save. Undo by voice is the surprise beat.
+  // Runs against ToolBox.photoStage (no one-step undo): with undo present,
+  // every "undo everything / revert / reset" wording routed to it on the
+  // 1.2B, and "Reset it" routed to resize_photo (res- prefix). The mistake
+  // beat now reverts the whole chain, visibly back to the untouched photo.
+  static let photoBeats = [
+    "Make the photo a bit brighter.",
+    "A bit warmer, too.",
+    "Crop it square.",
+    "Undo everything — back to the original.",
+    "Give it a sepia look.",
+    "Remove the background.",
+    "Save it.",
+  ]
+
+  /// `--scenario photo` swaps the stage to the photo pack; default stays the
+  /// coffee run. Beats and tools travel together, same as the bench.
+  static var scenarioBeats: [String] {
+    scenarioIsPhoto ? photoBeats : beats
+  }
+
+  static var scenarioIsPhoto: Bool {
+    guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    else { return false }
+    return CommandLine.arguments[flag + 1].lowercased() == "photo"
+  }
+
 
 
   private(set) var question = ""
@@ -62,7 +92,18 @@ final class StageModel {
   /// diffing an enum with associated values.
   private(set) var phaseID = 0
 
-  var beatCount: Int { Self.beats.count }
+  /// The photo scenario's star: the edit chain's current image, on screen
+  /// from the first frame to the last, updated after every edit.
+  private(set) var stageImage: UIImage?
+  private(set) var stageImageID = 0
+
+  private func refreshStageImage() {
+    guard Self.scenarioIsPhoto else { return }
+    stageImage = PhotoEditBox.shared.currentRendered()
+    stageImageID += 1
+  }
+
+  var beatCount: Int { Self.scenarioBeats.count }
 
   /// The bundle to run: `--model <substring>` pins one by filename
   /// (case-insensitive); otherwise the newest bundle wins. Newest-first bit a
@@ -105,7 +146,7 @@ final class StageModel {
       }
     }
     RunLog.startNewRun()
-    let tools = ToolBox.demo
+    let tools = Self.scenarioIsPhoto ? ToolBox.photoStage : ToolBox.demo
     toolCount = tools.count
     switch Self.backend {
     case .system:
@@ -171,12 +212,18 @@ final class StageModel {
       }
     }
     RunLog.write("BACKEND \(backendName)")
+    if Self.scenarioIsPhoto {
+      // The photo is on stage before the first word is typed; a permission
+      // prompt, if any, fires here rather than mid-beat.
+      try? await PhotoEditBox.shared.preload()
+      refreshStageImage()
+    }
     await run()
   }
 
   private func run() async {
     guard let session else { return }
-    for (index, prompt) in Self.beats.enumerated() {
+    for (index, prompt) in Self.scenarioBeats.enumerated() {
       RunLog.flushStream()  // beat N's tail was landing at the head of beat N+1
       RunLog.write("BEAT \(index + 1) \(prompt)")
       beatIndex = index
@@ -230,6 +277,7 @@ final class StageModel {
             if case .text(let text) = segment { return text.content } else { return nil }
           }.joined()
           RunLog.write("TOOL \(output.toolName) -> \(returned.prefix(300))")
+          refreshStageImage()
           if let call = pendingCall {
             set(.calling(name: call.name, arguments: call.arguments, returned: returned))
             try? await Task.sleep(for: .milliseconds(1400))

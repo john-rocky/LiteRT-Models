@@ -19,6 +19,19 @@ struct StageView: View {
       Color.black.ignoresSafeArea()
       VStack(spacing: 0) {
         hud
+        // The photo scenario's star stays on screen the whole run — every
+        // edit lands on it in place. layoutPriority hands it the free space
+        // the beat would otherwise claim.
+        if let image = stage.stageImage {
+          Image(uiImage: image)
+            .resizable()
+            .scaledToFit()
+            .frame(maxWidth: .infinity)
+            .clipShape(.rect(cornerRadius: 18))
+            .layoutPriority(1)
+            .padding(.top, 10)
+            .animation(.easeInOut(duration: 0.35), value: stage.stageImageID)
+        }
         Spacer(minLength: 8)
         // The beat gets the screen. It was sharing it with two flexible spacers
         // and losing, which is why the map and the photo came out postcard-sized.
@@ -95,11 +108,13 @@ struct StageView: View {
       case .idle, .typing:
         EmptyView()
       case .thinking:
-        ThinkingView(text: stage.live)
+        ThinkingView(text: stage.live, compact: stage.stageImage != nil)
       case .calling(let name, let arguments, let returned):
         ToolBadge(name: name, arguments: arguments, returned: returned)
       case .result(let text, let artifact):
-        ResultView(text: text, artifact: artifact)
+        // With the photo already filling the stage, a photo artifact card
+        // would show the same pixels twice at half the size.
+        ResultView(text: text, artifact: stage.stageImage == nil ? artifact : nil)
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
@@ -152,6 +167,7 @@ struct StageView: View {
 @available(iOS 27.0, *)
 private struct ThinkingView: View {
   let text: String
+  var compact = false
   @State private var pulse = false
 
   var body: some View {
@@ -166,10 +182,12 @@ private struct ThinkingView: View {
           .font(.system(size: 14, weight: .medium, design: .rounded))
           .foregroundStyle(.secondary)
       }
-      Text(String(text.suffix(400)))
-        .font(.system(size: 18, design: .monospaced))
+      // Compact when a photo owns the stage: the stream is a heartbeat there,
+      // not the show.
+      Text(String(text.suffix(compact ? 150 : 400)))
+        .font(.system(size: compact ? 14 : 18, design: .monospaced))
         .foregroundStyle(.green)
-        .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: compact ? 40 : 220, alignment: .topLeading)
         .animation(.none, value: text)
     }
     .onAppear { pulse = true }

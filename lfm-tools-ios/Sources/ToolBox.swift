@@ -65,8 +65,17 @@ enum ToolBox {
     CropPhotoTool(), ResizePhotoTool(), ZoomPhotoTool(), RotatePhotoTool(), FlipPhotoTool(),
     BrightnessPhotoTool(), ExposurePhotoTool(), ContrastPhotoTool(),
     SaturationPhotoTool(), WarmthPhotoTool(), FilterPhotoTool(), BlurPhotoTool(),
-    AutoEnhancePhotoTool(), UndoPhotoEditTool(), SavePhotoTool(),
+    AutoEnhancePhotoTool(), CutOutSubjectTool(),
+    UndoPhotoEditTool(), ResetPhotoEditsTool(), SavePhotoTool(),
   ]
+
+  /// The stage cut of the photo pack: no undo_photo_edit. Measured, not
+  /// cosmetic — every "undo everything / revert / reset" wording routed to
+  /// the one-step undo on the 1.2B while it was present. With it gone,
+  /// revert_to_original owns the going-back words.
+  static let photoStage: [any FoundationModels.Tool] = photoEditing.filter {
+    $0.name != "undo_photo_edit"
+  }
 
   static let all: [any FoundationModels.Tool] = ambient + actions + personal + photoEditing
 

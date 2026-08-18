@@ -15,6 +15,7 @@ import CoreImage.CIFilterBuiltins
 import FoundationModels
 import Photos
 import UIKit
+import Vision
 
 /// The edit chain. One shared instance: the model operates "the photo", and
 /// which pixels that means is this class's problem, not the model's.
@@ -73,6 +74,20 @@ final class PhotoEditBox: @unchecked Sendable {
     return "undid the last edit"
   }
 
+  /// Back to the untouched photo. `history.first` is the image before the
+  /// first edit — the original, as loaded.
+  func reset() -> String {
+    lock.lock()
+    defer { lock.unlock() }
+    guard let original = history.first else { return "no edits to discard" }
+    current = original
+    history = []
+    if let preview = render(original) {
+      ArtifactBox.shared.post(.photo(preview, caption: "back to the original"))
+    }
+    return "discarded all edits — back to the original photo"
+  }
+
   func save() async throws -> String {
     let (image, edits) = sync { (current, history.count) }
     guard let image, let rendered = render(image) else { return "no edits to save yet" }
@@ -87,9 +102,16 @@ final class PhotoEditBox: @unchecked Sendable {
     return UIImage(cgImage: cgImage)
   }
 
-  /// The working image as pixels, for `--photocheck`'s eyes-on verification.
+  /// The working image as pixels, for `--photocheck`'s eyes-on verification
+  /// and the stage's always-on photo.
   func currentRendered() -> UIImage? {
     sync { current }.flatMap { render($0) }
+  }
+
+  /// Load the newest photo into the chain without editing it — the stage
+  /// shows the photo from the first frame, before any tool has run.
+  func preload() async throws {
+    _ = try await workingImage()
   }
 }
 
@@ -406,6 +428,48 @@ struct UndoPhotoEditTool: Tool {
 
   func call(arguments: NoArguments) async throws -> String {
     PhotoEditBox.shared.undo()
+  }
+}
+
+@available(iOS 27.0, *)
+struct CutOutSubjectTool: Tool {
+  // "Cut out the person" routed to flip_photo on the 1.2B even with
+  // `person` in this tool's name. remove_background is the word the world
+  // uses for this job; the beat says exactly that.
+  let name = "remove_background"
+  let description = "Remove the background, keeping the person or subject."
+
+  func call(arguments: NoArguments) async throws -> String {
+    try await PhotoEditBox.shared.apply("remove the background") { image in
+      let request = VNGenerateForegroundInstanceMaskRequest()
+      let handler = VNImageRequestHandler(ciImage: image)
+      try? handler.perform([request])
+      guard let observation = request.results?.first,
+        let maskBuffer = try? observation.generateScaledMaskForImage(
+          forInstances: observation.allInstances, from: handler)
+      else { return nil }
+      let filter = CIFilter.blendWithMask()
+      filter.inputImage = image
+      // Transparent background: on the stage's black it reads as the person
+      // lifted clean off the photo.
+      filter.backgroundImage = CIImage.empty()
+      filter.maskImage = CIImage(cvPixelBuffer: maskBuffer)
+      return filter.outputImage?.cropped(to: image.extent)
+    }
+  }
+}
+
+@available(iOS 27.0, *)
+struct ResetPhotoEditsTool: Tool {
+  // Named away from its neighbors the hard way: "undo everything" routed to
+  // undo_photo_edit (name match), and as reset_photo_edits the beat routed
+  // to resize_photo — `res-` was enough prefix for a 1.2B. No shared stem
+  // with any other tool, and the words the user will say are all in it.
+  let name = "revert_to_original"
+  let description = "Throw away all edits and show the original photo."
+
+  func call(arguments: NoArguments) async throws -> String {
+    PhotoEditBox.shared.reset()
   }
 }
 

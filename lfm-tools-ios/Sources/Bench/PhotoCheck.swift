@@ -42,6 +42,9 @@ enum PhotoCheck {
     _ = box.undo()
     _ = box.undo()
     snap("6-original-again")
+    _ = try? await CutOutSubjectTool().call(arguments: .init())
+    snap("7-cutout")
+    _ = box.undo()
     try? Data("done\n".utf8).write(
       to: documents.appendingPathComponent("photocheck-\(runID).done"))
     print("PHOTOCHECK done")
