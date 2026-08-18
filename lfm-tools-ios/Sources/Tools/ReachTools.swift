@@ -29,11 +29,22 @@ struct TimerTool: Tool {
     guard state == .authorized else { return "alarm permission was refused" }
 
     let seconds = max(5, arguments.seconds)
-    let alert = AlarmPresentation.Alert(
-      title: LocalizedStringResource(stringLiteral: arguments.label),
-      stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill"))
+    let title = LocalizedStringResource(stringLiteral: arguments.label)
+    // A timer is a Live Activity that counts down: alarmd wants the countdown
+    // and paused faces as well as the alert, or scheduling comes back with an
+    // opaque com.apple.AlarmKit.Alarm error 1 (seen from the focus-session
+    // compound on 2026-08-19; the alert-only form had never fired on device).
+    let presentation = AlarmPresentation(
+      alert: AlarmPresentation.Alert(title: title),
+      countdown: AlarmPresentation.Countdown(
+        title: title,
+        pauseButton: AlarmButton(text: "Pause", textColor: .white, systemImageName: "pause.fill")),
+      paused: AlarmPresentation.Paused(
+        title: title,
+        resumeButton: AlarmButton(
+          text: "Resume", textColor: .white, systemImageName: "play.fill")))
     let attributes = AlarmAttributes<EmptyAlarmMetadata>(
-      presentation: AlarmPresentation(alert: alert), tintColor: .green)
+      presentation: presentation, tintColor: .green)
     let configuration = AlarmManager.AlarmConfiguration<EmptyAlarmMetadata>.timer(
       duration: TimeInterval(seconds), attributes: attributes)
     _ = try await manager.schedule(id: UUID(), configuration: configuration)

@@ -29,10 +29,20 @@ struct FocusSessionTool: Tool {
     let minutes = max(1, arguments.minutes ?? 25)
     let cleared = try await CancelNotificationsTool().call(arguments: NoArguments())
     let dimmed = try await BrightnessTool().call(arguments: .init(percent: 25))
-    let timer = try await TimerTool().call(
-      arguments: .init(seconds: minutes * 60, label: "Focus"))
+    // The system timer is the nice ending; a notification is the one that
+    // cannot fail. A compound that dies on its third step after doing two
+    // visible things reads as broken, so the ending degrades instead.
+    let ending: String
+    do {
+      ending = try await TimerTool().call(arguments: .init(seconds: minutes * 60, label: "Focus"))
+    } catch {
+      ending = try await NotificationTool().call(
+        arguments: .init(
+          title: "Focus session over", body: "\(minutes) minutes are up.",
+          seconds: minutes * 60))
+    }
     _ = try await HapticTool().call(arguments: .init(kind: "success"))
-    return "focus session started for \(minutes) min — \(cleared), \(dimmed), \(timer)"
+    return "focus session started for \(minutes) min — \(cleared), \(dimmed), \(ending)"
   }
 }
 
