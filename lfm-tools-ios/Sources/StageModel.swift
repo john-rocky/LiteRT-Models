@@ -132,15 +132,29 @@ final class StageModel {
   /// "fix it" on a dark photo should become brightness, on a tilted one
   /// rotate, on a menu OCR. The conditional beats ("if there's text…") are
   /// routing decided by pixels: the right answer may be no call at all.
+  // Conditionals before the makeover: on the first run "what would you fix"
+  // removed the background of a portrait, and the later "if there's a person,
+  // remove the background" had nothing left to do and rotated the photo
+  // instead. The model is shown its own work, so beat order is beat logic.
   static let visionBeats = [
     "What's in this photo?",
-    "What would you fix about it? Go ahead and do it.",
-    "Now make it look its best.",
     "If there's any text in it, save that text as a note.",
-    "If there's a person in it, remove the background.",
+    "If there's a person in it, cut them out from the background.",
+    "Is there anything you'd fix about it? If so, do it.",
+    "Now make it look its best, and save it.",
   ]
 
-  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision`
+  /// Sight alone, no tools: does the model see the picture at all? Three
+  /// questions a blind model cannot answer from the words. Run this before
+  /// reading anything into what the vision pack routes.
+  static let lookBeats = [
+    "Describe this photo in one sentence.",
+    "Is there a person in this photo? Answer yes or no, then say why.",
+    "Is this photo too dark, too bright, or about right?",
+    "Is there any readable text in it? If so, what does it say?",
+  ]
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look`
   /// swaps the stage to that pack; default stays the coffee run. Beats and
   /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
@@ -154,15 +168,18 @@ final class StageModel {
     case "chains": return chainBeats
     case "compound": return compoundBeats
     case "vision": return visionBeats
+    case "look": return lookBeats
     default: return beats
     }
   }
 
   /// Packs that keep a photo on stage from the first frame.
-  static var scenarioShowsPhoto: Bool { scenarioIsPhoto || scenarioName == "vision" }
+  static var scenarioShowsPhoto: Bool {
+    scenarioIsPhoto || scenarioName == "vision" || scenarioName == "look"
+  }
   /// Packs where the photo goes into the prompt as an image attachment, so
   /// the model routes on what it sees rather than on what it is told.
-  static var scenarioAttachesPhoto: Bool { scenarioName == "vision" }
+  static var scenarioAttachesPhoto: Bool { scenarioName == "vision" || scenarioName == "look" }
 
   static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
@@ -278,8 +295,14 @@ final class StageModel {
     // that the model picks the one call over the three, when one exists.
     case "compound": tools = ToolBox.compound + ToolBox.focus + ToolBox.briefing
     case "vision": tools = ToolBox.vision
+    case "look": tools = []
     default: tools = ToolBox.demo
     }
+    // The vision packs get their own instructions: the stock ones push tools
+    // ("prefer a tool over guessing"), which is the wrong bias for a model
+    // that can see — it removed the background from a mountain range because
+    // a beat said "if there's a person…".
+    let instructions = Self.scenarioAttachesPhoto ? ToolBox.visionInstructions : ToolBox.instructions
     toolCount = tools.count
     switch Self.backend {
     case .system:
@@ -292,7 +315,7 @@ final class StageModel {
         return
       }
       backendName = "Apple on-device"
-      session = LanguageModelSession(tools: tools, instructions: ToolBox.instructions)
+      session = LanguageModelSession(tools: tools, instructions: instructions)
     case .liteRT:
       // Same process, same bundle, same backend as the beats that follow. The
       // standalone benchmark reported 252 tok/s of prefill where a turn in this
@@ -340,13 +363,17 @@ final class StageModel {
           maxTokens: context, toolListStyle: .bare,
           thinkingTokenBudget: 32)
         session = LanguageModelSession(
-          model: model, tools: tools, instructions: ToolBox.instructions)
+          model: model, tools: tools, instructions: instructions)
       } catch {
         question = "could not load the model: \(error.localizedDescription)"
         return
       }
     }
     RunLog.write("BACKEND \(backendName)")
+    if Self.backend == .system {
+      let caps = SystemLanguageModel.default.capabilities
+      RunLog.write("CAPS vision=\(caps.contains(.vision)) tools=\(caps.contains(.toolCalling)) reasoning=\(caps.contains(.reasoning))")
+    }
     if let session { TranscriptBox.shared.attach(session) }
     if Self.scenarioShowsPhoto {
       // The photo is on stage before the first word is typed; a permission

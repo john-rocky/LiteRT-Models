@@ -23,12 +23,22 @@ struct TimerTool: Tool {
   }
 
   func call(arguments: Arguments) async throws -> String {
+    let seconds = max(5, arguments.seconds)
     let manager = AlarmManager.shared
     var state = manager.authorizationState
-    if state == .notDetermined { state = try await manager.requestAuthorization() }
-    guard state == .authorized else { return "alarm permission was refused" }
+    if state == .notDetermined {
+      do {
+        state = try await manager.requestAuthorization()
+      } catch {
+        // AlarmKit refused before any alarm was described — com.apple.AlarmKit
+        // .Alarm error 1 from the authorization request itself (2026-08-19).
+        return try await ringAsNotification(seconds: seconds, label: arguments.label, why: "authorization failed")
+      }
+    }
+    guard state == .authorized else {
+      return try await ringAsNotification(seconds: seconds, label: arguments.label, why: "permission refused")
+    }
 
-    let seconds = max(5, arguments.seconds)
     let title = LocalizedStringResource(stringLiteral: arguments.label)
     // A timer is a Live Activity that counts down: alarmd wants the countdown
     // and paused faces as well as the alert, or scheduling comes back with an
@@ -47,9 +57,25 @@ struct TimerTool: Tool {
       presentation: presentation, tintColor: .green)
     let configuration = AlarmManager.AlarmConfiguration<EmptyAlarmMetadata>.timer(
       duration: TimeInterval(seconds), attributes: attributes)
-    _ = try await manager.schedule(id: UUID(), configuration: configuration)
+    do {
+      _ = try await manager.schedule(id: UUID(), configuration: configuration)
+    } catch {
+      return try await ringAsNotification(seconds: seconds, label: arguments.label, why: "scheduling failed")
+    }
     ArtifactBox.shared.post(.timer(seconds: seconds, label: arguments.label))
     return "timer set for \(seconds)s — it will ring in the system, not in this app"
+  }
+
+  /// A timer that cannot ring in the system rings as a notification instead —
+  /// the beat still lands. AlarmKit has refused every way it has been asked
+  /// on this build (error 1 from authorization and from scheduling, with and
+  /// without countdown faces); the likely missing piece is a widget extension
+  /// hosting the alarm's Live Activity, which this single-target app lacks.
+  private func ringAsNotification(seconds: Int, label: String, why: String) async throws -> String {
+    let scheduled = try await NotificationTool().call(
+      arguments: .init(title: label, body: "Timer done — \(max(1, seconds / 60)) min.", seconds: seconds))
+    ArtifactBox.shared.post(.timer(seconds: seconds, label: label))
+    return "timer set for \(seconds)s as a notification (system alarm \(why)) — \(scheduled)"
   }
 }
 

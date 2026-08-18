@@ -30,7 +30,7 @@ final class ChatModel {
   private(set) var attachedImage: CGImage?
   private(set) var attachedThumbnail: UIImage?
 
-  /// Each attachment gets its own label ("photo-1", "photo-2"…) so an
+  /// Each attachment gets its own label ("image-1", "image-2"…) so an
   /// `ImageReference` from the model can point at any picture in the
   /// conversation, not just the last one.
   private var attachmentCount = 0
@@ -40,7 +40,7 @@ final class ChatModel {
     attachedImage = image
     attachedThumbnail = UIImage(cgImage: image)
     attachmentCount += 1
-    attachedLabel = "photo-\(attachmentCount)"
+    attachedLabel = "image-\(attachmentCount)"
     // The attached picture is also "the photo" for the editing tools: "fix
     // this" edits what the model was shown, not whatever is newest.
     PhotoEditBox.shared.load(image, label: attachedLabel)

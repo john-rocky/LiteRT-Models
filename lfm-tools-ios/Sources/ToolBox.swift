@@ -219,6 +219,20 @@ enum ToolBox {
     tool has returned, answer the user in one short sentence using its result.
     """
 
+  /// For packs where the photo is in the prompt. The stock instructions tell
+  /// the model to prefer a tool over guessing, which is right when it cannot
+  /// see and wrong when it can: it should look first, and a conditional
+  /// ("if there's a person…") is answered by the pixels, not by the tool list.
+  static let visionInstructions = """
+    You are running on the user's iPhone and can see the photo attached to each
+    message. Look at the photo first and describe what is actually there when
+    asked. Call a photo tool only when the photo itself calls for it — an edit
+    the picture needs, text that is really in it, a person who is really in
+    it. When the condition is not met, say so and call nothing. Pass the
+    photo's label as the image argument. When a tool has returned, answer in
+    one short sentence.
+    """
+
   static func summary(for tools: [any FoundationModels.Tool]) -> String {
     tools.map(\.name).joined(separator: ", ")
   }
