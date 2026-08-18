@@ -70,12 +70,24 @@ final class StageModel {
     "Silence all my notifications and set a one-hour focus timer.",
   ]
 
-  /// `--scenario photo|focus` swaps the stage to that pack; default stays the
-  /// coffee run. Beats and tools travel together, same as the bench.
+  /// The field-report cut: the gauge photo read out, kept, and turned into
+  /// tomorrow's obligation. "Save that as a note" is the anaphora beat — the
+  /// 1.2B is expected to fail it (references don't become arguments at that
+  /// size); the recorded cut decides whether that beat stays.
+  static let reportBeats = [
+    "Read the text in my latest photo.",
+    "Save that as a note.",
+    "Remind me tomorrow at 9 to file the report.",
+    "What's still on my reminder list?",
+  ]
+
+  /// `--scenario photo|focus|report` swaps the stage to that pack; default
+  /// stays the coffee run. Beats and tools travel together, same as the bench.
   static var scenarioBeats: [String] {
     switch scenarioName {
     case "photo": return photoBeats
     case "focus": return focusBeats
+    case "report": return reportBeats
     default: return beats
     }
   }
@@ -169,6 +181,7 @@ final class StageModel {
     switch Self.scenarioName {
     case "photo": tools = ToolBox.photoStage
     case "focus": tools = ToolBox.focus
+    case "report": tools = ToolBox.fieldReport
     default: tools = ToolBox.demo
     }
     toolCount = tools.count

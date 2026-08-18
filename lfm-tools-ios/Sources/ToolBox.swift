@@ -87,6 +87,17 @@ enum ToolBox {
     WriteNoteTool(), ReadNotesTool(), TorchTool(), HapticTool(),
   ]
 
+  /// The field-report scenario pack: a photographed gauge becoming a note and
+  /// a next-morning reminder, fully offline. Discrimination axes: the
+  /// read/identify photo pair, reminder-vs-calendar, and a date argument
+  /// ("tomorrow") the model can only fill by asking the phone what today is.
+  static let fieldReport: [any FoundationModels.Tool] = [
+    ReadPhotoTextTool(), ClassifyPhotoTool(), PhotoLibraryTool(),
+    WriteNoteTool(), ReadNotesTool(),
+    CreateReminderTool(), ListRemindersTool(),
+    CreateEventTool(), ListEventsTool(), CurrentTimeTool(),
+  ]
+
   static let all: [any FoundationModels.Tool] = ambient + actions + personal + photoEditing
 
   /// The set the scripted run uses.

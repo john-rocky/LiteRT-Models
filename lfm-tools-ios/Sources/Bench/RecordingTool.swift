@@ -97,12 +97,36 @@ enum BenchToolBox {
     RecordingTool(base: HapticTool(), canned: "played the success haptic"),
   ]
 
+  /// The field-report pack, neutralized — except the clock. A fixed world
+  /// again (a gauge photo, one note, one open reminder), but get_current_time
+  /// stays the real tool: `dateResolvesTo` scores against the device's date
+  /// at run time, and a canned "today" would silently break every tomorrow
+  /// case the day after it was written. Create results claim success without
+  /// echoing specifics a mismatch could contradict.
+  static let report: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: ReadPhotoTextTool(), canned: "TANK 3\nPRESSURE 82 PSI\nCHECKED 08:40"),
+    RecordingTool(base: ClassifyPhotoTool(), canned: "gauge 92%, pipe 74%"),
+    RecordingTool(
+      base: PhotoLibraryTool(),
+      canned: "1204 photos, 87 videos, most recent Aug 18, 2026 at 8:40"),
+    RecordingTool(base: WriteNoteTool(), canned: "noted"),
+    RecordingTool(
+      base: ReadNotesTool(), canned: "2026-08-18T08:41:22Z  TANK 3 PRESSURE 82 PSI"),
+    RecordingTool(base: CreateReminderTool(), canned: "added the reminder"),
+    RecordingTool(base: ListRemindersTool(), canned: "- File the report"),
+    RecordingTool(base: CreateEventTool(), canned: "created the event on the calendar"),
+    RecordingTool(base: ListEventsTool(), canned: "- Aug 19 14:00 Site inspection"),
+    CurrentTimeTool(),
+  ]
+
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {
     switch name {
     case "demo": return demo
     case "photo": return photo
     case "focus": return focus
+    case "report": return report
     default: return nil
     }
   }
