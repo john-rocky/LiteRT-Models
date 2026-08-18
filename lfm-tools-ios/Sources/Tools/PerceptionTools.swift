@@ -20,7 +20,10 @@ struct ReadPhotoTextTool: Tool {
   let description = "Read the text in the latest photo."
 
   func call(arguments: NoArguments) async throws -> String {
-    guard let image = try await PhotoBox.latestImage() else {
+    // "The photo" is whatever is on the stage or attached to the message when
+    // there is one; the newest library photo otherwise.
+    let staged = PhotoEditBox.shared.currentCGImage()
+    guard let image = try await (staged != nil ? staged : PhotoBox.latestImage()) else {
       return "no photo to read (or permission was refused)"
     }
     var request = RecognizeTextRequest()
@@ -46,7 +49,10 @@ struct ClassifyPhotoTool: Tool {
   let description = "Say what the latest photo shows."
 
   func call(arguments: NoArguments) async throws -> String {
-    guard let image = try await PhotoBox.latestImage() else {
+    // "The photo" is whatever is on the stage or attached to the message when
+    // there is one; the newest library photo otherwise.
+    let staged = PhotoEditBox.shared.currentCGImage()
+    guard let image = try await (staged != nil ? staged : PhotoBox.latestImage()) else {
       return "no photo to look at (or permission was refused)"
     }
     let request = ClassifyImageRequest()

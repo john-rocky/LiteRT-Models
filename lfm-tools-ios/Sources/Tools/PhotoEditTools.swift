@@ -113,6 +113,23 @@ final class PhotoEditBox: @unchecked Sendable {
   func preload() async throws {
     _ = try await workingImage()
   }
+
+  /// Make a given picture "the photo": what the tools edit, and what a
+  /// vision model is shown. Attaching a photo to a message means this one,
+  /// not the newest in the library. A fresh original, so revert lands here.
+  func load(_ cgImage: CGImage) {
+    sync {
+      current = CIImage(cgImage: cgImage)
+      history = []
+    }
+  }
+
+  /// The working image as a CGImage, for attaching to a prompt: the model
+  /// sees the photo as it is now, edits included.
+  func currentCGImage() -> CGImage? {
+    guard let image = sync({ current }) else { return nil }
+    return context.createCGImage(image, from: image.extent)
+  }
 }
 
 // MARK: - Geometry (crop / resize / zoom are near-neighbors on purpose)

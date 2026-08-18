@@ -127,7 +127,20 @@ final class StageModel {
     "Read my latest photo and keep the text as a note.",
   ]
 
-  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound`
+  /// The vision cut: the photo goes in with every beat, and what the model
+  /// does depends on what it sees. No beat names a tool or an adjustment —
+  /// "fix it" on a dark photo should become brightness, on a tilted one
+  /// rotate, on a menu OCR. The conditional beats ("if there's text…") are
+  /// routing decided by pixels: the right answer may be no call at all.
+  static let visionBeats = [
+    "What's in this photo?",
+    "What would you fix about it? Go ahead and do it.",
+    "Now make it look its best.",
+    "If there's any text in it, save that text as a note.",
+    "If there's a person in it, remove the background.",
+  ]
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision`
   /// swaps the stage to that pack; default stays the coffee run. Beats and
   /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
@@ -140,9 +153,16 @@ final class StageModel {
     case "handoff": return handoffBeats
     case "chains": return chainBeats
     case "compound": return compoundBeats
+    case "vision": return visionBeats
     default: return beats
     }
   }
+
+  /// Packs that keep a photo on stage from the first frame.
+  static var scenarioShowsPhoto: Bool { scenarioIsPhoto || scenarioName == "vision" }
+  /// Packs where the photo goes into the prompt as an image attachment, so
+  /// the model routes on what it sees rather than on what it is told.
+  static var scenarioAttachesPhoto: Bool { scenarioName == "vision" }
 
   static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
@@ -195,7 +215,7 @@ final class StageModel {
   private(set) var stageImageID = 0
 
   private func refreshStageImage() {
-    guard Self.scenarioIsPhoto else { return }
+    guard Self.scenarioShowsPhoto else { return }
     stageImage = PhotoEditBox.shared.currentRendered()
     stageImageID += 1
   }
@@ -257,6 +277,7 @@ final class StageModel {
     // The compound pack carries the single tools too: the point on screen is
     // that the model picks the one call over the three, when one exists.
     case "compound": tools = ToolBox.compound + ToolBox.focus + ToolBox.briefing
+    case "vision": tools = ToolBox.vision
     default: tools = ToolBox.demo
     }
     toolCount = tools.count
@@ -314,7 +335,9 @@ final class StageModel {
         // so on stage it is pure silence — up to 40s of it, sometimes ending
         // in an empty answer. 32 tokens caps the silence at about two seconds.
         let model = try LiteRTLanguageModel(
-          modelPath: url.path, backend: .cpu(), maxTokens: context, toolListStyle: .bare,
+          modelPath: url.path, backend: .cpu(),
+          visionBackend: url.lastPathComponent.uppercased().contains("-VL-") ? .cpu() : nil,
+          maxTokens: context, toolListStyle: .bare,
           thinkingTokenBudget: 32)
         session = LanguageModelSession(
           model: model, tools: tools, instructions: ToolBox.instructions)
@@ -324,7 +347,7 @@ final class StageModel {
       }
     }
     RunLog.write("BACKEND \(backendName)")
-    if Self.scenarioIsPhoto {
+    if Self.scenarioShowsPhoto {
       // The photo is on stage before the first word is typed; a permission
       // prompt, if any, fires here rather than mid-beat.
       try? await PhotoEditBox.shared.preload()
@@ -380,8 +403,20 @@ final class StageModel {
         // on the caller's executor — and this class is @MainActor. Left alone,
         // the model generates on the main thread while the same thread is being
         // asked to redraw for every token it produces.
+        // The vision pack sends the photo as it is now — edits included, so
+        // "now make it look its best" is judged on what beat 2 produced.
+        let attached = Self.scenarioAttachesPhoto ? PhotoEditBox.shared.currentCGImage() : nil
+        if attached != nil { RunLog.write("ATTACH photo \(attached!.width)x\(attached!.height)") }
         answer = try await Task.detached(priority: .userInitiated) {
-          try await session.respond(to: prompt).content
+          if let attached {
+            return try await session.respond(
+              to: Prompt {
+                prompt
+                Attachment(attached)
+              }
+            ).content
+          }
+          return try await session.respond(to: prompt).content
         }.value
       } catch {
         RunLog.write("ERROR \(error)")

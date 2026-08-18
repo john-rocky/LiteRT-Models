@@ -33,6 +33,9 @@ final class ChatModel {
   func attach(_ image: CGImage) {
     attachedImage = image
     attachedThumbnail = UIImage(cgImage: image)
+    // The attached picture is also "the photo" for the editing tools: "fix
+    // this" edits what the model was shown, not whatever is newest.
+    PhotoEditBox.shared.load(image)
   }
 
   func detachImage() {
