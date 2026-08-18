@@ -3,6 +3,7 @@
 // The model sees this list as a name + description + argument schema per tool,
 // and picks by name. That is the whole contract: adding a capability to the
 // agent is adding one struct here, not touching the loop.
+import Foundation
 import FoundationModels
 
 /// Run a tool's body with a deadline. CoreLocation, CoreMotion and EventKit all
@@ -13,15 +14,63 @@ import FoundationModels
 func withDeadline(
   _ seconds: Double = 8, _ what: String, _ body: @escaping @Sendable () async throws -> String
 ) async throws -> String {
-  try await withThrowingTaskGroup(of: String.self) { group in
-    group.addTask { try await body() }
-    group.addTask {
-      try await Task.sleep(for: .seconds(seconds))
-      return "\(what) did not answer within \(Int(seconds))s"
+  do {
+    return try await firstToFinish(within: seconds, body)
+  } catch is DeadlinePassed {
+    return "\(what) did not answer within \(Int(seconds))s"
+  }
+}
+
+struct DeadlinePassed: Error, CustomStringConvertible {
+  let seconds: Double
+  var description: String { "timed out after \(Int(seconds))s" }
+}
+
+/// Whichever finishes first: `body`, or a timer that throws `DeadlinePassed`.
+///
+/// Not a task group on purpose. A `withThrowingTaskGroup` race looks right
+/// and is dead code against a real hang: the group awaits *every* child
+/// before it returns, even after the timer child throws, and a child stuck
+/// in a callback that never comes — or awaiting a detached task's `.value`,
+/// which cancellation does not interrupt — never finishes. The bench watched
+/// a hung engine for five minutes past a 180 s "timeout" this way. This
+/// version resumes the caller the moment the timer fires and lets the hung
+/// work stay hung on its own thread; the caller decides what to do about a
+/// process that now has one wedged task in it.
+@available(iOS 27.0, *)
+func firstToFinish<T: Sendable>(
+  within seconds: Double, _ body: @escaping @Sendable () async throws -> T
+) async throws -> T {
+  let gate = OnceGate<T>()
+  return try await withCheckedThrowingContinuation { continuation in
+    gate.arm(continuation)
+    Task.detached {
+      do { gate.finish(.success(try await body())) } catch { gate.finish(.failure(error)) }
     }
-    let first = try await group.next()!
-    group.cancelAll()
-    return first
+    Task.detached {
+      try? await Task.sleep(for: .seconds(seconds))
+      gate.finish(.failure(DeadlinePassed(seconds: seconds)))
+    }
+  }
+}
+
+/// Resumes a continuation exactly once, from whichever racer gets there first.
+final class OnceGate<T: Sendable>: @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<T, Error>?
+
+  func arm(_ continuation: CheckedContinuation<T, Error>) {
+    lock.lock()
+    self.continuation = continuation
+    lock.unlock()
+  }
+
+  func finish(_ result: Result<T, Error>) {
+    lock.lock()
+    let pending = continuation
+    continuation = nil
+    lock.unlock()
+    pending?.resume(with: result)
   }
 }
 

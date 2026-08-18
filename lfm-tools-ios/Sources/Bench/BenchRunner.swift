@@ -135,12 +135,12 @@ enum BenchRunner {
         // Detached for the same reason as the stage: `respond` runs on the
         // caller's executor. Raced against a deadline — one transient engine
         // hang has been observed, and it must cost one case, not the run.
-        answer = try await withTimeout(180) {
+        answer = try await firstToFinish(within: 180) {
           try await Task.detached(priority: .userInitiated) {
             try await session.respond(to: benchCase.input).content
           }.value
         }
-      } catch let timeout as Timeout {
+      } catch let timeout as DeadlinePassed {
         // The engine is hung, not slow: reading the transcript now blocks on
         // the same engine lock the generation is stuck behind — that is how
         // the first hang ate 27 minutes without even writing an error line.
@@ -214,27 +214,6 @@ enum BenchRunner {
     print("TOOLBENCH done \(passed)/\(passed + failed)")
   }
 
-  struct Timeout: Error, CustomStringConvertible {
-    let seconds: Double
-    var description: String { "timed out after \(Int(seconds))s" }
-  }
-
-  /// Unlike `withDeadline`, timing out is an error here, not a result string —
-  /// a timeout must land in the JSONL as `error`, not as the model's answer.
-  private static func withTimeout(
-    _ seconds: Double, _ body: @escaping @Sendable () async throws -> String
-  ) async throws -> String {
-    try await withThrowingTaskGroup(of: String.self) { group in
-      group.addTask { try await body() }
-      group.addTask {
-        try await Task.sleep(for: .seconds(seconds))
-        throw Timeout(seconds: seconds)
-      }
-      let first = try await group.next()!
-      group.cancelAll()
-      return first
-    }
-  }
 }
 
 /// One JSON object per line, appended as it happens — a died run keeps every
