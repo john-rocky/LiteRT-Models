@@ -94,6 +94,34 @@ Models: any text `.litertlm`, e.g.
 CPU is the default and the safe choice; the GPU backend is a toggle on the model
 picker.
 
+## Trying things fast: Apple's model, any pack, spoken
+
+The quickest way to see whether a tool or a wording works is Apple's own
+model — no bundle, an answer in a second. Same session, same tools, same
+cards; only who generates changes.
+
+```bash
+# chat: Apple's model, every tool in the sheet, mic button in the composer
+xcrun devicectl device process launch --terminate-existing --device <id> \
+  com.lfmtools.app --model apple
+
+# stage: a scripted pack on Apple's model
+xcrun devicectl device process launch --terminate-existing --device <id> \
+  com.lfmtools.app --autorun --backend apple --scenario handoff
+
+# stage: same pack, but each beat is whatever you say into the mic
+xcrun devicectl device process launch --terminate-existing --device <id> \
+  com.lfmtools.app --autorun --backend apple --scenario sensors --voice
+```
+
+Packs: `photo` (editing on a stage photo), `focus` (timer + notifications
++ brightness), `report` (photo OCR → note → reminder), `briefing` (time,
+battery, calendar, reminders, steps), `sensors` (location, heading,
+motion, sound level, altitude), `handoff` (torch, sounds, badge,
+clipboard, notification, note). Without `--scenario` the stage runs the
+coffee-run beats; without `--backend apple` it runs on the newest LiteRT
+bundle (or `--model <substring>`).
+
 ## Not included
 
 - **WeatherKit** — needs a paid team and a capability, which would stop this

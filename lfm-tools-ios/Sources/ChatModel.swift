@@ -36,6 +36,10 @@ final class ChatModel {
 
   private var session: LanguageModelSession?
   private var model: LiteRTLanguageModel?
+  /// Apple's on-device model instead of a LiteRT bundle. Same session, same
+  /// tools, same transcript reading — the fastest way to try a new tool or
+  /// wording is to ask the model that answers in a second.
+  private var usingSystemModel = false
 
   var tools: [any FoundationModels.Tool] {
     // --no-tools isolates the engine from the tool path when a turn fails: a
@@ -80,6 +84,7 @@ final class ChatModel {
       let model = try LiteRTLanguageModel(
         modelPath: url.path, backend: backend, maxTokens: 4096, toolListStyle: .bare)
       self.model = model
+      usingSystemModel = false
       startSession()
       status = .ready(url.lastPathComponent)
     } catch {
@@ -87,12 +92,31 @@ final class ChatModel {
     }
   }
 
+  static let systemModelName = "Apple on-device"
+
+  /// Apple's Foundation Model. No file, no load time; available whenever
+  /// Apple Intelligence is on. `--model apple` picks it at launch.
+  func loadSystemModel() {
+    guard SystemLanguageModel.default.availability == .available else {
+      status = .failed("Apple's on-device model is not available on this device")
+      return
+    }
+    model = nil
+    usingSystemModel = true
+    startSession()
+    status = .ready(Self.systemModelName)
+  }
+
   /// A session owns its transcript, so changing the tool set or clearing the
   /// history means a new session over the same (cached, already-loaded) engine.
   func startSession() {
-    guard let model else { return }
-    session = LanguageModelSession(
-      model: model, tools: tools, instructions: ToolBox.instructions)
+    if usingSystemModel {
+      session = LanguageModelSession(tools: tools, instructions: ToolBox.instructions)
+    } else {
+      guard let model else { return }
+      session = LanguageModelSession(
+        model: model, tools: tools, instructions: ToolBox.instructions)
+    }
     lines = []
   }
 

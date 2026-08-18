@@ -147,6 +147,22 @@ enum ToolBox {
     CreateEventTool(), ListEventsTool(), CurrentTimeTool(),
   ]
 
+  /// Quick packs for trying the rest of the phone on Apple's model. Not
+  /// benchmarked yet; each becomes a scenario pack the day it earns cases.
+  static let briefing: [any FoundationModels.Tool] = [
+    CurrentTimeTool(), BatteryTool(), PowerStateTool(),
+    ListEventsTool(), ListRemindersTool(), StepsTool(), StepChartTool(),
+  ]
+  static let sensors: [any FoundationModels.Tool] = [
+    LocationTool(), PlaceNameTool(), HeadingTool(), MotionActivityTool(),
+    SoundLevelTool(), AltitudeTool(), OrientationTool(), AttitudeTool(),
+  ]
+  static let handoff: [any FoundationModels.Tool] = [
+    TorchTool(), SystemSoundTool(), HapticTool(), BadgeTool(),
+    WriteClipboardTool(), ReadClipboardTool(), NotificationTool(), WriteNoteTool(),
+    BrightnessTool(),
+  ]
+
   static let all: [any FoundationModels.Tool] = ambient + actions + personal + photoEditing
 
   /// The set the scripted run uses.

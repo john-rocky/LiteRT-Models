@@ -81,13 +81,44 @@ final class StageModel {
     "What's still on my reminder list?",
   ]
 
-  /// `--scenario photo|focus|report` swaps the stage to that pack; default
-  /// stays the coffee run. Beats and tools travel together, same as the bench.
+  /// Three quick packs for trying the phone's other capabilities on Apple's
+  /// model: what it knows about right now, what it can sense, what it can
+  /// leave behind. Beats are what a viewer sees happen, not coverage.
+  static let briefingBeats = [
+    "What time is it, and how's my battery?",
+    "What's on my calendar this week?",
+    "Anything left on my reminder list?",
+    "How many steps have I walked today?",
+    "Chart my steps for the last 7 days.",
+  ]
+  static let sensorBeats = [
+    "Where am I?",
+    "What's this place called?",
+    "Which way am I facing?",
+    "Am I moving right now?",
+    "How loud is it here?",
+    "How high up am I?",
+  ]
+  static let handoffBeats = [
+    "Turn the flashlight on.",
+    "Turn it off and play the mail sound.",
+    "Put a 3 on the app icon.",
+    "Copy 'meeting moved to 4pm' to the clipboard.",
+    "Remind me in 30 seconds to check the oven.",
+    "Note this: the gate code is 2281.",
+  ]
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff` swaps the stage
+  /// to that pack; default stays the coffee run. Beats and tools travel
+  /// together, same as the bench.
   static var scenarioBeats: [String] {
     switch scenarioName {
     case "photo": return photoBeats
     case "focus": return focusBeats
     case "report": return reportBeats
+    case "briefing": return briefingBeats
+    case "sensors": return sensorBeats
+    case "handoff": return handoffBeats
     default: return beats
     }
   }
@@ -124,9 +155,15 @@ final class StageModel {
   private(set) var backendName = ""
 
   enum Backend { case system, liteRT }
-  /// Apple's model by default: it is the one that answers in a second. Flip to
-  /// `.liteRT` to run the same demo on LFM2.5 through LiteRT-LM.
-  static let backend: Backend = .liteRT
+  /// `--backend apple` runs the same stage on Apple's model — the way to try
+  /// a new pack in a minute instead of a quarter of an hour. Default stays
+  /// LiteRT, which is what every recording so far was made on.
+  static var backend: Backend {
+    guard let flag = CommandLine.arguments.firstIndex(of: "--backend"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    else { return .liteRT }
+    return CommandLine.arguments[flag + 1].lowercased() == "apple" ? .system : .liteRT
+  }
   /// Bumped on every phase change so the view animates the swap rather than
   /// diffing an enum with associated values.
   private(set) var phaseID = 0
@@ -192,6 +229,9 @@ final class StageModel {
     case "photo": tools = ToolBox.photoStage
     case "focus": tools = ToolBox.focus
     case "report": tools = ToolBox.fieldReport
+    case "briefing": tools = ToolBox.briefing
+    case "sensors": tools = ToolBox.sensors
+    case "handoff": tools = ToolBox.handoff
     default: tools = ToolBox.demo
     }
     toolCount = tools.count

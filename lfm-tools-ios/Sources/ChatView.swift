@@ -135,6 +135,15 @@ struct ChatView: View {
     }
     chat.startTrace()
     guard case .noModel = chat.status else { return }
+    // `--model apple` skips the bundle entirely: Apple's model, every tool,
+    // the mic — the setup for trying things out, not measuring them.
+    if let flag = CommandLine.arguments.firstIndex(of: "--model"),
+      CommandLine.arguments.indices.contains(flag + 1),
+      CommandLine.arguments[flag + 1].lowercased() == "apple"
+    {
+      chat.loadSystemModel()
+      return
+    }
     guard let newest = ChatModel.availableModels().first else { return }
     await chat.load(newest)
     if CommandLine.arguments.contains("--autorun") {
@@ -335,6 +344,14 @@ private struct ModelPicker: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
+      // Always first: no file to find, answers in a second, and every tool
+      // in the sheet works with it. The bundles below are the same session
+      // on open weights.
+      Button {
+        chat.loadSystemModel()
+      } label: {
+        Label(ChatModel.systemModelName, systemImage: "apple.logo")
+      }
       if models.isEmpty {
         Text("No .litertlm in the app's Documents folder.")
           .font(.callout)
@@ -367,6 +384,22 @@ private struct ToolSheet: View {
   var body: some View {
     NavigationStack {
       List {
+        Section("Model") {
+          // Switching who answers, mid-session. Same tools either way; the
+          // point of the demo is that the session does not care.
+          Button {
+            chat.loadSystemModel()
+            dismiss()
+          } label: {
+            Label(ChatModel.systemModelName, systemImage: "apple.logo")
+          }
+          ForEach(ChatModel.availableModels(), id: \.self) { url in
+            Button(url.lastPathComponent) {
+              Task { await chat.load(url) }
+              dismiss()
+            }
+          }
+        }
         Section {
           toggle("ambient", "No permission needed", ToolBox.ambient)
           toggle("actions", "Changes something", ToolBox.actions)
