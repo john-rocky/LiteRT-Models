@@ -1,0 +1,232 @@
+// The photo tools, the way Foundation Models does vision natively.
+//
+// The picture goes into the prompt as an `Attachment` with a label; the model
+// looks at the pixels and decides; and when it calls a tool it names the
+// picture it means with an `ImageReference` argument, which the tool resolves
+// against the session transcript. Nothing here tells the model what is wrong
+// with the photo — that is the point. Same names and descriptions as the
+// plain photo pack, so the stage reads the same; only the `image` argument is
+// new, and the bodies delegate to the plain tools once the referenced image
+// is "the photo".
+import CoreGraphics
+import Foundation
+import FoundationModels
+
+/// Where an ImageReference gets resolved: the transcript of whichever session
+/// is live. Set when a session is created; tools read it during a call, when
+/// the model is waiting on them anyway.
+@available(iOS 27.0, *)
+final class TranscriptBox: @unchecked Sendable {
+  static let shared = TranscriptBox()
+  private let lock = NSLock()
+  private var provider: (@Sendable () -> Transcript?)?
+
+  func attach(_ session: LanguageModelSession) {
+    lock.lock()
+    provider = { [weak session] in session?.transcript }
+    lock.unlock()
+  }
+
+  func current() -> Transcript? {
+    lock.lock()
+    let provider = self.provider
+    lock.unlock()
+    return provider?()
+  }
+}
+
+@available(iOS 27.0, *)
+enum SeenPhoto {
+  /// The label every attachment carries when there is only one photo in
+  /// play — the model refers back to it by this name.
+  static let singleLabel = "photo"
+
+  /// Make the referenced picture "the photo" the editing chain works on.
+  /// A reference to the label already on stage is left alone: the same
+  /// photo, attached again after an edit so the model can see its own work,
+  /// must not reset the chain it is looking at. Returns the label of what
+  /// could not be resolved, or nil on success.
+  static func select(_ reference: ImageReference) -> String? {
+    if PhotoEditBox.shared.loadedLabel == reference.attachmentLabel { return nil }
+    guard let transcript = TranscriptBox.shared.current(),
+      let attachment = reference.resolved(in: transcript)
+    else { return reference.attachmentLabel }
+    PhotoEditBox.shared.load(attachment.cgImage, label: reference.attachmentLabel)
+    return nil
+  }
+
+  static func unresolved(_ label: String) -> String {
+    "no image called \"\(label)\" in this conversation"
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenBrightnessTool: Tool {
+  let name = "adjust_photo_brightness"
+  let description = "Make the photo brighter or darker."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "-100 (darker) to 100 (brighter).") var amount: Int
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await BrightnessPhotoTool().call(arguments: .init(amount: arguments.amount))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenExposureTool: Tool {
+  let name = "adjust_photo_exposure"
+  let description = "Adjust the photo's exposure in stops."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "Exposure stops, -2 to 2.") var stops: Double
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await ExposurePhotoTool().call(arguments: .init(stops: arguments.stops))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenContrastTool: Tool {
+  let name = "adjust_photo_contrast"
+  let description = "Adjust the photo's contrast."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "-100 (flatter) to 100 (punchier).") var amount: Int
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await ContrastPhotoTool().call(arguments: .init(amount: arguments.amount))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenSaturationTool: Tool {
+  let name = "adjust_photo_saturation"
+  let description = "Adjust how vivid the photo's colors are."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "-100 (grayscale) to 100 (very vivid).") var amount: Int
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await SaturationPhotoTool().call(arguments: .init(amount: arguments.amount))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenWarmthTool: Tool {
+  let name = "adjust_photo_warmth"
+  let description = "Make the photo warmer (orange) or cooler (blue)."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "-100 (cooler) to 100 (warmer).") var amount: Int
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await WarmthPhotoTool().call(arguments: .init(amount: arguments.amount))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenRotateTool: Tool {
+  let name = "rotate_photo"
+  let description = "Rotate the photo."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "Clockwise degrees.", .anyOf(["90", "180", "270"])) var degrees: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await RotatePhotoTool().call(arguments: .init(degrees: arguments.degrees))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenCropTool: Tool {
+  let name = "crop_photo"
+  let description = "Crop the photo to an aspect ratio."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "Target aspect.", .anyOf(["square", "4:3", "3:2", "16:9", "9:16"]))
+    var aspect: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await CropPhotoTool().call(arguments: .init(aspect: arguments.aspect))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenFilterTool: Tool {
+  let name = "apply_photo_filter"
+  let description = "Apply a named look to the photo."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+    @Guide(description: "Which look.", .anyOf(["mono", "sepia", "noir", "vivid", "fade"]))
+    var look: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await FilterPhotoTool().call(arguments: .init(look: arguments.look))
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenAutoEnhanceTool: Tool {
+  let name = "auto_enhance_photo"
+  let description = "Automatically improve the photo."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await AutoEnhancePhotoTool().call(arguments: NoArguments())
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenRemoveBackgroundTool: Tool {
+  let name = "remove_background"
+  let description = "Remove the background, keeping the person or subject."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await CutOutSubjectTool().call(arguments: NoArguments())
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenReadTextTool: Tool {
+  let name = "read_text_in_photo"
+  let description = "Read the text in the photo, exactly as written."
+  @Generable struct Arguments {
+    @Guide(description: "Which photo.") var image: ImageReference
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    return try await ReadPhotoTextTool().call(arguments: NoArguments())
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenRevertTool: Tool {
+  let name = "revert_to_original"
+  let description = "Throw away all edits and show the original photo."
+  func call(arguments: NoArguments) async throws -> String {
+    PhotoEditBox.shared.reset()
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenSaveTool: Tool {
+  let name = "save_edited_photo"
+  let description = "Save the edited photo to the library."
+  func call(arguments: NoArguments) async throws -> String {
+    try await PhotoEditBox.shared.save()
+  }
+}

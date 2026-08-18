@@ -110,17 +110,23 @@ final class PhotoEditBox: @unchecked Sendable {
 
   /// Load the newest photo into the chain without editing it — the stage
   /// shows the photo from the first frame, before any tool has run.
-  func preload() async throws {
+  func preload(label: String? = nil) async throws {
     _ = try await workingImage()
+    sync { loadedLabel = label }
   }
+
+  /// The attachment label of the picture on stage, so an ImageReference to
+  /// the same label does not reload (and reset) the chain it refers to.
+  private(set) var loadedLabel: String?
 
   /// Make a given picture "the photo": what the tools edit, and what a
   /// vision model is shown. Attaching a photo to a message means this one,
   /// not the newest in the library. A fresh original, so revert lands here.
-  func load(_ cgImage: CGImage) {
+  func load(_ cgImage: CGImage, label: String? = nil) {
     sync {
       current = CIImage(cgImage: cgImage)
       history = []
+      loadedLabel = label
     }
   }
 

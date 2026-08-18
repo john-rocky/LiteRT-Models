@@ -454,7 +454,8 @@ private struct ToolSheet: View {
           toggle("ambient", "No permission needed", ToolBox.ambient)
           toggle("actions", "Changes something", ToolBox.actions)
           toggle("personal", "Asks permission", ToolBox.personal)
-          toggle("photo", "Photo editing", ToolBox.photoEditing)
+          toggle("photo", "Photo editing (the newest photo)", ToolBox.photoEditing)
+          toggle("vision", "Photo editing, by looking (attach a photo)", ToolBox.vision)
           toggle("compound", "One call, several things", ToolBox.compound)
         } footer: {
           Text("Changing the set starts a new conversation; the model is kept loaded.")

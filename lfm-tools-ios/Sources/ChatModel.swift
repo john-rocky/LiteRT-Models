@@ -30,12 +30,20 @@ final class ChatModel {
   private(set) var attachedImage: CGImage?
   private(set) var attachedThumbnail: UIImage?
 
+  /// Each attachment gets its own label ("photo-1", "photo-2"…) so an
+  /// `ImageReference` from the model can point at any picture in the
+  /// conversation, not just the last one.
+  private var attachmentCount = 0
+  private(set) var attachedLabel = ""
+
   func attach(_ image: CGImage) {
     attachedImage = image
     attachedThumbnail = UIImage(cgImage: image)
+    attachmentCount += 1
+    attachedLabel = "photo-\(attachmentCount)"
     // The attached picture is also "the photo" for the editing tools: "fix
     // this" edits what the model was shown, not whatever is newest.
-    PhotoEditBox.shared.load(image)
+    PhotoEditBox.shared.load(image, label: attachedLabel)
   }
 
   func detachImage() {
@@ -56,7 +64,7 @@ final class ChatModel {
   // The engine's Metal path is the one LiteRT-LM ships for iOS; --gpu selects it
   // when the CPU path is what a failure has to be isolated from.
   var backend: Backend = CommandLine.arguments.contains("--gpu") ? .gpu : .cpu()
-  var enabledGroups: Set<String> = ["ambient", "actions", "personal", "compound"]
+  var enabledGroups: Set<String> = ["ambient", "actions", "personal", "compound", "vision"]
 
   private var session: LanguageModelSession?
   private var model: LiteRTLanguageModel?
@@ -74,7 +82,14 @@ final class ChatModel {
     if enabledGroups.contains("ambient") { tools += ToolBox.ambient }
     if enabledGroups.contains("actions") { tools += ToolBox.actions }
     if enabledGroups.contains("personal") { tools += ToolBox.personal }
-    if enabledGroups.contains("photo") { tools += ToolBox.photoEditing }
+    // "photo" and "vision" share tool names (the vision set adds an image
+    // argument to each); when both are on, vision wins — attach a photo and
+    // the model names the picture it means.
+    if enabledGroups.contains("vision") {
+      tools += ToolBox.vision
+    } else if enabledGroups.contains("photo") {
+      tools += ToolBox.photoEditing
+    }
     if enabledGroups.contains("compound") { tools += ToolBox.compound }
     return tools
   }
@@ -147,6 +162,7 @@ final class ChatModel {
       session = LanguageModelSession(
         model: model, tools: tools, instructions: ToolBox.instructions)
     }
+    if let session { TranscriptBox.shared.attach(session) }
     lines = []
   }
 
@@ -158,6 +174,7 @@ final class ChatModel {
     // A photo alone is a message: "what's this?" without the words.
     guard !prompt.isEmpty || attachedImage != nil, !thinking else { return }
     let image = attachedImage
+    let label = attachedLabel
     let thumbnail = attachedThumbnail
     detachImage()
     lines.append(
@@ -181,7 +198,7 @@ final class ChatModel {
           return try await session.respond(
             to: Prompt {
               prompt
-              Attachment(image)
+              Attachment(image).label(label)
             })
         }
         return try await session.respond(to: prompt)

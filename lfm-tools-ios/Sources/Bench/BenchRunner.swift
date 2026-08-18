@@ -138,7 +138,7 @@ enum BenchRunner {
           continue
         }
         attached = image
-        PhotoEditBox.shared.load(image)
+        PhotoEditBox.shared.load(image, label: SeenPhoto.singleLabel)
       }
       // A fresh session per case: no history, no carried KV, every case pays
       // the same prefill. Cross-turn behavior is a different benchmark.
@@ -150,6 +150,7 @@ enum BenchRunner {
         session = LanguageModelSession(tools: tools, instructions: ToolBox.instructions)
       }
 
+      TranscriptBox.shared.attach(session)
       // Written before the respond, so a hang is attributable to its case —
       // one engine freeze left a 30-minute silence with nothing to say where.
       out.write(["type": "start", "case": benchCase.id])
@@ -168,7 +169,7 @@ enum BenchRunner {
               return try await session.respond(
                 to: Prompt {
                   input
-                  Attachment(attached)
+                  Attachment(attached).label(SeenPhoto.singleLabel)
                 }
               ).content
             }

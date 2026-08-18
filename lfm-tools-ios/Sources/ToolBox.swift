@@ -179,11 +179,17 @@ enum ToolBox {
     WriteNoteTool(),
   ]
 
-  /// The vision pack: the photo is in the prompt, and the tools are the ones
-  /// a picture can call for — every edit, OCR, a note for what was read, and
-  /// what-is-this. Nothing here needs the user to name the problem.
-  static let vision: [any FoundationModels.Tool] =
-    photoStage + [ReadPhotoTextTool(), ClassifyPhotoTool(), WriteNoteTool()]
+  /// The vision pack: the photo is in the prompt as a labelled attachment,
+  /// and every tool takes an `ImageReference` — Foundation Models' native
+  /// vision: the model looks, decides, and names the picture it means
+  /// (Tools/VisionTools.swift). Nothing here needs the user to name the
+  /// problem.
+  static let vision: [any FoundationModels.Tool] = [
+    SeenBrightnessTool(), SeenExposureTool(), SeenContrastTool(), SeenSaturationTool(),
+    SeenWarmthTool(), SeenRotateTool(), SeenCropTool(), SeenFilterTool(),
+    SeenAutoEnhanceTool(), SeenRemoveBackgroundTool(), SeenReadTextTool(),
+    SeenRevertTool(), SeenSaveTool(), WriteNoteTool(),
+  ]
 
   static let all: [any FoundationModels.Tool] =
     ambient + actions + personal + photoEditing + compound

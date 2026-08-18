@@ -347,10 +347,11 @@ final class StageModel {
       }
     }
     RunLog.write("BACKEND \(backendName)")
+    if let session { TranscriptBox.shared.attach(session) }
     if Self.scenarioShowsPhoto {
       // The photo is on stage before the first word is typed; a permission
       // prompt, if any, fires here rather than mid-beat.
-      try? await PhotoEditBox.shared.preload()
+      try? await PhotoEditBox.shared.preload(label: SeenPhoto.singleLabel)
       refreshStageImage()
     }
     await run()
@@ -412,7 +413,7 @@ final class StageModel {
             return try await session.respond(
               to: Prompt {
                 prompt
-                Attachment(attached)
+                Attachment(attached).label(SeenPhoto.singleLabel)
               }
             ).content
           }
