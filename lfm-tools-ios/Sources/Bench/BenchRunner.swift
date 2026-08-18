@@ -47,6 +47,20 @@ enum BenchRunner {
       return
     }
 
+    // Which scenario pack the model sees. The cases file and the tool set
+    // travel together — pushing photo cases with the demo tools measures
+    // nothing.
+    var toolsetName = "demo"
+    if let flag = CommandLine.arguments.firstIndex(of: "--toolset"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    {
+      toolsetName = CommandLine.arguments[flag + 1].lowercased()
+    }
+    guard let tools = BenchToolBox.named(toolsetName) else {
+      out.write(["type": "error", "what": "unknown toolset \(toolsetName)"])
+      return
+    }
+
     let chosen: Chosen
     if CommandLine.arguments.contains("--model"),
       let flag = CommandLine.arguments.firstIndex(of: "--model"),
@@ -85,7 +99,9 @@ enum BenchRunner {
         return
       }
     }
-    out.write(["type": "run", "model": modelName, "cases": cases.count])
+    out.write([
+      "type": "run", "model": modelName, "cases": cases.count, "toolset": toolsetName,
+    ])
 
     var passed = 0
     var failed = 0
@@ -99,10 +115,9 @@ enum BenchRunner {
       let session: LanguageModelSession
       if let model = liteRTModel {
         session = LanguageModelSession(
-          model: model, tools: BenchToolBox.demo, instructions: ToolBox.instructions)
+          model: model, tools: tools, instructions: ToolBox.instructions)
       } else {
-        session = LanguageModelSession(
-          tools: BenchToolBox.demo, instructions: ToolBox.instructions)
+        session = LanguageModelSession(tools: tools, instructions: ToolBox.instructions)
       }
 
       // Written before the respond, so a hang is attributable to its case —

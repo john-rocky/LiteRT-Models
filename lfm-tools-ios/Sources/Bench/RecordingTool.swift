@@ -40,4 +40,42 @@ enum BenchToolBox {
     RecordingTool(base: SpeakLastAnswerTool(), canned: "spoke the previous answer"),
     RecordingTool(base: OpenMapsTool(), canned: "opened it in Maps"),
   ]
+
+  /// The photo-editing pack, neutralized. Every canned result claims success
+  /// in the shape the real tool answers with — a result that reads wrong
+  /// makes a model retry the call (Apple FM re-translated twice on a canned
+  /// result that didn't look translated).
+  static let photo: [any FoundationModels.Tool] = [
+    RecordingTool(base: CropPhotoTool(), canned: "done: cropped — the result is on screen"),
+    RecordingTool(base: ResizePhotoTool(), canned: "done: resized — the result is on screen"),
+    RecordingTool(base: ZoomPhotoTool(), canned: "done: zoomed — the result is on screen"),
+    RecordingTool(base: RotatePhotoTool(), canned: "done: rotated — the result is on screen"),
+    RecordingTool(base: FlipPhotoTool(), canned: "done: flipped — the result is on screen"),
+    RecordingTool(
+      base: BrightnessPhotoTool(), canned: "done: brightness adjusted — the result is on screen"),
+    RecordingTool(
+      base: ExposurePhotoTool(), canned: "done: exposure adjusted — the result is on screen"),
+    RecordingTool(
+      base: ContrastPhotoTool(), canned: "done: contrast adjusted — the result is on screen"),
+    RecordingTool(
+      base: SaturationPhotoTool(), canned: "done: saturation adjusted — the result is on screen"),
+    RecordingTool(
+      base: WarmthPhotoTool(), canned: "done: warmth adjusted — the result is on screen"),
+    RecordingTool(base: FilterPhotoTool(), canned: "done: look applied — the result is on screen"),
+    RecordingTool(base: BlurPhotoTool(), canned: "done: blurred — the result is on screen"),
+    RecordingTool(
+      base: AutoEnhancePhotoTool(), canned: "done: auto-enhanced — the result is on screen"),
+    RecordingTool(base: UndoPhotoEditTool(), canned: "undid the last edit"),
+    RecordingTool(
+      base: SavePhotoTool(), canned: "saved a copy with 2 edits to the photo library"),
+  ]
+
+  /// `--toolset <name>` picks the pack a bench run offers the model.
+  static func named(_ name: String) -> [any FoundationModels.Tool]? {
+    switch name {
+    case "demo": return demo
+    case "photo": return photo
+    default: return nil
+    }
+  }
 }

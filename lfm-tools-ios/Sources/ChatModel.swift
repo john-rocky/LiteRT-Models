@@ -46,6 +46,7 @@ final class ChatModel {
     if enabledGroups.contains("ambient") { tools += ToolBox.ambient }
     if enabledGroups.contains("actions") { tools += ToolBox.actions }
     if enabledGroups.contains("personal") { tools += ToolBox.personal }
+    if enabledGroups.contains("photo") { tools += ToolBox.photoEditing }
     return tools
   }
 

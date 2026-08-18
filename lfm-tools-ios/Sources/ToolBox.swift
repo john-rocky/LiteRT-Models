@@ -58,7 +58,17 @@ enum ToolBox {
     SearchContactsTool(), PhotoLibraryTool(),
   ]
 
-  static let all: [any FoundationModels.Tool] = ambient + actions + personal
+  /// The photo-editing scenario pack. Session-stateful: edits stack, undo
+  /// steps back, save writes out. The near-neighbor names (crop/resize/zoom,
+  /// brightness/exposure/contrast) are a benchmark axis.
+  static let photoEditing: [any FoundationModels.Tool] = [
+    CropPhotoTool(), ResizePhotoTool(), ZoomPhotoTool(), RotatePhotoTool(), FlipPhotoTool(),
+    BrightnessPhotoTool(), ExposurePhotoTool(), ContrastPhotoTool(),
+    SaturationPhotoTool(), WarmthPhotoTool(), FilterPhotoTool(), BlurPhotoTool(),
+    AutoEnhancePhotoTool(), UndoPhotoEditTool(), SavePhotoTool(),
+  ]
+
+  static let all: [any FoundationModels.Tool] = ambient + actions + personal + photoEditing
 
   /// The set the scripted run uses.
   ///
