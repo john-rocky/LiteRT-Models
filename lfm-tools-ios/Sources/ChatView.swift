@@ -120,6 +120,10 @@ struct ChatView: View {
       await exportNewestVideo()
       return
     }
+    if CommandLine.arguments.contains("--toolbench") {
+      await BenchRunner.run()
+      return
+    }
     if CommandLine.arguments.contains("--bench") {
       await runBenchmarks()
       return
