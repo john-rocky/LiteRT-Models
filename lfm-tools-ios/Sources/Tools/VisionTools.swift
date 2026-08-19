@@ -85,6 +85,28 @@ enum SeenPhoto {
   static func unresolved(_ label: String) -> String {
     "no image called \"\(label)\" in this conversation"
   }
+
+  /// Vague amounts land on the rail: asked for 0–100, the model answered 100
+  /// for "warmer", "more contrast" and "make it look its best" alike. The
+  /// vision tools take the steps the words already have and map them to
+  /// numbers a photo can survive.
+  static func percent(_ strength: String) -> Int {
+    switch strength.lowercased() {
+    case "a_lot": return 60
+    case "some": return 35
+    default: return 15
+    }
+  }
+
+  static func stops(_ strength: String) -> Double {
+    switch strength.lowercased() {
+    case "a_lot": return 1.2
+    case "some": return 0.7
+    default: return 0.3
+    }
+  }
+
+  static let strengths = ["a_little", "some", "a_lot"]
 }
 
 @available(iOS 27.0, *)
@@ -93,11 +115,14 @@ struct SeenBrightnessTool: Tool {
   let description = "Make the photo brighter or darker."
   @Generable struct Arguments {
     @Guide(description: "The attached photo, by its label.") var image: ImageReference
-    @Guide(description: "-100 (darker) to 100 (brighter).") var amount: Int
+    @Guide(description: "Which way.", .anyOf(["brighter", "darker"])) var direction: String
+    @Guide(description: "How much.", .anyOf(SeenPhoto.strengths)) var strength: String
   }
   func call(arguments: Arguments) async throws -> String {
     if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
-    return try await BrightnessPhotoTool().call(arguments: .init(amount: arguments.amount))
+    let sign = arguments.direction.lowercased() == "darker" ? -1 : 1
+    return try await BrightnessPhotoTool().call(
+      arguments: .init(amount: sign * SeenPhoto.percent(arguments.strength)))
   }
 }
 
@@ -107,11 +132,14 @@ struct SeenExposureTool: Tool {
   let description = "Adjust the photo's exposure in stops."
   @Generable struct Arguments {
     @Guide(description: "The attached photo, by its label.") var image: ImageReference
-    @Guide(description: "Exposure stops, -2 to 2.") var stops: Double
+    @Guide(description: "Which way.", .anyOf(["up", "down"])) var direction: String
+    @Guide(description: "How much.", .anyOf(SeenPhoto.strengths)) var strength: String
   }
   func call(arguments: Arguments) async throws -> String {
     if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
-    return try await ExposurePhotoTool().call(arguments: .init(stops: arguments.stops))
+    let sign: Double = arguments.direction.lowercased() == "down" ? -1 : 1
+    return try await ExposurePhotoTool().call(
+      arguments: .init(stops: sign * SeenPhoto.stops(arguments.strength)))
   }
 }
 
@@ -121,11 +149,14 @@ struct SeenContrastTool: Tool {
   let description = "Adjust the photo's contrast."
   @Generable struct Arguments {
     @Guide(description: "The attached photo, by its label.") var image: ImageReference
-    @Guide(description: "-100 (flatter) to 100 (punchier).") var amount: Int
+    @Guide(description: "Which way.", .anyOf(["more", "less"])) var direction: String
+    @Guide(description: "How much.", .anyOf(SeenPhoto.strengths)) var strength: String
   }
   func call(arguments: Arguments) async throws -> String {
     if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
-    return try await ContrastPhotoTool().call(arguments: .init(amount: arguments.amount))
+    let sign = arguments.direction.lowercased() == "less" ? -1 : 1
+    return try await ContrastPhotoTool().call(
+      arguments: .init(amount: sign * SeenPhoto.percent(arguments.strength)))
   }
 }
 
@@ -135,11 +166,14 @@ struct SeenSaturationTool: Tool {
   let description = "Adjust how vivid the photo's colors are."
   @Generable struct Arguments {
     @Guide(description: "The attached photo, by its label.") var image: ImageReference
-    @Guide(description: "-100 (grayscale) to 100 (very vivid).") var amount: Int
+    @Guide(description: "Which way.", .anyOf(["more_vivid", "more_muted"])) var direction: String
+    @Guide(description: "How much.", .anyOf(SeenPhoto.strengths)) var strength: String
   }
   func call(arguments: Arguments) async throws -> String {
     if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
-    return try await SaturationPhotoTool().call(arguments: .init(amount: arguments.amount))
+    let sign = arguments.direction.lowercased() == "more_muted" ? -1 : 1
+    return try await SaturationPhotoTool().call(
+      arguments: .init(amount: sign * SeenPhoto.percent(arguments.strength)))
   }
 }
 
@@ -149,11 +183,14 @@ struct SeenWarmthTool: Tool {
   let description = "Make the photo warmer (orange) or cooler (blue)."
   @Generable struct Arguments {
     @Guide(description: "The attached photo, by its label.") var image: ImageReference
-    @Guide(description: "-100 (cooler) to 100 (warmer).") var amount: Int
+    @Guide(description: "Which way.", .anyOf(["warmer", "cooler"])) var direction: String
+    @Guide(description: "How much.", .anyOf(SeenPhoto.strengths)) var strength: String
   }
   func call(arguments: Arguments) async throws -> String {
     if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
-    return try await WarmthPhotoTool().call(arguments: .init(amount: arguments.amount))
+    let sign = arguments.direction.lowercased() == "cooler" ? -1 : 1
+    return try await WarmthPhotoTool().call(
+      arguments: .init(amount: sign * SeenPhoto.percent(arguments.strength)))
   }
 }
 

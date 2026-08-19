@@ -155,12 +155,16 @@ final class ChatModel {
   /// A session owns its transcript, so changing the tool set or clearing the
   /// history means a new session over the same (cached, already-loaded) engine.
   func startSession() {
+    // With the vision tools on, the instructions have to say what a photo
+    // means — including a photo sent alone. The stock instructions push
+    // tools over looking.
+    let instructions = enabledGroups.contains("vision") ? ToolBox.instructionsWithVision : ToolBox.instructions
     if usingSystemModel {
-      session = LanguageModelSession(tools: tools, instructions: ToolBox.instructions)
+      session = LanguageModelSession(tools: tools, instructions: instructions)
     } else {
       guard let model else { return }
       session = LanguageModelSession(
-        model: model, tools: tools, instructions: ToolBox.instructions)
+        model: model, tools: tools, instructions: instructions)
     }
     if let session { TranscriptBox.shared.attach(session) }
     lines = []
@@ -195,6 +199,11 @@ final class ChatModel {
       // detached task is the supported way out.
       let response = try await Task.detached(priority: .userInitiated) {
         if let image {
+          // No words: the attachment alone is the message, and the vision
+          // instructions say what that means (make it look its best).
+          if prompt.isEmpty {
+            return try await session.respond(to: Prompt { Attachment(image).label(label) })
+          }
           return try await session.respond(
             to: Prompt {
               prompt

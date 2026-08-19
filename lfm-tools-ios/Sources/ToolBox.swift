@@ -229,8 +229,23 @@ enum ToolBox {
     asked. Call a photo tool only when the photo itself calls for it — an edit
     the picture needs, text that is really in it, a person who is really in
     it. When the condition is not met, say so and call nothing. Pass the
-    photo's label as the image argument. When a tool has returned, answer in
-    one short sentence.
+    photo's label as the image argument. A photo sent with no words means:
+    make it look its best — judge what this picture needs (exposure,
+    brightness, warmth, contrast, color, straightening) and apply those edits
+    one after another, gently, then say in one sentence what you changed and
+    why. When a tool has returned, answer in one short sentence.
+    """
+
+  /// For the chat, where photos are one input among many: the stock
+  /// instructions plus what a photo means. Appended, not swapped — the chat
+  /// still needs "you cannot know the battery without calling".
+  static let instructionsWithVision = instructions + """
+
+    When a photo is attached, look at it first; a photo tool's image argument
+    is the photo's label. A photo sent with no words means: make it look its
+    best — judge what this picture needs (exposure, brightness, warmth,
+    contrast, color, straightening), apply those edits one after another,
+    gently, then say in one sentence what you changed and why.
     """
 
   static func summary(for tools: [any FoundationModels.Tool]) -> String {

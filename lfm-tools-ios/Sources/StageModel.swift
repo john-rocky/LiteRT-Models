@@ -144,6 +144,16 @@ final class StageModel {
     "Now make it look its best, and save it.",
   ]
 
+  /// The demo: hand the phone a photo and say nothing. An empty beat sends
+  /// the attachment alone; the vision instructions say what that means —
+  /// make it look its best. Then three words each, spoken if `--voice`.
+  static let polishBeats = [
+    "",
+    "A little more.",
+    "Now cut her out from the background.",
+    "Save it.",
+  ]
+
   /// Sight alone, no tools: does the model see the picture at all? Three
   /// questions a blind model cannot answer from the words. Run this before
   /// reading anything into what the vision pack routes.
@@ -169,17 +179,20 @@ final class StageModel {
     case "compound": return compoundBeats
     case "vision": return visionBeats
     case "look": return lookBeats
+    case "polish": return polishBeats
     default: return beats
     }
   }
 
   /// Packs that keep a photo on stage from the first frame.
   static var scenarioShowsPhoto: Bool {
-    scenarioIsPhoto || scenarioName == "vision" || scenarioName == "look"
+    scenarioIsPhoto || scenarioAttachesPhoto
   }
   /// Packs where the photo goes into the prompt as an image attachment, so
   /// the model routes on what it sees rather than on what it is told.
-  static var scenarioAttachesPhoto: Bool { scenarioName == "vision" || scenarioName == "look" }
+  static var scenarioAttachesPhoto: Bool {
+    ["vision", "look", "polish"].contains(scenarioName)
+  }
 
   static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
@@ -296,6 +309,7 @@ final class StageModel {
     case "compound": tools = ToolBox.compound + ToolBox.focus + ToolBox.briefing
     case "vision": tools = ToolBox.vision
     case "look": tools = []
+    case "polish": tools = ToolBox.vision
     default: tools = ToolBox.demo
     }
     // The vision packs get their own instructions: the stock ones push tools
@@ -393,8 +407,9 @@ final class StageModel {
       typed = ""
       set(.typing)
       let prompt: String
-      if Self.voiceDriven {
-        // The person speaks the beat. An empty take (a cough, a false start)
+      if Self.voiceDriven && !scripted.isEmpty {
+        // The person speaks the beat. (A silent beat — photo only — stays
+        // silent in voice mode too; the silence is the point.) An empty take (a cough, a false start)
         // just listens again; a broken recognizer ends the run — looping on
         // it would record a phone listening to nothing.
         var spoken = ""
@@ -408,7 +423,7 @@ final class StageModel {
         prompt = spoken
         RunLog.write("BEAT \(index + 1) (spoken) \(prompt)")
       } else {
-        RunLog.write("BEAT \(index + 1) \(scripted)")
+        RunLog.write("BEAT \(index + 1) \(scripted.isEmpty ? "(photo only)" : scripted)")
         // Typed out rather than announced: on screen this has to read as
         // somebody instructing the phone, not as a chapter heading.
         for character in scripted {
@@ -418,7 +433,8 @@ final class StageModel {
         prompt = scripted
       }
       try? await Task.sleep(for: .milliseconds(450))
-      question = prompt
+      // A silent beat still needs a sent message on screen: the photo itself.
+      question = prompt.isEmpty ? "📷" : prompt
       typed = ""
       live = ""
       set(.thinking)
@@ -437,6 +453,11 @@ final class StageModel {
         if attached != nil { RunLog.write("ATTACH photo \(attached!.width)x\(attached!.height)") }
         answer = try await Task.detached(priority: .userInitiated) {
           if let attached {
+            if prompt.isEmpty {
+              return try await session.respond(
+                to: Prompt { Attachment(attached).label(SeenPhoto.singleLabel) }
+              ).content
+            }
             return try await session.respond(
               to: Prompt {
                 prompt
