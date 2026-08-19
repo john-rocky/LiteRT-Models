@@ -207,7 +207,7 @@ final class StageModel {
     "The keys are a bit loud — turn them down a bit.",
     "Put some echo on the lead.",
     "Solo the drums.",
-    "Un-solo, and pan the bass a little left.",
+    "Un-solo the drums, and pan the bass a little left.",
     "Fade out at the end, then export it.",
   ]
 

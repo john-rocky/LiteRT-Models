@@ -578,7 +578,8 @@ struct AddNoteTool: Tool {
   let name = "add_note"
   let description = "Stick a note (a comment) on the open page."
   @Generable struct Arguments {
-    @Guide(description: "What the note says.") var text: String
+    @Guide(description: "What the note says, exactly as the user gave it. If the user did not say what the note should say, do not call this — ask them.")
+    var text: String
   }
   func call(arguments: Arguments) async throws -> String {
     DocBox.shared.preload()

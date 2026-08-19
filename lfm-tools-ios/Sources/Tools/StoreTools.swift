@@ -607,7 +607,8 @@ struct RefundOrderTool: Tool {
   let name = "refund_order"
   let description = "Refund one order in full."
   @Generable struct Arguments {
-    @Guide(description: "The order number, e.g. 1007.") var order_number: Int
+    @Guide(description: "The order number, e.g. 1007, from the request or the state. If no order is identified anywhere, do not call this — ask which order.")
+    var order_number: Int
   }
   func call(arguments: Arguments) async throws -> String {
     StoreBox.shared.refund(order: arguments.order_number)

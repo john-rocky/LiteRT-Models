@@ -148,19 +148,21 @@ enum BenchToolBox {
   /// canned data, frozen at "6 products under 5 in stock, 5 orders awaiting
   /// payment"; results claim success in the shape the real tools answer.
   static let store: [any FoundationModels.Tool] = [
-    RecordingTool(base: SearchProductsTool(), canned: "3 products selected (search):\nLinen Shirt — ¥6,800, stock 3, active\nOxford Shirt — ¥7,200, stock 14, active\nCamp Shirt — ¥6,200, stock 7, active"),
-    RecordingTool(base: FilterProductsTool(), canned: "4 products selected (filter):\nField Jacket — ¥16,500, stock 4, draft\nCorduroy Pants — ¥9,800, stock 12, draft\nWool Cardigan — ¥13,800, stock 9, draft\nFlannel Shirt — ¥7,800, stock 15, draft"),
-    RecordingTool(base: LowStockTool(), canned: "6 products selected (stock below 5):\nWool Beanie — ¥3,200, stock 0, active\nStraw Hat — ¥4,600, stock 1, active\nWide Chinos — ¥8,900, stock 2, active\nLinen Shirt — ¥6,800, stock 3, active\nWool Scarf — ¥5,400, stock 4, active\nField Jacket — ¥16,500, stock 4, draft"),
+    // Finder fakes are NEUTRAL on purpose: a canned result that echoed one
+    // fixed query ("4 products (draft)") contradicted every other query and
+    // the model retried or piled on extra calls — the same disease as the
+    // go_to_page echo, measured across four packs (Mac, 2026-08-19).
+    RecordingTool(base: SearchProductsTool(), canned: "the matching products are selected and listed on screen"),
+    RecordingTool(base: FilterProductsTool(), canned: "the matching products are selected and listed on screen"),
+    RecordingTool(base: LowStockTool(), canned: "the low-stock products are selected and listed on screen"),
     RecordingTool(base: UpdatePriceTool(), canned: "prices changed on the selected products"),
     RecordingTool(base: SetPriceTool(), canned: "price set on the selected products"),
     RecordingTool(base: AddTagTool(), canned: "tagged the selected products"),
     RecordingTool(base: SetProductStatusTool(), canned: "status changed on the selected products"),
     RecordingTool(base: AdjustInventoryTool(), canned: "stock adjusted on the selected products"),
-    RecordingTool(
-      base: SearchOrdersTool(),
-      canned: "1 order selected (customer \"Tanaka\"):\n#1001 Aoi Tanaka — ¥6,800, paid, fulfilled, 13 d ago"),
+    RecordingTool(base: SearchOrdersTool(), canned: "the matching orders are selected and listed on screen"),
     RecordingTool(base: ExportProductsTool(), canned: "exported 24 products to products.csv in the app's Documents"),
-    RecordingTool(base: FilterOrdersTool(), canned: "5 orders selected (filter):\n#1020 Uma Reddy — ¥1,800, pending, unfulfilled, today\n#1018 Sam Doyle — ¥5,900, pending, unfulfilled, 1 d ago\n#1015 Olivia Park — ¥15,800, pending, unfulfilled, 2 d ago\n#1012 Leo Brandt — ¥5,400, pending, unfulfilled, 4 d ago\n#1008 Hana Kim — ¥8,900, pending, unfulfilled, 6 d ago"),
+    RecordingTool(base: FilterOrdersTool(), canned: "the matching orders are selected and listed on screen"),
     RecordingTool(base: FulfillOrdersTool(), canned: "fulfilled 5 orders: #1010, #1013, #1016, #1017, #1019"),
     RecordingTool(base: SendInvoiceTool(), canned: "sent a payment reminder for 5 orders"),
     RecordingTool(base: RefundOrderTool(), canned: "refunded the order"),
@@ -216,11 +218,9 @@ enum BenchToolBox {
   /// The shopping pack, neutralized, against the state the cases carry
   /// (five earbuds results, one cart line).
   static let shopping: [any FoundationModels.Tool] = [
-    RecordingTool(
-      base: SearchCatalogTool(),
-      canned: "5 results for \"wireless earbuds\":\n1. Wireless Earbuds Pro (Soundcore) — ¥12,800, ★4.5\n2. Wireless Earbuds Lite (Soundcore) — ¥4,990, ★4.2\n3. Noise Cancelling Earbuds (Sony) — ¥24,800, ★4.7\n4. Budget Earbuds (JVC) — ¥2,480, ★3.9\n5. Over-Ear Headphones (Audio-Technica) — ¥9,800, ★4.4"),
-    RecordingTool(base: SortResultsTool(), canned: "sorted cheapest first:\n1. Budget Earbuds — ¥2,480\n2. Wireless Earbuds Lite — ¥4,990\n3. Over-Ear Headphones — ¥9,800\n4. Wireless Earbuds Pro — ¥12,800\n5. Noise Cancelling Earbuds — ¥24,800"),
-    RecordingTool(base: ShowProductTool(), canned: "Wireless Earbuds Lite by Soundcore — ¥4,990, ★4.2 from 15402 reviews, ships today"),
+    RecordingTool(base: SearchCatalogTool(), canned: "the results are numbered and listed on screen"),
+    RecordingTool(base: SortResultsTool(), canned: "sorted — the renumbered results are on screen"),
+    RecordingTool(base: ShowProductTool(), canned: "that product's details are on screen"),
     RecordingTool(base: AddToCartTool(), canned: "added to the cart — cart total ¥9,980"),
     RecordingTool(base: ChangeQuantityTool(), canned: "quantity changed — cart total ¥4,990"),
     RecordingTool(base: RemoveFromCartTool(), canned: "removed from the cart"),
@@ -231,13 +231,9 @@ enum BenchToolBox {
 
   /// The money pack, neutralized, against the month of canned spending.
   static let money: [any FoundationModels.Tool] = [
-    RecordingTool(
-      base: ListTransactionsTool(),
-      canned: "7 transactions (last 7 days), ¥21,340 in all:\ntoday Seven-Eleven — ¥680, uncategorized\nyesterday Maruetsu — ¥4,820, groceries\nyesterday JR East — ¥1,340, transport"),
-    RecordingTool(
-      base: FilterTransactionsTool(),
-      canned: "5 transactions (uncategorized), ¥5,410 in all:\ntoday Seven-Eleven — ¥680\n3 d ago Starbucks — ¥720\n7 d ago Don Quijote — ¥2,890\n12 d ago Seven-Eleven — ¥540\n19 d ago Book Off — ¥880"),
-    RecordingTool(base: SearchPayeeTool(), canned: "5 transactions (payee \"Maruetsu\"), ¥26,190 in all"),
+    RecordingTool(base: ListTransactionsTool(), canned: "the matching transactions are selected and listed on screen"),
+    RecordingTool(base: FilterTransactionsTool(), canned: "the matching transactions are selected and listed on screen"),
+    RecordingTool(base: SearchPayeeTool(), canned: "the matching transactions are selected and listed on screen"),
     RecordingTool(base: CategorizeTool(), canned: "categorized the selected transactions"),
     RecordingTool(base: FlagTransactionsTool(), canned: "flagged the selected transactions"),
     RecordingTool(base: SetBudgetTool(), canned: "budget set"),
@@ -248,13 +244,9 @@ enum BenchToolBox {
 
   /// The inbox pack, neutralized, against the fifteen canned messages.
   static let inbox: [any FoundationModels.Tool] = [
-    RecordingTool(
-      base: ListInboxTool(),
-      canned: "7 messages (unread):\n#1 Hana Kim — \"Report deadline\" (today, unread)\n#2 Kanda Goods — \"Invoice #4471\" (today, unread)\n#3 TechWeekly — \"This week in AI\" (today, unread)"),
-    RecordingTool(
-      base: SearchMailTool(),
-      canned: "1 message (search):\n#2 Kanda Goods — \"Invoice #4471\" (today, unread)"),
-    RecordingTool(base: ReadMessageTool(), canned: "#2 from Kanda Goods, today — \"Invoice #4471\": Your invoice for August is attached."),
+    RecordingTool(base: ListInboxTool(), canned: "the matching messages are selected and listed on screen"),
+    RecordingTool(base: SearchMailTool(), canned: "the matching messages are selected and listed on screen"),
+    RecordingTool(base: ReadMessageTool(), canned: "the message is open on screen"),
     RecordingTool(base: ArchiveTool(), canned: "archived the selected messages"),
     RecordingTool(base: MarkReadTool(), canned: "marked the selected messages read"),
     RecordingTool(base: FlagMailTool(), canned: "flagged the selected messages"),

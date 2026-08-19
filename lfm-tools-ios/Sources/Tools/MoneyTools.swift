@@ -346,7 +346,7 @@ struct SpendingReportTool: Tool {
 @available(iOS 27.0, *)
 struct BudgetReportTool: Tool {
   let name = "budget_report"
-  let description = "This month's spending against each budget."
+  let description = "Compare this month's spending with each budget — over or under, by how much."
   func call(arguments: NoArguments) async throws -> String {
     MoneyBox.shared.budgetReport()
   }

@@ -834,8 +834,11 @@ struct ClipSpeedTool: Tool {
   // argument lets the direct call be the right call.
   let description = "Change the playback speed of a clip."
   @Generable struct Arguments {
-    @Guide(description: "Speed multiplier, 0.25 to 4. 0.5 is slow motion, 2 is twice as fast.")
-    var multiplier: Double
+    // "speed", not "multiplier": named multiplier, "half speed" arrived as 2
+    // — the model reasoned about duration, not speed (Mac, 2026-08-19). The
+    // argument's name is part of the contract.
+    @Guide(description: "The new playback speed: 0.5 plays at half speed (slow motion means 0.5 unless a number is given), 1 is normal, 2 is double speed.")
+    var speed: Double
     @Guide(description: "Which clip, from 1. Omit for the selected clip.")
     var clip: Int?
   }
@@ -845,7 +848,7 @@ struct ClipSpeedTool: Tool {
       let selected = VideoEditBox.shared.select(clip: clip)
       if selected.hasPrefix("there is no clip") { return selected }
     }
-    return VideoEditBox.shared.setSpeed(arguments.multiplier)
+    return VideoEditBox.shared.setSpeed(arguments.speed)
   }
 }
 
@@ -867,7 +870,11 @@ struct AddCaptionTool: Tool {
   let name = "add_caption"
   let description = "Put a text caption on the video for a span of time."
   @Generable struct Arguments {
-    @Guide(description: "The words to show.") var text: String
+    // The ask lives on the argument: the instructions-level "ask when a
+    // caption has no words" both over- and under-fired; at the decision
+    // point it is harder to miss.
+    @Guide(description: "The words to show, exactly as the user gave them. If the user did not say what the caption should say, do not call this — ask them what it should say.")
+    var text: String
     @Guide(description: "Where on the frame.", .anyOf(["top", "bottom"])) var position: String
     @Guide(description: "When it appears, in timeline seconds. 0 is the beginning.") var start_seconds: Double
     @Guide(description: "How long it stays, in seconds. 3 is typical.") var duration_seconds: Double
@@ -936,9 +943,9 @@ struct AddMusicTool: Tool {
 @available(iOS 27.0, *)
 struct RemoveMusicTool: Tool {
   let name = "remove_music"
-  // "(added with add_music)" is load-bearing: without it, 「音を消して」
-  // (kill the sound) routed here instead of to set_volume(0).
-  let description = "Take the background music (added with add_music) off the video."
+  // The "not for muting" clause is load-bearing: without it, 「音を消して」
+  // (kill the sound) routed here instead of to set_volume(0) — twice.
+  let description = "Remove the background music track that add_music added. Not for muting the video's own sound — set_volume 0 does that."
   func call(arguments: NoArguments) async throws -> String {
     try await VideoEditBox.shared.preload()
     return VideoEditBox.shared.removeMusic()
@@ -956,7 +963,7 @@ struct MakeReelTool: Tool {
   // first and then called this, or walked the steps by hand and forgot the
   // export (Mac, 2026-08-19).
   let description =
-    "Turn the video into a ready-to-post vertical Reel: this one call does the 9:16 crop, the fade-out and the export itself — no other calls needed."
+    "When the user asks for a Reel, call only this: one call does the 9:16 crop, the fade-out and the export itself. Never call crop_video, add_fade or export_video alongside it."
   @Generable struct Arguments {
     @Guide(description: "Optional caption shown at the bottom for the first seconds; omit for none.")
     var caption: String?
@@ -989,7 +996,7 @@ struct RevertVideoTool: Tool {
 @available(iOS 27.0, *)
 struct ExportVideoTool: Tool {
   let name = "export_video"
-  let description = "Render the edited video and save it to the photo library."
+  let description = "Export: render the edited video and save it to the photo library."
   func call(arguments: NoArguments) async throws -> String {
     try await VideoEditBox.shared.preload()
     return try await VideoEditBox.shared.export()

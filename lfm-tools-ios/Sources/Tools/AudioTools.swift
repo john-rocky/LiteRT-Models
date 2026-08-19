@@ -754,7 +754,8 @@ struct SetTempoTool: Tool {
   let name = "set_tempo"
   let description = "Change the song's tempo."
   @Generable struct Arguments {
-    @Guide(description: "Beats per minute, 60–200. The current tempo is in the song state.") var bpm: Int
+    @Guide(description: "Beats per minute, 60–200. The current tempo is in the song state. If the user asked for a change without saying how fast, do not call this — ask what tempo.")
+    var bpm: Int
   }
   func call(arguments: Arguments) async throws -> String {
     AudioBox.shared.setTempo(arguments.bpm)
@@ -764,7 +765,7 @@ struct SetTempoTool: Tool {
 @available(iOS 27.0, *)
 struct SetBarsTool: Tool {
   let name = "set_song_length"
-  let description = "Make the whole song longer or shorter, in bars."
+  let description = "Set how many bars the song loops — its length. Not for fades or endings."
   @Generable struct Arguments {
     @Guide(description: "Length in bars.", .anyOf(["4", "8", "16"])) var bars: String
   }
@@ -776,7 +777,7 @@ struct SetBarsTool: Tool {
 @available(iOS 27.0, *)
 struct SongFadeTool: Tool {
   let name = "add_fade"
-  let description = "Fade the whole song in from silence at the start, out to silence at the end, or both."
+  let description = "Fade the volume: in from silence at the start of the song, out to silence at its end, or both."
   @Generable struct Arguments {
     @Guide(description: "Which end.", .anyOf(["in", "out", "both"])) var which: String
     @Guide(description: "Length of the fade in seconds. 2 is typical.") var seconds: Double
