@@ -68,10 +68,15 @@ final class ShopBox: @unchecked Sendable {
     let (results, how, cart, coupon) = sync { (results, resultsHow, cart, coupon) }
     var line = ""
     if results.isEmpty {
-      line = "Results: none yet — search the catalog first."
+      // Bare on purpose: "none yet — search the catalog first" was read as a
+      // command, and "Add it to the cart." obeyed it with an invented query
+      // instead of asking which item (the state-line recipe).
+      line = "Results: none."
     } else {
+      // Brand first: "the Sony ones" is a sentence the user will say, and a
+      // reference the state's titles alone cannot resolve.
       let listed = results.prefix(6).enumerated().map { index, item in
-        "\(index + 1) \(item.name) \(StoreBox.yen(item.price)) ★\(String(format: "%.1f", item.rating))"
+        "\(index + 1) \(item.brand) \(item.name) \(StoreBox.yen(item.price)) ★\(String(format: "%.1f", item.rating))"
       }
       let more = results.count > 6 ? ", and \(results.count - 6) more" : ""
       line = "Results (\(how)): " + listed.joined(separator: "; ") + more + "."
@@ -124,7 +129,7 @@ final class ShopBox: @unchecked Sendable {
       title: results.isEmpty ? "Catalog" : "Results — \(how)",
       columns: ["#", "Item", "Price", "Rating", "Ships"],
       rows: (results.isEmpty ? Catalog.items : results).enumerated().map { index, item in
-        ["\(index + 1)", item.name, StoreBox.yen(item.price),
+        ["\(index + 1)", "\(item.brand) \(item.name)", StoreBox.yen(item.price),
          "★\(String(format: "%.1f", item.rating)) (\(item.reviews))",
          item.shipsToday ? "today" : "2–3 d"]
       },
@@ -258,9 +263,20 @@ final class ShopBox: @unchecked Sendable {
     }
   }
 
-  func changeQuantity(itemNamed name: String, to quantity: Int) -> String {
-    guard let index = cartLine(named: name) else {
-      return "nothing in the cart matches \"\(name)\""
+  func changeQuantity(itemNamed name: String?, to quantity: Int) -> String {
+    // No name given: "make it just one" means the only cart line there is.
+    // Copying "Wireless Earbuds Lite" out of the state was the barrier that
+    // sent quantity edits to add_to_cart, which takes a result number.
+    let index: Int?
+    if let name, !name.isEmpty {
+      index = cartLine(named: name)
+    } else {
+      index = sync { cart.count == 1 ? 0 : nil }
+    }
+    guard let index else {
+      if let name, !name.isEmpty { return "nothing in the cart matches \"\(name)\"" }
+      return sync { cart.isEmpty }
+        ? "the cart is empty" : "the cart has several items — say which one"
     }
     let itemName = Catalog.item(sync { cart[index].itemID })?.name ?? name
     if quantity <= 0 {
@@ -367,7 +383,10 @@ struct SearchCatalogTool: Tool {
   let name = "search_catalog"
   let description = "Search the shop for products; the results are numbered."
   @Generable struct Arguments {
-    @Guide(description: "What to look for, e.g. wireless earbuds.") var query: String
+    // No example here: "Add it to the cart." with no results searched for
+    // the guide's example phrase verbatim — an example is invent-fodder for
+    // a query the user never said.
+    @Guide(description: "What to look for.") var query: String
   }
   func call(arguments: Arguments) async throws -> String {
     ShopBox.shared.search(arguments.query)
@@ -426,10 +445,13 @@ struct AddToCartTool: Tool {
 
 @available(iOS 27.0, *)
 struct ChangeQuantityTool: Tool {
-  let name = "change_quantity"
-  let description = "Change how many of a cart item to buy. 0 removes it."
+  // "set", not "change": "make it just one" is a set-operation in the
+  // user's sentence, and the model was composing it out of remove + add.
+  let name = "set_quantity"
+  let description = "Set how many of a cart item to buy. 0 removes it."
   @Generable struct Arguments {
-    @Guide(description: "The item, by (part of) its name as the cart shows it.") var item: String
+    @Guide(description: "The item, by (part of) its name as the cart shows it. Omit it when the user means the only item in the cart.")
+    var item: String?
     @Guide(description: "The new quantity; 0 removes it.") var quantity: Int
   }
   func call(arguments: Arguments) async throws -> String {
