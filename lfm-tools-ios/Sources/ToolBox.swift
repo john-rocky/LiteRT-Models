@@ -204,16 +204,19 @@ enum ToolBox {
   ]
 
   /// The store pack (Tools/StoreTools.swift): a Shopify admin's menu over
-  /// canned products and orders. A filter or search makes a selection; the
-  /// bulk actions act on it. Discrimination axes: update_price (percent)
-  /// vs set_price (amount); search vs filter vs find_low_stock; fulfil vs
-  /// remind; and a selection that has to exist before an action — the
-  /// chain "filter, then act" is the pack.
+  /// canned products and orders — the Commerce pack of the business wing,
+  /// extended to the spec on 2026-08-20. A filter or search makes a
+  /// selection; the bulk actions act on it. Discrimination axes:
+  /// adjust_product_price (relative) vs set_price (absolute); search vs
+  /// filter vs find_low_stock vs get_product; fulfil vs refund vs cancel
+  /// (the status-verb triangle, both gated); customers vs their orders;
+  /// and a selection that has to exist before a bulk action.
   static let store: [any FoundationModels.Tool] = [
-    SearchProductsTool(), FilterProductsTool(), LowStockTool(),
-    UpdatePriceTool(), SetPriceTool(), AddTagTool(), SetProductStatusTool(), AdjustInventoryTool(),
+    SearchProductsTool(), FilterProductsTool(), LowStockTool(), GetProductTool(),
+    AdjustProductPriceTool(), SetPriceTool(), AddTagTool(), SetProductStatusTool(), AdjustInventoryTool(),
     SearchOrdersTool(), FilterOrdersTool(), FulfillOrdersTool(), SendInvoiceTool(),
-    RefundOrderTool(), OrderNoteTool(),
+    RefundOrderTool(), CancelOrderTool(), OrderNoteTool(),
+    SearchCustomersTool(), CreateDiscountTool(),
     SalesSummaryTool(), ExportProductsTool(),
     UndoLastTool(target: .store), AskUserTool(),
   ]
@@ -461,7 +464,8 @@ enum ToolBox {
     vendor, tag, type or status come from filter_products, and lists of
     orders from filter_orders or search_orders. Showing or listing records
     is a finder call — the counts in the state only answer how-many
-    questions. refund_order takes its order number directly; do not search
+    questions. refund_order and cancel_order take their order number
+    directly; do not search
     first, and never invent a number — call ask_user when one is missing,
     but never ask about a detail the request or the state already gives. Do only
     what was asked, nothing more.

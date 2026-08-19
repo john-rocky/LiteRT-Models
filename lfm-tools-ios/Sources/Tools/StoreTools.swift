@@ -53,19 +53,21 @@ final class StoreBox: @unchecked Sendable {
   private var orders: [Order] = StoreData.orders
   private var selection: Selection = .none
   private var invoicesSent = 0
-  /// A refund waiting on the user's yes (the confirm pattern): what the
-  /// state names until refund_order is called again with confirm true.
+  private var discounts: [String] = []
+  /// A refund or cancellation waiting on the user's yes (the confirm
+  /// pattern): what the state names until the tool is called again with
+  /// confirm true.
   private var pendingConfirmation: String?
-  private let history = UndoStack<([Product], [Order], Selection, String)>()
+  private let history = UndoStack<([Product], [Order], [String], Selection, String)>()
 
   private func pushHistory(_ what: String) {
-    history.push((products, orders, selection, selectionHow), what)
+    history.push((products, orders, discounts, selection, selectionHow), what)
   }
   private var selectionHow = ""
 
   func undoLast() -> String {
     guard let (snap, what) = history.pop() else { return "nothing to undo" }
-    sync { (products, orders, selection, selectionHow) = snap }
+    sync { (products, orders, discounts, selection, selectionHow) = snap }
     post()
     return "undid the last change (\(what))"
   }
@@ -103,7 +105,7 @@ final class StoreBox: @unchecked Sendable {
     if let pending = sync({ pendingConfirmation }) { line += " Awaiting confirmation: \(pending)." }
     switch selection {
     case .none:
-      line += " Selection: none. Only the bulk tools (reprice, tag, status, stock, fulfil, remind, note) need a search or filter first; refund_order acts straight on its order number, and reports need no selection."
+      line += " Selection: none. Only the bulk tools (reprice, tag, status, stock, fulfil, remind, note) need a search or filter first; refund_order and cancel_order act straight on their order number, and reports need no selection."
     case .products(let ids, let how):
       let rows = ids.compactMap { id in products.first { $0.id == id } }
       let names = rows.prefix(6).map { "\($0.title) (\(Self.yen($0.price)), stock \($0.stock))" }
@@ -184,7 +186,7 @@ final class StoreBox: @unchecked Sendable {
   /// Wool" a coin toss between two tools, and a bench cannot score a coin
   /// toss.
   func searchProducts(_ query: String) -> String {
-    let needle = query.lowercased().trimmingCharacters(in: .whitespaces)
+    let needle = StoreData.romaji(query)
     let words = needle.split(separator: " ").map(String.init)
     let rows = sync { products }.filter { p in
       needle.isEmpty || words.allSatisfy { p.title.lowercased().contains($0) }
@@ -215,7 +217,7 @@ final class StoreBox: @unchecked Sendable {
   /// A second finder on orders — by who placed them. search vs filter is a
   /// discrimination axis on the order side too.
   func searchOrders(customer: String) -> String {
-    let needle = customer.lowercased().trimmingCharacters(in: .whitespaces)
+    let needle = StoreData.romaji(customer)
     let rows = sync { orders }.filter { $0.customer.lowercased().contains(needle) }
       .sorted { $0.daysAgo < $1.daysAgo }
     return selectOrders(rows, how: "customer \"\(customer)\"")
@@ -263,13 +265,25 @@ final class StoreBox: @unchecked Sendable {
     return "\(caption) on \(rows.count) product\(rows.count == 1 ? "" : "s"):\n" + listed.joined(separator: "\n")
   }
 
-  func updatePrice(percent: Double) -> String {
-    let factor = 1 + percent / 100
-    let word = percent < 0 ? "cut" : "raised"
-    return updateSelectedProducts("prices \(word) \(Self.pct(abs(percent)))%") { p in
-      // Round to a price a shop would print: nearest ¥10.
-      p.price = max(0, Int((Double(p.price) * factor / 10).rounded()) * 10)
+  /// The relative half of the price pair (set_price is the absolute one):
+  /// a percentage or a flat yen change, one of the two. Extended from the
+  /// percent-only update_price when the Commerce spec landed (2026-08-20).
+  func adjustPrice(percent: Double?, amount: Int?) -> String {
+    if let percent, amount == nil {
+      let factor = 1 + percent / 100
+      let word = percent < 0 ? "cut" : "raised"
+      return updateSelectedProducts("prices \(word) \(Self.pct(abs(percent)))%") { p in
+        // Round to a price a shop would print: nearest ¥10.
+        p.price = max(0, Int((Double(p.price) * factor / 10).rounded()) * 10)
+      }
     }
+    if let amount, percent == nil {
+      let word = amount < 0 ? "cut" : "raised"
+      return updateSelectedProducts("prices \(word) \(Self.yen(abs(amount)))") { p in
+        p.price = max(0, p.price + amount)
+      }
+    }
+    return "give a percentage or a yen amount — one of the two"
   }
 
   func setPrice(_ amount: Int) -> String {
@@ -359,6 +373,122 @@ final class StoreBox: @unchecked Sendable {
     return result
   }
 
+  /// One product's full record, by name — the read half beside
+  /// search_products. Several matches list themselves; none says so.
+  func getProduct(name: String) -> String {
+    let needle = StoreData.romaji(name)
+    let words = needle.split(separator: " ").map(String.init)
+    let rows = sync { products }.filter { p in
+      !needle.isEmpty && words.allSatisfy { p.title.lowercased().contains($0) }
+    }
+    guard !rows.isEmpty else { return "no product matches \"\(name)\"" }
+    guard rows.count == 1 else {
+      return "\(rows.count) products match \"\(name)\": " + rows.map(\.title).joined(separator: "; ")
+    }
+    let p = rows[0]
+    return "\(p.title) — \(Self.yen(p.price)), stock \(p.stock), \(p.status); vendor \(p.vendor), type \(p.type)"
+      + (p.tags.isEmpty ? "" : ", tags: \(p.tags.joined(separator: ", "))")
+  }
+
+  /// The third corner of the status-verb triangle (fulfil / refund /
+  /// cancel), gated like refund: cancelling is permanent, so the first
+  /// call comes in with confirm false and relays the question.
+  func cancel(order number: Int, confirmed: Bool) -> String {
+    let result: String = sync {
+      guard let index = orders.firstIndex(where: { $0.number == number }) else {
+        return "there is no order #\(number)"
+      }
+      let o = orders[index]
+      guard o.fulfillment != "fulfilled" else {
+        return "order #\(number) has already shipped — refund_order is the tool for a shipped order"
+      }
+      guard o.fulfillment != "cancelled" else { return "order #\(number) is already cancelled" }
+      guard confirmed else {
+        pendingConfirmation = "cancel order #\(o.number) (\(o.customer), \(Self.yen(o.total)))"
+        return "cancelling order #\(o.number) (\(o.customer), \(Self.yen(o.total))) is permanent — ask the user to confirm, then call cancel_order again with confirm true"
+      }
+      pendingConfirmation = nil
+      pushHistory("cancellation")
+      orders[index].fulfillment = "cancelled"
+      let refunded = orders[index].payment == "paid"
+      if refunded { orders[index].payment = "refunded" }
+      let done = orders[index]
+      ArtifactBox.shared.post(.table(
+        title: "cancelled #\(done.number)",
+        columns: ["Order", "Customer", "Total", "Payment", "Fulfilment"],
+        rows: [["#\(done.number)", done.customer, Self.yen(done.total), done.payment, done.fulfillment]]))
+      return "cancelled order #\(done.number) (\(done.customer), \(Self.yen(done.total)))"
+        + (refunded ? " — the payment was refunded" : "")
+    }
+    return result
+  }
+
+  /// Customers are the orders folded by name: who they are, how to reach
+  /// them, what they have spent. Derived, never stored — the totals can't
+  /// drift from the orders.
+  func searchCustomers(name: String?, email: String?, spentAbove: Int?) -> String {
+    struct Customer {
+      let name: String
+      let email: String
+      var total: Int
+      var count: Int
+    }
+    var byName: [String: Customer] = [:]
+    for order in sync({ orders }) where order.payment != "refunded" && order.fulfillment != "cancelled" {
+      let email = order.customer.lowercased().replacingOccurrences(of: " ", with: ".") + "@example.com"
+      byName[order.customer, default: Customer(name: order.customer, email: email, total: 0, count: 0)]
+        .total += order.total
+      byName[order.customer]!.count += 1
+    }
+    var rows = Array(byName.values)
+    var how: [String] = []
+    if let name, !name.isEmpty {
+      let needle = StoreData.romaji(name)
+      rows = rows.filter { $0.name.lowercased().contains(needle) }
+      how.append("name \"\(name)\"")
+    }
+    if let email, !email.isEmpty {
+      let needle = email.lowercased()
+      rows = rows.filter { $0.email.contains(needle) }
+      how.append("email \"\(email)\"")
+    }
+    if let spentAbove {
+      rows = rows.filter { $0.total >= spentAbove }
+      how.append("spent \(Self.yen(spentAbove))+")
+    }
+    let caption = how.isEmpty ? "all customers" : how.joined(separator: ", ")
+    let sorted = rows.sorted { $0.total > $1.total }
+    guard !sorted.isEmpty else { return "no customers match \(caption)" }
+    ArtifactBox.shared.post(.table(
+      title: "\(sorted.count) customer\(sorted.count == 1 ? "" : "s") — \(caption)",
+      columns: ["Customer", "Email", "Spent", "Orders"],
+      rows: sorted.prefix(8).map { [$0.name, $0.email, Self.yen($0.total), String($0.count)] }))
+    return "\(sorted.count) customer\(sorted.count == 1 ? "" : "s") (\(caption)):\n"
+      + sorted.prefix(8).map { "\($0.name) (\($0.email)) — \(Self.yen($0.total)) across \($0.count) order\($0.count == 1 ? "" : "s")" }
+        .joined(separator: "\n")
+      + (sorted.count > 8 ? "\n… and \(sorted.count - 8) more" : "")
+  }
+
+  /// A discount is a record, not a price change: the products keep their
+  /// prices and the discount applies at the register. Percentage or amount,
+  /// one of the two.
+  func createDiscount(percentage: Double?, amount: Int?, products: String?, expiresAt: String?) -> String {
+    let off: String
+    if let percentage, amount == nil {
+      off = "\(Self.pct(percentage))% off"
+    } else if let amount, percentage == nil {
+      off = "\(Self.yen(amount)) off"
+    } else {
+      return "give a percentage or a yen amount — one of the two"
+    }
+    let scope = (products?.isEmpty == false) ? "products matching \"\(products!)\"" : "all products"
+    sync {
+      pushHistory("discount")
+      discounts.append("\(off) — \(scope)" + (expiresAt.map { ", until \($0)" } ?? ""))
+    }
+    return "created a discount: \(off) for \(scope)" + (expiresAt.map { ", until \($0)" } ?? "")
+  }
+
   func addOrderNote(_ note: String) -> String {
     guard let numbers = selectedOrders() else { return Self.needOrders }
     sync {
@@ -430,6 +560,26 @@ final class StoreBox: @unchecked Sendable {
 /// from "today", so `sales_summary(7)` means the same thing on any date.
 @available(iOS 27.0, *)
 enum StoreData {
+  /// The names the Japanese beats say, mapped to how the canned rows spell
+  /// them — the money pack's kana lesson. Compound product words map whole
+  /// (リネンシャツ, not リネン + シャツ) so one key never shadows another.
+  static let kana: [String: String] = [
+    "リネンシャツ": "linen shirt", "オックスフォードシャツ": "oxford shirt",
+    "デニムジャケット": "denim jacket", "ウールマフラー": "wool scarf",
+    "ウールビーニー": "wool beanie", "キャンバストート": "canvas tote",
+    "ウールブランケット": "wool blanket", "レインポンチョ": "rain poncho",
+    "田中": "tanaka", "タナカ": "tanaka", "渡辺": "watanabe", "ワタナベ": "watanabe",
+    "佐藤": "sato", "サトウ": "sato", "森": "mori", "モリ": "mori",
+    "伊藤": "ito", "イトウ": "ito", "林": "hayashi", "ハヤシ": "hayashi",
+    "加藤": "kato", "カトウ": "kato", "中村": "nakamura", "ナカムラ": "nakamura",
+  ]
+
+  static func romaji(_ text: String) -> String {
+    let needle = text.lowercased().trimmingCharacters(in: .whitespaces)
+    for (kana, latin) in kana where needle.contains(kana.lowercased()) { return latin }
+    return needle
+  }
+
   static let products: [StoreBox.Product] = [
     .init(id: 1, title: "Linen Shirt", vendor: "Kanda Goods", type: "Shirts", tags: ["summer", "new"], price: 6800, stock: 3, status: "active"),
     .init(id: 2, title: "Oxford Shirt", vendor: "Kanda Goods", type: "Shirts", tags: ["classic"], price: 7200, stock: 14, status: "active"),
@@ -522,15 +672,78 @@ struct LowStockTool: Tool {
 }
 
 @available(iOS 27.0, *)
-struct UpdatePriceTool: Tool {
-  let name = "update_price"
-  let description = "Change the price of the selected products by a percentage."
+struct AdjustProductPriceTool: Tool {
+  let name = "adjust_product_price"
+  let description =
+    "Change the price of the selected products by a percentage or a yen amount — relative; set_price sets the exact price."
   @Generable struct Arguments {
     @Guide(description: "Percent change: -10 lowers prices by 10%, 15 raises them by 15%.")
-    var percent_change: Double
+    var percentage: Double?
+    @Guide(description: "Yen change: -500 cuts ¥500 off each price, 300 adds ¥300.")
+    var amount: Int?
   }
   func call(arguments: Arguments) async throws -> String {
-    StoreBox.shared.updatePrice(percent: arguments.percent_change)
+    StoreBox.shared.adjustPrice(percent: arguments.percentage, amount: arguments.amount)
+  }
+}
+
+@available(iOS 27.0, *)
+struct GetProductTool: Tool {
+  let name = "get_product"
+  let description = "One product's full details, by name."
+  @Generable struct Arguments {
+    @Guide(description: "The product's name, or part of it.") var name: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    StoreBox.shared.getProduct(name: arguments.name)
+  }
+}
+
+@available(iOS 27.0, *)
+struct CancelOrderTool: Tool {
+  let name = "cancel_order"
+  let description = "Cancel one order before it ships — it will not be fulfilled; a paid order gets its money back."
+  @Generable struct Arguments {
+    @Guide(description: "The order number, e.g. 1008, from the request or the state — no need to search first. If no order is identified anywhere, call ask_user instead.")
+    var order_number: Int
+    @Guide(description: "Pass false unless the user has already said yes to this exact cancellation; false shows them what will happen so they can decide.")
+    var confirm: Bool
+  }
+  func call(arguments: Arguments) async throws -> String {
+    StoreBox.shared.cancel(order: arguments.order_number, confirmed: arguments.confirm)
+  }
+}
+
+@available(iOS 27.0, *)
+struct SearchCustomersTool: Tool {
+  let name = "search_customers"
+  let description = "Find customers by name, email or how much they have spent — who they are and their totals, not their orders."
+  @Generable struct Arguments {
+    @Guide(description: "Part of the customer's name.") var name: String?
+    @Guide(description: "Part of their email address.") var email: String?
+    @Guide(description: "Only customers who have spent at least this much, in yen.") var total_spent_above: Int?
+  }
+  func call(arguments: Arguments) async throws -> String {
+    StoreBox.shared.searchCustomers(
+      name: arguments.name, email: arguments.email, spentAbove: arguments.total_spent_above)
+  }
+}
+
+@available(iOS 27.0, *)
+struct CreateDiscountTool: Tool {
+  let name = "create_discount"
+  let description = "Create a discount — a percentage or a yen amount off, for some products or all."
+  @Generable struct Arguments {
+    @Guide(description: "Percent off, e.g. 10 for 10% off.") var percentage: Double?
+    @Guide(description: "Yen off, e.g. 500 for ¥500 off.") var amount: Int?
+    @Guide(description: "Words from product names or a tag it applies to; leave it out for all products.")
+    var products: String?
+    @Guide(description: "When it stops working, YYYY-MM-DD.") var expires_at: String?
+  }
+  func call(arguments: Arguments) async throws -> String {
+    StoreBox.shared.createDiscount(
+      percentage: arguments.percentage, amount: arguments.amount,
+      products: arguments.products, expiresAt: arguments.expires_at)
   }
 }
 
@@ -589,7 +802,7 @@ struct FilterOrdersTool: Tool {
   @Generable struct Arguments {
     @Guide(description: "Payment status, or any.", .anyOf(["any", "paid", "pending", "refunded"]))
     var payment_status: String
-    @Guide(description: "Fulfilment status, or any.", .anyOf(["any", "unfulfilled", "fulfilled", "partial"]))
+    @Guide(description: "Fulfilment status, or any.", .anyOf(["any", "unfulfilled", "fulfilled", "partial", "cancelled"]))
     var fulfillment_status: String
   }
   func call(arguments: Arguments) async throws -> String {

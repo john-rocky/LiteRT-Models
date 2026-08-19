@@ -219,9 +219,10 @@ enum BenchToolBox {
     RecordingTool(base: SearchProductsTool(), canned: "", respond: { StoreEcho.search($0.query) }),
     RecordingTool(base: FilterProductsTool(), canned: "", respond: { StoreEcho.filter(by: $0.by, value: $0.value) }),
     RecordingTool(base: LowStockTool(), canned: "", respond: { StoreEcho.lowStock(below: $0.below) }),
+    RecordingTool(base: GetProductTool(), canned: "", respond: { StoreEcho.product($0.name) }),
     // Bulk fakes are honest about the selection: with nothing selected the
     // real app refuses, and so do these (BenchSelection, primed per case).
-    RecordingTool(base: UpdatePriceTool(), canned: "", respond: { _ in
+    RecordingTool(base: AdjustProductPriceTool(), canned: "", respond: { _ in
       StoreFake.onProducts("prices changed on the selected products") }),
     RecordingTool(base: SetPriceTool(), canned: "", respond: { _ in
       StoreFake.onProducts("price set on the selected products") }),
@@ -247,6 +248,17 @@ enum BenchToolBox {
           ? "refunded order #\(args.order_number) in full"
           : "refunding order #\(args.order_number) is permanent — ask the user to confirm, then call refund_order again with confirm true"
       }),
+    RecordingTool(
+      base: CancelOrderTool(), canned: "",
+      respond: { args in
+        args.confirm
+          ? "cancelled order #\(args.order_number) — it will not ship"
+          : "cancelling order #\(args.order_number) is permanent — ask the user to confirm, then call cancel_order again with confirm true"
+      }),
+    RecordingTool(
+      base: SearchCustomersTool(), canned: "",
+      respond: { StoreEcho.customers(name: $0.name, email: $0.email, spentAbove: $0.total_spent_above) }),
+    RecordingTool(base: CreateDiscountTool(), canned: "discount created — it is in the discounts list"),
     AskUserTool(),
     RecordingTool(base: UndoLastTool(target: .store), canned: "undid the last change"),
     RecordingTool(base: OrderNoteTool(), canned: "", respond: { _ in
@@ -556,12 +568,62 @@ enum BenchToolBox {
     }
 
     static func search(_ query: String) -> String {
-      let needle = query.lowercased().trimmingCharacters(in: .whitespaces)
+      let needle = StoreData.romaji(query)
       let words = needle.split(separator: " ").map(String.init)
       let matched = StoreData.products.filter { p in
         needle.isEmpty || words.allSatisfy { p.title.lowercased().contains($0) }
       }
       return renderProducts(matched, how: needle.isEmpty ? "all products" : "search \"\(query)\"")
+    }
+
+    static func product(_ name: String) -> String {
+      let needle = StoreData.romaji(name)
+      let words = needle.split(separator: " ").map(String.init)
+      let matched = StoreData.products.filter { p in
+        !needle.isEmpty && words.allSatisfy { p.title.lowercased().contains($0) }
+      }
+      guard !matched.isEmpty else { return "no product matches \"\(name)\"" }
+      guard matched.count == 1 else {
+        return "\(matched.count) products match \"\(name)\": " + matched.map(\.title).joined(separator: "; ")
+      }
+      let p = matched[0]
+      return "\(p.title) — \(StoreBox.yen(p.price)), stock \(p.stock), \(p.status); vendor \(p.vendor), type \(p.type)"
+        + (p.tags.isEmpty ? "" : ", tags: \(p.tags.joined(separator: ", "))")
+    }
+
+    static func customers(name: String?, email: String?, spentAbove: Int?) -> String {
+      struct Customer {
+        var total = 0
+        var count = 0
+      }
+      var byName: [String: Customer] = [:]
+      for order in StoreData.orders where order.payment != "refunded" {
+        byName[order.customer, default: Customer()].total += order.total
+        byName[order.customer]!.count += 1
+      }
+      var rows = byName.map { (name: $0.key, email: $0.key.lowercased().replacingOccurrences(of: " ", with: ".") + "@example.com", total: $0.value.total, count: $0.value.count) }
+      var how: [String] = []
+      if let name, !name.isEmpty {
+        let needle = StoreData.romaji(name)
+        rows = rows.filter { $0.name.lowercased().contains(needle) }
+        how.append("name \"\(name)\"")
+      }
+      if let email, !email.isEmpty {
+        let needle = email.lowercased()
+        rows = rows.filter { $0.email.contains(needle) }
+        how.append("email \"\(email)\"")
+      }
+      if let spentAbove {
+        rows = rows.filter { $0.total >= spentAbove }
+        how.append("spent \(StoreBox.yen(spentAbove))+")
+      }
+      let caption = how.isEmpty ? "all customers" : how.joined(separator: ", ")
+      let sorted = rows.sorted { $0.total > $1.total }
+      guard !sorted.isEmpty else { return "no customers match \(caption)" }
+      return "\(sorted.count) customer\(sorted.count == 1 ? "" : "s") (\(caption)):\n"
+        + sorted.prefix(8).map { "\($0.name) (\($0.email)) — \(StoreBox.yen($0.total)) across \($0.count) order\($0.count == 1 ? "" : "s")" }
+          .joined(separator: "\n")
+        + (sorted.count > 8 ? "\n… and \(sorted.count - 8) more" : "")
     }
 
     static func filter(by field: String, value: String) -> String {
