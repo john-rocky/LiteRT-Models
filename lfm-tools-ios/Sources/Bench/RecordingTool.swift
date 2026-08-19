@@ -936,6 +936,21 @@ enum BenchToolBox {
     }
   }
 
+  /// The business wing merged: CRM + PM + Commerce in one list, the rails
+  /// deduplicated by name (three packs each carry ask_user and undo_last;
+  /// a session cannot hold two tools with one name). 41 tools — the
+  /// cross-domain instrument: 「昨日の未発送注文」 must find the store's
+  /// order filter with the CRM and the board in the room.
+  static let business: [any FoundationModels.Tool] = {
+    var seen = Set<String>()
+    var merged: [any FoundationModels.Tool] = []
+    for tool in crm + pm + store where !seen.contains(tool.name) {
+      seen.insert(tool.name)
+      merged.append(tool)
+    }
+    return merged
+  }()
+
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {
     switch name {
@@ -952,6 +967,7 @@ enum BenchToolBox {
     case "inbox": return inbox
     case "crm": return crm
     case "pm": return pm
+    case "business": return business
     default: return nil
     }
   }

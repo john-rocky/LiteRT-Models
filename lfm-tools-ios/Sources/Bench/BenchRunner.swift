@@ -77,6 +77,16 @@ enum BenchRunner {
       out.write(["type": "error", "what": "unknown toolset \(toolsetName)"])
       return
     }
+    // `--instructions <pack>` pins the instructions independently of the
+    // tool list — the cross-domain runs grow the list while each pack's
+    // cases keep their own measured instructions, so tool count is the
+    // only variable (the business wing's evaluation program).
+    var instructionsName = toolsetName
+    if let flag = CommandLine.arguments.firstIndex(of: "--instructions"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    {
+      instructionsName = CommandLine.arguments[flag + 1].lowercased()
+    }
 
     let chosen: Chosen
     if CommandLine.arguments.contains("--model"),
@@ -155,7 +165,7 @@ enum BenchRunner {
       // A fresh session per case: no history, no carried KV, every case pays
       // the same prefill. Cross-turn behavior is a different benchmark.
       let session: LanguageModelSession
-      let instructions = BenchToolBox.instructions(for: toolsetName)
+      let instructions = BenchToolBox.instructions(for: instructionsName)
       #if canImport(LiteRTLM)
         if let model = liteRTModel {
           session = LanguageModelSession(model: model, tools: tools, instructions: instructions)
@@ -263,6 +273,7 @@ enum BenchRunner {
 
       var line: [String: Any] = [
         "case": benchCase.id, "lang": benchCase.lang, "model": modelName,
+        "toolset": toolsetName,
         "input": benchCase.input,
         "expected": expected, "called": called,
         "calls": calls.map { ["tool": $0.tool, "args": $0.raw] },
