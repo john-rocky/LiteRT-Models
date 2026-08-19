@@ -275,6 +275,18 @@ enum ToolBox {
     UndoLastTool(target: .crm), AskUserTool(),
   ]
 
+  /// The PM pack (Tools/PMTools.swift): a Jira board over a frozen sprint.
+  /// One finder makes the selection; every action takes its issue id. The
+  /// four change_* verbs (assign / status / priority / due date) and
+  /// close-vs-status are deliberately similar — the pack is dense with the
+  /// bench's central question on purpose.
+  static let pm: [any FoundationModels.Tool] = [
+    SearchIssuesTool(), GetIssueTool(), CreateIssueTool(),
+    AssignIssueTool(), ChangeIssueStatusTool(), ChangeIssuePriorityTool(), ChangeDueDateTool(),
+    AddCommentTool(), CloseIssueTool(),
+    UndoLastTool(target: .pm), AskUserTool(),
+  ]
+
   /// The inbox pack (Tools/InboxTools.swift): mail triage over fifteen canned
   /// messages. list/search select; archive/snooze/flag act on the selection;
   /// draft_reply writes, never sends.
@@ -362,6 +374,25 @@ enum ToolBox {
     report the results and stop. Answer questions the state already answers
     without a tool. When a tool has returned, answer the user in one short
     sentence using its result.
+    """
+
+  static let pmInstructions = """
+    You are operating the user's issue tracker through tools. Every message
+    starts with the board's current state: today's date, the projects, the
+    issue counts by status and priority, the assignees, and the current
+    selection — the issues the last search found. Tools that take an issue
+    id (get_issue, assign, change status, change priority, change due date,
+    add_comment, close) act straight on an id from the request or the
+    selection in the state — no search call first. Showing or listing
+    issues is a search call — the counts in the state only answer how-many
+    questions. Dates in arguments are absolute, YYYY-MM-DD: count them from
+    the today the state names. When a request lists several steps, call the
+    tools one after another in that order. When something required is truly
+    absent — a change with no issue named anywhere — call ask_user; never
+    ask about a detail the request or the state already gives. Do only what
+    was asked: after a search returns, report the results and stop. Answer
+    questions the state already answers without a tool. When a tool has
+    returned, answer the user in one short sentence using its result.
     """
 
   static let inboxInstructions = """

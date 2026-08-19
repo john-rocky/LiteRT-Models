@@ -389,6 +389,32 @@ enum BenchToolBox {
     RecordingTool(base: UndoLastTool(target: .crm), canned: "undid the last change"),
   ]
 
+  /// The PM pack against the frozen sprint. Echoes from day one — the
+  /// starvation neutral fakes cause was re-measured on the CRM pack the
+  /// same week (get-tails on every Japanese finder, confabulated rows);
+  /// that lesson is not bought again. Actions stay neutral; nothing here
+  /// mutates.
+  static let pm: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: SearchIssuesTool(), canned: "",
+      respond: {
+        PmEcho.issues(
+          project: $0.project, status: $0.status, priority: $0.priority,
+          assignee: $0.assignee, creator: $0.creator, keyword: $0.keyword,
+          dueFrom: $0.due_from, dueTo: $0.due_by)
+      }),
+    RecordingTool(base: GetIssueTool(), canned: "", respond: { PmEcho.issue($0.id) }),
+    RecordingTool(base: CreateIssueTool(), canned: "issue created — it is on the board"),
+    RecordingTool(base: AssignIssueTool(), canned: "assignee changed — the board is on screen"),
+    RecordingTool(base: ChangeIssueStatusTool(), canned: "status changed — the board is on screen"),
+    RecordingTool(base: ChangeIssuePriorityTool(), canned: "priority changed — the board is on screen"),
+    RecordingTool(base: ChangeDueDateTool(), canned: "due date changed — the board is on screen"),
+    RecordingTool(base: AddCommentTool(), canned: "comment added"),
+    RecordingTool(base: CloseIssueTool(), canned: "closed — it left the open board"),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .pm), canned: "undid the last change"),
+  ]
+
   /// The inbox pack against the fifteen canned messages — finders echo
   /// dynamically: a pure render over the same frozen world the real tools
   /// compute over, arguments reflected. The neutral fakes ("the matching
@@ -577,6 +603,89 @@ enum BenchToolBox {
       if p != "any" { parts.append("payment \(p)") }
       if f != "any" { parts.append(f) }
       return renderOrders(matched, how: parts.isEmpty ? "all orders" : parts.joined(separator: ", "))
+    }
+  }
+
+  /// Pure renders of the PM finder and get over the frozen sprint — the
+  /// same filters, kana normalization and row format as IssueBox
+  /// (IssueBox.oneLine is shared), selection state left out.
+  enum PmEcho {
+    static func issues(
+      project: String?, status: String?, priority: String?, assignee: String?,
+      creator: String?, keyword: String?, dueFrom: String?, dueTo: String?
+    ) -> String {
+      var how: [String] = []
+      var rows = PmData.issues
+      if let project, !project.isEmpty {
+        let want = project.lowercased()
+        guard let canonical = PmData.projects.first(where: { $0.lowercased() == want }) else {
+          return "no project called \(project) — the projects are \(PmData.projects.joined(separator: ", "))"
+        }
+        rows = rows.filter { $0.project == canonical }
+        how.append("project \(canonical)")
+      }
+      if let status, !status.isEmpty {
+        let want = status.lowercased()
+        guard PmData.statuses.contains(want) else {
+          return "unknown status; the statuses are \(PmData.statuses.joined(separator: ", "))"
+        }
+        rows = rows.filter { $0.status == want }
+        how.append("status \(want)")
+      }
+      if let priority, !priority.isEmpty {
+        let want = priority.uppercased()
+        guard PmData.priorities.contains(want) else {
+          return "unknown priority; the priorities are \(PmData.priorities.joined(separator: ", "))"
+        }
+        rows = rows.filter { $0.priority == want }
+        how.append("priority \(want)")
+      }
+      if let assignee, !assignee.isEmpty {
+        let want = assignee.lowercased()
+        if want == "unassigned" || want == "none" || want == "nobody" {
+          rows = rows.filter { $0.assignee == nil }
+          how.append("unassigned")
+        } else {
+          guard let canonical = PmData.person(assignee) else {
+            return "nobody called \(assignee) here — the assignees are \(PmData.assignees.joined(separator: ", "))"
+          }
+          rows = rows.filter { $0.assignee == canonical }
+          how.append("assignee \(canonical)")
+        }
+      }
+      if let creator, !creator.isEmpty {
+        guard let canonical = PmData.person(creator) else { return "nobody called \(creator) here" }
+        rows = rows.filter { $0.creator == canonical }
+        how.append("creator \(canonical)")
+      }
+      if let keyword, !keyword.isEmpty {
+        let needle = PmData.romaji(keyword)
+        rows = rows.filter { $0.title.lowercased().contains(needle) }
+        how.append("keyword \"\(keyword)\"")
+      }
+      if let dueFrom, !dueFrom.isEmpty {
+        rows = rows.filter { $0.due >= dueFrom }
+        how.append("due from \(dueFrom)")
+      }
+      if let dueTo, !dueTo.isEmpty {
+        rows = rows.filter { $0.due <= dueTo }
+        how.append("due by \(dueTo)")
+      }
+      let sorted = rows.sorted { $0.due < $1.due }
+      let caption = how.isEmpty ? "all issues" : how.joined(separator: ", ")
+      BenchSelection.shared.kind = sorted.isEmpty ? nil : "rows"
+      guard !sorted.isEmpty else { return "no issues match \(caption)" }
+      return "\(sorted.count) issue\(sorted.count == 1 ? "" : "s") (\(caption)) — now the selection:\n"
+        + sorted.prefix(8).map(IssueBox.oneLine).joined(separator: "\n")
+        + (sorted.count > 8 ? "\n… and \(sorted.count - 8) more" : "")
+    }
+
+    static func issue(_ id: String) -> String {
+      let want = id.uppercased()
+      guard let issue = PmData.issues.first(where: { $0.id == want }) else {
+        return "there is no issue \(id) — ids look like APP-3"
+      }
+      return IssueBox.oneLine(issue) + "\ncreated by \(issue.creator)"
     }
   }
 
@@ -780,6 +889,7 @@ enum BenchToolBox {
     case "money": return money
     case "inbox": return inbox
     case "crm": return crm
+    case "pm": return pm
     default: return nil
     }
   }
@@ -796,6 +906,7 @@ enum BenchToolBox {
     case "money": return ToolBox.moneyInstructions
     case "inbox": return ToolBox.inboxInstructions
     case "crm": return ToolBox.crmInstructions
+    case "pm": return ToolBox.pmInstructions
     default: return ToolBox.instructions
     }
   }
