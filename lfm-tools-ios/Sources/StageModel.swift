@@ -164,7 +164,24 @@ final class StageModel {
     "Is there any readable text in it? If so, what does it say?",
   ]
 
-  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look`
+  /// The video cut: a CapCut's menu, said out loud, on the newest library
+  /// video. The model never sees a frame — every beat carries the app's
+  /// state (clips, selection, playhead, frame size) at the top of the
+  /// message, and the tools take the numbers it names. Beat 1 is the
+  /// headline: three menu items out of one sentence. Beat 2 is the state
+  /// test — "the playhead" is a number in the message, and the model has to
+  /// copy it. Beat 3 is a two-call chain (select → speed). Export last: it
+  /// writes to the library and takes the longest.
+  static let videoBeats = [
+    "Cut the first two seconds, make it vertical, and fade out at the end.",
+    "Split it at the playhead.",
+    "Make the second clip slow motion.",
+    "Caption it 'Tokyo, August' at the bottom for the first three seconds.",
+    "Mute it.",
+    "Export it.",
+  ]
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look|polish|video`
   /// swaps the stage to that pack; default stays the coffee run. Beats and
   /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
@@ -180,6 +197,7 @@ final class StageModel {
     case "vision": return visionBeats
     case "look": return lookBeats
     case "polish": return polishBeats
+    case "video": return videoBeats
     default: return beats
     }
   }
@@ -193,6 +211,9 @@ final class StageModel {
   static var scenarioAttachesPhoto: Bool {
     ["vision", "look", "polish"].contains(scenarioName)
   }
+  /// Packs where the app's state — not a picture — is the input: the model
+  /// is told the timeline and asked to operate it.
+  static var scenarioSendsState: Bool { scenarioName == "video" }
 
   static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
@@ -247,6 +268,22 @@ final class StageModel {
   private func refreshStageImage() {
     guard Self.scenarioShowsPhoto else { return }
     stageImage = PhotoEditBox.shared.currentRendered()
+    stageImageID += 1
+  }
+
+  /// The video pack's stage: the frame at the moment the last edit touched,
+  /// rendered through the composition, and the timeline as blocks under it.
+  /// Async because the frame is decoded on demand — a few hundred ms, off
+  /// the actor.
+  private(set) var stageTimeline: VideoEditBox.Snapshot?
+
+  private func refreshStageVideo() async {
+    guard Self.scenarioSendsState else { return }
+    let frame = await Task.detached(priority: .userInitiated) {
+      await VideoEditBox.shared.currentFrame()
+    }.value
+    if let frame { stageImage = frame }
+    stageTimeline = VideoEditBox.shared.snapshot()
     stageImageID += 1
   }
 
@@ -310,13 +347,18 @@ final class StageModel {
     case "vision": tools = ToolBox.vision
     case "look": tools = []
     case "polish": tools = ToolBox.vision
+    case "video": tools = ToolBox.video
     default: tools = ToolBox.demo
     }
     // The vision packs get their own instructions: the stock ones push tools
     // ("prefer a tool over guessing"), which is the wrong bias for a model
     // that can see — it removed the background from a mountain range because
-    // a beat said "if there's a person…".
-    let instructions = Self.scenarioAttachesPhoto ? ToolBox.visionInstructions : ToolBox.instructions
+    // a beat said "if there's a person…". The state packs get theirs: the
+    // model is told everything and asked to copy numbers, not look them up.
+    let instructions =
+      Self.scenarioAttachesPhoto
+      ? ToolBox.visionInstructions
+      : (Self.scenarioSendsState ? ToolBox.stateInstructions : ToolBox.instructions)
     toolCount = tools.count
     switch Self.backend {
     case .system:
@@ -395,6 +437,17 @@ final class StageModel {
       try? await PhotoEditBox.shared.preload(label: SeenPhoto.singleLabel)
       refreshStageImage()
     }
+    if Self.scenarioSendsState {
+      // Same for the video: newest in the library, on stage from the first
+      // frame, and the state line the model will read is in the log.
+      do {
+        try await VideoEditBox.shared.preload()
+        RunLog.write("VIDEO loaded — \(VideoEditBox.shared.describe())")
+      } catch {
+        RunLog.write("VIDEO load failed: \(error)")
+      }
+      await refreshStageVideo()
+    }
     await run()
   }
 
@@ -451,6 +504,15 @@ final class StageModel {
         // "now make it look its best" is judged on what beat 2 produced.
         let attached = Self.scenarioAttachesPhoto ? PhotoEditBox.shared.currentCGImage() : nil
         if attached != nil { RunLog.write("ATTACH photo \(attached!.width)x\(attached!.height)") }
+        // The state packs send the timeline as it is now, ahead of the words:
+        // the model is told what beat N-1 did before it is asked for beat N.
+        // On screen only the words show; the log has the whole message.
+        var message = prompt
+        if Self.scenarioSendsState {
+          let state = VideoEditBox.shared.describe()
+          RunLog.write("STATE \(state)")
+          message = AppState.compose(state: state, request: prompt)
+        }
         answer = try await Task.detached(priority: .userInitiated) {
           if let attached {
             if prompt.isEmpty {
@@ -465,7 +527,7 @@ final class StageModel {
               }
             ).content
           }
-          return try await session.respond(to: prompt).content
+          return try await session.respond(to: message).content
         }.value
       } catch {
         RunLog.write("ERROR \(error)")
@@ -492,6 +554,7 @@ final class StageModel {
           }.joined()
           RunLog.write("TOOL \(output.toolName) -> \(returned.prefix(300))")
           refreshStageImage()
+          await refreshStageVideo()
           if let call = pendingCall {
             set(.calling(name: call.name, arguments: call.arguments, returned: returned))
             try? await Task.sleep(for: .milliseconds(1400))

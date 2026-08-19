@@ -191,6 +191,17 @@ enum ToolBox {
     SeenRevertTool(), SeenSaveTool(), WriteNoteTool(),
   ]
 
+  /// The video-editing pack (Tools/VideoEditTools.swift): a CapCut's menu,
+  /// said out loud. The model never sees a frame — the app's state (clips,
+  /// selection, playhead, frame size) rides at the top of every message and
+  /// the tools take the numbers it names. Trim / split / speed / crop 9:16 /
+  /// caption / fade / stabilise / volume / export, in the menu's own words.
+  static let video: [any FoundationModels.Tool] = [
+    TrimClipTool(), SplitClipTool(), SelectClipTool(), DeleteClipTool(), ClipSpeedTool(),
+    CropVideoTool(), AddCaptionTool(), AddFadeTool(), StabilizeVideoTool(), VideoVolumeTool(),
+    RevertVideoTool(), ExportVideoTool(),
+  ]
+
   static let all: [any FoundationModels.Tool] =
     ambient + actions + personal + photoEditing + compound
 
@@ -234,6 +245,21 @@ enum ToolBox {
     brightness, warmth, contrast, color, straightening) and apply those edits
     one after another, gently, then say in one sentence what you changed and
     why. When a tool has returned, answer in one short sentence.
+    """
+
+  /// For packs where the app's state is in the message. The stock line
+  /// "you cannot know X without calling a tool" is wrong here — the model
+  /// is told everything it needs at the top of each message and its job is
+  /// to copy those numbers into arguments, not to look anything up.
+  static let stateInstructions = """
+    You are operating the user's video editor through tools. Every message
+    starts with the app's current state: the clips on the timeline with their
+    times in seconds, which clip is selected, where the playhead is, and the
+    frame size. Take times from that state — the playhead, a clip's start or
+    end — never guess one. Tools act on the selected clip unless they name a
+    clip. When a request lists several edits, call the tools one after
+    another in that order. When a tool has returned, answer the user in one
+    short sentence using its result.
     """
 
   /// For the chat, where photos are one input among many: the stock

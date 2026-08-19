@@ -120,6 +120,25 @@ enum BenchToolBox {
     CurrentTimeTool(),
   ]
 
+  /// The video pack, neutralized. Results claim success in the shape the
+  /// real tools answer with, against the one fixed timeline every video
+  /// case's `state` describes (see the cases file): one 12.4 s landscape
+  /// clip, playhead at 5 s. Nothing here renders.
+  static let video: [any FoundationModels.Tool] = [
+    RecordingTool(base: TrimClipTool(), canned: "trimmed — the timeline is on screen"),
+    RecordingTool(base: SplitClipTool(), canned: "split — clip 1 is selected"),
+    RecordingTool(base: SelectClipTool(), canned: "selected"),
+    RecordingTool(base: DeleteClipTool(), canned: "deleted — 1 clip left"),
+    RecordingTool(base: ClipSpeedTool(), canned: "speed set — the timeline is on screen"),
+    RecordingTool(base: CropVideoTool(), canned: "cropped — the frame is on screen"),
+    RecordingTool(base: AddCaptionTool(), canned: "caption added"),
+    RecordingTool(base: AddFadeTool(), canned: "fade added (picture and sound)"),
+    RecordingTool(base: StabilizeVideoTool(), canned: "stabilization on"),
+    RecordingTool(base: VideoVolumeTool(), canned: "volume set"),
+    RecordingTool(base: RevertVideoTool(), canned: "discarded all edits — back to the original video"),
+    RecordingTool(base: ExportVideoTool(), canned: "exported to the photo library"),
+  ]
+
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {
     switch name {
@@ -127,7 +146,14 @@ enum BenchToolBox {
     case "photo": return photo
     case "focus": return focus
     case "report": return report
+    case "video": return video
     default: return nil
     }
+  }
+
+  /// The instructions that travel with a pack — the stage's, so a bench
+  /// case is the same message the demo sends.
+  static func instructions(for name: String) -> String {
+    name == "video" ? ToolBox.stateInstructions : ToolBox.instructions
   }
 }

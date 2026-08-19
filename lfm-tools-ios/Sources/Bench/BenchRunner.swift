@@ -143,11 +143,11 @@ enum BenchRunner {
       // A fresh session per case: no history, no carried KV, every case pays
       // the same prefill. Cross-turn behavior is a different benchmark.
       let session: LanguageModelSession
+      let instructions = BenchToolBox.instructions(for: toolsetName)
       if let model = liteRTModel {
-        session = LanguageModelSession(
-          model: model, tools: tools, instructions: ToolBox.instructions)
+        session = LanguageModelSession(model: model, tools: tools, instructions: instructions)
       } else {
-        session = LanguageModelSession(tools: tools, instructions: ToolBox.instructions)
+        session = LanguageModelSession(tools: tools, instructions: instructions)
       }
 
       TranscriptBox.shared.attach(session)
@@ -161,7 +161,9 @@ enum BenchRunner {
         // Detached for the same reason as the stage: `respond` runs on the
         // caller's executor. Raced against a deadline — one transient engine
         // hang has been observed, and it must cost one case, not the run.
-        let input = benchCase.input
+        // A state case opens with the app's state, exactly as the stage does.
+        let input = benchCase.state.map { AppState.compose(state: $0, request: benchCase.input) }
+          ?? benchCase.input
         let attached = attached  // a let for the Sendable closure
         answer = try await firstToFinish(within: 180) {
           try await Task.detached(priority: .userInitiated) {

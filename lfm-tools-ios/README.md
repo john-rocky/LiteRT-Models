@@ -118,7 +118,12 @@ Packs: `photo` (editing on a stage photo), `focus` (timer + notifications
 + brightness), `report` (photo OCR → note → reminder), `briefing` (time,
 battery, calendar, reminders, steps), `sensors` (location, heading,
 motion, sound level, altitude), `handoff` (torch, sounds, badge,
-clipboard, notification, note). Without `--scenario` the stage runs the
+clipboard, notification, note), `chains` / `compound`, `vision` / `look` /
+`polish` (the photo goes in as an attachment; the model routes on what it
+sees), `video` (a CapCut-style menu — trim, split, speed, crop 9:16,
+caption, fade, stabilise, volume, export — on the newest library video;
+the app's state opens every message and the model never sees a frame).
+Without `--scenario` the stage runs the
 coffee-run beats; without `--backend apple` it runs on the newest LiteRT
 bundle (or `--model <substring>`).
 

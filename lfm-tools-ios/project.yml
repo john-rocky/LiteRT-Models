@@ -6,8 +6,14 @@ options:
 packages:
   # The local checkout, not the released package: the Foundation Models adapter
   # this demo needs (constrained tool routing) lives on that branch.
+  # A worktree pinned at the branch's last commit that builds against the
+  # v0.16.0 prebuilt (72345f92 = the code every measurement was made with):
+  # the branch's 2026-08-19 rebase onto upstream pulled in EmbeddingEngine.swift,
+  # which calls an embedding C API the pinned xcframework does not ship
+  # (LiteRT-LM #3296). Re-point at ../../litert-lm-applefm-fix when that
+  # resolves.
   LiteRTLM:
-    path: ../../litert-lm-applefm-fix
+    path: ../../litert-lm-ios-host
 targets:
   LFMTools:
     type: application

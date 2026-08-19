@@ -11,6 +11,10 @@ struct BenchCase: Decodable {
   var lang: String
   /// Reserved for the VLM stage: a fixture image name.
   var image: String?
+  /// For the state packs (video): the app state the message opens with,
+  /// verbatim — the same block the stage sends ahead of the words. Cases
+  /// that name a playhead or a clip edge are only scorable against it.
+  var state: String?
   var expected: [ExpectedCall]
 }
 

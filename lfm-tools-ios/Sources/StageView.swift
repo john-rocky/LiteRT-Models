@@ -27,9 +27,17 @@ struct StageView: View {
             .resizable()
             .scaledToFit()
             .frame(maxWidth: .infinity)
+            // The video frame shares the stage with its timeline; a 9:16 crop
+            // would otherwise take the whole screen and leave the beat nowhere.
+            .frame(maxHeight: stage.stageTimeline == nil ? .infinity : 360)
             .clipShape(.rect(cornerRadius: 18))
             .layoutPriority(1)
             .padding(.top, 10)
+            .animation(.easeInOut(duration: 0.35), value: stage.stageImageID)
+        }
+        if let timeline = stage.stageTimeline {
+          TimelineStrip(snapshot: timeline)
+            .padding(.top, 8)
             .animation(.easeInOut(duration: 0.35), value: stage.stageImageID)
         }
         Spacer(minLength: 8)
@@ -170,6 +178,92 @@ struct StageView: View {
 }
 
 // MARK: - Pieces
+
+/// The video pack's timeline: clips as blocks (thumbnails inside when they
+/// are ready), the selected one outlined, captions and fades marked, and a
+/// line at the moment the frame above was taken from. What an editor's
+/// timeline looks like, at the size a phone recording can read.
+@available(iOS 27.0, *)
+private struct TimelineStrip: View {
+  let snapshot: VideoEditBox.Snapshot
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 8) {
+        Text(snapshot.frame)
+        Text("\(VideoEditBox.f(snapshot.duration)) s")
+        if snapshot.fadeIn > 0 { Text("fade in") }
+        if snapshot.fadeOut > 0 { Text("fade out") }
+        if snapshot.volume != 100 {
+          Label(snapshot.volume == 0 ? "muted" : "\(snapshot.volume)%",
+            systemImage: snapshot.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
+        }
+        Spacer()
+        Text("\(snapshot.blocks.count) clip\(snapshot.blocks.count == 1 ? "" : "s")")
+      }
+      .font(.system(size: 12, weight: .semibold, design: .rounded))
+      .foregroundStyle(.white.opacity(0.7))
+
+      GeometryReader { geo in
+        let width = geo.size.width
+        let scale = snapshot.duration > 0 ? width / snapshot.duration : 0
+        ZStack(alignment: .topLeading) {
+          // Thumbnails run across the whole timeline; the blocks sit over them.
+          HStack(spacing: 0) {
+            ForEach(Array(snapshot.thumbnails.enumerated()), id: \.offset) { _, thumb in
+              Image(uiImage: thumb)
+                .resizable()
+                .scaledToFill()
+                .frame(width: width / CGFloat(max(1, snapshot.thumbnails.count)), height: 56)
+                .clipped()
+            }
+          }
+          .frame(width: width, height: 56)
+          .clipShape(.rect(cornerRadius: 8))
+          .opacity(0.9)
+
+          ForEach(snapshot.blocks) { block in
+            RoundedRectangle(cornerRadius: 8)
+              .strokeBorder(
+                block.selected ? Color.yellow : Color.white.opacity(0.35),
+                lineWidth: block.selected ? 3 : 1)
+              .background(
+                RoundedRectangle(cornerRadius: 8)
+                  .fill(block.selected ? Color.yellow.opacity(0.12) : Color.clear))
+              .overlay(alignment: .bottomLeading) {
+                if block.speed != 1 {
+                  Text("\(VideoEditBox.f(block.speed))×")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.black.opacity(0.6), in: Capsule())
+                    .foregroundStyle(.white)
+                    .padding(4)
+                }
+              }
+              .frame(width: max(2, (block.end - block.start) * scale), height: 56)
+              .offset(x: block.start * scale)
+          }
+
+          // Captions as a bar along the top edge.
+          ForEach(Array(snapshot.captions.enumerated()), id: \.offset) { _, span in
+            Capsule()
+              .fill(Color.cyan)
+              .frame(width: max(3, (span.end - span.start) * scale), height: 4)
+              .offset(x: span.start * scale, y: -7)
+          }
+
+          // The moment shown above.
+          Rectangle()
+            .fill(Color.white)
+            .frame(width: 2, height: 64)
+            .offset(x: min(max(0, snapshot.preview * scale - 1), width - 2), y: -4)
+        }
+      }
+      .frame(height: 64)
+    }
+  }
+}
 
 /// The model generating, made the centre of the screen rather than a footnote.
 @available(iOS 27.0, *)
