@@ -37,6 +37,24 @@ final class ShopBox: @unchecked Sendable {
   private var savedForLater: [Int] = []
   private var coupon: (code: String, percent: Int)?
   private var ordersPlaced = 0
+  private var pendingConfirmation: String?
+  private let history = UndoStack<([Item], String, [CartLine], String?)>()
+
+  private func pushHistory(_ what: String) {
+    history.push((results, resultsHow, cart, coupon?.code), what)
+  }
+
+  func undoLast() -> String {
+    guard let (snap, what) = history.pop() else { return "nothing to undo" }
+    sync {
+      results = snap.0
+      resultsHow = snap.1
+      cart = snap.2
+      coupon = snap.3.flatMap { code in Catalog.coupons[code].map { (code, $0) } }
+    }
+    post()
+    return "undid the last change (\(what)) — cart total \(StoreBox.yen(sync { total() }))"
+  }
 
   private func sync<T>(_ body: () -> T) -> T {
     lock.lock()
@@ -58,6 +76,7 @@ final class ShopBox: @unchecked Sendable {
       let more = results.count > 6 ? ", and \(results.count - 6) more" : ""
       line = "Results (\(how)): " + listed.joined(separator: "; ") + more + "."
     }
+    if let pending = sync({ pendingConfirmation }) { line += " Awaiting confirmation: \(pending)." }
     if cart.isEmpty {
       line += " Cart: empty."
     } else {
@@ -140,6 +159,42 @@ final class ShopBox: @unchecked Sendable {
     return "\(rows.count) result\(rows.count == 1 ? "" : "s") for \"\(query)\":\n" + listed.joined(separator: "\n")
   }
 
+  /// Narrow the current results — the second finder, added as the
+  /// controlled experiment for "a new tool re-routes old sentences": the
+  /// pack was benched at 21/28 without it.
+  func filterResults(by field: String, value: String) -> String {
+    let rows = sync { results }
+    guard !rows.isEmpty else { return "search first, then narrow the results" }
+    let want = value.lowercased().trimmingCharacters(in: .whitespaces)
+    let kept: [Item]
+    let how: String
+    switch field.lowercased() {
+    case "category":
+      kept = rows.filter { $0.category.lowercased().contains(want) }
+      how = "category \(value)"
+    case "brand":
+      kept = rows.filter { $0.brand.lowercased().contains(want) }
+      how = "brand \(value)"
+    case "max_price":
+      let cap = Int(want.filter(\.isNumber)) ?? 0
+      kept = rows.filter { $0.price <= cap }
+      how = "under \(StoreBox.yen(cap))"
+    default:  // ships_today
+      kept = rows.filter(\.shipsToday)
+      how = "ships today"
+    }
+    sync {
+      results = kept
+      resultsHow += ", \(how)"
+    }
+    post()
+    guard !kept.isEmpty else { return "none of the results match \(how)" }
+    let listed = kept.prefix(6).enumerated().map { index, item in
+      "\(index + 1). \(item.name) — \(StoreBox.yen(item.price)), ★\(String(format: "%.1f", item.rating))"
+    }
+    return "\(kept.count) result\(kept.count == 1 ? "" : "s") (\(how)):\n" + listed.joined(separator: "\n")
+  }
+
   func sort(by field: String) -> String {
     let rows = sync { results }
     guard !rows.isEmpty else { return "search first, then sort the results" }
@@ -182,6 +237,7 @@ final class ShopBox: @unchecked Sendable {
     }
     let count = max(1, quantity)
     sync {
+      pushHistory("added to cart")
       if let index = cart.firstIndex(where: { $0.itemID == item.id }) {
         cart[index].quantity += count
       } else {
@@ -208,11 +264,17 @@ final class ShopBox: @unchecked Sendable {
     }
     let itemName = Catalog.item(sync { cart[index].itemID })?.name ?? name
     if quantity <= 0 {
-      sync { cart.remove(at: index) }
+      sync {
+        pushHistory("removed from cart")
+        cart.remove(at: index)
+      }
       post()
       return "removed \(itemName) from the cart — total \(StoreBox.yen(sync { total() }))"
     }
-    sync { cart[index].quantity = quantity }
+    sync {
+      pushHistory("quantity change")
+      cart[index].quantity = quantity
+    }
     post()
     return "\(itemName) is now ×\(quantity) — cart total \(StoreBox.yen(sync { total() }))"
   }
@@ -226,17 +288,26 @@ final class ShopBox: @unchecked Sendable {
     guard let percent = Catalog.coupons[want] else {
       return "coupon \(want) is not valid; nothing applied"
     }
-    sync { coupon = (want, percent) }
+    sync {
+      pushHistory("coupon")
+      coupon = (want, percent)
+    }
     post()
     return "coupon \(want) applied: −\(percent)% — total \(StoreBox.yen(sync { total() }))"
   }
 
-  func checkout() -> String {
+  func checkout(confirmed: Bool) -> String {
     let lines = sync { cart }
     guard !lines.isEmpty else { return "the cart is empty — nothing to order" }
     let paid = sync { total() }
     let count = lines.reduce(0) { $0 + $1.quantity }
+    guard confirmed else {
+      sync { pendingConfirmation = "place the order (\(count) item\(count == 1 ? "" : "s"), \(StoreBox.yen(paid)))" }
+      return "placing this order charges \(StoreBox.yen(paid)) for \(count) item\(count == 1 ? "" : "s") — ask the user to confirm, then call checkout again with confirm true"
+    }
     let orderNumber: Int = sync {
+      pendingConfirmation = nil
+      pushHistory("order")
       ordersPlaced += 1
       cart = []
       coupon = nil
@@ -300,6 +371,19 @@ struct SearchCatalogTool: Tool {
   }
   func call(arguments: Arguments) async throws -> String {
     ShopBox.shared.search(arguments.query)
+  }
+}
+
+@available(iOS 27.0, *)
+struct FilterResultsTool: Tool {
+  let name = "filter_results"
+  let description = "Narrow the current search results by one condition."
+  @Generable struct Arguments {
+    @Guide(description: "Which condition.", .anyOf(["category", "brand", "max_price", "ships_today"])) var by: String
+    @Guide(description: "The value: a category or brand name, a max price in yen, or ignored for ships_today.") var value: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    ShopBox.shared.filterResults(by: arguments.by, value: arguments.value)
   }
 }
 
@@ -380,9 +464,13 @@ struct ApplyCouponTool: Tool {
 @available(iOS 27.0, *)
 struct CheckoutTool: Tool {
   let name = "checkout"
-  let description = "Place the order for everything in the cart."
-  func call(arguments: NoArguments) async throws -> String {
-    ShopBox.shared.checkout()
+  let description = "Place the order for everything in the cart. This charges the user."
+  @Generable struct Arguments {
+    @Guide(description: "Pass false unless the user has already said yes to placing this order; false shows them the total so they can decide.")
+    var confirm: Bool
+  }
+  func call(arguments: Arguments) async throws -> String {
+    ShopBox.shared.checkout(confirmed: arguments.confirm)
   }
 }
 

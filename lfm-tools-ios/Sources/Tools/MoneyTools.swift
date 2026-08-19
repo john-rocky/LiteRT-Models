@@ -34,6 +34,18 @@ final class MoneyBox: @unchecked Sendable {
   ]
   private var selection: [Int] = []
   private var selectionHow = ""
+  private let history = UndoStack<([Transaction], [String: Int], [Int], String)>()
+
+  private func pushHistory(_ what: String) {
+    history.push((transactions, budgets, selection, selectionHow), what)
+  }
+
+  func undoLast() -> String {
+    guard let (snap, what) = history.pop() else { return "nothing to undo" }
+    sync { (transactions, budgets, selection, selectionHow) = snap }
+    post()
+    return "undid the last change (\(what))"
+  }
 
   private func sync<T>(_ body: () -> T) -> T {
     lock.lock()
@@ -133,6 +145,7 @@ final class MoneyBox: @unchecked Sendable {
     let ids = sync { selection }
     guard !ids.isEmpty else { return "nothing is selected — list, search or filter first" }
     sync {
+      pushHistory("categorizing")
       for index in transactions.indices where ids.contains(transactions[index].id) {
         transactions[index].category = want
       }
@@ -145,6 +158,7 @@ final class MoneyBox: @unchecked Sendable {
     let ids = sync { selection }
     guard !ids.isEmpty else { return "nothing is selected — list, search or filter first" }
     sync {
+      pushHistory("flags")
       for index in transactions.indices where ids.contains(transactions[index].id) {
         transactions[index].flagged = true
       }
@@ -160,7 +174,10 @@ final class MoneyBox: @unchecked Sendable {
     guard Self.categories.contains(want) else {
       return "unknown category; try \(Self.categories.joined(separator: ", "))"
     }
-    sync { budgets[want] = max(0, amount) }
+    sync {
+      pushHistory("budget change")
+      budgets[want] = max(0, amount)
+    }
     return "budget for \(want) set to \(StoreBox.yen(max(0, amount))) a month"
   }
 

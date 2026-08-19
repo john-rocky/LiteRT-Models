@@ -66,7 +66,7 @@ final class DocBox: @unchecked Sendable {
     if let url = pdfs.first, let data = try? Data(contentsOf: url), let doc = PDFDocument(data: data) {
       load(doc, data: data, title: url.deletingPathExtension().lastPathComponent)
     } else {
-      let data = SampleLease.pdfData()
+      let data = SampleLease.withFormFields(SampleLease.pdfData())
       if let doc = PDFDocument(data: data) { load(doc, data: data, title: "Lease Agreement") }
     }
   }
@@ -96,6 +96,10 @@ final class DocBox: @unchecked Sendable {
       if let summary = Self.annotationSummary(doc, index) { notes.append("page \(index + 1): \(summary)") }
     }
     line += notes.isEmpty ? " Annotations: none." : " Annotations: " + notes.joined(separator: "; ") + "."
+    let fields = Self.formFields(doc)
+    if !fields.isEmpty {
+      line += " Form fields: " + fields.map { "\($0.0) (\($0.1.isEmpty ? "empty" : "\"\($0.1)\""))" }.joined(separator: "; ") + "."
+    }
     return line
   }
 
@@ -127,6 +131,27 @@ final class DocBox: @unchecked Sendable {
 
   // MARK: Edits (each returns what the model is told)
 
+  private let docHistory = UndoStack<(Data, Int)>()
+
+  /// Call at the top of a mutating edit: the document as bytes, so undo is a
+  /// clean reload with no shared-page aliasing.
+  private func pushHistory(_ what: String) {
+    if let doc = document, let data = doc.dataRepresentation() {
+      docHistory.push((data, current), what)
+    }
+  }
+
+  func undoLast() -> String {
+    guard let (snap, what) = docHistory.pop() else { return "nothing to undo" }
+    guard let doc = PDFDocument(data: snap.0) else { return "could not undo" }
+    sync {
+      document = doc
+      current = min(snap.1, max(0, doc.pageCount - 1))
+    }
+    refreshThumbnails()
+    return "undid the last \(what) — \(doc.pageCount) pages"
+  }
+
   private func withDocument(_ body: (PDFDocument, inout Int) -> String) -> String {
     let result: String = sync {
       guard let doc = document else { return Failure.noDocument.localizedDescription }
@@ -157,7 +182,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func delete(page number: Int) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("page delete") }
+    return withDocument { doc, current in
       guard let index = page(number, of: doc) else { return noPage(number, doc) }
       guard doc.pageCount > 1 else { return "cannot delete the only page" }
       let name = Self.pageTitle(doc, index)
@@ -168,7 +194,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func move(page number: Int, to position: Int) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("page move") }
+    return withDocument { doc, current in
       guard let from = page(number, of: doc) else { return noPage(number, doc) }
       guard let to = page(position, of: doc) else { return noPage(position, doc) }
       guard from != to, let moving = doc.page(at: from) else { return "page \(number) is already at position \(position)" }
@@ -180,7 +207,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func rotate(page number: Int, degrees: Int) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("rotation") }
+    return withDocument { doc, current in
       guard let index = page(number, of: doc), let p = doc.page(at: index) else { return noPage(number, doc) }
       p.rotation = (p.rotation + degrees) % 360
       current = index
@@ -189,7 +217,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func insertBlank(after number: Int) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("inserted page") }
+    return withDocument { doc, current in
       let at = min(max(0, number), doc.pageCount)
       let blank = PDFPage()
       if let reference = doc.page(at: max(0, min(number - 1, doc.pageCount - 1))) {
@@ -202,7 +231,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func highlight(_ text: String, color: String) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("highlights") }
+    return withDocument { doc, current in
       let selections = doc.findString(text, withOptions: [.caseInsensitive])
       guard !selections.isEmpty else { return "\"\(text)\" is not in the document" }
       let tint: UIColor = {
@@ -233,7 +263,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func removeHighlights(scope: String) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("highlight removal") }
+    return withDocument { doc, current in
       let indices = scope.lowercased() == "this_page" ? [current] : Array(0..<doc.pageCount)
       var removed = 0
       for index in indices {
@@ -250,7 +281,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func addNote(_ text: String) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("note") }
+    return withDocument { doc, current in
       guard let p = doc.page(at: current) else { return Failure.noDocument.localizedDescription }
       let box = p.bounds(for: .mediaBox)
       // Top-right corner, stacked down for each note already there.
@@ -266,7 +298,8 @@ final class DocBox: @unchecked Sendable {
   }
 
   func sign(page number: Int) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("signature") }
+    return withDocument { doc, current in
       guard let index = page(number, of: doc), let p = doc.page(at: index) else { return noPage(number, doc) }
       let box = p.bounds(for: .mediaBox)
       // Bottom-right, above the margin: a hand-drawn-looking signature.
@@ -302,7 +335,8 @@ final class DocBox: @unchecked Sendable {
 
   /// A big translucent word across every page — the review copy's stamp.
   func watermark(_ text: String) -> String {
-    withDocument { doc, current in
+    sync { pushHistory("watermark") }
+    return withDocument { doc, current in
       let word = text.trimmingCharacters(in: .whitespaces)
       guard !word.isEmpty else { return "the watermark needs a word" }
       for index in 0..<doc.pageCount {
@@ -342,6 +376,69 @@ final class DocBox: @unchecked Sendable {
       .appendingPathComponent("saved-pages-\(low)-\(high).pdf")
     guard out.write(to: url) else { return "could not write \(url.lastPathComponent)" }
     return "extracted pages \(low)–\(high) to \(url.lastPathComponent) in the app's Documents (\(out.pageCount) pages)"
+  }
+
+  /// Fill a form field by (part of) its name. The sample lease carries two
+  /// AcroForm text fields on the signatures page; a dropped-in PDF's own
+  /// fields work the same way.
+  func fill(field name: String, value: String) -> String {
+    sync { pushHistory("form entry") }
+    return withDocument { doc, current in
+      let needle = name.lowercased().replacingOccurrences(of: " ", with: "_")
+      for index in 0..<doc.pageCount {
+        guard let p = doc.page(at: index) else { continue }
+        for annotation in p.annotations where annotation.widgetFieldType == .text {
+          let fieldName = (annotation.fieldName ?? "").lowercased()
+          if fieldName.contains(needle) || needle.contains(fieldName), !fieldName.isEmpty {
+            annotation.widgetStringValue = value
+            current = index
+            return "\"\(value)\" entered in the \(annotation.fieldName ?? "?") field on page \(index + 1)"
+          }
+        }
+      }
+      let fields = Self.formFields(doc).map(\.0)
+      return fields.isEmpty
+        ? "this document has no form fields"
+        : "no field called \"\(name)\"; the fields are \(fields.joined(separator: ", "))"
+    }
+  }
+
+  static func formFields(_ doc: PDFDocument) -> [(String, String)] {
+    var out: [(String, String)] = []
+    for index in 0..<doc.pageCount {
+      guard let p = doc.page(at: index) else { continue }
+      for annotation in p.annotations where annotation.widgetFieldType == .text {
+        out.append((annotation.fieldName ?? "?", annotation.widgetStringValue ?? ""))
+      }
+    }
+    return out
+  }
+
+  /// Black boxes over every occurrence — redaction, the destructive cousin
+  /// of highlight (a deliberate near-neighbor).
+  func redact(_ text: String) -> String {
+    sync { pushHistory("redaction") }
+    return withDocument { doc, current in
+      let selections = doc.findString(text, withOptions: [.caseInsensitive])
+      guard !selections.isEmpty else { return "\"\(text)\" is not in the document" }
+      var pages = Set<Int>()
+      var count = 0
+      for selection in selections {
+        for line in selection.selectionsByLine() {
+          for p in line.pages {
+            let bounds = line.bounds(for: p).insetBy(dx: -1, dy: -1)
+            let box = PDFAnnotation(bounds: bounds, forType: .square, withProperties: nil)
+            box.color = .black
+            box.interiorColor = .black
+            p.addAnnotation(box)
+            pages.insert(doc.index(for: p))
+            count += 1
+          }
+        }
+      }
+      if let first = pages.min() { current = first }
+      return "blacked out \(count) occurrence\(count == 1 ? "" : "s") of \"\(text)\" on page\(pages.count == 1 ? "" : "s") \(pages.sorted().map { String($0 + 1) }.joined(separator: ", "))"
+    }
   }
 
   func search(_ text: String) -> String {
@@ -474,6 +571,24 @@ enum SampleLease {
         "Page \(index + 1) of \(pages.count)".draw(at: CGPoint(x: 60, y: 790), withAttributes: footer)
       }
     }
+  }
+
+  /// The signatures page gets real AcroForm text fields (tenant_name, date)
+  /// after render — UIGraphicsPDFRenderer draws pixels, PDFKit adds the
+  /// widgets.
+  static func withFormFields(_ data: Data) -> Data {
+    guard let doc = PDFDocument(data: data), let page = doc.page(at: doc.pageCount - 1) else { return data }
+    let bounds = page.bounds(for: .mediaBox)
+    for (name, y) in [("tenant_name", bounds.height - 322), ("date", bounds.height - 322 - 46)] {
+      let field = PDFAnnotation(
+        bounds: CGRect(x: 130, y: y, width: 240, height: 26), forType: .widget, withProperties: nil)
+      field.widgetFieldType = .text
+      field.fieldName = name
+      field.backgroundColor = UIColor(white: 0.94, alpha: 1)
+      field.font = UIFont.systemFont(ofSize: 13)
+      page.addAnnotation(field)
+    }
+    return doc.dataRepresentation() ?? data
   }
 }
 
@@ -624,6 +739,33 @@ struct ExtractPagesTool: Tool {
   func call(arguments: Arguments) async throws -> String {
     DocBox.shared.preload()
     return DocBox.shared.extract(from: arguments.from, to: arguments.to)
+  }
+}
+
+@available(iOS 27.0, *)
+struct FillFieldTool: Tool {
+  let name = "fill_field"
+  let description = "Type a value into a form field of the document."
+  @Generable struct Arguments {
+    @Guide(description: "The field, by (part of) its name — the state lists the fields.") var field: String
+    @Guide(description: "What to enter, exactly as the user gave it.") var value: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    DocBox.shared.preload()
+    return DocBox.shared.fill(field: arguments.field, value: arguments.value)
+  }
+}
+
+@available(iOS 27.0, *)
+struct RedactTextTool: Tool {
+  let name = "redact_text"
+  let description = "Black out every occurrence of some words, so they cannot be read. Highlight marks; this hides."
+  @Generable struct Arguments {
+    @Guide(description: "The words to black out, exactly as they appear.") var text: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    DocBox.shared.preload()
+    return DocBox.shared.redact(arguments.text)
   }
 }
 

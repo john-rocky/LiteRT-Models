@@ -19,6 +19,7 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import FoundationModels
 import Photos
+@preconcurrency import Speech
 import UIKit
 
 /// The timeline. One shared instance: the model operates "the video", and
@@ -241,14 +242,29 @@ final class VideoEditBox: @unchecked Sendable {
 
   // MARK: Edits (each returns what the model is told)
 
-  private func mutate(_ body: (inout EditState) -> String) -> String {
-    let result = sync { body(&state) }
+  private let history = UndoStack<EditState>()
+
+  private func mutate(_ what: String = "edit", _ body: (inout EditState) -> String) -> String {
+    let result = sync {
+      history.push(state, what)
+      return body(&state)
+    }
     refreshThumbnails()
     return result
   }
 
+  func undoLast() -> String {
+    guard let (snapshot, what) = history.pop() else { return "nothing to undo" }
+    sync {
+      state = snapshot
+      previewTime = min(previewTime, max(0, snapshot.duration - 0.1))
+    }
+    refreshThumbnails()
+    return "undid the last \(what) — the timeline is back to \(Self.f(snapshot.duration)) s"
+  }
+
   func trim(edge: String, seconds: Double) -> String {
-    mutate { s in
+    mutate("trim") { s in
       guard s.clips.indices.contains(s.selected) else { return "no clip selected" }
       var clip = s.clips[s.selected]
       let cut = max(0, seconds) * clip.speed  // timeline seconds → source seconds
@@ -270,7 +286,7 @@ final class VideoEditBox: @unchecked Sendable {
   }
 
   func split(at seconds: Double) -> String {
-    mutate { s in
+    mutate("split") { s in
       let starts = s.starts
       guard let index = s.clips.indices.first(where: {
         seconds > starts[$0] + 0.05 && seconds < starts[$0] + s.clips[$0].timelineDuration - 0.05
@@ -341,7 +357,7 @@ final class VideoEditBox: @unchecked Sendable {
   }
 
   func addCaption(_ text: String, position: String, start: Double, duration: Double) -> String {
-    mutate { s in
+    mutate("caption") { s in
       let start = min(max(0, start), max(0, s.duration - 0.5))
       let duration = min(max(0.5, duration), s.duration - start)
       let where_ = position.lowercased() == "top" ? "top" : "bottom"
@@ -352,7 +368,7 @@ final class VideoEditBox: @unchecked Sendable {
   }
 
   func fade(_ which: String, seconds: Double) -> String {
-    mutate { s in
+    mutate("fade") { s in
       let length = min(max(0.2, seconds), max(0.2, s.duration / 2))
       switch which.lowercased() {
       case "in":
@@ -455,6 +471,90 @@ final class VideoEditBox: @unchecked Sendable {
       previewTime = fresh.playhead
       return "discarded all edits — back to the original video, \(Self.f(fresh.duration)) s"
     }
+  }
+
+  /// CapCut's hero feature, on the phone's own recognizer: export the
+  /// timeline's audio, transcribe it on the device, and lay the words in as
+  /// captions where they were said.
+  func autoCaptions() async -> String {
+    do {
+      let (composition, _, mix) = try await build()
+      guard let session = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetAppleM4A)
+      else { return "could not read the audio track" }
+      session.audioMix = mix
+      let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("captions-\(Int(Date().timeIntervalSince1970)).m4a")
+      try await session.export(to: url, as: .m4a)
+      let chunks = try await Self.transcribe(url)
+      guard !chunks.isEmpty else { return "no speech found in the video" }
+      var added = 0
+      for chunk in chunks.prefix(6) {
+        _ = addCaption(chunk.text, position: "bottom", start: chunk.start, duration: max(1.2, chunk.duration))
+        added += 1
+      }
+      return "transcribed the speech on the device and added \(added) caption\(added == 1 ? "" : "s") where it was said"
+    } catch {
+      return "could not transcribe: \(error.localizedDescription)"
+    }
+  }
+
+  /// File-based on-device speech recognition, grouped into caption-sized
+  /// chunks (~3.5 s or 7 words).
+  private static func transcribe(_ url: URL) async throws -> [(text: String, start: Double, duration: Double)] {
+    let auth = await withCheckedContinuation { continuation in
+      SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
+    }
+    guard auth == .authorized else {
+      throw NSError(
+        domain: "Captions", code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "speech recognition permission refused"])
+    }
+    guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
+      throw NSError(
+        domain: "Captions", code: 2,
+        userInfo: [NSLocalizedDescriptionKey: "the speech recognizer is not available"])
+    }
+    let request = SFSpeechURLRecognitionRequest(url: url)
+    request.requiresOnDeviceRecognition = true
+    request.shouldReportPartialResults = false
+    // The recognizer and its request cross into the deadline race's
+    // @Sendable closure; Speech predates Sendable and the box carries them.
+    struct Recognition: @unchecked Sendable {
+      let recognizer: SFSpeechRecognizer
+      let request: SFSpeechURLRecognitionRequest
+    }
+    let recognition = Recognition(recognizer: recognizer, request: request)
+    let segments: [(String, Double, Double)] = try await firstToFinish(within: 45) {
+      try await withCheckedThrowingContinuation { continuation in
+        let once = OnceBox()
+        recognition.recognizer.recognitionTask(with: recognition.request) { result, error in
+          if let error {
+            if once.claim() { continuation.resume(throwing: error) }
+            return
+          }
+          guard let result, result.isFinal, once.claim() else { return }
+          continuation.resume(
+            returning: result.bestTranscription.segments.map {
+              ($0.substring, $0.timestamp, $0.duration)
+            })
+        }
+      }
+    }
+    var out: [(String, Double, Double)] = []
+    var words: [String] = []
+    var start = 0.0
+    var end = 0.0
+    for (word, at, length) in segments {
+      if words.isEmpty { start = at }
+      words.append(word)
+      end = at + length
+      if end - start > 3.5 || words.count >= 7 {
+        out.append((words.joined(separator: " "), start, end - start))
+        words = []
+      }
+    }
+    if !words.isEmpty { out.append((words.joined(separator: " "), start, max(1.0, end - start))) }
+    return out
   }
 
   // MARK: Rendering
@@ -924,6 +1024,16 @@ struct VideoVolumeTool: Tool {
   func call(arguments: Arguments) async throws -> String {
     try await VideoEditBox.shared.preload()
     return VideoEditBox.shared.setVolume(arguments.percent)
+  }
+}
+
+@available(iOS 27.0, *)
+struct AutoCaptionsTool: Tool {
+  let name = "auto_captions"
+  let description = "Transcribe the video's speech on the device and add it as subtitles where it was said."
+  func call(arguments: NoArguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    return await VideoEditBox.shared.autoCaptions()
   }
 }
 

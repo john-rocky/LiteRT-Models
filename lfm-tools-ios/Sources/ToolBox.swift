@@ -187,7 +187,7 @@ enum ToolBox {
   static let vision: [any FoundationModels.Tool] = [
     SeenBrightnessTool(), SeenExposureTool(), SeenContrastTool(), SeenSaturationTool(),
     SeenWarmthTool(), SeenRotateTool(), SeenCropTool(), SeenFilterTool(),
-    SeenAutoEnhanceTool(), SeenRemoveBackgroundTool(), SeenReadTextTool(),
+    SeenAutoEnhanceTool(), SeenRemoveBackgroundTool(), SeenReadTextTool(), SeenRedactTool(),
     SeenRevertTool(), SeenSaveTool(), WriteNoteTool(),
   ]
 
@@ -198,9 +198,9 @@ enum ToolBox {
   /// caption / fade / stabilise / volume / export, in the menu's own words.
   static let video: [any FoundationModels.Tool] = [
     TrimClipTool(), SplitClipTool(), SelectClipTool(), DeleteClipTool(), ClipSpeedTool(),
-    CropVideoTool(), AddCaptionTool(), AddFadeTool(), StabilizeVideoTool(), VideoVolumeTool(),
-    AddMusicTool(), RemoveMusicTool(), MakeReelTool(),
-    RevertVideoTool(), ExportVideoTool(),
+    CropVideoTool(), AddCaptionTool(), AutoCaptionsTool(), AddFadeTool(), StabilizeVideoTool(),
+    VideoVolumeTool(), AddMusicTool(), RemoveMusicTool(), MakeReelTool(),
+    UndoLastTool(target: .video), RevertVideoTool(), ExportVideoTool(), AskUserTool(),
   ]
 
   /// The store pack (Tools/StoreTools.swift): a Shopify admin's menu over
@@ -215,6 +215,7 @@ enum ToolBox {
     SearchOrdersTool(), FilterOrdersTool(), FulfillOrdersTool(), SendInvoiceTool(),
     RefundOrderTool(), OrderNoteTool(),
     SalesSummaryTool(), ExportProductsTool(),
+    UndoLastTool(target: .store), AskUserTool(),
   ]
 
   /// The audio pack (Tools/AudioTools.swift): a GarageBand mixer over four
@@ -225,7 +226,7 @@ enum ToolBox {
     TrackVolumeTool(), TrackPanTool(), MuteTrackTool(), SoloTrackTool(),
     AddEffectTool(), RemoveEffectTool(), DuplicateTrackTool(), DeleteTrackTool(), RenameTrackTool(),
     SetTempoTool(), SetBarsTool(), SongFadeTool(), PlaySongTool(), StopSongTool(),
-    ExportSongTool(), RevertSongTool(),
+    ExportSongTool(), UndoLastTool(target: .audio), RevertSongTool(), AskUserTool(),
   ]
 
   /// The documents pack (Tools/DocTools.swift): an Acrobat / Goodnotes menu
@@ -234,8 +235,9 @@ enum ToolBox {
   /// model reads; "the last page" is the page count.
   static let docs: [any FoundationModels.Tool] = [
     GoToPageTool(), DeletePageTool(), MovePageTool(), RotatePageTool(), InsertBlankPageTool(),
-    HighlightTextTool(), RemoveHighlightsTool(), AddNoteTool(), SignPageTool(), WatermarkTool(),
-    SearchDocumentTool(), ExtractPagesTool(), SavePDFTool(), RevertDocumentTool(),
+    HighlightTextTool(), RemoveHighlightsTool(), RedactTextTool(), AddNoteTool(), SignPageTool(),
+    WatermarkTool(), FillFieldTool(), SearchDocumentTool(), ExtractPagesTool(), SavePDFTool(),
+    UndoLastTool(target: .docs), RevertDocumentTool(), AskUserTool(),
   ]
 
   /// The shopping pack (Tools/ShoppingTools.swift): the buyer's side of the
@@ -243,9 +245,10 @@ enum ToolBox {
   /// Numbers come from the numbered results in the state; the cart maths is
   /// the app's.
   static let shopping: [any FoundationModels.Tool] = [
-    SearchCatalogTool(), SortResultsTool(), ShowProductTool(),
+    SearchCatalogTool(), FilterResultsTool(), SortResultsTool(), ShowProductTool(),
     AddToCartTool(), ChangeQuantityTool(), RemoveFromCartTool(),
     ApplyCouponTool(), CheckoutTool(), TrackOrderTool(),
+    UndoLastTool(target: .shopping), AskUserTool(),
   ]
 
   /// The money pack (Tools/MoneyTools.swift): a household-budget app over a
@@ -255,6 +258,7 @@ enum ToolBox {
     ListTransactionsTool(), FilterTransactionsTool(), SearchPayeeTool(),
     CategorizeTool(), FlagTransactionsTool(),
     SetBudgetTool(), SpendingReportTool(), BudgetReportTool(), FindSubscriptionsTool(),
+    UndoLastTool(target: .money), AskUserTool(),
   ]
 
   /// The inbox pack (Tools/InboxTools.swift): mail triage over fifteen canned
@@ -262,8 +266,9 @@ enum ToolBox {
   /// draft_reply writes, never sends.
   static let inbox: [any FoundationModels.Tool] = [
     ListInboxTool(), SearchMailTool(), ReadMessageTool(),
-    ArchiveTool(), MarkReadTool(), FlagMailTool(), SnoozeTool(),
+    ArchiveTool(), MarkReadTool(), FlagMailTool(), SnoozeTool(), DeleteMessageTool(),
     DraftReplyTool(), UnsubscribeTool(),
+    UndoLastTool(target: .inbox), AskUserTool(),
   ]
 
   static let all: [any FoundationModels.Tool] =
@@ -303,8 +308,9 @@ enum ToolBox {
     when the state has no results for what the user wants. track_order
     answers where an order is. Quantity is 1 unless the user says otherwise. When a request lists
     several steps, call the tools one after another in that order. When the
-    request does not say which item at all, ask instead of guessing — but
-    never ask about a detail the request or the state already gives. Do
+    request does not say which item at all, call ask_user instead of
+    guessing — but never ask about a detail the request or the state
+    already gives. Do
     only what was asked: after a search returns, report the results and
     stop. Answer questions about prices or the cart from the
     state without a tool. When a tool has returned, answer the user in one
@@ -317,9 +323,9 @@ enum ToolBox {
     the current selection — the transactions the last list, search or filter
     found. Categorize and flag apply to that selection: find first, then act.
     Amounts are yen. When a request lists several steps, call the tools one
-    after another in that order. Ask only when something required is truly
-    absent — "set a budget" with no category or amount; never ask about a
-    detail the request or the state already gives. Do only what was asked:
+    after another in that order. When something required is truly absent — "set a budget" with no
+    category or amount — call ask_user; never ask about a detail the
+    request or the state already gives. Do only what was asked:
     after a finder returns, report what it found and stop. Answer questions the state already answers
     without a tool. When a tool has returned, answer the user in one short
     sentence using its result.
@@ -333,8 +339,8 @@ enum ToolBox {
     search_mail is for a name or words — prefer list_inbox when the slice
     has a name, and call a finder once, not repeatedly. Archive, snooze,
     flag and mark-read apply to the selection: find first, then act. Message numbers come from the state, never guess one —
-    ask when the request does not say which message at all, but never ask
-    about a detail the request or the state already gives. Do only what
+    call ask_user when the request does not say which message at all, but
+    never ask about a detail the request or the state already gives. Do only what
     was asked: after a finder returns, report what it found and stop. Drafting
     a reply never sends anything. When a request lists several steps, call
     the tools one after another in that order. When a tool has returned,
@@ -369,9 +375,9 @@ enum ToolBox {
     frame size. Take times from that state — the playhead, a clip's start or
     end — never guess one. Tools act on the selected clip unless they name a
     clip. When a request lists several edits, call the tools one after
-    another in that order. Ask only when something required is truly absent
-    — a caption with no words given. Never ask about a detail the request
-    or the state already gives, and never ask to confirm. When a tool has
+    another in that order. When something required is truly absent — a caption
+    with no words given — call ask_user. Never ask about a detail the
+    request or the state already gives, and never ask to confirm an edit. When a tool has
     returned, answer the user in one short sentence using its result.
     """
 
@@ -390,8 +396,8 @@ enum ToolBox {
     orders from filter_orders or search_orders. Showing or listing records
     is a finder call — the counts in the state only answer how-many
     questions. refund_order takes its order number directly; do not search
-    first, and never invent a number — ask when one is missing, but never
-    ask about a detail the request or the state already gives. Do only
+    first, and never invent a number — call ask_user when one is missing,
+    but never ask about a detail the request or the state already gives. Do only
     what was asked: after a finder returns, report what it found and stop.
     When a request lists several steps, call the tools one after another in
     that order. When a tool has returned, answer the user in one short
@@ -405,10 +411,10 @@ enum ToolBox {
     whether it is playing. Name tracks the way the state does. Take current
     numbers from the state and change them by what the request implies — "a
     bit quieter" is about 15 less than the level shown. When a request lists
-    several changes, call the tools one after another in that order. Ask
-    only when something required is truly absent — "change the tempo" with
-    no tempo; never ask about a detail the request or the state already
-    gives. Answer questions about the mix from the state without a tool. When a tool has returned, answer the
+    several changes, call the tools one after another in that order. When
+    something required is truly absent — "change the tempo" with no tempo —
+    call ask_user; never ask about a detail the request or the state
+    already gives. Answer questions about the mix from the state without a tool. When a tool has returned, answer the
     user in one short sentence using its result.
     """
 
@@ -420,9 +426,9 @@ enum ToolBox {
     page numbers from that state, never guess one. The state lists page
     titles, not their contents — a question about what the document says
     needs search_document. When a request lists
-    several steps, call the tools one after another in that order. Ask only
-    when something required is truly absent — a note with no words given;
-    never ask about a detail the request or the state already gives. Answer
+    several steps, call the tools one after another in that order. When something required is truly absent — a note with no words given —
+    call ask_user; never ask about a detail the request or the state
+    already gives. Answer
     questions about the document from the state without a tool. When a tool has returned,
     answer the user in one short sentence using its result.
     """

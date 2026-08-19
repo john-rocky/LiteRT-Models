@@ -30,6 +30,19 @@ final class InboxBox: @unchecked Sendable {
   private var selection: [Int] = []
   private var selectionHow = ""
   private var drafts: [(to: String, body: String)] = []
+  private var pendingConfirmation: String?
+  private let history = UndoStack<([Message], [Int], String)>()
+
+  private func pushHistory(_ what: String) {
+    history.push((messages, selection, selectionHow), what)
+  }
+
+  func undoLast() -> String {
+    guard let (snap, what) = history.pop() else { return "nothing to undo" }
+    sync { (messages, selection, selectionHow) = snap }
+    post()
+    return "undid the last change (\(what))"
+  }
 
   private func sync<T>(_ body: () -> T) -> T {
     lock.lock()
@@ -44,6 +57,7 @@ final class InboxBox: @unchecked Sendable {
     let inbox = rows.filter { !$0.archived && $0.snoozedUntil == nil }
     let unread = inbox.filter(\.unread).count
     var line = "Inbox: \(inbox.count) messages, \(unread) unread."
+    if let pending = sync({ pendingConfirmation }) { line += " Awaiting confirmation: \(pending)." }
     let listed = inbox.sorted { $0.daysAgo < $1.daysAgo }.prefix(6).map {
       "#\($0.id) \($0.from) — \"\($0.subject)\"\($0.unread ? " (unread)" : "")\($0.flagged ? " ⚑" : "")"
     }
@@ -138,6 +152,7 @@ final class InboxBox: @unchecked Sendable {
     let ids = sync { selection }
     guard !ids.isEmpty else { return "nothing is selected — list, search or filter first" }
     sync {
+      pushHistory(what)
       for index in messages.indices where ids.contains(messages[index].id) {
         change(&messages[index])
       }
@@ -172,9 +187,28 @@ final class InboxBox: @unchecked Sendable {
     return "draft saved, replying to \(message.from) re \"\(message.subject)\":\n\(body)"
   }
 
+  /// Delete is the destructive one (archive keeps the mail): behind the
+  /// confirm pattern.
+  func delete(_ id: Int, confirmed: Bool) -> String {
+    let message = sync { messages.first { $0.id == id } }
+    guard let message else { return "there is no message #\(id)" }
+    guard confirmed else {
+      sync { pendingConfirmation = "delete message #\(id) from \(message.from)" }
+      return "deleting #\(id) from \(message.from) (\"\(message.subject)\") is permanent — ask the user to confirm, then call delete_message again with confirm true"
+    }
+    sync {
+      pendingConfirmation = nil
+      pushHistory("delete")
+      messages.removeAll { $0.id == id }
+    }
+    post()
+    return "deleted the message from \(message.from)"
+  }
+
   func unsubscribe(_ id: Int) -> String {
     let message: Message? = sync {
       guard let index = messages.firstIndex(where: { $0.id == id }) else { return nil }
+      pushHistory("unsubscribe")
       messages[index].archived = true
       return messages[index]
     }
@@ -298,6 +332,20 @@ struct DraftReplyTool: Tool {
   }
   func call(arguments: Arguments) async throws -> String {
     InboxBox.shared.draftReply(to: arguments.number, gist: arguments.gist)
+  }
+}
+
+@available(iOS 27.0, *)
+struct DeleteMessageTool: Tool {
+  let name = "delete_message"
+  let description = "Delete a message permanently. Archive keeps it; this does not."
+  @Generable struct Arguments {
+    @Guide(description: "The message number.") var number: Int
+    @Guide(description: "Pass false unless the user has already said yes to deleting this exact message; false shows them what would be deleted.")
+    var confirm: Bool
+  }
+  func call(arguments: Arguments) async throws -> String {
+    InboxBox.shared.delete(arguments.number, confirmed: arguments.confirm)
   }
 }
 

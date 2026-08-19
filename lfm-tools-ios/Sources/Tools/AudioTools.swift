@@ -149,15 +149,29 @@ final class AudioBox: @unchecked Sendable {
 
   // MARK: Edits (each returns what the model is told)
 
-  private func mutate(_ body: (inout SongState) -> String) -> String {
-    let (result, snapshot) = sync { (body(&state), state) }
+  private let songHistory = UndoStack<SongState>()
+
+  private func mutate(_ what: String = "change", _ body: (inout SongState) -> String) -> String {
+    let (result, snapshot) = sync {
+      songHistory.push(state, what)
+      return (body(&state), state)
+    }
     applyLevels(snapshot)
     postMixer(snapshot)
     return result
   }
 
+  func undoLast() -> String {
+    guard let (snap, what) = songHistory.pop() else { return "nothing to undo" }
+    let restored = sync { state = snap; return snap }
+    applyLevels(restored)
+    postMixer(restored)
+    rebuildIfPlaying()
+    return "undid the last \(what)"
+  }
+
   func setVolume(track: String, percent: Int) -> String {
-    mutate { s in
+    mutate("volume change") { s in
       guard let i = index(of: track, in: s) else { return noTrack(track, s) }
       let was = s.tracks[i].volume
       s.tracks[i].volume = min(100, max(0, percent))
@@ -274,7 +288,7 @@ final class AudioBox: @unchecked Sendable {
   }
 
   func fade(_ which: String, seconds: Double) -> String {
-    mutate { s in
+    mutate("fade") { s in
       let length = min(max(0.5, seconds), s.duration / 2)
       switch which.lowercased() {
       case "in": s.fadeIn = length

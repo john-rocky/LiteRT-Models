@@ -246,12 +246,16 @@ enum BenchRunner {
           argsPass = false
         }
       }
-      // An ask-back case passes only when nothing was called AND the answer
-      // asks something. "?" alone is the test on purpose: a model that asks
-      // without a question mark still reads as a statement on stage.
+      // An ask-back case passes when the model routed the question — one
+      // ask_user call and nothing else — or called nothing and asked in
+      // prose ("?" is the test: a question without a question mark reads as
+      // a statement on stage).
       let asked = answer.contains("?") || answer.contains("?")
-      let askPass = benchCase.expectAsk != true || asked
-      let pass = selectionPass && argsPass && askPass && errorText == nil
+      let askPass = called == ["ask_user"] || (called.isEmpty && asked)
+      let pass =
+        benchCase.expectAsk == true
+        ? (askPass && errorText == nil)
+        : (selectionPass && argsPass && errorText == nil)
       if pass { passed += 1 } else { failed += 1 }
 
       var line: [String: Any] = [

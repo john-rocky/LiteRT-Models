@@ -53,6 +53,28 @@ final class StoreBox: @unchecked Sendable {
   private var orders: [Order] = StoreData.orders
   private var selection: Selection = .none
   private var invoicesSent = 0
+  /// A refund waiting on the user's yes (the confirm pattern): what the
+  /// state names until refund_order is called again with confirm true.
+  private var pendingConfirmation: String?
+  private let history = UndoStack<([Product], [Order], Selection, String)>()
+
+  private func pushHistory(_ what: String) {
+    history.push((products, orders, selection, selectionHow), what)
+  }
+  private var selectionHow = ""
+
+  func undoLast() -> String {
+    guard let (snap, what) = history.pop() else { return "nothing to undo" }
+    sync { (products, orders, selection, selectionHow) = snap }
+    post()
+    return "undid the last change (\(what))"
+  }
+
+  private func post() {
+    let panel = snapshot()
+    ArtifactBox.shared.post(.table(
+      title: panel.title, columns: panel.columns, rows: Array(panel.rows.prefix(8))))
+  }
 
   private func sync<T>(_ body: () -> T) -> T {
     lock.lock()
@@ -78,6 +100,7 @@ final class StoreBox: @unchecked Sendable {
     var line =
       "Store: \(products.count) products (\(active) active, \(draft) draft, \(archived) archived), "
       + "\(orders.count) orders (\(unfulfilled) unfulfilled, \(pending) awaiting payment)."
+    if let pending = sync({ pendingConfirmation }) { line += " Awaiting confirmation: \(pending)." }
     switch selection {
     case .none:
       line += " Selection: none — search or filter first, then act."
@@ -228,6 +251,7 @@ final class StoreBox: @unchecked Sendable {
   private func updateSelectedProducts(_ caption: String, _ change: (inout Product) -> Void) -> String {
     guard let ids = selectedProducts() else { return Self.needProducts }
     let rows: [Product] = sync {
+      pushHistory(caption)
       for index in products.indices where ids.contains(products[index].id) { change(&products[index]) }
       return products.filter { ids.contains($0.id) }
     }
@@ -272,6 +296,7 @@ final class StoreBox: @unchecked Sendable {
   func fulfillOrders() -> String {
     guard let numbers = selectedOrders() else { return Self.needOrders }
     let (done, skipped): ([Order], [Order]) = sync {
+      pushHistory("fulfilment")
       var done: [Order] = []
       var skipped: [Order] = []
       for index in orders.indices where numbers.contains(orders[index].number) {
@@ -308,7 +333,7 @@ final class StoreBox: @unchecked Sendable {
       + rows.map { "#\($0.number) \($0.customer)" }.joined(separator: ", ")
   }
 
-  func refund(order number: Int) -> String {
+  func refund(order number: Int, confirmed: Bool) -> String {
     let result: String = sync {
       guard let index = orders.firstIndex(where: { $0.number == number }) else {
         return "there is no order #\(number)"
@@ -316,6 +341,13 @@ final class StoreBox: @unchecked Sendable {
       guard orders[index].payment == "paid" else {
         return "order #\(number) is \(orders[index].payment) — nothing to refund"
       }
+      guard confirmed else {
+        let o = orders[index]
+        pendingConfirmation = "refund order #\(o.number) (\(o.customer), \(Self.yen(o.total)))"
+        return "refunding order #\(o.number) (\(o.customer), \(Self.yen(o.total))) is permanent — ask the user to confirm, then call refund_order again with confirm true"
+      }
+      pendingConfirmation = nil
+      pushHistory("refund")
       orders[index].payment = "refunded"
       let o = orders[index]
       ArtifactBox.shared.post(.table(
@@ -330,6 +362,7 @@ final class StoreBox: @unchecked Sendable {
   func addOrderNote(_ note: String) -> String {
     guard let numbers = selectedOrders() else { return Self.needOrders }
     sync {
+      pushHistory("note")
       for index in orders.indices where numbers.contains(orders[index].number) {
         orders[index].note = note
       }
@@ -607,11 +640,13 @@ struct RefundOrderTool: Tool {
   let name = "refund_order"
   let description = "Refund one order in full."
   @Generable struct Arguments {
-    @Guide(description: "The order number, e.g. 1007, from the request or the state. If no order is identified anywhere, do not call this — ask which order.")
+    @Guide(description: "The order number, e.g. 1007, from the request or the state. If no order is identified anywhere, call ask_user instead.")
     var order_number: Int
+    @Guide(description: "Pass false unless the user has already said yes to this exact refund; false shows them what will happen so they can decide.")
+    var confirm: Bool
   }
   func call(arguments: Arguments) async throws -> String {
-    StoreBox.shared.refund(order: arguments.order_number)
+    StoreBox.shared.refund(order: arguments.order_number, confirmed: arguments.confirm)
   }
 }
 

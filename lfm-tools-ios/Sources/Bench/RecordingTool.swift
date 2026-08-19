@@ -16,12 +16,19 @@ struct RecordingTool<Base: Tool>: Tool {
   /// is the only one where "the model chained search → maps correctly" is a
   /// checkable claim.
   let canned: String
+  /// For tools whose honest answer depends on the arguments (a confirm
+  /// gate's two branches, a result that must echo a number): a closure that
+  /// renders the canned answer from what was actually passed. The world
+  /// stays deterministic; the shape stays honest.
+  var respond: (@Sendable (Base.Arguments) -> String)? = nil
 
   var name: String { base.name }
   var description: String { base.description }
   var parameters: GenerationSchema { base.parameters }
 
-  func call(arguments: Base.Arguments) async throws -> String { canned }
+  func call(arguments: Base.Arguments) async throws -> String {
+    respond?(arguments) ?? canned
+  }
 }
 
 @available(iOS 27.0, *)
@@ -135,6 +142,11 @@ enum BenchToolBox {
     RecordingTool(base: AddFadeTool(), canned: "fade added (picture and sound)"),
     RecordingTool(base: StabilizeVideoTool(), canned: "stabilization on"),
     RecordingTool(base: VideoVolumeTool(), canned: "volume set"),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .video), canned: "undid the last change"),
+    RecordingTool(
+      base: AutoCaptionsTool(),
+      canned: "transcribed the speech on the device and added 3 captions where it was said"),
     RecordingTool(base: AddMusicTool(), canned: "calm music added under the whole video"),
     RecordingTool(base: RemoveMusicTool(), canned: "music removed"),
     RecordingTool(
@@ -165,7 +177,15 @@ enum BenchToolBox {
     RecordingTool(base: FilterOrdersTool(), canned: "the matching orders are selected and listed on screen"),
     RecordingTool(base: FulfillOrdersTool(), canned: "fulfilled 5 orders: #1010, #1013, #1016, #1017, #1019"),
     RecordingTool(base: SendInvoiceTool(), canned: "sent a payment reminder for 5 orders"),
-    RecordingTool(base: RefundOrderTool(), canned: "refunded the order"),
+    RecordingTool(
+      base: RefundOrderTool(), canned: "",
+      respond: { args in
+        args.confirm
+          ? "refunded order #\(args.order_number) in full"
+          : "refunding order #\(args.order_number) is permanent — ask the user to confirm, then call refund_order again with confirm true"
+      }),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .store), canned: "undid the last change"),
     RecordingTool(base: OrderNoteTool(), canned: "note added to the selected orders"),
     RecordingTool(base: SalesSummaryTool(), canned: "last 7 days: 13 orders, ¥104,500 in sales, up 44% on the 7 days before"),
   ]
@@ -189,6 +209,8 @@ enum BenchToolBox {
     RecordingTool(base: StopSongTool(), canned: "stopped"),
     RecordingTool(base: ExportSongTool(), canned: "exported 17.5 s of 4 tracks to mix.m4a"),
     RecordingTool(base: RevertSongTool(), canned: "back to the original mix — 4 tracks at 110 bpm"),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .audio), canned: "undid the last change"),
   ]
 
   /// The documents pack, neutralized, against the six-page lease the cases
@@ -213,6 +235,14 @@ enum BenchToolBox {
     RecordingTool(base: SearchDocumentTool(), canned: "\"deposit\" appears 4 times: page 3 (3×, Rent and Deposit); page 4 (1×, Term)"),
     RecordingTool(base: SavePDFTool(), canned: "saved as saved-lease.pdf in the app's Documents (6 pages)"),
     RecordingTool(base: RevertDocumentTool(), canned: "back to the original document — 6 pages, no annotations"),
+    RecordingTool(
+      base: FillFieldTool(), canned: "",
+      respond: { args in "\"\(args.value)\" entered in the \(args.field) field" }),
+    RecordingTool(
+      base: RedactTextTool(), canned: "",
+      respond: { args in "blacked out every occurrence of \"\(args.text)\" — they can no longer be read" }),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .docs), canned: "undid the last change"),
   ]
 
   /// The shopping pack, neutralized, against the state the cases carry
@@ -225,7 +255,16 @@ enum BenchToolBox {
     RecordingTool(base: ChangeQuantityTool(), canned: "quantity changed — cart total ¥4,990"),
     RecordingTool(base: RemoveFromCartTool(), canned: "removed from the cart"),
     RecordingTool(base: ApplyCouponTool(), canned: "coupon applied: −10% — total ¥4,490"),
-    RecordingTool(base: CheckoutTool(), canned: "order #5231 placed — arriving in 2 days"),
+    RecordingTool(
+      base: CheckoutTool(), canned: "",
+      respond: { args in
+        args.confirm
+          ? "order #5231 placed — arriving in 2 days"
+          : "placing this order charges the cart total — ask the user to confirm, then call checkout again with confirm true"
+      }),
+    RecordingTool(base: FilterResultsTool(), canned: "the narrowed results are renumbered and listed on screen"),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .shopping), canned: "undid the last change"),
     RecordingTool(base: TrackOrderTool(), canned: "order #5230 is out for delivery — arriving today by 21:00"),
   ]
 
@@ -240,6 +279,8 @@ enum BenchToolBox {
     RecordingTool(base: SpendingReportTool(), canned: "last 7 days: ¥21,340 across 7 transactions — groceries ¥4,820, eating_out ¥1,180"),
     RecordingTool(base: BudgetReportTool(), canned: "this month against budgets: eating_out over by ¥2,460; groceries ¥13,810 left"),
     RecordingTool(base: FindSubscriptionsTool(), canned: "2 recurring payments, about ¥2,470 a month: Netflix ¥1,490; Spotify ¥980"),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .money), canned: "undid the last change"),
   ]
 
   /// The inbox pack, neutralized, against the fifteen canned messages.
@@ -253,6 +294,15 @@ enum BenchToolBox {
     RecordingTool(base: SnoozeTool(), canned: "snoozed the selected messages"),
     RecordingTool(base: DraftReplyTool(), canned: "draft saved — nothing sent"),
     RecordingTool(base: UnsubscribeTool(), canned: "unsubscribed and archived the message"),
+    RecordingTool(
+      base: DeleteMessageTool(), canned: "",
+      respond: { args in
+        args.confirm
+          ? "deleted message #\(args.number)"
+          : "deleting message #\(args.number) is permanent — ask the user to confirm, then call delete_message again with confirm true"
+      }),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .inbox), canned: "undid the last change"),
   ]
 
   /// `--toolset <name>` picks the pack a bench run offers the model.

@@ -9,8 +9,10 @@
 // new, and the bodies delegate to the plain tools once the referenced image
 // is "the photo".
 import CoreGraphics
+import CoreImage
 import Foundation
 import FoundationModels
+import Vision
 
 /// Where an ImageReference gets resolved: the transcript of whichever session
 /// is live. Set when a session is created; tools read it during a call, when
@@ -274,6 +276,59 @@ struct SeenReadTextTool: Tool {
   func call(arguments: Arguments) async throws -> String {
     if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
     return try await ReadPhotoTextTool().call(arguments: NoArguments())
+  }
+}
+
+@available(iOS 27.0, *)
+struct SeenRedactTool: Tool {
+  let name = "redact_photo"
+  let description = "Black out faces, readable text, or both — so the photo can be shared without the private parts."
+  @Generable struct Arguments {
+    @Guide(description: "The attached photo, by its label.") var image: ImageReference
+    @Guide(description: "What to hide.", .anyOf(["faces", "text", "both"])) var hide: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    if let missing = SeenPhoto.select(arguments.image) { return SeenPhoto.unresolved(missing) }
+    guard let cgImage = PhotoEditBox.shared.currentCGImage() else {
+      return "no photo to redact"
+    }
+    // Detect first, so "nothing found" is an honest answer, not a fake edit.
+    let hide = arguments.hide.lowercased()
+    let handler = VNImageRequestHandler(cgImage: cgImage)
+    var normalized: [CGRect] = []
+    var found: [String] = []
+    if hide != "text" {
+      let faces = VNDetectFaceRectanglesRequest()
+      try? handler.perform([faces])
+      let boxes = (faces.results ?? []).map(\.boundingBox)
+      if !boxes.isEmpty { found.append("\(boxes.count) face\(boxes.count == 1 ? "" : "s")") }
+      normalized += boxes
+    }
+    if hide != "faces" {
+      let texts = VNRecognizeTextRequest()
+      texts.recognitionLevel = .fast
+      try? handler.perform([texts])
+      let boxes = (texts.results ?? []).map(\.boundingBox)
+      if !boxes.isEmpty { found.append("\(boxes.count) piece\(boxes.count == 1 ? "" : "s") of text") }
+      normalized += boxes
+    }
+    guard !normalized.isEmpty else {
+      return "nothing to hide — no \(hide == "both" ? "faces or text" : hide) in the photo"
+    }
+    let caption = "redact \(found.joined(separator: " and "))"
+    return try await PhotoEditBox.shared.apply(caption) { image in
+      let width = image.extent.width
+      let height = image.extent.height
+      var out = image
+      for box in normalized {
+        let rect = CGRect(
+          x: image.extent.minX + box.minX * width, y: image.extent.minY + box.minY * height,
+          width: box.width * width, height: box.height * height
+        ).insetBy(dx: -width * 0.005, dy: -height * 0.005)
+        out = CIImage(color: .black).cropped(to: rect).composited(over: out)
+      }
+      return out.cropped(to: image.extent)
+    }
   }
 }
 
