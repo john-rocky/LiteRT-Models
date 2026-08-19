@@ -1,8 +1,12 @@
 import FoundationModels
-import LiteRTLM
+#if canImport(LiteRTLM)
+  import LiteRTLM
+#endif
 import Photos
 import PhotosUI
-import LiteRTLMFoundationModels
+#if canImport(LiteRTLMFoundationModels)
+  import LiteRTLMFoundationModels
+#endif
 import SwiftUI
 
 @available(iOS 27.0, *)
@@ -60,6 +64,9 @@ struct ChatView: View {
   /// Documents, on both backends, with the same token counts as the desktop CLI
   /// so the numbers line up with it.
   private func runBenchmarks() async {
+    #if !canImport(LiteRTLM)
+      print("BENCH unavailable: LiteRT is not in this build")
+    #else
     for url in ChatModel.availableModels() {
       for backend in [Backend.cpu(), .gpu] {
         let label = "\(url.lastPathComponent) \(backend.rawValue)"
@@ -78,6 +85,7 @@ struct ChatView: View {
       }
     }
     print("BENCH done")
+    #endif
   }
 
   /// `--export-video` copies the newest video out of the photo library into the
@@ -103,7 +111,7 @@ struct ChatView: View {
       print("EXPORT no resource")
       return
     }
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let documents = AppFiles.documents
     let destination = documents.appendingPathComponent("screen-recording.mov")
     try? FileManager.default.removeItem(at: destination)
     let options2 = PHAssetResourceRequestOptions()
@@ -136,6 +144,13 @@ struct ChatView: View {
       return
     }
     chat.startTrace()
+    // A state pack's world exists before the first message: the video and
+    // the document load here so the state line has something to say.
+    switch ChatModel.statePack {
+    case "video": try? await VideoEditBox.shared.preload()
+    case "docs": DocBox.shared.preload()
+    default: break
+    }
     guard case .noModel = chat.status else { return }
     // `--model apple` skips the bundle entirely: Apple's model, every tool,
     // the mic — the setup for trying things out, not measuring them.
@@ -412,11 +427,13 @@ private struct ModelPicker: View {
         .font(.caption).foregroundStyle(.secondary)
         Button("Look again") { models = ChatModel.availableModels() }
       } else {
-        Picker("Backend", selection: Binding(get: { chat.backend }, set: { chat.backend = $0 })) {
-          Text("CPU").tag(Backend.cpu())
-          Text("GPU").tag(Backend.gpu)
-        }
-        .pickerStyle(.segmented)
+        #if canImport(LiteRTLM)
+          Picker("Backend", selection: Binding(get: { chat.backend }, set: { chat.backend = $0 })) {
+            Text("CPU").tag(Backend.cpu())
+            Text("GPU").tag(Backend.gpu)
+          }
+          .pickerStyle(.segmented)
+        #endif
         ForEach(models, id: \.self) { url in
           Button(url.lastPathComponent) { Task { await chat.load(url) } }
         }

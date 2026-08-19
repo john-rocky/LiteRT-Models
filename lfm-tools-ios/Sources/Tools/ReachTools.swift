@@ -1,7 +1,9 @@
 // The four that reach furthest out of the app: a real system alarm, Apple's
 // offline translator, an edit written back to the photo library, and a chart
 // the agent draws.
-import AlarmKit
+#if !targetEnvironment(macCatalyst)
+  import AlarmKit
+#endif
 import CoreImage
 import Foundation
 import FoundationModels
@@ -24,6 +26,10 @@ struct TimerTool: Tool {
 
   func call(arguments: Arguments) async throws -> String {
     let seconds = max(5, arguments.seconds)
+    #if targetEnvironment(macCatalyst)
+      // AlarmKit is iOS-only; on the Mac the timer rings as a notification.
+      return try await ringAsNotification(seconds: seconds, label: arguments.label, why: "no AlarmKit on the Mac")
+    #else
     let manager = AlarmManager.shared
     var state = manager.authorizationState
     if state == .notDetermined {
@@ -64,6 +70,7 @@ struct TimerTool: Tool {
     }
     ArtifactBox.shared.post(.timer(seconds: seconds, label: arguments.label))
     return "timer set for \(seconds)s — it will ring in the system, not in this app"
+    #endif
   }
 
   /// A timer that cannot ring in the system rings as a notification instead —
@@ -79,11 +86,13 @@ struct TimerTool: Tool {
   }
 }
 
-/// AlarmKit requires a metadata type even when there is nothing to carry.
-@available(iOS 27.0, *)
-struct EmptyAlarmMetadata: AlarmMetadata, Codable, Hashable {
-  init() {}
-}
+#if !targetEnvironment(macCatalyst)
+  /// AlarmKit requires a metadata type even when there is nothing to carry.
+  @available(iOS 27.0, *)
+  struct EmptyAlarmMetadata: AlarmMetadata, Codable, Hashable {
+    init() {}
+  }
+#endif
 
 @available(iOS 27.0, *)
 struct TranslateTool: Tool {

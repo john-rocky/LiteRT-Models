@@ -46,6 +46,38 @@ final class AudioBox: @unchecked Sendable {
 
   static let effects = ["reverb", "echo", "distortion", "lowpass"]
 
+  /// What the stage draws: the mixer as it is.
+  struct Snapshot: Sendable {
+    struct Channel: Sendable, Identifiable {
+      let id: Int
+      let name: String
+      let volume: Int
+      let pan: Int
+      let muted: Bool
+      let solo: Bool
+      let effects: [String]
+      let audible: Bool
+    }
+    let channels: [Channel]
+    let tempo: Int
+    let bars: Int
+    let duration: Double
+    let playing: Bool
+    let playhead: Double
+  }
+
+  func snapshot() -> Snapshot {
+    let s = sync { state }
+    let anySolo = s.tracks.contains(where: \.solo)
+    return Snapshot(
+      channels: s.tracks.map { t in
+        Snapshot.Channel(
+          id: t.id, name: t.name, volume: t.volume, pan: t.pan, muted: t.muted, solo: t.solo,
+          effects: t.effects, audible: !t.muted && (!anySolo || t.solo))
+      },
+      tempo: s.tempo, bars: s.bars, duration: s.duration, playing: s.playing, playhead: s.playhead)
+  }
+
   private let lock = NSLock()
   private var state = SongState(
     tracks: [
@@ -220,6 +252,16 @@ final class AudioBox: @unchecked Sendable {
       s.tracks[i].name = name.trimmingCharacters(in: .whitespaces)
       return "renamed \(was) to \(s.tracks[i].name)"
     }
+  }
+
+  func setBars(_ bars: Int) -> String {
+    let result = mutate { s in
+      let want = [4, 8, 16].contains(bars) ? bars : 8
+      s.bars = want
+      return "the song is now \(want) bars (\(Self.f(s.duration)) s)"
+    }
+    rebuildIfPlaying()
+    return result
   }
 
   func setTempo(_ bpm: Int) -> String {
@@ -460,7 +502,7 @@ final class AudioBox: @unchecked Sendable {
       player.play()
     }
     applyLevels(s)
-    let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let url = AppFiles.documents
       .appendingPathComponent("mix-\(Int(Date().timeIntervalSince1970)).m4a")
     let file = try AVAudioFile(
       forWriting: url,
@@ -592,14 +634,16 @@ enum Synth {
 @available(iOS 27.0, *)
 struct TrackVolumeTool: Tool {
   let name = "set_track_volume"
-  let description = "Set a track's volume fader."
+  let description = "Move a track's volume fader to a level."
   @Generable struct Arguments {
     @Guide(description: "The track, by name (Drums, Bass, Keys, Lead) or number.") var track: String
-    @Guide(description: "New level 0–100. The current level is in the song state; 'a bit quieter' is about 15 less.")
-    var percent: Int
+    // "level", not "percent": named percent, "turn them down a bit" came in
+    // as 5 — a step, not the fader position (Mac, 2026-08-19).
+    @Guide(description: "Where the fader ends up, 0–100. The current level is in the song state; 'a bit quieter' means about 15 below it.")
+    var level: Int
   }
   func call(arguments: Arguments) async throws -> String {
-    AudioBox.shared.setVolume(track: arguments.track, percent: arguments.percent)
+    AudioBox.shared.setVolume(track: arguments.track, percent: arguments.level)
   }
 }
 
@@ -718,9 +762,21 @@ struct SetTempoTool: Tool {
 }
 
 @available(iOS 27.0, *)
+struct SetBarsTool: Tool {
+  let name = "set_song_length"
+  let description = "Make the whole song longer or shorter, in bars."
+  @Generable struct Arguments {
+    @Guide(description: "Length in bars.", .anyOf(["4", "8", "16"])) var bars: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    AudioBox.shared.setBars(Int(arguments.bars) ?? 8)
+  }
+}
+
+@available(iOS 27.0, *)
 struct SongFadeTool: Tool {
   let name = "add_fade"
-  let description = "Fade the whole song in at the start, out at the end, or both."
+  let description = "Fade the whole song in from silence at the start, out to silence at the end, or both."
   @Generable struct Arguments {
     @Guide(description: "Which end.", .anyOf(["in", "out", "both"])) var which: String
     @Guide(description: "Length of the fade in seconds. 2 is typical.") var seconds: Double

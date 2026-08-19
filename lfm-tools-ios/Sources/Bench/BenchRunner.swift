@@ -9,8 +9,12 @@
 // edge-agent-lab/ios/bench/run-device.sh.
 import Foundation
 import FoundationModels
-import LiteRTLM
-import LiteRTLMFoundationModels
+#if canImport(LiteRTLM)
+  import LiteRTLM
+#endif
+#if canImport(LiteRTLMFoundationModels)
+  import LiteRTLMFoundationModels
+#endif
 import UIKit
 
 @available(iOS 27.0, *)
@@ -24,7 +28,7 @@ enum BenchRunner {
   // there, and everything slow is detached anyway.
   @MainActor
   static func run() async {
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let documents = AppFiles.documents
     // Per-run filename. `devicectl copy from` returns stale content for a
     // path it has copied before; a fixed name here cost days elsewhere.
     let out = JSONLWriter(
@@ -89,7 +93,9 @@ enum BenchRunner {
     }
 
     let modelName: String
-    var liteRTModel: LiteRTLanguageModel?
+    #if canImport(LiteRTLM)
+      var liteRTModel: LiteRTLanguageModel?
+    #endif
     switch chosen {
     case .apple:
       guard SystemLanguageModel.default.availability == .available else {
@@ -98,6 +104,11 @@ enum BenchRunner {
       }
       modelName = "apple-fm"
     case .liteRT(let url):
+      #if !canImport(LiteRTLM)
+        _ = url
+        out.write(["type": "error", "what": "LiteRT is not in this build; run with --model apple"])
+        return
+      #else
       do {
         let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         // Same sizing as the stage demo: a 2.6B plus a 2048-token KV is what
@@ -112,6 +123,7 @@ enum BenchRunner {
         out.write(["type": "error", "what": "model load: \(error)"])
         return
       }
+      #endif
     }
     // The run's own date, so `dateResolvesTo` can be re-scored offline:
     // "tomorrow" only means something relative to the day the run happened.
@@ -144,11 +156,15 @@ enum BenchRunner {
       // the same prefill. Cross-turn behavior is a different benchmark.
       let session: LanguageModelSession
       let instructions = BenchToolBox.instructions(for: toolsetName)
-      if let model = liteRTModel {
-        session = LanguageModelSession(model: model, tools: tools, instructions: instructions)
-      } else {
+      #if canImport(LiteRTLM)
+        if let model = liteRTModel {
+          session = LanguageModelSession(model: model, tools: tools, instructions: instructions)
+        } else {
+          session = LanguageModelSession(tools: tools, instructions: instructions)
+        }
+      #else
         session = LanguageModelSession(tools: tools, instructions: instructions)
-      }
+      #endif
 
       TranscriptBox.shared.attach(session)
       // Written before the respond, so a hang is attributable to its case —
@@ -230,7 +246,12 @@ enum BenchRunner {
           argsPass = false
         }
       }
-      let pass = selectionPass && argsPass && errorText == nil
+      // An ask-back case passes only when nothing was called AND the answer
+      // asks something. "?" alone is the test on purpose: a model that asks
+      // without a question mark still reads as a statement on stage.
+      let asked = answer.contains("?") || answer.contains("?")
+      let askPass = benchCase.expectAsk != true || asked
+      let pass = selectionPass && argsPass && askPass && errorText == nil
       if pass { passed += 1 } else { failed += 1 }
 
       var line: [String: Any] = [
@@ -241,6 +262,7 @@ enum BenchRunner {
         "selectionPass": selectionPass, "argsPass": argsPass, "pass": pass,
         "ms": ms, "answer": String(answer.prefix(200)),
       ]
+      if benchCase.expectAsk == true { line["expectAsk"] = true; line["asked"] = asked }
       if let errorText { line["error"] = errorText }
       out.write(line)
       print("TOOLBENCH \(benchCase.id) \(pass ? "PASS" : "FAIL") \(ms)ms \(called)")

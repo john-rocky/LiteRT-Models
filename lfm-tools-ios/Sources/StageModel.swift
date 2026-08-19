@@ -4,8 +4,12 @@
 // moment in front of you; the transcript still exists inside the session.
 import Foundation
 import FoundationModels
-import LiteRTLM
-import LiteRTLMFoundationModels
+#if canImport(LiteRTLM)
+  import LiteRTLM
+#endif
+#if canImport(LiteRTLMFoundationModels)
+  import LiteRTLMFoundationModels
+#endif
 import Observation
 import UIKit
 
@@ -177,7 +181,7 @@ final class StageModel {
     "Split it at the playhead.",
     "Make the second clip slow motion.",
     "Caption it 'Tokyo, August' at the bottom for the first three seconds.",
-    "Mute it.",
+    "Mute it, and put some calm music under it.",
     "Export it.",
   ]
 
@@ -221,6 +225,40 @@ final class StageModel {
     "Save it as 'lease-signed'.",
   ]
 
+  /// The shopping cut: the buyer's side. Beat 3 is the state test ("the
+  /// second one" is a number in the message); beat 4 acts on the cart by
+  /// name; checkout closes it.
+  static let shoppingBeats = [
+    "Find wireless earbuds.",
+    "Sort them by price, cheapest first.",
+    "Add the second one to the cart — two of them.",
+    "Actually, make it just one.",
+    "Use the coupon SAVE10.",
+    "Check out.",
+  ]
+
+  /// The money cut: report → triage → fix → the two reports. Beat 3 is the
+  /// anaphora beat: "they" is the selection beat 2 made.
+  static let moneyBeats = [
+    "What did I spend this week?",
+    "Show me the uncategorized ones.",
+    "They're all groceries — categorize them.",
+    "Find my subscriptions.",
+    "Set the eating-out budget to 25,000 yen.",
+    "How am I doing against my budgets this month?",
+  ]
+
+  /// The inbox cut: triage. Beat 2 and beat 5 are find-then-act chains; the
+  /// reply beat writes a draft and sends nothing.
+  static let inboxBeats = [
+    "What's new in my inbox?",
+    "Archive all the newsletters.",
+    "Snooze the invoice from Kanda Goods until tomorrow.",
+    "Flag the one from the property company.",
+    "Reply to Hana: I'll send the report by Friday.",
+    "Archive everything I've already read.",
+  ]
+
   /// See and choose, split (Tools/ChooseTools.swift): the model answers a
   /// question about the photo with a @Generable enum, the app makes the
   /// call. For the vision bundles too small to route; runs on Apple's model
@@ -247,6 +285,9 @@ final class StageModel {
     case "store": return storeBeats
     case "audio": return audioBeats
     case "docs": return docsBeats
+    case "shopping": return shoppingBeats
+    case "money": return moneyBeats
+    case "inbox": return inboxBeats
     case "choose": return chooseBeats
     default: return beats
     }
@@ -265,7 +306,9 @@ final class StageModel {
   /// Packs where the app's state — not a picture — is the input: the model
   /// is told the timeline (video) or the store and its selection (store)
   /// and asked to operate it.
-  static var scenarioSendsState: Bool { ["video", "store", "audio", "docs"].contains(scenarioName) }
+  static var scenarioSendsState: Bool {
+    ["video", "store", "audio", "docs", "shopping", "money", "inbox"].contains(scenarioName)
+  }
   static var scenarioIsVideo: Bool { scenarioName == "video" }
   static var scenarioIsDocs: Bool { scenarioName == "docs" }
 
@@ -275,6 +318,9 @@ final class StageModel {
     case "store": return StoreBox.shared.describe()
     case "audio": return AudioBox.shared.describe()
     case "docs": return DocBox.shared.describe()
+    case "shopping": return ShopBox.shared.describe()
+    case "money": return MoneyBox.shared.describe()
+    case "inbox": return InboxBox.shared.describe()
     default: return VideoEditBox.shared.describe()
     }
   }
@@ -283,6 +329,9 @@ final class StageModel {
     case "store": return ToolBox.storeInstructions
     case "audio": return ToolBox.audioInstructions
     case "docs": return ToolBox.docsInstructions
+    case "shopping": return ToolBox.shoppingInstructions
+    case "money": return ToolBox.moneyInstructions
+    case "inbox": return ToolBox.inboxInstructions
     default: return ToolBox.videoInstructions
     }
   }
@@ -326,10 +375,16 @@ final class StageModel {
   /// a new pack in a minute instead of a quarter of an hour. Default stays
   /// LiteRT, which is what every recording so far was made on.
   static var backend: Backend {
-    guard let flag = CommandLine.arguments.firstIndex(of: "--backend"),
-      CommandLine.arguments.indices.contains(flag + 1)
-    else { return .liteRT }
-    return CommandLine.arguments[flag + 1].lowercased() == "apple" ? .system : .liteRT
+    #if !canImport(LiteRTLM)
+      // No LiteRT engine in the Mac Catalyst build: the stage always runs on
+      // Apple's model there.
+      return .system
+    #else
+      guard let flag = CommandLine.arguments.firstIndex(of: "--backend"),
+        CommandLine.arguments.indices.contains(flag + 1)
+      else { return .liteRT }
+      return CommandLine.arguments[flag + 1].lowercased() == "apple" ? .system : .liteRT
+    #endif
   }
   /// Bumped on every phase change so the view animates the swap rather than
   /// diffing an enum with associated values.
@@ -353,6 +408,32 @@ final class StageModel {
   private(set) var stageTimeline: VideoEditBox.Snapshot?
   /// The documents pack's: the open page above, the pages as a strip below.
   private(set) var stagePages: DocBox.Snapshot?
+  /// The audio pack's: the mixer, faders and all.
+  private(set) var stageMixer: AudioBox.Snapshot?
+  /// The records packs': the app's list, always on stage.
+  private(set) var stageTable: TablePanel?
+
+  private func refreshStagePanel() {
+    switch Self.scenarioName {
+    case "audio":
+      stageMixer = AudioBox.shared.snapshot()
+      stageImageID += 1
+    case "store":
+      stageTable = StoreBox.shared.snapshot()
+      stageImageID += 1
+    case "shopping":
+      stageTable = ShopBox.shared.snapshot()
+      stageImageID += 1
+    case "money":
+      stageTable = MoneyBox.shared.snapshot()
+      stageImageID += 1
+    case "inbox":
+      stageTable = InboxBox.shared.snapshot()
+      stageImageID += 1
+    default:
+      break
+    }
+  }
 
   private func refreshStageDoc() {
     guard Self.scenarioIsDocs else { return }
@@ -398,14 +479,16 @@ final class StageModel {
     // Tokens arrive faster than a screen can usefully change. They are collected
     // off the actor and published on a timer; one hop and one redraw per token
     // was competing with the generation itself.
-    LiteRTFMTrace.onChunk = { [weak self] piece in
-      self?.pending.append(piece)
-      RunLog.stream(piece)
-    }
-    LiteRTFMTrace.onTiming = { line in RunLog.write("TIME \(line)") }
-    LiteRTFMTrace.onRate = { [weak self] rate in
-      Task { @MainActor in self?.rate = rate }
-    }
+    #if canImport(LiteRTLM)
+      LiteRTFMTrace.onChunk = { [weak self] piece in
+        self?.pending.append(piece)
+        RunLog.stream(piece)
+      }
+      LiteRTFMTrace.onTiming = { line in RunLog.write("TIME \(line)") }
+      LiteRTFMTrace.onRate = { [weak self] rate in
+        Task { @MainActor in self?.rate = rate }
+      }
+    #endif
     pump = Task { @MainActor [weak self] in
       while !Task.isCancelled {
         try? await Task.sleep(for: .milliseconds(60))
@@ -435,6 +518,9 @@ final class StageModel {
     case "store": tools = ToolBox.store
     case "audio": tools = ToolBox.audio
     case "docs": tools = ToolBox.docs
+    case "shopping": tools = ToolBox.shopping
+    case "money": tools = ToolBox.money
+    case "inbox": tools = ToolBox.inbox
     case "choose": tools = []  // the model answers; the app calls
     default: tools = ToolBox.demo
     }
@@ -463,6 +549,10 @@ final class StageModel {
       backendName = "Apple on-device"
       session = LanguageModelSession(tools: tools, instructions: instructions)
     case .liteRT:
+      #if !canImport(LiteRTLM)
+        question = "LiteRT is not in this build — launch with --backend apple"
+        return
+      #else
       // Same process, same bundle, same backend as the beats that follow. The
       // standalone benchmark reported 252 tok/s of prefill where a turn in this
       // app measured about 46; running both here says whether that gap belongs
@@ -514,6 +604,7 @@ final class StageModel {
         question = "could not load the model: \(error.localizedDescription)"
         return
       }
+      #endif
     }
     RunLog.write("BACKEND \(backendName)")
     if Self.backend == .system {
@@ -543,6 +634,7 @@ final class StageModel {
       RunLog.write("DOC loaded — \(DocBox.shared.describe())")
       refreshStageDoc()
     }
+    refreshStagePanel()
     await run()
   }
 
@@ -655,6 +747,7 @@ final class StageModel {
           refreshStageImage()
           await refreshStageVideo()
           refreshStageDoc()
+          refreshStagePanel()
           if let call = pendingCall {
             set(.calling(name: call.name, arguments: call.arguments, returned: returned))
             try? await Task.sleep(for: .milliseconds(1400))
@@ -804,7 +897,7 @@ enum RunLog {
   }
 
   static var url: URL {
-    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    AppFiles.documents
       .appendingPathComponent(name)
   }
 

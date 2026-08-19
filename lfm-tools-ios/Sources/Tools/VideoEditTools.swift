@@ -61,6 +61,9 @@ final class VideoEditBox: @unchecked Sendable {
     var volume = 100
     var stabilize: String?
     var captions: [Caption] = []
+    /// Background music style, or nil. The track itself is synthesized on
+    /// demand (Tools/AudioTools.swift's Synth) — no assets in the repo.
+    var music: String?
 
     var duration: Double { clips.reduce(0) { $0 + $1.timelineDuration } }
 
@@ -194,6 +197,7 @@ final class VideoEditBox: @unchecked Sendable {
       applied.append(
         "caption \"\(caption.text)\" at \(caption.position), \(Self.f(caption.start))–\(Self.f(caption.start + caption.duration)) s")
     }
+    if let music = s.music { applied.append("\(music) music") }
     if !applied.isEmpty { lines.append("Applied: " + applied.joined(separator: "; ") + ".") }
     return lines.joined(separator: " ")
   }
@@ -366,6 +370,63 @@ final class VideoEditBox: @unchecked Sendable {
     }
   }
 
+  /// Synthesize a music loop and lay it under the whole timeline. The audio
+  /// pack's Synth makes the notes; here they are rendered to a file once and
+  /// the composition loops it.
+  func addMusic(style: String) -> String {
+    let want = ["calm", "upbeat"].contains(style.lowercased()) ? style.lowercased() : "calm"
+    do {
+      let url = try Self.renderMusic(style: want)
+      sync { musicFile = url }
+      return mutate { s in
+        s.music = want
+        return "\(want) music added under the whole video"
+      }
+    } catch {
+      return "could not make the music: \(error.localizedDescription)"
+    }
+  }
+
+  func removeMusic() -> String {
+    sync { musicFile = nil }
+    return mutate { s in
+      guard s.music != nil else { return "there is no music to remove" }
+      s.music = nil
+      return "music removed"
+    }
+  }
+
+  private var musicFile: URL?
+
+  /// Two bars of the audio pack's synth, mixed and written once per style.
+  private static func renderMusic(style: String) throws -> URL {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("music-\(style).m4a")
+    if FileManager.default.fileExists(atPath: url.path) { return url }
+    let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)!
+    let tempo = style == "upbeat" ? 120 : 88
+    let kinds: [AudioBox.Kind] = style == "upbeat" ? [.drums, .bass] : [.keys, .bass]
+    let buffers = try kinds.map { try Synth.loop($0, tempo: tempo, format: format) }
+    let frames = buffers.map(\.frameLength).min() ?? 0
+    guard frames > 0, let mixed = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else {
+      throw NSError(domain: "Music", code: 1)
+    }
+    mixed.frameLength = frames
+    let out = mixed.floatChannelData![0]
+    for i in 0..<Int(frames) { out[i] = 0 }
+    for buffer in buffers {
+      let src = buffer.floatChannelData![0]
+      for i in 0..<Int(frames) { out[i] += src[i] * 0.7 }
+    }
+    let file = try AVAudioFile(
+      forWriting: url,
+      settings: [
+        AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44100, AVNumberOfChannelsKey: 1,
+        AVEncoderBitRateKey: 128_000,
+      ])
+    try file.write(from: mixed)
+    return file.url
+  }
+
   func setVolume(_ percent: Int) -> String {
     let hasAudio = sync { audioTrack != nil }
     return mutate { s in
@@ -387,6 +448,7 @@ final class VideoEditBox: @unchecked Sendable {
 
   func revert() -> String {
     let fresh = sync { original }
+    sync { musicFile = nil }
     return mutate { s in
       guard fresh.clips.count > 0 else { return "no video loaded" }
       s = fresh
@@ -453,10 +515,8 @@ final class VideoEditBox: @unchecked Sendable {
       })
     videoComposition.renderSize = plan.crop.size
 
-    var mix: AVMutableAudioMix?
-    if let audioOut {
-      let params = AVMutableAudioMixInputParameters(track: audioOut)
-      let volume = Float(s.volume) / 100
+    var mixParams: [AVMutableAudioMixInputParameters] = []
+    func fadeRamps(_ params: AVMutableAudioMixInputParameters, volume: Float) {
       params.setVolume(volume, at: .zero)
       if s.fadeIn > 0 {
         params.setVolumeRamp(
@@ -470,8 +530,39 @@ final class VideoEditBox: @unchecked Sendable {
             start: CMTime(seconds: max(0, s.duration - s.fadeOut), preferredTimescale: 600),
             duration: CMTime(seconds: s.fadeOut, preferredTimescale: 600)))
       }
+    }
+    if let audioOut {
+      let params = AVMutableAudioMixInputParameters(track: audioOut)
+      fadeRamps(params, volume: Float(s.volume) / 100)
+      mixParams.append(params)
+    }
+    // The music loops under the whole timeline on its own track, quiet enough
+    // to sit under the original sound, and rides the same fades.
+    if s.music != nil, let file = sync({ musicFile }) {
+      let musicAsset = AVURLAsset(url: file)
+      if let musicTrack = try await musicAsset.loadTracks(withMediaType: .audio).first,
+        let musicOut = composition.addMutableTrack(
+          withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+      {
+        let loopSeconds = try await musicAsset.load(.duration).seconds
+        var at = 0.0
+        while at < s.duration, loopSeconds > 0.1 {
+          let length = min(loopSeconds, s.duration - at)
+          try musicOut.insertTimeRange(
+            CMTimeRange(
+              start: .zero, duration: CMTime(seconds: length, preferredTimescale: 600)),
+            of: musicTrack, at: CMTime(seconds: at, preferredTimescale: 600))
+          at += length
+        }
+        let params = AVMutableAudioMixInputParameters(track: musicOut)
+        fadeRamps(params, volume: 0.5)
+        mixParams.append(params)
+      }
+    }
+    var mix: AVMutableAudioMix?
+    if !mixParams.isEmpty {
       let audioMix = AVMutableAudioMix()
-      audioMix.inputParameters = [params]
+      audioMix.inputParameters = mixParams
       mix = audioMix
     }
     return (composition, videoComposition, mix)
@@ -737,13 +828,23 @@ struct DeleteClipTool: Tool {
 @available(iOS 27.0, *)
 struct ClipSpeedTool: Tool {
   let name = "set_clip_speed"
-  let description = "Change the playback speed of the selected clip."
+  // Takes the clip too: asked to slow "the second clip", Apple FM called
+  // this directly without selecting first (Mac, 2026-08-19) — and a tool
+  // that silently acted on the selected clip would slow the wrong one. The
+  // argument lets the direct call be the right call.
+  let description = "Change the playback speed of a clip."
   @Generable struct Arguments {
     @Guide(description: "Speed multiplier, 0.25 to 4. 0.5 is slow motion, 2 is twice as fast.")
     var multiplier: Double
+    @Guide(description: "Which clip, from 1. Omit for the selected clip.")
+    var clip: Int?
   }
   func call(arguments: Arguments) async throws -> String {
     try await VideoEditBox.shared.preload()
+    if let clip = arguments.clip {
+      let selected = VideoEditBox.shared.select(clip: clip)
+      if selected.hasPrefix("there is no clip") { return selected }
+    }
     return VideoEditBox.shared.setSpeed(arguments.multiplier)
   }
 }
@@ -816,6 +917,60 @@ struct VideoVolumeTool: Tool {
   func call(arguments: Arguments) async throws -> String {
     try await VideoEditBox.shared.preload()
     return VideoEditBox.shared.setVolume(arguments.percent)
+  }
+}
+
+@available(iOS 27.0, *)
+struct AddMusicTool: Tool {
+  let name = "add_music"
+  let description = "Put background music under the video."
+  @Generable struct Arguments {
+    @Guide(description: "The mood.", .anyOf(["calm", "upbeat"])) var style: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    return VideoEditBox.shared.addMusic(style: arguments.style)
+  }
+}
+
+@available(iOS 27.0, *)
+struct RemoveMusicTool: Tool {
+  let name = "remove_music"
+  // "(added with add_music)" is load-bearing: without it, 「音を消して」
+  // (kill the sound) routed here instead of to set_volume(0).
+  let description = "Take the background music (added with add_music) off the video."
+  func call(arguments: NoArguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    return VideoEditBox.shared.removeMusic()
+  }
+}
+
+@available(iOS 27.0, *)
+struct MakeReelTool: Tool {
+  // The compound: one name to say, one call, the app walks the steps — for
+  // the job that is always the same three, and for the models that cannot
+  // chain. "Make it vertical" alone should still route to crop_video; this
+  // is for the person who says what they want, not how.
+  let name = "make_reel"
+  // "no other calls needed" is load-bearing: without it the model cropped
+  // first and then called this, or walked the steps by hand and forgot the
+  // export (Mac, 2026-08-19).
+  let description =
+    "Turn the video into a ready-to-post vertical Reel: this one call does the 9:16 crop, the fade-out and the export itself — no other calls needed."
+  @Generable struct Arguments {
+    @Guide(description: "Optional caption shown at the bottom for the first seconds; omit for none.")
+    var caption: String?
+  }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    var steps: [String] = []
+    steps.append(VideoEditBox.shared.crop(aspect: "9:16"))
+    if let text = arguments.caption, !text.isEmpty {
+      steps.append(VideoEditBox.shared.addCaption(text, position: "bottom", start: 0, duration: 3))
+    }
+    steps.append(VideoEditBox.shared.fade("out", seconds: 1))
+    steps.append(try await VideoEditBox.shared.export())
+    return "made a Reel — " + steps.joined(separator: "; ")
   }
 }
 

@@ -5,8 +5,12 @@
 // shows exactly one moment — the question, then the tokens, then the tool
 // firing, then the result — and clears before the next.
 import FoundationModels
-import LiteRTLM
-import LiteRTLMFoundationModels
+#if canImport(LiteRTLM)
+  import LiteRTLM
+#endif
+#if canImport(LiteRTLMFoundationModels)
+  import LiteRTLMFoundationModels
+#endif
 import SwiftUI
 
 @available(iOS 27.0, *)
@@ -44,6 +48,16 @@ struct StageView: View {
           PageStrip(snapshot: pages)
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.35), value: stage.stageImageID)
+        }
+        if let mixer = stage.stageMixer {
+          MixerBoard(snapshot: mixer)
+            .padding(.top, 10)
+            .animation(.easeInOut(duration: 0.3), value: stage.stageImageID)
+        }
+        if let table = stage.stageTable {
+          RecordsPanel(snapshot: table)
+            .padding(.top, 10)
+            .animation(.easeInOut(duration: 0.3), value: stage.stageImageID)
         }
         Spacer(minLength: 8)
         // The beat gets the screen. It was sharing it with two flexible spacers
@@ -183,6 +197,128 @@ struct StageView: View {
 }
 
 // MARK: - Pieces
+
+/// The audio pack's stage: a channel strip per track — a fader that is
+/// visibly at its level, the pan below it, effect tags, mute and solo as an
+/// editor would draw them. When the model turns the keys down, the fader
+/// moves; that is the shot.
+@available(iOS 27.0, *)
+private struct MixerBoard: View {
+  let snapshot: AudioBox.Snapshot
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(spacing: 8) {
+        Image(systemName: snapshot.playing ? "play.fill" : "stop.fill")
+          .foregroundStyle(snapshot.playing ? Color.green : .white.opacity(0.5))
+        Text("\(snapshot.tempo) bpm · \(snapshot.bars) bars · \(AudioBox.f(snapshot.duration)) s")
+        Spacer()
+        if snapshot.playing {
+          Text("\(AudioBox.f(snapshot.playhead)) s")
+            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+        }
+      }
+      .font(.system(size: 12, weight: .semibold, design: .rounded))
+      .foregroundStyle(.white.opacity(0.7))
+
+      HStack(alignment: .bottom, spacing: 10) {
+        ForEach(snapshot.channels) { channel in
+          VStack(spacing: 5) {
+            if !channel.effects.isEmpty {
+              Text(channel.effects.map { String($0.prefix(3)) }.joined(separator: "+"))
+                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .foregroundStyle(.cyan)
+                .lineLimit(1)
+            }
+            ZStack(alignment: .bottom) {
+              Capsule()
+                .fill(Color.white.opacity(0.12))
+                .frame(width: 14, height: 110)
+              Capsule()
+                .fill(channel.audible ? Color.green : Color.white.opacity(0.25))
+                .frame(width: 14, height: max(4, 110 * CGFloat(channel.volume) / 100))
+              // The fader cap, at the level.
+              RoundedRectangle(cornerRadius: 3)
+                .fill(Color.white)
+                .frame(width: 26, height: 9)
+                .offset(y: -max(0, 110 * CGFloat(channel.volume) / 100 - 5))
+            }
+            Text(channel.pan == 0 ? "C" : AudioBox.panText(channel.pan))
+              .font(.system(size: 9, weight: .semibold, design: .monospaced))
+              .foregroundStyle(.white.opacity(0.5))
+            Text(channel.name)
+              .font(.system(size: 11, weight: .bold, design: .rounded))
+              .foregroundStyle(.white.opacity(channel.audible ? 0.9 : 0.4))
+              .lineLimit(1)
+            HStack(spacing: 3) {
+              if channel.muted {
+                Text("M").font(.system(size: 9, weight: .heavy))
+                  .padding(3).background(Color.red.opacity(0.6), in: .rect(cornerRadius: 3))
+              }
+              if channel.solo {
+                Text("S").font(.system(size: 9, weight: .heavy))
+                  .padding(3).background(Color.yellow.opacity(0.7), in: .rect(cornerRadius: 3))
+                  .foregroundStyle(.black)
+              }
+            }
+            .frame(height: 14)
+          }
+          .frame(maxWidth: .infinity)
+        }
+      }
+    }
+    .padding(12)
+    .background(Color.white.opacity(0.06), in: .rect(cornerRadius: 14))
+  }
+}
+
+/// A records pack's stage: the app's list, always on screen — the selection
+/// when a finder has made one, the default list otherwise. A bulk action
+/// lands and the rows change in place.
+@available(iOS 27.0, *)
+private struct RecordsPanel: View {
+  let snapshot: TablePanel
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 7) {
+      HStack {
+        Text(snapshot.title).font(.system(size: 13, weight: .bold, design: .rounded))
+        Spacer()
+        Text(snapshot.overview)
+          .font(.system(size: 10, weight: .semibold, design: .rounded))
+          .foregroundStyle(.white.opacity(0.5))
+      }
+      .foregroundStyle(.white)
+      Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 4) {
+        GridRow {
+          ForEach(Array(snapshot.columns.enumerated()), id: \.offset) { _, column in
+            Text(column.uppercased())
+              .font(.system(size: 9, weight: .heavy, design: .rounded))
+              .foregroundStyle(.white.opacity(0.45))
+          }
+        }
+        Divider().overlay(Color.white.opacity(0.2))
+        ForEach(Array(snapshot.rows.prefix(9).enumerated()), id: \.offset) { _, row in
+          GridRow {
+            ForEach(Array(row.enumerated()), id: \.offset) { index, cell in
+              Text(cell)
+                .font(.system(size: 12, weight: index == 0 ? .semibold : .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(index == 0 ? 0.95 : 0.75))
+                .lineLimit(1)
+            }
+          }
+        }
+      }
+      if snapshot.totalRows > 9 {
+        Text("and \(snapshot.totalRows - 9) more")
+          .font(.system(size: 10, weight: .semibold, design: .rounded))
+          .foregroundStyle(.white.opacity(0.4))
+      }
+    }
+    .padding(12)
+    .background(Color.white.opacity(0.06), in: .rect(cornerRadius: 14))
+  }
+}
 
 /// The documents pack's pages: thumbnails in a row, the open one outlined,
 /// a dot on the ones that carry annotations.

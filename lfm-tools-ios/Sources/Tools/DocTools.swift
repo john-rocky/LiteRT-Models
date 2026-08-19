@@ -54,7 +54,7 @@ final class DocBox: @unchecked Sendable {
 
   func preload() {
     if isLoaded { return }
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let documents = AppFiles.documents
     let pdfs = ((try? FileManager.default.contentsOfDirectory(
       at: documents, includingPropertiesForKeys: [.contentModificationDateKey])) ?? [])
       .filter { $0.pathExtension.lowercased() == "pdf" && !$0.lastPathComponent.hasPrefix("saved-") }
@@ -300,6 +300,50 @@ final class DocBox: @unchecked Sendable {
     }
   }
 
+  /// A big translucent word across every page — the review copy's stamp.
+  func watermark(_ text: String) -> String {
+    withDocument { doc, current in
+      let word = text.trimmingCharacters(in: .whitespaces)
+      guard !word.isEmpty else { return "the watermark needs a word" }
+      for index in 0..<doc.pageCount {
+        guard let p = doc.page(at: index) else { continue }
+        let box = p.bounds(for: .mediaBox)
+        let height = box.width * 0.16
+        let bounds = CGRect(
+          x: box.midX - box.width * 0.45, y: box.midY - height / 2,
+          width: box.width * 0.9, height: height)
+        let mark = PDFAnnotation(bounds: bounds, forType: .freeText, withProperties: nil)
+        mark.contents = word
+        mark.font = UIFont.boldSystemFont(ofSize: height * 0.6)
+        mark.fontColor = UIColor.red.withAlphaComponent(0.18)
+        mark.color = .clear
+        mark.alignment = .center
+        p.addAnnotation(mark)
+      }
+      return "\"\(word)\" watermarked across all \(doc.pageCount) pages"
+    }
+  }
+
+  /// A span of pages as a new PDF in Documents; the open document is untouched.
+  func extract(from: Int, to: Int) -> String {
+    let doc = sync { document }
+    guard let doc else { return Failure.noDocument.localizedDescription }
+    let low = min(from, to), high = max(from, to)
+    guard low >= 1, high <= doc.pageCount else {
+      return "pages must be within 1–\(doc.pageCount)"
+    }
+    let out = PDFDocument()
+    for (offset, index) in ((low - 1)..<high).enumerated() {
+      if let page = doc.page(at: index), let copy = page.copy() as? PDFPage {
+        out.insert(copy, at: offset)
+      }
+    }
+    let url = AppFiles.documents
+      .appendingPathComponent("saved-pages-\(low)-\(high).pdf")
+    guard out.write(to: url) else { return "could not write \(url.lastPathComponent)" }
+    return "extracted pages \(low)–\(high) to \(url.lastPathComponent) in the app's Documents (\(out.pageCount) pages)"
+  }
+
   func search(_ text: String) -> String {
     let doc = sync { document }
     guard let doc else { return Failure.noDocument.localizedDescription }
@@ -323,7 +367,7 @@ final class DocBox: @unchecked Sendable {
     var stem = name.trimmingCharacters(in: .whitespaces)
     if stem.lowercased().hasSuffix(".pdf") { stem = String(stem.dropLast(4)) }
     if stem.isEmpty { stem = fallback }
-    let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let url = AppFiles.documents
       .appendingPathComponent("saved-\(stem).pdf")
     guard doc.write(to: url) else { return "could not write \(url.lastPathComponent)" }
     return "saved as \(url.lastPathComponent) in the app's Documents (\(doc.pageCount) pages)"
@@ -552,6 +596,33 @@ struct SignPageTool: Tool {
   func call(arguments: Arguments) async throws -> String {
     DocBox.shared.preload()
     return DocBox.shared.sign(page: arguments.number)
+  }
+}
+
+@available(iOS 27.0, *)
+struct WatermarkTool: Tool {
+  let name = "add_watermark"
+  let description = "Stamp a big translucent word across every page."
+  @Generable struct Arguments {
+    @Guide(description: "The word, e.g. DRAFT or CONFIDENTIAL.") var text: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    DocBox.shared.preload()
+    return DocBox.shared.watermark(arguments.text)
+  }
+}
+
+@available(iOS 27.0, *)
+struct ExtractPagesTool: Tool {
+  let name = "extract_pages"
+  let description = "Copy a span of pages into a new PDF file. The open document is unchanged."
+  @Generable struct Arguments {
+    @Guide(description: "First page of the span, from 1.") var from: Int
+    @Guide(description: "Last page of the span.") var to: Int
+  }
+  func call(arguments: Arguments) async throws -> String {
+    DocBox.shared.preload()
+    return DocBox.shared.extract(from: arguments.from, to: arguments.to)
   }
 }
 

@@ -135,6 +135,11 @@ enum BenchToolBox {
     RecordingTool(base: AddFadeTool(), canned: "fade added (picture and sound)"),
     RecordingTool(base: StabilizeVideoTool(), canned: "stabilization on"),
     RecordingTool(base: VideoVolumeTool(), canned: "volume set"),
+    RecordingTool(base: AddMusicTool(), canned: "calm music added under the whole video"),
+    RecordingTool(base: RemoveMusicTool(), canned: "music removed"),
+    RecordingTool(
+      base: MakeReelTool(),
+      canned: "made a Reel — cropped to 9:16; fade out over 1 s; exported to the photo library"),
     RecordingTool(base: RevertVideoTool(), canned: "discarded all edits — back to the original video"),
     RecordingTool(base: ExportVideoTool(), canned: "exported to the photo library"),
   ]
@@ -151,6 +156,10 @@ enum BenchToolBox {
     RecordingTool(base: AddTagTool(), canned: "tagged the selected products"),
     RecordingTool(base: SetProductStatusTool(), canned: "status changed on the selected products"),
     RecordingTool(base: AdjustInventoryTool(), canned: "stock adjusted on the selected products"),
+    RecordingTool(
+      base: SearchOrdersTool(),
+      canned: "1 order selected (customer \"Tanaka\"):\n#1001 Aoi Tanaka — ¥6,800, paid, fulfilled, 13 d ago"),
+    RecordingTool(base: ExportProductsTool(), canned: "exported 24 products to products.csv in the app's Documents"),
     RecordingTool(base: FilterOrdersTool(), canned: "5 orders selected (filter):\n#1020 Uma Reddy — ¥1,800, pending, unfulfilled, today\n#1018 Sam Doyle — ¥5,900, pending, unfulfilled, 1 d ago\n#1015 Olivia Park — ¥15,800, pending, unfulfilled, 2 d ago\n#1012 Leo Brandt — ¥5,400, pending, unfulfilled, 4 d ago\n#1008 Hana Kim — ¥8,900, pending, unfulfilled, 6 d ago"),
     RecordingTool(base: FulfillOrdersTool(), canned: "fulfilled 5 orders: #1010, #1013, #1016, #1017, #1019"),
     RecordingTool(base: SendInvoiceTool(), canned: "sent a payment reminder for 5 orders"),
@@ -172,6 +181,7 @@ enum BenchToolBox {
     RecordingTool(base: DeleteTrackTool(), canned: "deleted; 3 tracks left"),
     RecordingTool(base: RenameTrackTool(), canned: "renamed"),
     RecordingTool(base: SetTempoTool(), canned: "tempo set"),
+    RecordingTool(base: SetBarsTool(), canned: "the song is now 16 bars (34.9 s)"),
     RecordingTool(base: SongFadeTool(), canned: "fade added"),
     RecordingTool(base: PlaySongTool(), canned: "playing from 0 s (17.5 s song, 110 bpm)"),
     RecordingTool(base: StopSongTool(), canned: "stopped"),
@@ -182,7 +192,10 @@ enum BenchToolBox {
   /// The documents pack, neutralized, against the six-page lease the cases
   /// describe.
   static let docs: [any FoundationModels.Tool] = [
-    RecordingTool(base: GoToPageTool(), canned: "on page 3 — Rent and Deposit"),
+    // Neutral on purpose: a canned "on page 3" contradicted a go_to_page(5)
+    // and the model retried the call (Mac, 2026-08-19) — the fake-results
+    // recipe again.
+    RecordingTool(base: GoToPageTool(), canned: "on that page now"),
     RecordingTool(base: DeletePageTool(), canned: "deleted the page; 5 pages left"),
     RecordingTool(base: MovePageTool(), canned: "moved the page"),
     RecordingTool(base: RotatePageTool(), canned: "rotated the page"),
@@ -191,9 +204,63 @@ enum BenchToolBox {
     RecordingTool(base: RemoveHighlightsTool(), canned: "removed 4 highlights"),
     RecordingTool(base: AddNoteTool(), canned: "note added to the open page"),
     RecordingTool(base: SignPageTool(), canned: "signed the page"),
+    RecordingTool(base: WatermarkTool(), canned: "\"DRAFT\" watermarked across all 6 pages"),
+    RecordingTool(
+      base: ExtractPagesTool(),
+      canned: "extracted pages 3–4 to saved-pages-3-4.pdf in the app's Documents (2 pages)"),
     RecordingTool(base: SearchDocumentTool(), canned: "\"deposit\" appears 4 times: page 3 (3×, Rent and Deposit); page 4 (1×, Term)"),
     RecordingTool(base: SavePDFTool(), canned: "saved as saved-lease.pdf in the app's Documents (6 pages)"),
     RecordingTool(base: RevertDocumentTool(), canned: "back to the original document — 6 pages, no annotations"),
+  ]
+
+  /// The shopping pack, neutralized, against the state the cases carry
+  /// (five earbuds results, one cart line).
+  static let shopping: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: SearchCatalogTool(),
+      canned: "5 results for \"wireless earbuds\":\n1. Wireless Earbuds Pro (Soundcore) — ¥12,800, ★4.5\n2. Wireless Earbuds Lite (Soundcore) — ¥4,990, ★4.2\n3. Noise Cancelling Earbuds (Sony) — ¥24,800, ★4.7\n4. Budget Earbuds (JVC) — ¥2,480, ★3.9\n5. Over-Ear Headphones (Audio-Technica) — ¥9,800, ★4.4"),
+    RecordingTool(base: SortResultsTool(), canned: "sorted cheapest first:\n1. Budget Earbuds — ¥2,480\n2. Wireless Earbuds Lite — ¥4,990\n3. Over-Ear Headphones — ¥9,800\n4. Wireless Earbuds Pro — ¥12,800\n5. Noise Cancelling Earbuds — ¥24,800"),
+    RecordingTool(base: ShowProductTool(), canned: "Wireless Earbuds Lite by Soundcore — ¥4,990, ★4.2 from 15402 reviews, ships today"),
+    RecordingTool(base: AddToCartTool(), canned: "added to the cart — cart total ¥9,980"),
+    RecordingTool(base: ChangeQuantityTool(), canned: "quantity changed — cart total ¥4,990"),
+    RecordingTool(base: RemoveFromCartTool(), canned: "removed from the cart"),
+    RecordingTool(base: ApplyCouponTool(), canned: "coupon applied: −10% — total ¥4,490"),
+    RecordingTool(base: CheckoutTool(), canned: "order #5231 placed — arriving in 2 days"),
+    RecordingTool(base: TrackOrderTool(), canned: "order #5230 is out for delivery — arriving today by 21:00"),
+  ]
+
+  /// The money pack, neutralized, against the month of canned spending.
+  static let money: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: ListTransactionsTool(),
+      canned: "7 transactions (last 7 days), ¥21,340 in all:\ntoday Seven-Eleven — ¥680, uncategorized\nyesterday Maruetsu — ¥4,820, groceries\nyesterday JR East — ¥1,340, transport"),
+    RecordingTool(
+      base: FilterTransactionsTool(),
+      canned: "5 transactions (uncategorized), ¥5,410 in all:\ntoday Seven-Eleven — ¥680\n3 d ago Starbucks — ¥720\n7 d ago Don Quijote — ¥2,890\n12 d ago Seven-Eleven — ¥540\n19 d ago Book Off — ¥880"),
+    RecordingTool(base: SearchPayeeTool(), canned: "5 transactions (payee \"Maruetsu\"), ¥26,190 in all"),
+    RecordingTool(base: CategorizeTool(), canned: "categorized the selected transactions"),
+    RecordingTool(base: FlagTransactionsTool(), canned: "flagged the selected transactions"),
+    RecordingTool(base: SetBudgetTool(), canned: "budget set"),
+    RecordingTool(base: SpendingReportTool(), canned: "last 7 days: ¥21,340 across 7 transactions — groceries ¥4,820, eating_out ¥1,180"),
+    RecordingTool(base: BudgetReportTool(), canned: "this month against budgets: eating_out over by ¥2,460; groceries ¥13,810 left"),
+    RecordingTool(base: FindSubscriptionsTool(), canned: "2 recurring payments, about ¥2,470 a month: Netflix ¥1,490; Spotify ¥980"),
+  ]
+
+  /// The inbox pack, neutralized, against the fifteen canned messages.
+  static let inbox: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: ListInboxTool(),
+      canned: "7 messages (unread):\n#1 Hana Kim — \"Report deadline\" (today, unread)\n#2 Kanda Goods — \"Invoice #4471\" (today, unread)\n#3 TechWeekly — \"This week in AI\" (today, unread)"),
+    RecordingTool(
+      base: SearchMailTool(),
+      canned: "1 message (search):\n#2 Kanda Goods — \"Invoice #4471\" (today, unread)"),
+    RecordingTool(base: ReadMessageTool(), canned: "#2 from Kanda Goods, today — \"Invoice #4471\": Your invoice for August is attached."),
+    RecordingTool(base: ArchiveTool(), canned: "archived the selected messages"),
+    RecordingTool(base: MarkReadTool(), canned: "marked the selected messages read"),
+    RecordingTool(base: FlagMailTool(), canned: "flagged the selected messages"),
+    RecordingTool(base: SnoozeTool(), canned: "snoozed the selected messages"),
+    RecordingTool(base: DraftReplyTool(), canned: "draft saved — nothing sent"),
+    RecordingTool(base: UnsubscribeTool(), canned: "unsubscribed and archived the message"),
   ]
 
   /// `--toolset <name>` picks the pack a bench run offers the model.
@@ -207,6 +274,9 @@ enum BenchToolBox {
     case "store": return store
     case "audio": return audio
     case "docs": return docs
+    case "shopping": return shopping
+    case "money": return money
+    case "inbox": return inbox
     default: return nil
     }
   }
@@ -219,6 +289,9 @@ enum BenchToolBox {
     case "store": return ToolBox.storeInstructions
     case "audio": return ToolBox.audioInstructions
     case "docs": return ToolBox.docsInstructions
+    case "shopping": return ToolBox.shoppingInstructions
+    case "money": return ToolBox.moneyInstructions
+    case "inbox": return ToolBox.inboxInstructions
     default: return ToolBox.instructions
     }
   }

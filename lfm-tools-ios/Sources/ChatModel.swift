@@ -2,8 +2,12 @@
 import CoreGraphics
 import Foundation
 import FoundationModels
-import LiteRTLM
-import LiteRTLMFoundationModels
+#if canImport(LiteRTLM)
+  import LiteRTLM
+#endif
+#if canImport(LiteRTLMFoundationModels)
+  import LiteRTLMFoundationModels
+#endif
 import Observation
 import UIKit
 
@@ -61,22 +65,47 @@ final class ChatModel {
   private(set) var status: Status = .noModel
   private(set) var lines: [Line] = []
   private(set) var thinking = false
-  // The engine's Metal path is the one LiteRT-LM ships for iOS; --gpu selects it
-  // when the CPU path is what a failure has to be isolated from.
-  var backend: Backend = CommandLine.arguments.contains("--gpu") ? .gpu : .cpu()
+  #if canImport(LiteRTLM)
+    // The engine's Metal path is the one LiteRT-LM ships for iOS; --gpu selects
+    // it when the CPU path is what a failure has to be isolated from.
+    var backend: Backend = CommandLine.arguments.contains("--gpu") ? .gpu : .cpu()
+  #endif
   var enabledGroups: Set<String> = ["ambient", "actions", "personal", "compound", "vision"]
 
   private var session: LanguageModelSession?
-  private var model: LiteRTLanguageModel?
+  #if canImport(LiteRTLM)
+    private var model: LiteRTLanguageModel?
+  #endif
   /// Apple's on-device model instead of a LiteRT bundle. Same session, same
   /// tools, same transcript reading — the fastest way to try a new tool or
   /// wording is to ask the model that answers in a second.
   private var usingSystemModel = false
 
+  /// A state pack chosen at launch (`--scenario video|store|audio|docs`
+  /// without `--autorun`): the chat becomes that app's assistant — the
+  /// pack's tools, its instructions, and its state ahead of every message.
+  /// Speech and the composer stay; this is the pack driven by hand.
+  static var statePack: String? {
+    guard !CommandLine.arguments.contains("--autorun"),
+      StageModel.scenarioSendsState
+    else { return nil }
+    return StageModel.scenarioName
+  }
+
   var tools: [any FoundationModels.Tool] {
     // --no-tools isolates the engine from the tool path when a turn fails: a
     // plain session exercises neither the router nor constrained decoding.
     if CommandLine.arguments.contains("--no-tools") { return [] }
+    switch Self.statePack {
+    case "video": return ToolBox.video
+    case "store": return ToolBox.store
+    case "audio": return ToolBox.audio
+    case "docs": return ToolBox.docs
+    case "shopping": return ToolBox.shopping
+    case "money": return ToolBox.money
+    case "inbox": return ToolBox.inbox
+    default: break
+    }
     if CommandLine.arguments.contains("--autorun") { return ToolBox.demo }
     var tools: [any FoundationModels.Tool] = []
     if enabledGroups.contains("ambient") { tools += ToolBox.ambient }
@@ -101,10 +130,9 @@ final class ChatModel {
   /// copying a 1–2 GB file into a cache to read it is the difference between
   /// fitting on the device and not.
   static func availableModels() -> [URL] {
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-    guard let root = documents.first,
+    guard
       let files = try? FileManager.default.contentsOfDirectory(
-        at: root, includingPropertiesForKeys: nil)
+        at: AppFiles.documents, includingPropertiesForKeys: nil)
     else { return [] }
     // Newest first: pushing a new bundle should be enough to switch to it.
     return files.filter { $0.pathExtension == "litertlm" }.sorted {
@@ -115,6 +143,11 @@ final class ChatModel {
   }
 
   func load(_ url: URL) async {
+    #if !canImport(LiteRTLM)
+      // The Mac Catalyst target carries no LiteRT engine (the binary
+      // xcframework has no macabi slice); Apple's model is the backend there.
+      status = .failed("LiteRT is not in this build — use Apple's model")
+    #else
     status = .loading(url.lastPathComponent)
     do {
       // 27 tool descriptions and their argument schemas go into the system
@@ -135,6 +168,7 @@ final class ChatModel {
     } catch {
       status = .failed(error.localizedDescription)
     }
+    #endif
   }
 
   static let systemModelName = "Apple on-device"
@@ -146,7 +180,9 @@ final class ChatModel {
       status = .failed("Apple's on-device model is not available on this device")
       return
     }
-    model = nil
+    #if canImport(LiteRTLM)
+      model = nil
+    #endif
     usingSystemModel = true
     startSession()
     status = .ready(Self.systemModelName)
@@ -158,13 +194,20 @@ final class ChatModel {
     // With the vision tools on, the instructions have to say what a photo
     // means — including a photo sent alone. The stock instructions push
     // tools over looking.
-    let instructions = enabledGroups.contains("vision") ? ToolBox.instructionsWithVision : ToolBox.instructions
+    let instructions =
+      Self.statePack != nil
+      ? StageModel.stateInstructions
+      : (enabledGroups.contains("vision") ? ToolBox.instructionsWithVision : ToolBox.instructions)
     if usingSystemModel {
       session = LanguageModelSession(tools: tools, instructions: instructions)
     } else {
-      guard let model else { return }
-      session = LanguageModelSession(
-        model: model, tools: tools, instructions: instructions)
+      #if canImport(LiteRTLM)
+        guard let model else { return }
+        session = LanguageModelSession(
+          model: model, tools: tools, instructions: instructions)
+      #else
+        return
+      #endif
     }
     if let session { TranscriptBox.shared.attach(session) }
     lines = []
@@ -188,6 +231,13 @@ final class ChatModel {
     thinking = true
     defer { thinking = false }
 
+    // The pack's state rides ahead of the words, exactly as on the stage;
+    // the bubble shows only what was typed or said.
+    var message = prompt
+    if Self.statePack != nil {
+      message = AppState.compose(state: StageModel.currentState(), request: prompt)
+    }
+
     let before = session.transcript.count
     do {
       // Off the main actor on purpose. The FM executor protocol declares
@@ -210,7 +260,7 @@ final class ChatModel {
               Attachment(image).label(label)
             })
         }
-        return try await session.respond(to: prompt)
+        return try await session.respond(to: message)
       }.value
       // Tool calls are not part of the reply text — they are transcript entries
       // the session made on its own. Reading them back is the only way to show
@@ -269,12 +319,14 @@ final class ChatModel {
   private(set) var lastRate: Double = 0
 
   func startTrace() {
-    LiteRTFMTrace.onChunk = { [weak self] piece in
-      Task { @MainActor in self?.live += piece }
-    }
-    LiteRTFMTrace.onRate = { [weak self] rate in
-      Task { @MainActor in self?.lastRate = rate }
-    }
+    #if canImport(LiteRTLM)
+      LiteRTFMTrace.onChunk = { [weak self] piece in
+        Task { @MainActor in self?.live += piece }
+      }
+      LiteRTFMTrace.onRate = { [weak self] rate in
+        Task { @MainActor in self?.lastRate = rate }
+      }
+    #endif
   }
 
   func runScript() async {

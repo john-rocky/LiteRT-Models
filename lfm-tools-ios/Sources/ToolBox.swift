@@ -199,6 +199,7 @@ enum ToolBox {
   static let video: [any FoundationModels.Tool] = [
     TrimClipTool(), SplitClipTool(), SelectClipTool(), DeleteClipTool(), ClipSpeedTool(),
     CropVideoTool(), AddCaptionTool(), AddFadeTool(), StabilizeVideoTool(), VideoVolumeTool(),
+    AddMusicTool(), RemoveMusicTool(), MakeReelTool(),
     RevertVideoTool(), ExportVideoTool(),
   ]
 
@@ -211,8 +212,9 @@ enum ToolBox {
   static let store: [any FoundationModels.Tool] = [
     SearchProductsTool(), FilterProductsTool(), LowStockTool(),
     UpdatePriceTool(), SetPriceTool(), AddTagTool(), SetProductStatusTool(), AdjustInventoryTool(),
-    FilterOrdersTool(), FulfillOrdersTool(), SendInvoiceTool(), RefundOrderTool(), OrderNoteTool(),
-    SalesSummaryTool(),
+    SearchOrdersTool(), FilterOrdersTool(), FulfillOrdersTool(), SendInvoiceTool(),
+    RefundOrderTool(), OrderNoteTool(),
+    SalesSummaryTool(), ExportProductsTool(),
   ]
 
   /// The audio pack (Tools/AudioTools.swift): a GarageBand mixer over four
@@ -222,8 +224,8 @@ enum ToolBox {
   static let audio: [any FoundationModels.Tool] = [
     TrackVolumeTool(), TrackPanTool(), MuteTrackTool(), SoloTrackTool(),
     AddEffectTool(), RemoveEffectTool(), DuplicateTrackTool(), DeleteTrackTool(), RenameTrackTool(),
-    SetTempoTool(), SongFadeTool(), PlaySongTool(), StopSongTool(), ExportSongTool(),
-    RevertSongTool(),
+    SetTempoTool(), SetBarsTool(), SongFadeTool(), PlaySongTool(), StopSongTool(),
+    ExportSongTool(), RevertSongTool(),
   ]
 
   /// The documents pack (Tools/DocTools.swift): an Acrobat / Goodnotes menu
@@ -232,8 +234,36 @@ enum ToolBox {
   /// model reads; "the last page" is the page count.
   static let docs: [any FoundationModels.Tool] = [
     GoToPageTool(), DeletePageTool(), MovePageTool(), RotatePageTool(), InsertBlankPageTool(),
-    HighlightTextTool(), RemoveHighlightsTool(), AddNoteTool(), SignPageTool(),
-    SearchDocumentTool(), SavePDFTool(), RevertDocumentTool(),
+    HighlightTextTool(), RemoveHighlightsTool(), AddNoteTool(), SignPageTool(), WatermarkTool(),
+    SearchDocumentTool(), ExtractPagesTool(), SavePDFTool(), RevertDocumentTool(),
+  ]
+
+  /// The shopping pack (Tools/ShoppingTools.swift): the buyer's side of the
+  /// counter — search → sort → "the second one" → cart → coupon → checkout.
+  /// Numbers come from the numbered results in the state; the cart maths is
+  /// the app's.
+  static let shopping: [any FoundationModels.Tool] = [
+    SearchCatalogTool(), SortResultsTool(), ShowProductTool(),
+    AddToCartTool(), ChangeQuantityTool(), RemoveFromCartTool(),
+    ApplyCouponTool(), CheckoutTool(), TrackOrderTool(),
+  ]
+
+  /// The money pack (Tools/MoneyTools.swift): a household-budget app over a
+  /// month of canned spending. Finders select; categorize/flag act on the
+  /// selection; the reports do the arithmetic in the app.
+  static let money: [any FoundationModels.Tool] = [
+    ListTransactionsTool(), FilterTransactionsTool(), SearchPayeeTool(),
+    CategorizeTool(), FlagTransactionsTool(),
+    SetBudgetTool(), SpendingReportTool(), BudgetReportTool(), FindSubscriptionsTool(),
+  ]
+
+  /// The inbox pack (Tools/InboxTools.swift): mail triage over fifteen canned
+  /// messages. list/search select; archive/snooze/flag act on the selection;
+  /// draft_reply writes, never sends.
+  static let inbox: [any FoundationModels.Tool] = [
+    ListInboxTool(), SearchMailTool(), ReadMessageTool(),
+    ArchiveTool(), MarkReadTool(), FlagMailTool(), SnoozeTool(),
+    DraftReplyTool(), UnsubscribeTool(),
   ]
 
   static let all: [any FoundationModels.Tool] =
@@ -264,6 +294,47 @@ enum ToolBox {
     tool has returned, answer the user in one short sentence using its result.
     """
 
+  static let shoppingInstructions = """
+    You are operating the user's shopping app through tools. Every message
+    starts with the app's current state: the numbered search results and the
+    cart with its total. "The second one" means result 2 in that list — take
+    numbers from the state, never guess them. Search before adding to the
+    cart. Quantity is 1 unless the user says otherwise. When a request lists
+    several steps, call the tools one after another in that order. When the
+    request does not say which item, ask a short question instead of
+    guessing. Do only what was asked: after a search returns, report the
+    results and stop. Answer questions about prices or the cart from the
+    state without a tool. When a tool has returned, answer the user in one
+    short sentence using its result.
+    """
+
+  static let moneyInstructions = """
+    You are operating the user's budgeting app through tools. Every message
+    starts with the app's current state: the month's totals, the budgets, and
+    the current selection — the transactions the last list, search or filter
+    found. Categorize and flag apply to that selection: find first, then act.
+    Amounts are yen. When a request lists several steps, call the tools one
+    after another in that order. When the request is missing a detail a tool
+    needs — a category, an amount — ask a short question instead of
+    inventing it. Do only what was asked: after a finder returns, report
+    what it found and stop. Answer questions the state already answers
+    without a tool. When a tool has returned, answer the user in one short
+    sentence using its result.
+    """
+
+  static let inboxInstructions = """
+    You are operating the user's mail app through tools. Every message starts
+    with the app's current state: the newest messages by number, unread
+    counts, and the current selection — the messages the last list or search
+    found. Archive, snooze, flag and mark-read apply to that selection: find
+    first, then act. Message numbers come from the state, never guess one —
+    ask when the request does not say which message. Do only what was
+    asked: after a finder returns, report what it found and stop. Drafting
+    a reply never sends anything. When a request lists several steps, call
+    the tools one after another in that order. When a tool has returned,
+    answer the user in one short sentence using its result.
+    """
+
   /// For packs where the photo is in the prompt. The stock instructions tell
   /// the model to prefer a tool over guessing, which is right when it cannot
   /// see and wrong when it can: it should look first, and a conditional
@@ -292,8 +363,10 @@ enum ToolBox {
     frame size. Take times from that state — the playhead, a clip's start or
     end — never guess one. Tools act on the selected clip unless they name a
     clip. When a request lists several edits, call the tools one after
-    another in that order. When a tool has returned, answer the user in one
-    short sentence using its result.
+    another in that order. When the request is missing a detail a tool needs
+    — the words of a caption, a length — ask a short question instead of
+    inventing it. When a tool has returned, answer the user in one short
+    sentence using its result.
     """
 
   /// The store pack's: same idea, records instead of a timeline. The
@@ -306,11 +379,16 @@ enum ToolBox {
     and the current selection — the products or orders the last search or
     filter found. Actions on prices, tags, status, stock, fulfilment and
     payment reminders apply to the current selection: search or filter
-    first, then act. Take numbers and names from the request and the state;
-    never invent an order number. When a request lists several steps, call
-    the tools one after another in that order. Answer questions about counts
-    from the state without a tool. When a tool has returned, answer the user
-    in one short sentence using its result.
+    first, then act. search_products matches product names only; lists by
+    vendor, tag, type or status come from filter_products, and lists of
+    orders from filter_orders or search_orders. Showing or listing records
+    is a finder call — the counts in the state only answer how-many
+    questions. refund_order takes its order number directly; do not search
+    first, and never invent a number — ask when one is missing. Do only
+    what was asked: after a finder returns, report what it found and stop.
+    When a request lists several steps, call the tools one after another in
+    that order. When a tool has returned, answer the user in one short
+    sentence using its result.
     """
 
   static let audioInstructions = """
@@ -320,9 +398,11 @@ enum ToolBox {
     whether it is playing. Name tracks the way the state does. Take current
     numbers from the state and change them by what the request implies — "a
     bit quieter" is about 15 less than the level shown. When a request lists
-    several changes, call the tools one after another in that order. Answer
-    questions about the mix from the state without a tool. When a tool has
-    returned, answer the user in one short sentence using its result.
+    several changes, call the tools one after another in that order. When
+    the request is missing a detail a tool needs — a level, a tempo — ask a
+    short question instead of inventing it. Answer questions about the mix
+    from the state without a tool. When a tool has returned, answer the
+    user in one short sentence using its result.
     """
 
   static let docsInstructions = """
@@ -330,10 +410,14 @@ enum ToolBox {
     with the document's current state: the page count, the open page, each
     page's title, and what is annotated. Pages are numbers: "the cover" is
     the page whose title says so, "the last page" is the page count. Take
-    page numbers from that state, never guess one. When a request lists
-    several steps, call the tools one after another in that order. Answer
-    questions about the document from the state without a tool. When a tool
-    has returned, answer the user in one short sentence using its result.
+    page numbers from that state, never guess one. The state lists page
+    titles, not their contents — a question about what the document says
+    needs search_document. When a request lists
+    several steps, call the tools one after another in that order. When the
+    request is missing a detail a tool needs — the words of a note, a page —
+    ask a short question instead of inventing it. Answer questions about
+    the document from the state without a tool. When a tool has returned,
+    answer the user in one short sentence using its result.
     """
 
   /// For the chat, where photos are one input among many: the stock

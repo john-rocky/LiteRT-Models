@@ -10,7 +10,7 @@ import UIKit
 @MainActor
 enum PhotoCheck {
   static func run() async {
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let documents = AppFiles.documents
     // Per-run names: `devicectl copy from` serves stale content for a path
     // it has copied before, and these files exist to be looked at.
     let runID = Int(Date().timeIntervalSince1970)

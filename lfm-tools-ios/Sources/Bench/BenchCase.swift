@@ -15,6 +15,11 @@ struct BenchCase: Decodable {
   /// verbatim — the same block the stage sends ahead of the words. Cases
   /// that name a playhead or a clip edge are only scorable against it.
   var state: String?
+  /// The ask-back axis: true means the input deliberately omits a required
+  /// argument and a correct run calls nothing and asks a question back.
+  /// `expected` stays [] on these cases; the runner additionally requires a
+  /// question in the answer.
+  var expectAsk: Bool?
   var expected: [ExpectedCall]
 }
 

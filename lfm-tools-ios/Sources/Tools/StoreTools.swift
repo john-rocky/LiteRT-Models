@@ -97,6 +97,37 @@ final class StoreBox: @unchecked Sendable {
     return line
   }
 
+  /// The admin's list for the stage — the selection when there is one, the
+  /// products overview otherwise.
+  func snapshot() -> TablePanel {
+    let (products, orders, selection) = sync { (products, orders, selection) }
+    let unfulfilled = orders.filter { $0.fulfillment == "unfulfilled" && $0.payment != "refunded" }.count
+    let pending = orders.filter { $0.payment == "pending" }.count
+    let overview = "\(products.count) products · \(orders.count) orders · \(unfulfilled) to ship · \(pending) unpaid"
+    switch selection {
+    case .none:
+      return TablePanel(
+        title: "Products",
+        columns: ["Product", "Price", "Stock", "Status"],
+        rows: products.map { [$0.title, Self.yen($0.price), String($0.stock), $0.status] },
+        totalRows: products.count, overview: overview)
+    case .products(let ids, let how):
+      let rows = ids.compactMap { id in products.first { $0.id == id } }
+      return TablePanel(
+        title: "\(rows.count) selected — \(how)",
+        columns: ["Product", "Price", "Stock", "Status"],
+        rows: rows.map { [$0.title, Self.yen($0.price), String($0.stock), $0.status] },
+        totalRows: rows.count, overview: overview)
+    case .orders(let numbers, let how):
+      let rows = numbers.compactMap { n in orders.first { $0.number == n } }
+      return TablePanel(
+        title: "\(rows.count) orders — \(how)",
+        columns: ["Order", "Customer", "Total", "Payment", "Fulfilment"],
+        rows: rows.map { ["#\($0.number)", $0.customer, Self.yen($0.total), $0.payment, $0.fulfillment] },
+        totalRows: rows.count, overview: overview)
+    }
+  }
+
   // MARK: Finding (each replaces the selection)
 
   private func selectProducts(_ rows: [Product], how: String) -> String {
@@ -156,6 +187,15 @@ final class StoreBox: @unchecked Sendable {
     let rows = sync { products }.filter { $0.stock < below && $0.status != "archived" }
       .sorted { $0.stock < $1.stock }
     return selectProducts(rows, how: "stock below \(below)")
+  }
+
+  /// A second finder on orders — by who placed them. search vs filter is a
+  /// discrimination axis on the order side too.
+  func searchOrders(customer: String) -> String {
+    let needle = customer.lowercased().trimmingCharacters(in: .whitespaces)
+    let rows = sync { orders }.filter { $0.customer.lowercased().contains(needle) }
+      .sorted { $0.daysAgo < $1.daysAgo }
+    return selectOrders(rows, how: "customer \"\(customer)\"")
   }
 
   func filterOrders(payment: String, fulfillment: String) -> String {
@@ -297,6 +337,30 @@ final class StoreBox: @unchecked Sendable {
     return "note added to \(numbers.count) order\(numbers.count == 1 ? "" : "s"): \"\(note)\""
   }
 
+  /// The selected products (or all, when nothing is selected) as a CSV in
+  /// the app's Documents — the admin's "export" button.
+  func exportCSV() -> String {
+    let (rows, selected): ([Product], Bool) = sync {
+      if case .products(let ids, _) = selection {
+        return (products.filter { ids.contains($0.id) }, true)
+      }
+      return (products, false)
+    }
+    var csv = "id,title,vendor,type,tags,price,stock,status\n"
+    for p in rows {
+      let title = p.title.contains(",") ? "\"\(p.title)\"" : p.title
+      csv += "\(p.id),\(title),\(p.vendor),\(p.type),\(p.tags.joined(separator: "|")),\(p.price),\(p.stock),\(p.status)\n"
+    }
+    let url = AppFiles.documents
+      .appendingPathComponent("products.csv")
+    do {
+      try Data(csv.utf8).write(to: url)
+      return "exported \(rows.count) \(selected ? "selected " : "")product\(rows.count == 1 ? "" : "s") to products.csv in the app's Documents"
+    } catch {
+      return "could not write products.csv: \(error.localizedDescription)"
+    }
+  }
+
   func salesSummary(days: Int) -> String {
     let span = max(1, days)
     let rows = sync { orders }.filter { $0.daysAgo < span && $0.payment != "refunded" }
@@ -388,7 +452,8 @@ enum StoreData {
 @available(iOS 27.0, *)
 struct SearchProductsTool: Tool {
   let name = "search_products"
-  let description = "Find products by name; the matches become the selection."
+  let description =
+    "Find products by words in the product name; the matches become the selection. Vendors, tags, types and statuses are filter_products' job."
   @Generable struct Arguments {
     @Guide(description: "Words from the product name, e.g. linen shirt.") var query: String
   }
@@ -495,6 +560,27 @@ struct FilterOrdersTool: Tool {
   }
   func call(arguments: Arguments) async throws -> String {
     StoreBox.shared.filterOrders(payment: arguments.payment_status, fulfillment: arguments.fulfillment_status)
+  }
+}
+
+@available(iOS 27.0, *)
+struct SearchOrdersTool: Tool {
+  let name = "search_orders"
+  let description = "Find orders by customer name; the matches become the selection."
+  @Generable struct Arguments {
+    @Guide(description: "Part of the customer's name, e.g. Tanaka.") var customer: String
+  }
+  func call(arguments: Arguments) async throws -> String {
+    StoreBox.shared.searchOrders(customer: arguments.customer)
+  }
+}
+
+@available(iOS 27.0, *)
+struct ExportProductsTool: Tool {
+  let name = "export_products_csv"
+  let description = "Export the selected products (or all products) to a CSV file."
+  func call(arguments: NoArguments) async throws -> String {
+    StoreBox.shared.exportCSV()
   }
 }
 

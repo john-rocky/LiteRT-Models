@@ -108,7 +108,7 @@ struct ReadNotesTool: Tool {
 @available(iOS 27.0, *)
 enum NoteStore {
   private static var url: URL {
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let documents = AppFiles.documents
     return documents.appendingPathComponent("agent-notes.txt")
   }
 
@@ -135,7 +135,7 @@ struct ListDocumentsTool: Tool {
   let description = "List saved files."
 
   func call(arguments: NoArguments) async throws -> String {
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let documents = AppFiles.documents
     let files = try FileManager.default.contentsOfDirectory(
       at: documents, includingPropertiesForKeys: [.fileSizeKey])
     guard !files.isEmpty else { return "empty" }
