@@ -248,6 +248,21 @@ final class StageModel {
     "How am I doing against my budgets this month?",
   ]
 
+  /// The CRM cut: the pipeline worked from the top. Beat 1 is the spec's
+  /// headline search (amount + close date out of one sentence); beat 2
+  /// resolves "the Aozora one" through beat 1's selection and chains a
+  /// stage change with a task whose date is relative to the frozen today;
+  /// beats 4–6 are the similar-tool triple, acted on ids straight from
+  /// the state.
+  static let crmBeats = [
+    "Which deals close this month at a million yen or more?",
+    "Mark the Aozora one as won, and set a follow-up task for tomorrow.",
+    "Show me Tanaka's deals.",
+    "Raise O3 to 1,000,000 yen.",
+    "Reassign O7 to Suzuki.",
+    "Add a note to O4: budget approved in October.",
+  ]
+
   /// The inbox cut: triage. Beat 2 and beat 5 are find-then-act chains; the
   /// reply beat writes a draft and sends nothing.
   static let inboxBeats = [
@@ -288,6 +303,7 @@ final class StageModel {
     case "shopping": return shoppingBeats
     case "money": return moneyBeats
     case "inbox": return inboxBeats
+    case "crm": return crmBeats
     case "choose": return chooseBeats
     default: return beats
     }
@@ -307,7 +323,7 @@ final class StageModel {
   /// is told the timeline (video) or the store and its selection (store)
   /// and asked to operate it.
   static var scenarioSendsState: Bool {
-    ["video", "store", "audio", "docs", "shopping", "money", "inbox"].contains(scenarioName)
+    ["video", "store", "audio", "docs", "shopping", "money", "inbox", "crm"].contains(scenarioName)
   }
   static var scenarioIsVideo: Bool { scenarioName == "video" }
   static var scenarioIsDocs: Bool { scenarioName == "docs" }
@@ -321,6 +337,7 @@ final class StageModel {
     case "shopping": return ShopBox.shared.describe()
     case "money": return MoneyBox.shared.describe()
     case "inbox": return InboxBox.shared.describe()
+    case "crm": return CrmBox.shared.describe()
     default: return VideoEditBox.shared.describe()
     }
   }
@@ -332,6 +349,7 @@ final class StageModel {
     case "shopping": return ToolBox.shoppingInstructions
     case "money": return ToolBox.moneyInstructions
     case "inbox": return ToolBox.inboxInstructions
+    case "crm": return ToolBox.crmInstructions
     default: return ToolBox.videoInstructions
     }
   }
@@ -430,6 +448,9 @@ final class StageModel {
     case "inbox":
       stageTable = InboxBox.shared.snapshot()
       stageImageID += 1
+    case "crm":
+      stageTable = CrmBox.shared.snapshot()
+      stageImageID += 1
     default:
       break
     }
@@ -521,6 +542,7 @@ final class StageModel {
     case "shopping": tools = ToolBox.shopping
     case "money": tools = ToolBox.money
     case "inbox": tools = ToolBox.inbox
+    case "crm": tools = ToolBox.crm
     case "choose": tools = []  // the model answers; the app calls
     default: tools = ToolBox.demo
     }

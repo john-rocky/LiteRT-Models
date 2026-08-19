@@ -261,6 +261,20 @@ enum ToolBox {
     UndoLastTool(target: .money), AskUserTool(),
   ]
 
+  /// The CRM pack (Tools/CRMTools.swift): a Salesforce's pipeline over a
+  /// frozen quarter. Finders select; every action takes its record as an id
+  /// argument — no bulk tools, so nothing needs a selection to act. The
+  /// similar-tool triple (update stage / update amount / assign) is a
+  /// deliberate axis, and the frozen today in the state makes relative
+  /// dates scorable as absolute ones.
+  static let crm: [any FoundationModels.Tool] = [
+    SearchOpportunitiesTool(), GetOpportunityTool(),
+    UpdateOpportunityStageTool(), UpdateOpportunityAmountTool(), AssignOpportunityTool(),
+    CrmSearchContactsTool(), CrmGetContactTool(), CrmSearchCompaniesTool(),
+    CreateFollowUpTaskTool(), CrmAddNoteTool(),
+    UndoLastTool(target: .crm), AskUserTool(),
+  ]
+
   /// The inbox pack (Tools/InboxTools.swift): mail triage over fifteen canned
   /// messages. list/search select; archive/snooze/flag act on the selection;
   /// draft_reply writes, never sends.
@@ -327,6 +341,25 @@ enum ToolBox {
     category or amount — call ask_user; never ask about a detail the
     request or the state already gives. Do only what was asked:
     after a finder returns, report what it found and stop. Answer questions the state already answers
+    without a tool. When a tool has returned, answer the user in one short
+    sentence using its result.
+    """
+
+  static let crmInstructions = """
+    You are operating the user's CRM through tools. Every message starts with
+    the app's current state: today's date, the pipeline by stage, the owners
+    and companies, and the current selection — the records the last search
+    found. Tools that take an id (get_opportunity, get_contact, update stage,
+    update amount, assign, add_note, a task's record) act straight on an id
+    from the request or the selection in the state — no search call first.
+    Showing or listing records is a search call — the counts in the state
+    only answer how-many questions. Amounts are yen. Dates in arguments are
+    absolute, YYYY-MM-DD: count them from the today the state names. When a
+    request lists several steps, call the tools one after another in that
+    order. When something required is truly absent — an update with no record
+    named anywhere — call ask_user; never ask about a detail the request or
+    the state already gives. Do only what was asked: after a search returns,
+    report the results and stop. Answer questions the state already answers
     without a tool. When a tool has returned, answer the user in one short
     sentence using its result.
     """

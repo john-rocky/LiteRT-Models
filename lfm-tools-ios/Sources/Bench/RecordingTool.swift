@@ -356,6 +356,39 @@ enum BenchToolBox {
     RecordingTool(base: UndoLastTool(target: .money), canned: "undid the last change"),
   ]
 
+  /// The CRM pack against the frozen quarter. Finders and gets echo
+  /// dynamically — the pack started on static neutral fakes and r11
+  /// measured the starvation the recipe predicts: every Japanese finder
+  /// grew a get_opportunity tail, one English search flailed through five
+  /// queries the neutral line never answered, and the final answers
+  /// confabulated rows (¥1,500,000 deals that do not exist). Actions stay
+  /// neutral; nothing here mutates.
+  static let crm: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: SearchOpportunitiesTool(), canned: "",
+      respond: {
+        CrmEcho.opportunities(
+          company: $0.company, owner: $0.owner, stage: $0.stage,
+          minAmount: $0.min_amount, maxAmount: $0.max_amount,
+          closeFrom: $0.close_date_from, closeTo: $0.close_date_to)
+      }),
+    RecordingTool(base: GetOpportunityTool(), canned: "", respond: { CrmEcho.opportunity($0.id) }),
+    RecordingTool(base: UpdateOpportunityStageTool(), canned: "stage changed — the pipeline is on screen"),
+    RecordingTool(base: UpdateOpportunityAmountTool(), canned: "amount changed — the pipeline is on screen"),
+    RecordingTool(base: AssignOpportunityTool(), canned: "owner changed — the pipeline is on screen"),
+    RecordingTool(
+      base: CrmSearchContactsTool(), canned: "",
+      respond: { CrmEcho.contacts(name: $0.name, company: $0.company, email: $0.email) }),
+    RecordingTool(base: CrmGetContactTool(), canned: "", respond: { CrmEcho.contact($0.id) }),
+    RecordingTool(
+      base: CrmSearchCompaniesTool(), canned: "",
+      respond: { CrmEcho.companies(name: $0.name, industry: $0.industry, location: $0.location) }),
+    RecordingTool(base: CreateFollowUpTaskTool(), canned: "follow-up task added"),
+    RecordingTool(base: CrmAddNoteTool(), canned: "note added"),
+    AskUserTool(),
+    RecordingTool(base: UndoLastTool(target: .crm), canned: "undid the last change"),
+  ]
+
   /// The inbox pack against the fifteen canned messages — finders echo
   /// dynamically: a pure render over the same frozen world the real tools
   /// compute over, arguments reflected. The neutral fakes ("the matching
@@ -547,6 +580,146 @@ enum BenchToolBox {
     }
   }
 
+  /// Pure renders of the CRM finders and gets over the frozen quarter —
+  /// the same filters, kana normalization and row format as CrmBox
+  /// (CrmBox.oneLine is shared so the formats cannot drift), selection
+  /// state left out.
+  enum CrmEcho {
+    private static func render(_ matched: [CrmBox.Opportunity], how: String) -> String {
+      BenchSelection.shared.kind = matched.isEmpty ? nil : "rows"
+      guard !matched.isEmpty else { return "no opportunities match \(how)" }
+      let total = matched.reduce(0) { $0 + $1.amount }
+      let word = matched.count == 1 ? "opportunity" : "opportunities"
+      return "\(matched.count) \(word) (\(how)), \(StoreBox.yen(total)) in all — now the selection:\n"
+        + matched.prefix(8).map(CrmBox.oneLine).joined(separator: "\n")
+        + (matched.count > 8 ? "\n… and \(matched.count - 8) more" : "")
+    }
+
+    static func opportunities(
+      company: String?, owner: String?, stage: String?,
+      minAmount: Int?, maxAmount: Int?, closeFrom: String?, closeTo: String?
+    ) -> String {
+      var how: [String] = []
+      var rows = CrmData.opportunities
+      if let company, !company.isEmpty {
+        let needle = CrmData.romaji(company)
+        rows = rows.filter { $0.company.lowercased().contains(needle) }
+        how.append("company \"\(company)\"")
+      }
+      if let owner, !owner.isEmpty {
+        guard let canonical = CrmData.owner(owner) else {
+          return "no owner called \(owner) — the owners are \(CrmData.owners.joined(separator: ", "))"
+        }
+        rows = rows.filter { $0.owner == canonical }
+        how.append("owner \(canonical)")
+      }
+      if let stage, !stage.isEmpty {
+        let want = stage.lowercased()
+        guard CrmBox.stages.contains(want) else {
+          return "unknown stage; the stages are \(CrmBox.stages.joined(separator: ", "))"
+        }
+        rows = rows.filter { $0.stage == want }
+        how.append("stage \(want)")
+      }
+      if let minAmount {
+        rows = rows.filter { $0.amount >= minAmount }
+        how.append("\(StoreBox.yen(minAmount))+")
+      }
+      if let maxAmount {
+        rows = rows.filter { $0.amount <= maxAmount }
+        how.append("up to \(StoreBox.yen(maxAmount))")
+      }
+      if let closeFrom, !closeFrom.isEmpty {
+        rows = rows.filter { $0.closeDate >= closeFrom }
+        how.append("closing from \(closeFrom)")
+      }
+      if let closeTo, !closeTo.isEmpty {
+        rows = rows.filter { $0.closeDate <= closeTo }
+        how.append("closing by \(closeTo)")
+      }
+      return render(
+        rows.sorted { $0.closeDate < $1.closeDate },
+        how: how.isEmpty ? "all opportunities" : how.joined(separator: ", "))
+    }
+
+    static func opportunity(_ id: String) -> String {
+      let want = id.uppercased()
+      guard let o = CrmData.opportunities.first(where: { $0.id == want }) else {
+        return "there is no opportunity \(id) — ids look like O3"
+      }
+      var text = CrmBox.oneLine(o)
+      if let c = CrmData.contacts.first(where: { $0.company == o.company }) {
+        text += "\ncontact: \(c.name) (\(c.role), \(c.email))"
+      }
+      let tied = CrmData.tasks.filter { $0.about == want }
+      if !tied.isEmpty {
+        text += "\ntasks: " + tied.map { "\($0.id) \"\($0.title)\" due \($0.due)" }.joined(separator: "; ")
+      }
+      return text
+    }
+
+    static func contacts(name: String?, company: String?, email: String?) -> String {
+      var how: [String] = []
+      var rows = CrmData.contacts
+      if let name, !name.isEmpty {
+        let needle = CrmData.romaji(name)
+        rows = rows.filter { $0.name.lowercased().contains(needle) }
+        how.append("name \"\(name)\"")
+      }
+      if let company, !company.isEmpty {
+        let needle = CrmData.romaji(company)
+        rows = rows.filter { $0.company.lowercased().contains(needle) }
+        how.append("company \"\(company)\"")
+      }
+      if let email, !email.isEmpty {
+        let needle = email.lowercased()
+        rows = rows.filter { $0.email.lowercased().contains(needle) }
+        how.append("email \"\(email)\"")
+      }
+      let caption = how.isEmpty ? "all contacts" : how.joined(separator: ", ")
+      BenchSelection.shared.kind = rows.isEmpty ? nil : "rows"
+      guard !rows.isEmpty else { return "no contacts match \(caption)" }
+      return "\(rows.count) contact\(rows.count == 1 ? "" : "s") (\(caption)) — now the selection:\n"
+        + rows.prefix(8).map { "\($0.id) \($0.name) — \($0.company), \($0.role), \($0.email)" }.joined(separator: "\n")
+    }
+
+    static func contact(_ id: String) -> String {
+      let want = id.uppercased()
+      guard let c = CrmData.contacts.first(where: { $0.id == want }) else {
+        return "there is no contact \(id) — ids look like C2"
+      }
+      var text = "\(c.id) \(c.name) — \(c.company), \(c.role), \(c.email)"
+      let deals = CrmData.opportunities.filter { $0.company == c.company && $0.stage != "won" && $0.stage != "lost" }
+      if !deals.isEmpty { text += "\nopen deals: " + deals.map(CrmBox.oneLine).joined(separator: "; ") }
+      return text
+    }
+
+    static func companies(name: String?, industry: String?, location: String?) -> String {
+      var how: [String] = []
+      var rows = CrmData.companies
+      if let name, !name.isEmpty {
+        let needle = CrmData.romaji(name)
+        rows = rows.filter { $0.name.lowercased().contains(needle) }
+        how.append("name \"\(name)\"")
+      }
+      if let industry, !industry.isEmpty {
+        let needle = CrmData.romaji(industry)
+        rows = rows.filter { $0.industry.lowercased().contains(needle) }
+        how.append("industry \"\(industry)\"")
+      }
+      if let location, !location.isEmpty {
+        let needle = CrmData.romaji(location)
+        rows = rows.filter { $0.location.lowercased().contains(needle) }
+        how.append("location \"\(location)\"")
+      }
+      let caption = how.isEmpty ? "all companies" : how.joined(separator: ", ")
+      BenchSelection.shared.kind = rows.isEmpty ? nil : "rows"
+      guard !rows.isEmpty else { return "no companies match \(caption)" }
+      return "\(rows.count) compan\(rows.count == 1 ? "y" : "ies") (\(caption)) — now the selection:\n"
+        + rows.map { "\($0.name) — \($0.industry), \($0.location)" }.joined(separator: "\n")
+    }
+  }
+
   /// Pure renders of the inbox finders over the frozen fifteen messages —
   /// the same filter, search and row format as InboxBox, with the selection
   /// and the undo history left out. Deterministic across cases by
@@ -606,6 +779,7 @@ enum BenchToolBox {
     case "shopping": return shopping
     case "money": return money
     case "inbox": return inbox
+    case "crm": return crm
     default: return nil
     }
   }
@@ -621,6 +795,7 @@ enum BenchToolBox {
     case "shopping": return ToolBox.shoppingInstructions
     case "money": return ToolBox.moneyInstructions
     case "inbox": return ToolBox.inboxInstructions
+    case "crm": return ToolBox.crmInstructions
     default: return ToolBox.instructions
     }
   }
