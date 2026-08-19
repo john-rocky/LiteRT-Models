@@ -82,6 +82,51 @@ class Sam2VideoActivity : AppCompatActivity() {
         // tracks a synthetic moving disk and logs per-frame fg/obj/ms to logcat (tag SAM2V),
         // so the on-device host loop can be verified without UI taps.
         if (intent.getBooleanExtra("selftest", false)) thread { selfTest() }
+
+        // Demo mode: `--ez demo true [--es demofile <name>] [--ef clickx 0.52 --ef clicky 0.42]`
+        // loads a video staged in filesDir, tracks a preset click, then loops the masked
+        // frames on screen — for recording an on-device demo without UI taps.
+        if (intent.getBooleanExtra("demo", false)) thread { runDemo() }
+    }
+
+    private fun runDemo() {
+        try {
+            val name = intent.getStringExtra("demofile") ?: "demo_cat.mp4"
+            val file = java.io.File(filesDir, name)
+            if (!file.exists()) {
+                runOnUiThread { status.text = "Demo video not staged: $name" }
+                return
+            }
+            loadFrames { it.setDataSource(file.absolutePath) }
+            if (frames.isEmpty()) {
+                runOnUiThread { status.text = "No frames read from $name" }
+                return
+            }
+            val cx = intent.getFloatExtra("clickx", 0.52f) * Sam2VideoTracker.SIZE
+            val cy = intent.getFloatExtra("clicky", 0.42f) * Sam2VideoTracker.SIZE
+            runTracking(cx, cy)
+            loopPlayback()
+        } catch (e: Exception) {
+            android.util.Log.e("SAM2V", "DEMO FAIL ${e.message}", e)
+            runOnUiThread { status.text = "DEMO FAIL: ${e.message}" }
+        }
+    }
+
+    /** Cycle through the masked frames on the main thread so a screen recording sees motion. */
+    private fun loopPlayback() {
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val n = overlays.size
+        val step = object : Runnable {
+            var i = 0
+            override fun run() {
+                if (overlays.isEmpty()) return
+                showFrame(i % n)
+                seek.progress = i % n
+                i++
+                handler.postDelayed(this, 220)
+            }
+        }
+        handler.post(step)
     }
 
     private fun selfTest() {
@@ -121,28 +166,33 @@ class Sam2VideoActivity : AppCompatActivity() {
         }
     }
 
+    /** Extract MAX_FRAMES evenly across the clip; `configure` sets the retriever's source. */
+    private fun loadFrames(configure: (MediaMetadataRetriever) -> Unit) {
+        frames.forEach { it.recycle() }
+        frames.clear(); overlays.clear(); firstFrame = null
+        val retriever = MediaMetadataRetriever()
+        try {
+            configure(retriever)
+            val durUs = (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull() ?: 0L) * 1000L
+            val n = MAX_FRAMES
+            for (i in 0 until n) {
+                val tUs = if (n == 1) 0L else durUs * i / (n - 1)
+                val f = retriever.getFrameAtTime(tUs, MediaMetadataRetriever.OPTION_CLOSEST)
+                    ?: continue
+                frames.add(f.copy(Bitmap.Config.ARGB_8888, false))
+                overlays.add(null)
+                f.recycle()
+            }
+        } finally {
+            retriever.release()
+        }
+    }
+
     private fun onPickVideo(uri: Uri) {
         status.text = "Extracting frames…"
         thread {
-            frames.forEach { it.recycle() }
-            frames.clear(); overlays.clear(); firstFrame = null
-            val retriever = MediaMetadataRetriever()
-            try {
-                retriever.setDataSource(this, uri)
-                val durUs = (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                    ?.toLongOrNull() ?: 0L) * 1000L
-                val n = MAX_FRAMES
-                for (i in 0 until n) {
-                    val tUs = if (n == 1) 0L else durUs * i / (n - 1)
-                    val f = retriever.getFrameAtTime(tUs, MediaMetadataRetriever.OPTION_CLOSEST)
-                        ?: continue
-                    frames.add(f.copy(Bitmap.Config.ARGB_8888, false))
-                    overlays.add(null)
-                    f.recycle()
-                }
-            } finally {
-                retriever.release()
-            }
+            loadFrames { it.setDataSource(this, uri) }
             if (frames.isEmpty()) {
                 runOnUiThread { status.text = "No frames could be read from this video." }
                 return@thread
