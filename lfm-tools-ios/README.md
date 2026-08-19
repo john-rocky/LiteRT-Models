@@ -75,9 +75,11 @@ xcodegen generate
 open LFMTools.xcodeproj
 ```
 
-`project.yml` points at `../../litert-lm-applefm-fix` — a local checkout of
-LiteRT-LM carrying the constrained tool routing described above. Point it
-somewhere else, or at the released package, if you have that branch elsewhere.
+`project.yml` points at `../../litert-lm-ios-host` — a local checkout of
+LiteRT-LM (branch `apple-fm-guided-constrained-decoding`, pinned at the
+last commit that builds against the v0.16.0 prebuilt) carrying the
+constrained tool routing described above. Point it somewhere else, or at
+the released package, if you have that branch elsewhere.
 
 Then put a text `.litertlm` in the app's Documents folder:
 
