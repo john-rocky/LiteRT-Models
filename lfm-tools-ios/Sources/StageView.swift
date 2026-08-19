@@ -29,7 +29,7 @@ struct StageView: View {
             .frame(maxWidth: .infinity)
             // The video frame shares the stage with its timeline; a 9:16 crop
             // would otherwise take the whole screen and leave the beat nowhere.
-            .frame(maxHeight: stage.stageTimeline == nil ? .infinity : 360)
+            .frame(maxHeight: stage.stageTimeline == nil && stage.stagePages == nil ? .infinity : 360)
             .clipShape(.rect(cornerRadius: 18))
             .layoutPriority(1)
             .padding(.top, 10)
@@ -37,6 +37,11 @@ struct StageView: View {
         }
         if let timeline = stage.stageTimeline {
           TimelineStrip(snapshot: timeline)
+            .padding(.top, 8)
+            .animation(.easeInOut(duration: 0.35), value: stage.stageImageID)
+        }
+        if let pages = stage.stagePages {
+          PageStrip(snapshot: pages)
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.35), value: stage.stageImageID)
         }
@@ -178,6 +183,51 @@ struct StageView: View {
 }
 
 // MARK: - Pieces
+
+/// The documents pack's pages: thumbnails in a row, the open one outlined,
+/// a dot on the ones that carry annotations.
+@available(iOS 27.0, *)
+private struct PageStrip: View {
+  let snapshot: DocBox.Snapshot
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack {
+        Text(snapshot.title)
+        Spacer()
+        Text("page \(snapshot.current) of \(snapshot.pageCount)")
+      }
+      .font(.system(size: 12, weight: .semibold, design: .rounded))
+      .foregroundStyle(.white.opacity(0.7))
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          ForEach(Array(snapshot.thumbnails.enumerated()), id: \.offset) { index, thumb in
+            let number = index + 1
+            VStack(spacing: 3) {
+              Image(uiImage: thumb)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 64)
+                .clipShape(.rect(cornerRadius: 4))
+                .overlay(
+                  RoundedRectangle(cornerRadius: 4)
+                    .strokeBorder(number == snapshot.current ? Color.yellow : Color.white.opacity(0.25),
+                      lineWidth: number == snapshot.current ? 2.5 : 1))
+              HStack(spacing: 3) {
+                Text("\(number)")
+                  .font(.system(size: 10, weight: .bold, design: .rounded))
+                  .foregroundStyle(.white.opacity(0.7))
+                if snapshot.annotated[number] != nil {
+                  Circle().fill(Color.cyan).frame(width: 5, height: 5)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 /// The video pack's timeline: clips as blocks (thumbnails inside when they
 /// are ready), the selected one outlined, captions and fades marked, and a

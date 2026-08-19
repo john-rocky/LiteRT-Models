@@ -159,6 +159,43 @@ enum BenchToolBox {
     RecordingTool(base: SalesSummaryTool(), canned: "last 7 days: 13 orders, ¥104,500 in sales, up 44% on the 7 days before"),
   ]
 
+  /// The audio pack, neutralized, against the state the cases carry (four
+  /// tracks at 110 bpm, stopped).
+  static let audio: [any FoundationModels.Tool] = [
+    RecordingTool(base: TrackVolumeTool(), canned: "volume set"),
+    RecordingTool(base: TrackPanTool(), canned: "panned"),
+    RecordingTool(base: MuteTrackTool(), canned: "mute changed"),
+    RecordingTool(base: SoloTrackTool(), canned: "solo changed"),
+    RecordingTool(base: AddEffectTool(), canned: "effect added"),
+    RecordingTool(base: RemoveEffectTool(), canned: "effect removed"),
+    RecordingTool(base: DuplicateTrackTool(), canned: "duplicated as track 5"),
+    RecordingTool(base: DeleteTrackTool(), canned: "deleted; 3 tracks left"),
+    RecordingTool(base: RenameTrackTool(), canned: "renamed"),
+    RecordingTool(base: SetTempoTool(), canned: "tempo set"),
+    RecordingTool(base: SongFadeTool(), canned: "fade added"),
+    RecordingTool(base: PlaySongTool(), canned: "playing from 0 s (17.5 s song, 110 bpm)"),
+    RecordingTool(base: StopSongTool(), canned: "stopped"),
+    RecordingTool(base: ExportSongTool(), canned: "exported 17.5 s of 4 tracks to mix.m4a"),
+    RecordingTool(base: RevertSongTool(), canned: "back to the original mix — 4 tracks at 110 bpm"),
+  ]
+
+  /// The documents pack, neutralized, against the six-page lease the cases
+  /// describe.
+  static let docs: [any FoundationModels.Tool] = [
+    RecordingTool(base: GoToPageTool(), canned: "on page 3 — Rent and Deposit"),
+    RecordingTool(base: DeletePageTool(), canned: "deleted the page; 5 pages left"),
+    RecordingTool(base: MovePageTool(), canned: "moved the page"),
+    RecordingTool(base: RotatePageTool(), canned: "rotated the page"),
+    RecordingTool(base: InsertBlankPageTool(), canned: "inserted a blank page; 7 pages now"),
+    RecordingTool(base: HighlightTextTool(), canned: "highlighted 4 occurrences of \"deposit\" on pages 3, 4"),
+    RecordingTool(base: RemoveHighlightsTool(), canned: "removed 4 highlights"),
+    RecordingTool(base: AddNoteTool(), canned: "note added to the open page"),
+    RecordingTool(base: SignPageTool(), canned: "signed the page"),
+    RecordingTool(base: SearchDocumentTool(), canned: "\"deposit\" appears 4 times: page 3 (3×, Rent and Deposit); page 4 (1×, Term)"),
+    RecordingTool(base: SavePDFTool(), canned: "saved as saved-lease.pdf in the app's Documents (6 pages)"),
+    RecordingTool(base: RevertDocumentTool(), canned: "back to the original document — 6 pages, no annotations"),
+  ]
+
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {
     switch name {
@@ -168,6 +205,8 @@ enum BenchToolBox {
     case "report": return report
     case "video": return video
     case "store": return store
+    case "audio": return audio
+    case "docs": return docs
     default: return nil
     }
   }
@@ -178,6 +217,8 @@ enum BenchToolBox {
     switch name {
     case "video": return ToolBox.videoInstructions
     case "store": return ToolBox.storeInstructions
+    case "audio": return ToolBox.audioInstructions
+    case "docs": return ToolBox.docsInstructions
     default: return ToolBox.instructions
     }
   }

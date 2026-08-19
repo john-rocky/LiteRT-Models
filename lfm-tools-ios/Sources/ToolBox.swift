@@ -215,6 +215,27 @@ enum ToolBox {
     SalesSummaryTool(),
   ]
 
+  /// The audio pack (Tools/AudioTools.swift): a GarageBand mixer over four
+  /// synthesized tracks. Volume and pan are numbers the model reads from
+  /// the state and moves; mute vs solo, add vs remove effect, and a track
+  /// named by what the user calls it are the axes.
+  static let audio: [any FoundationModels.Tool] = [
+    TrackVolumeTool(), TrackPanTool(), MuteTrackTool(), SoloTrackTool(),
+    AddEffectTool(), RemoveEffectTool(), DuplicateTrackTool(), DeleteTrackTool(), RenameTrackTool(),
+    SetTempoTool(), SongFadeTool(), PlaySongTool(), StopSongTool(), ExportSongTool(),
+    RevertSongTool(),
+  ]
+
+  /// The documents pack (Tools/DocTools.swift): an Acrobat / Goodnotes menu
+  /// on a real PDF through PDFKit. Pages are named in the state by their
+  /// first line, so "the cover" and "the rules page" are page numbers the
+  /// model reads; "the last page" is the page count.
+  static let docs: [any FoundationModels.Tool] = [
+    GoToPageTool(), DeletePageTool(), MovePageTool(), RotatePageTool(), InsertBlankPageTool(),
+    HighlightTextTool(), RemoveHighlightsTool(), AddNoteTool(), SignPageTool(),
+    SearchDocumentTool(), SavePDFTool(), RevertDocumentTool(),
+  ]
+
   static let all: [any FoundationModels.Tool] =
     ambient + actions + personal + photoEditing + compound
 
@@ -290,6 +311,29 @@ enum ToolBox {
     the tools one after another in that order. Answer questions about counts
     from the state without a tool. When a tool has returned, answer the user
     in one short sentence using its result.
+    """
+
+  static let audioInstructions = """
+    You are operating the user's music app's mixer through tools. Every
+    message starts with the song's current state: the tracks by number and
+    name with their volume, pan, effects and mute or solo, the tempo, and
+    whether it is playing. Name tracks the way the state does. Take current
+    numbers from the state and change them by what the request implies — "a
+    bit quieter" is about 15 less than the level shown. When a request lists
+    several changes, call the tools one after another in that order. Answer
+    questions about the mix from the state without a tool. When a tool has
+    returned, answer the user in one short sentence using its result.
+    """
+
+  static let docsInstructions = """
+    You are operating the user's PDF app through tools. Every message starts
+    with the document's current state: the page count, the open page, each
+    page's title, and what is annotated. Pages are numbers: "the cover" is
+    the page whose title says so, "the last page" is the page count. Take
+    page numbers from that state, never guess one. When a request lists
+    several steps, call the tools one after another in that order. Answer
+    questions about the document from the state without a tool. When a tool
+    has returned, answer the user in one short sentence using its result.
     """
 
   /// For the chat, where photos are one input among many: the stock

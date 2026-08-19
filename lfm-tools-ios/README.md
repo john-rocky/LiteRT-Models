@@ -126,7 +126,9 @@ sees), `video` (a CapCut-style menu — trim, split, speed, crop 9:16,
 caption, fade, stabilise, volume, export — on the newest library video;
 the app's state opens every message and the model never sees a frame),
 `store` (a Shopify admin's menu over canned products and orders: filter →
-selection → bulk action; records, not pixels).
+selection → bulk action; records, not pixels), `audio` (a GarageBand mixer
+over four synthesized tracks, played live), `docs` (an Acrobat / Goodnotes
+menu on a real PDF through PDFKit).
 Without `--scenario` the stage runs the
 coffee-run beats; without `--backend apple` it runs on the newest LiteRT
 bundle (or `--model <substring>`).

@@ -195,7 +195,33 @@ final class StageModel {
     "How were sales this week?",
   ]
 
-  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look|polish|video|store`
+  /// The audio cut: a GarageBand mixer, four synthesized tracks looping.
+  /// Play first so every change is heard; "a bit quieter" is a number the
+  /// model reads from the state and lowers; beat 5 is a two-call chain.
+  static let audioBeats = [
+    "Play it from the top.",
+    "The keys are a bit loud — turn them down a bit.",
+    "Put some echo on the lead.",
+    "Solo the drums.",
+    "Un-solo, and pan the bass a little left.",
+    "Fade out at the end, then export it.",
+  ]
+
+  /// The documents cut: an Acrobat / Goodnotes menu on a real PDF. Pages
+  /// are named in the state by their first line, so "the cover" and "the
+  /// rules page" are numbers the model reads; beat 2 chains on beat 1's
+  /// answer; beat 6 needs the page count.
+  static let docsBeats = [
+    "Which pages mention the deposit?",
+    "Go to the first of those and highlight every 'deposit' in yellow.",
+    "Add a note: check this with the landlord.",
+    "Delete the cover page.",
+    "Move the house rules page to the end.",
+    "Sign the last page.",
+    "Save it as 'lease-signed'.",
+  ]
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look|polish|video|store|audio|docs`
   /// swaps the stage to that pack; default stays the coffee run. Beats and
   /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
@@ -213,6 +239,8 @@ final class StageModel {
     case "polish": return polishBeats
     case "video": return videoBeats
     case "store": return storeBeats
+    case "audio": return audioBeats
+    case "docs": return docsBeats
     default: return beats
     }
   }
@@ -229,15 +257,26 @@ final class StageModel {
   /// Packs where the app's state — not a picture — is the input: the model
   /// is told the timeline (video) or the store and its selection (store)
   /// and asked to operate it.
-  static var scenarioSendsState: Bool { ["video", "store"].contains(scenarioName) }
+  static var scenarioSendsState: Bool { ["video", "store", "audio", "docs"].contains(scenarioName) }
   static var scenarioIsVideo: Bool { scenarioName == "video" }
+  static var scenarioIsDocs: Bool { scenarioName == "docs" }
 
   /// The state block for this beat, from whichever box owns the pack.
   static func currentState() -> String {
-    scenarioName == "store" ? StoreBox.shared.describe() : VideoEditBox.shared.describe()
+    switch scenarioName {
+    case "store": return StoreBox.shared.describe()
+    case "audio": return AudioBox.shared.describe()
+    case "docs": return DocBox.shared.describe()
+    default: return VideoEditBox.shared.describe()
+    }
   }
   static var stateInstructions: String {
-    scenarioName == "store" ? ToolBox.storeInstructions : ToolBox.videoInstructions
+    switch scenarioName {
+    case "store": return ToolBox.storeInstructions
+    case "audio": return ToolBox.audioInstructions
+    case "docs": return ToolBox.docsInstructions
+    default: return ToolBox.videoInstructions
+    }
   }
 
   static var scenarioName: String {
@@ -301,6 +340,15 @@ final class StageModel {
   /// Async because the frame is decoded on demand — a few hundred ms, off
   /// the actor.
   private(set) var stageTimeline: VideoEditBox.Snapshot?
+  /// The documents pack's: the open page above, the pages as a strip below.
+  private(set) var stagePages: DocBox.Snapshot?
+
+  private func refreshStageDoc() {
+    guard Self.scenarioIsDocs else { return }
+    if let page = DocBox.shared.currentPageImage() { stageImage = page }
+    stagePages = DocBox.shared.snapshot()
+    stageImageID += 1
+  }
 
   private func refreshStageVideo() async {
     guard Self.scenarioIsVideo else { return }
@@ -374,6 +422,8 @@ final class StageModel {
     case "polish": tools = ToolBox.vision
     case "video": tools = ToolBox.video
     case "store": tools = ToolBox.store
+    case "audio": tools = ToolBox.audio
+    case "docs": tools = ToolBox.docs
     default: tools = ToolBox.demo
     }
     // The vision packs get their own instructions: the stock ones push tools
@@ -473,6 +523,11 @@ final class StageModel {
         RunLog.write("VIDEO load failed: \(error)")
       }
       await refreshStageVideo()
+    }
+    if Self.scenarioIsDocs {
+      DocBox.shared.preload()
+      RunLog.write("DOC loaded — \(DocBox.shared.describe())")
+      refreshStageDoc()
     }
     await run()
   }
@@ -581,6 +636,7 @@ final class StageModel {
           RunLog.write("TOOL \(output.toolName) -> \(returned.prefix(300))")
           refreshStageImage()
           await refreshStageVideo()
+          refreshStageDoc()
           if let call = pendingCall {
             set(.calling(name: call.name, arguments: call.arguments, returned: returned))
             try? await Task.sleep(for: .milliseconds(1400))

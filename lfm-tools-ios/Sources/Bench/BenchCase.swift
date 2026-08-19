@@ -83,6 +83,11 @@ enum Matcher: Decodable {
 
   private static func text(of value: Any) -> String {
     if let string = value as? String { return string }
+    // JSONSerialization hands booleans back as NSNumber; described, that is
+    // "1", and a case's {"equals": "true"} would never match.
+    if let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() {
+      return number.boolValue ? "true" : "false"
+    }
     return String(describing: value)
   }
 
