@@ -33,7 +33,10 @@ struct UndoLastTool: Tool {
   }
   let target: Target
   let name = "undo_last"
-  let description = "Undo the last change."
+  // "do not reverse it by hand" is load-bearing: asked to undo, the model
+  // re-set four faders to their old values and removed the effect itself
+  // (Mac, 2026-08-19) — the primitives instinct again.
+  let description = "Undo the last change. Use this for \"undo that\" — do not reverse the change by hand."
 
   func call(arguments: NoArguments) async throws -> String {
     switch target {
