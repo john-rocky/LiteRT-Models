@@ -400,7 +400,7 @@ enum ToolBox {
     questions. refund_order takes its order number directly; do not search
     first, and never invent a number — call ask_user when one is missing,
     but never ask about a detail the request or the state already gives. Do only
-    what was asked: after a finder returns, report what it found and stop.
+    what was asked, nothing more.
     When a request lists several steps, call the tools one after another in
     that order. When a tool has returned, answer the user in one short
     sentence using its result.

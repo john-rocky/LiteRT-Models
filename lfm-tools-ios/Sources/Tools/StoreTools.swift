@@ -103,7 +103,7 @@ final class StoreBox: @unchecked Sendable {
     if let pending = sync({ pendingConfirmation }) { line += " Awaiting confirmation: \(pending)." }
     switch selection {
     case .none:
-      line += " Selection: none — search or filter first, then act."
+      line += " Selection: none. Only the bulk tools (reprice, tag, status, stock, fulfil, remind, note) need a search or filter first; refund_order acts straight on its order number, and reports need no selection."
     case .products(let ids, let how):
       let rows = ids.compactMap { id in products.first { $0.id == id } }
       let names = rows.prefix(6).map { "\($0.title) (\(Self.yen($0.price)), stock \($0.stock))" }
@@ -641,7 +641,7 @@ struct RefundOrderTool: Tool {
   let name = "refund_order"
   let description = "Refund one order in full."
   @Generable struct Arguments {
-    @Guide(description: "The order number, e.g. 1007, from the request or the state. If no order is identified anywhere, call ask_user instead.")
+    @Guide(description: "The order number, e.g. 1007, from the request or the state — no need to search first. If no order is identified anywhere, call ask_user instead.")
     var order_number: Int
     @Guide(description: "Pass false unless the user has already said yes to this exact refund; false shows them what will happen so they can decide.")
     var confirm: Bool

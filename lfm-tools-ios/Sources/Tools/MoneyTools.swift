@@ -63,7 +63,7 @@ final class MoneyBox: @unchecked Sendable {
     var line = "Money: \(rows.count) transactions in the last month, \(StoreBox.yen(spent)) spent, \(uncategorized) uncategorized."
     line += " Budgets: " + budgets.keys.sorted().map { "\($0) \(StoreBox.yen(budgets[$0]!))" }.joined(separator: "; ") + "."
     if selection.isEmpty {
-      line += " Selection: none — list, search or filter first, then act."
+      line += " Selection: none."
     } else {
       let selected = rows.filter { selection.contains($0.id) }
       let names = selected.prefix(5).map { "\($0.payee) \(StoreBox.yen($0.amount)) (\(Self.when($0.daysAgo))\($0.category.map { ", \($0)" } ?? ", uncategorized"))" }
