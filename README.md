@@ -723,6 +723,17 @@ Converted with **litert-torch** from the `transformers` `Sam2Model`. The SAM 2 m
 
 **Sample apps**: [sam2/](sam2/) (Android, tap-to-segment + headless benchmark), [sam2-ios/](sam2-ios/) (iOS, LiteRT `CompiledModel` C API on Metal), [sam2-mlx-ios/](sam2-mlx-ios/) (iOS, a full **mlx-swift** port of the MLX SAM 2 image path, corr 1.0 vs the Python reference — used as the MLX side of the benchmark). Conversion: [sam2/scripts/convert_sam2.py](sam2/scripts/convert_sam2.py).
 
+**Video path (tracking)**: the full SAM 2.1 tracking loop — memory attention, memory encoder, object pointers and the prompt-conditioned mask decoder — as four fixed-shape per-frame graphs on **CompiledModel GPU**; the rolling memory bank and per-frame orchestration run host-side (Kotlin), so only tensor ops touch the GPU. The memory attention is written **batch-first (rank-4)** so it dodges the rank-3 miscompute above; the residual fp16 error over the N×4096 memory keys is accumulation-only and does not reach the mask (chained tracked-frame mask IoU 0.9986). All four graphs are fully GPU-resident with no CPU fallback (Pixel 8a Mali: encode 828/828, memcond 480/480, decode 462/462, memorize 145/145 nodes; iPhone 17 Pro Metal: all `fullyGPU`). Fidelity: the full loop matches the PyTorch reference at min mask-IoU **0.9999** over a 10-frame clip (both 7-slot and 2-slot memory banks). Per tracked frame (encode + memcond + decode + memorize): iPhone 17 Pro **471 ms** (2-slot) / **751 ms** (7-slot); Pixel 8a **~1.0–1.5 s**.
+
+| Graph | Size (fp16) | Input | Output |
+| ----- | ---- | ----- | ------ |
+| encode | 80 MB | Float32 [1, 3, 1024, 1024] NCHW | pix_raw \| hi0 \| hi1 |
+| memcond (7- or 2-slot) | 26 MB | pix_raw \| memory bank \| pos \| key mask | pix_feat [1, 1048576] |
+| decode | 18 MB | pix_feat \| hi0 \| hi1 \| sparse \| nomem | masks \| iou \| obj_ptr \| obj_score |
+| memorize | 3 MB | pix_raw \| mask_for_mem \| occ | spatial memory [4096, 64] |
+
+Video app: [sam2/](sam2/) "Video tracking →" — pick a video, tap the object in the first frame, and the mask propagates across frames on the GPU. Conversion + parity: [sam2/scripts/convert_sam2_video.py](sam2/scripts/convert_sam2_video.py), [sam2/scripts/verify_sam2_video.py](sam2/scripts/verify_sam2_video.py). The graphs are large, so they load from `filesDir` via [sam2/scripts/install_video_to_device.sh](sam2/scripts/install_video_to_device.sh).
+
 **Original project**: [facebook/sam2.1-hiera-tiny](https://huggingface.co/facebook/sam2.1-hiera-tiny) ([facebookresearch/sam2](https://github.com/facebookresearch/sam2)) | [Apache-2.0](https://github.com/facebookresearch/sam2/blob/main/LICENSE)
 
 ### EdgeTAM (SAM2)

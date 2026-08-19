@@ -23,25 +23,28 @@ struct ContentView: View {
                 .font(.system(.footnote, design: .monospaced))
                 .multilineTextAlignment(.leading)
                 .padding()
-            Button(running ? "Running…" : "Re-run benchmark") { run() }
+            Button(running ? "Running…" : "Re-run image benchmark") { run(video: false) }
+                .disabled(running)
+            Button("Run video-path benchmark") { run(video: true) }
                 .disabled(running)
         }
         .padding()
-        .onAppear { run() }
+        // `--video` launch argument runs the video-path probe headlessly (devicectl launch).
+        .onAppear { run(video: ProcessInfo.processInfo.arguments.contains("--video")) }
     }
 
-    private func run() {
+    private func run(video: Bool) {
         running = true
         status = "Compiling SAM2 on GPU…"
         DispatchQueue.global(qos: .userInitiated).async {
             let result: String
             do {
-                result = try Benchmark.run()
+                result = video ? try VideoBench.run() : try Benchmark.run()
             } catch {
                 result = "FAIL \(error)"
             }
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            try? result.write(to: docs.appendingPathComponent("result.txt"),
+            try? result.write(to: docs.appendingPathComponent(video ? "video_result.txt" : "result.txt"),
                               atomically: true, encoding: .utf8)
             // Emit to the device console so the result can be read headlessly on a real device.
             NSLog("SAM2BENCH\n%@", result)

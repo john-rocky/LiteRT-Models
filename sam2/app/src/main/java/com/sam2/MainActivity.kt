@@ -52,6 +52,10 @@ class MainActivity : AppCompatActivity() {
             text = "Select image"
             setOnClickListener { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
         }
+        val videoButton = Button(this).apply {
+            text = "Video tracking →"
+            setOnClickListener { startActivity(android.content.Intent(this@MainActivity, Sam2VideoActivity::class.java)) }
+        }
         status = TextView(this).apply {
             textSize = 16f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
             text = "SAM2 — compiling GPU + benchmarking…"; setPadding(0, 24, 0, 16)
@@ -61,7 +65,7 @@ class MainActivity : AppCompatActivity() {
             adjustViewBounds = true; scaleType = ImageView.ScaleType.FIT_CENTER
             setOnTouchListener { _, e -> if (e.action == MotionEvent.ACTION_DOWN) onTap(e.x, e.y); true }
         }
-        root.addView(button); root.addView(status); root.addView(imageView)
+        root.addView(button); root.addView(videoButton); root.addView(status); root.addView(imageView)
         setContentView(root.also { it.setBackgroundColor(Color.BLACK) })
 
         thread { benchmark() }
