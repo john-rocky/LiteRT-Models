@@ -72,4 +72,13 @@ final class UndoStack<State: Sendable>: @unchecked Sendable {
     defer { lock.unlock() }
     return stack.popLast()
   }
+
+  /// What the last change was, for the state line — "undo that" needs a
+  /// referent the model can read, or it re-derives one (and got it wrong:
+  /// 「今のを取り消して」 became three deletes on the Mac, 2026-08-19).
+  func peekWhat() -> String? {
+    lock.lock()
+    defer { lock.unlock() }
+    return stack.last?.1
+  }
 }

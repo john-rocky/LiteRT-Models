@@ -428,6 +428,7 @@ final class StoreBox: @unchecked Sendable {
 /// something to find and bulk actions something to change; few enough that
 /// the state line can name what is selected. Prices in yen; days count back
 /// from "today", so `sales_summary(7)` means the same thing on any date.
+@available(iOS 27.0, *)
 enum StoreData {
   static let products: [StoreBox.Product] = [
     .init(id: 1, title: "Linen Shirt", vendor: "Kanda Goods", type: "Shirts", tags: ["summer", "new"], price: 6800, stock: 3, status: "active"),

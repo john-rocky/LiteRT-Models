@@ -58,12 +58,13 @@ final class InboxBox: @unchecked Sendable {
     let unread = inbox.filter(\.unread).count
     var line = "Inbox: \(inbox.count) messages, \(unread) unread."
     if let pending = sync({ pendingConfirmation }) { line += " Awaiting confirmation: \(pending)." }
+    if let last = history.peekWhat() { line += " Last change: \(last)." }
     let listed = inbox.sorted { $0.daysAgo < $1.daysAgo }.prefix(6).map {
       "#\($0.id) \($0.from) — \"\($0.subject)\"\($0.unread ? " (unread)" : "")\($0.flagged ? " ⚑" : "")"
     }
     line += " Newest: " + listed.joined(separator: "; ") + "."
     if selection.isEmpty {
-      line += " Selection: none — list, search or filter first, then act."
+      line += " Selection: none. Only the bulk tools (archive, snooze, flag, mark read) need a list or search first; number tools act straight on the numbers above."
     } else {
       let selected = rows.filter { selection.contains($0.id) }
       line += " Selection: \(selected.count) from \(how): "
@@ -152,7 +153,7 @@ final class InboxBox: @unchecked Sendable {
     let ids = sync { selection }
     guard !ids.isEmpty else { return "nothing is selected — list, search or filter first" }
     sync {
-      pushHistory(what)
+      pushHistory("\(what) \(ids.count) message\(ids.count == 1 ? "" : "s")")
       for index in messages.indices where ids.contains(messages[index].id) {
         change(&messages[index])
       }
@@ -194,7 +195,7 @@ final class InboxBox: @unchecked Sendable {
     guard let message else { return "there is no message #\(id)" }
     guard confirmed else {
       sync { pendingConfirmation = "delete message #\(id) from \(message.from)" }
-      return "deleting #\(id) from \(message.from) (\"\(message.subject)\") is permanent — ask the user to confirm, then call delete_message again with confirm true"
+      return "not deleted — deleting #\(id) from \(message.from) (\"\(message.subject)\") is permanent. Ask the user to confirm and stop; only their yes in a later message allows confirm true"
     }
     sync {
       pendingConfirmation = nil
@@ -224,6 +225,7 @@ final class InboxBox: @unchecked Sendable {
 /// Fifteen messages, frozen; none is real. Three newsletters (the sweep), an
 /// invoice (the snooze), a question from a colleague (the reply), a message
 /// from the landlord (the flag).
+@available(iOS 27.0, *)
 enum InboxData {
   static let messages: [InboxBox.Message] = [
     .init(id: 1, from: "Hana Kim", subject: "Report deadline", snippet: "Could you send the Q3 report this week?", daysAgo: 0, unread: true, newsletter: false),
@@ -251,7 +253,7 @@ struct ListInboxTool: Tool {
   let name = "list_inbox"
   let description = "List inbox messages; the list becomes the selection."
   @Generable struct Arguments {
-    @Guide(description: "Which slice.", .anyOf(["all", "unread", "read", "flagged", "newsletters"]))
+    @Guide(description: "Which slice. \"What's new\" is unread.", .anyOf(["all", "unread", "read", "flagged", "newsletters"]))
     var filter: String
   }
   func call(arguments: Arguments) async throws -> String {
@@ -276,7 +278,7 @@ struct ReadMessageTool: Tool {
   let name = "read_message"
   let description = "Open one message, by its number."
   @Generable struct Arguments {
-    @Guide(description: "The message number, e.g. 2. The inbox list is in the state.") var number: Int
+    @Guide(description: "The message number, e.g. 2, from the state's list — no need to search first.") var number: Int
   }
   func call(arguments: Arguments) async throws -> String {
     InboxBox.shared.read(arguments.number)
@@ -327,7 +329,7 @@ struct DraftReplyTool: Tool {
   let name = "draft_reply"
   let description = "Write a reply draft to one message. Nothing is sent."
   @Generable struct Arguments {
-    @Guide(description: "The message number to reply to.") var number: Int
+    @Guide(description: "The message number to reply to, from the state's list — no need to search first.") var number: Int
     @Guide(description: "What the reply should say, in a sentence.") var gist: String
   }
   func call(arguments: Arguments) async throws -> String {
@@ -340,7 +342,7 @@ struct DeleteMessageTool: Tool {
   let name = "delete_message"
   let description = "Delete a message permanently. Archive keeps it; this does not."
   @Generable struct Arguments {
-    @Guide(description: "The message number.") var number: Int
+    @Guide(description: "The message number, from the state's list — no need to search first.") var number: Int
     @Guide(description: "Pass false unless the user has already said yes to deleting this exact message; false shows them what would be deleted.")
     var confirm: Bool
   }
@@ -354,7 +356,7 @@ struct UnsubscribeTool: Tool {
   let name = "unsubscribe"
   let description = "Unsubscribe from a newsletter and archive it, by message number."
   @Generable struct Arguments {
-    @Guide(description: "The newsletter's message number.") var number: Int
+    @Guide(description: "The newsletter's message number, from the state's list — no need to search first.") var number: Int
   }
   func call(arguments: Arguments) async throws -> String {
     InboxBox.shared.unsubscribe(arguments.number)

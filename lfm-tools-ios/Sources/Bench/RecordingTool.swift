@@ -160,21 +160,26 @@ enum BenchToolBox {
   /// canned data, frozen at "6 products under 5 in stock, 5 orders awaiting
   /// payment"; results claim success in the shape the real tools answer.
   static let store: [any FoundationModels.Tool] = [
-    // Finder fakes are NEUTRAL on purpose: a canned result that echoed one
-    // fixed query ("4 products (draft)") contradicted every other query and
-    // the model retried or piled on extra calls — the same disease as the
-    // go_to_page echo, measured across four packs (Mac, 2026-08-19).
-    RecordingTool(base: SearchProductsTool(), canned: "the matching products are selected and listed on screen"),
-    RecordingTool(base: FilterProductsTool(), canned: "the matching products are selected and listed on screen"),
-    RecordingTool(base: LowStockTool(), canned: "the low-stock products are selected and listed on screen"),
+    // Finder fakes echo DYNAMICALLY: a pure render over the frozen canned
+    // data with the real arguments reflected. The earlier neutral fakes
+    // ("the matching products are selected and listed on screen") existed
+    // because a FIXED echo ("4 products (draft)") contradicted other
+    // queries — reflecting the arguments removes the contradiction instead
+    // of the content, and gives the model rows to answer from rather than
+    // a reason to call something else (the JA spurious second call).
+    RecordingTool(base: SearchProductsTool(), canned: "", respond: { StoreEcho.search($0.query) }),
+    RecordingTool(base: FilterProductsTool(), canned: "", respond: { StoreEcho.filter(by: $0.by, value: $0.value) }),
+    RecordingTool(base: LowStockTool(), canned: "", respond: { StoreEcho.lowStock(below: $0.below) }),
     RecordingTool(base: UpdatePriceTool(), canned: "prices changed on the selected products"),
     RecordingTool(base: SetPriceTool(), canned: "price set on the selected products"),
     RecordingTool(base: AddTagTool(), canned: "tagged the selected products"),
     RecordingTool(base: SetProductStatusTool(), canned: "status changed on the selected products"),
     RecordingTool(base: AdjustInventoryTool(), canned: "stock adjusted on the selected products"),
-    RecordingTool(base: SearchOrdersTool(), canned: "the matching orders are selected and listed on screen"),
+    RecordingTool(base: SearchOrdersTool(), canned: "", respond: { StoreEcho.searchOrders(customer: $0.customer) }),
     RecordingTool(base: ExportProductsTool(), canned: "exported 24 products to products.csv in the app's Documents"),
-    RecordingTool(base: FilterOrdersTool(), canned: "the matching orders are selected and listed on screen"),
+    RecordingTool(
+      base: FilterOrdersTool(), canned: "",
+      respond: { StoreEcho.filterOrders(payment: $0.payment_status, fulfillment: $0.fulfillment_status) }),
     RecordingTool(base: FulfillOrdersTool(), canned: "fulfilled 5 orders: #1010, #1013, #1016, #1017, #1019"),
     RecordingTool(base: SendInvoiceTool(), canned: "sent a payment reminder for 5 orders"),
     RecordingTool(
@@ -268,11 +273,14 @@ enum BenchToolBox {
     RecordingTool(base: TrackOrderTool(), canned: "order #5230 is out for delivery — arriving today by 21:00"),
   ]
 
-  /// The money pack, neutralized, against the month of canned spending.
+  /// The money pack against the month of canned spending — finders echo
+  /// dynamically (see the store pack's note). The rows carry the total, so
+  /// "how much at Maruetsu?" is answered by the finder's own result instead
+  /// of by a spurious follow-up report call.
   static let money: [any FoundationModels.Tool] = [
-    RecordingTool(base: ListTransactionsTool(), canned: "the matching transactions are selected and listed on screen"),
-    RecordingTool(base: FilterTransactionsTool(), canned: "the matching transactions are selected and listed on screen"),
-    RecordingTool(base: SearchPayeeTool(), canned: "the matching transactions are selected and listed on screen"),
+    RecordingTool(base: ListTransactionsTool(), canned: "", respond: { MoneyEcho.list(days: $0.days) }),
+    RecordingTool(base: FilterTransactionsTool(), canned: "", respond: { MoneyEcho.filter($0.category) }),
+    RecordingTool(base: SearchPayeeTool(), canned: "", respond: { MoneyEcho.search(payee: $0.payee) }),
     RecordingTool(base: CategorizeTool(), canned: "categorized the selected transactions"),
     RecordingTool(base: FlagTransactionsTool(), canned: "flagged the selected transactions"),
     RecordingTool(base: SetBudgetTool(), canned: "budget set"),
@@ -283,27 +291,211 @@ enum BenchToolBox {
     RecordingTool(base: UndoLastTool(target: .money), canned: "undid the last change"),
   ]
 
-  /// The inbox pack, neutralized, against the fifteen canned messages.
+  /// The inbox pack against the fifteen canned messages — finders echo
+  /// dynamically: a pure render over the same frozen world the real tools
+  /// compute over, arguments reflected. The neutral fakes ("the matching
+  /// messages are selected and listed on screen") starved the model — it
+  /// piled a read_message onto "show me", stalled mid-chain narrating what
+  /// it would do next, and had no numbers to act on. Reflecting the real
+  /// arguments keeps the fake-well recipe's rule (the echo can never
+  /// contradict the call) while giving the model the rows the real app
+  /// would show. Actions stay neutral; nothing here mutates.
   static let inbox: [any FoundationModels.Tool] = [
-    RecordingTool(base: ListInboxTool(), canned: "the matching messages are selected and listed on screen"),
-    RecordingTool(base: SearchMailTool(), canned: "the matching messages are selected and listed on screen"),
-    RecordingTool(base: ReadMessageTool(), canned: "the message is open on screen"),
+    RecordingTool(base: ListInboxTool(), canned: "", respond: { InboxEcho.list($0.filter) }),
+    RecordingTool(base: SearchMailTool(), canned: "", respond: { InboxEcho.search($0.query) }),
+    RecordingTool(
+      base: ReadMessageTool(), canned: "",
+      respond: { args in
+        guard let message = InboxEcho.message(args.number) else {
+          return "there is no message #\(args.number)"
+        }
+        return "#\(message.id) from \(message.from), \(MoneyBox.when(message.daysAgo)) — \"\(message.subject)\": \(message.snippet)"
+      }),
     RecordingTool(base: ArchiveTool(), canned: "archived the selected messages"),
     RecordingTool(base: MarkReadTool(), canned: "marked the selected messages read"),
     RecordingTool(base: FlagMailTool(), canned: "flagged the selected messages"),
     RecordingTool(base: SnoozeTool(), canned: "snoozed the selected messages"),
-    RecordingTool(base: DraftReplyTool(), canned: "draft saved — nothing sent"),
-    RecordingTool(base: UnsubscribeTool(), canned: "unsubscribed and archived the message"),
+    RecordingTool(
+      base: DraftReplyTool(), canned: "",
+      respond: { args in
+        guard let message = InboxEcho.message(args.number) else {
+          return "there is no message #\(args.number)"
+        }
+        return "draft saved, replying to \(message.from) re \"\(message.subject)\" — nothing sent"
+      }),
+    RecordingTool(
+      base: UnsubscribeTool(), canned: "",
+      respond: { args in
+        guard let message = InboxEcho.message(args.number) else {
+          return "there is no message #\(args.number)"
+        }
+        return message.newsletter
+          ? "unsubscribed from \(message.from) and archived the message"
+          : "#\(message.id) from \(message.from) is not a newsletter — archived it instead"
+      }),
     RecordingTool(
       base: DeleteMessageTool(), canned: "",
       respond: { args in
         args.confirm
           ? "deleted message #\(args.number)"
-          : "deleting message #\(args.number) is permanent — ask the user to confirm, then call delete_message again with confirm true"
+          : "not deleted — deleting message #\(args.number) is permanent. Ask the user to confirm and stop; only their yes in a later message allows confirm true"
       }),
     AskUserTool(),
     RecordingTool(base: UndoLastTool(target: .inbox), canned: "undid the last change"),
   ]
+
+  /// Pure renders of the money finders over the frozen month — the same
+  /// filter, search and row format as MoneyBox (total included), selection
+  /// state left out.
+  enum MoneyEcho {
+    private static var rows: [MoneyBox.Transaction] {
+      MoneyData.transactions.sorted { $0.daysAgo < $1.daysAgo }
+    }
+
+    private static func render(_ matched: [MoneyBox.Transaction], how: String) -> String {
+      guard !matched.isEmpty else { return "no transactions match \(how)" }
+      let listed = matched.prefix(8).map {
+        "\(MoneyBox.when($0.daysAgo)) \($0.payee) — \(StoreBox.yen($0.amount))\($0.category.map { ", \($0)" } ?? ", uncategorized")"
+      }
+      let total = matched.reduce(0) { $0 + $1.amount }
+      return "\(matched.count) transaction\(matched.count == 1 ? "" : "s") (\(how)), \(StoreBox.yen(total)) in all — now the selection:\n"
+        + listed.joined(separator: "\n") + (matched.count > 8 ? "\n… and \(matched.count - 8) more" : "")
+    }
+
+    static func list(days: Int) -> String {
+      let span = max(1, days)
+      return render(rows.filter { $0.daysAgo < span }, how: "last \(span) day\(span == 1 ? "" : "s")")
+    }
+
+    static func filter(_ category: String) -> String {
+      let want = category.lowercased()
+      if want == "uncategorized" || want == "none" {
+        return render(rows.filter { $0.category == nil }, how: "uncategorized")
+      }
+      return render(rows.filter { $0.category == want }, how: "category \(want)")
+    }
+
+    static func search(payee: String) -> String {
+      let needle = MoneyData.romaji(payee)
+      return render(rows.filter { $0.payee.lowercased().contains(needle) }, how: "payee \"\(payee)\"")
+    }
+  }
+
+  /// Pure renders of the store finders over the frozen products and orders —
+  /// the same matching and row format as StoreBox, selection state left out.
+  enum StoreEcho {
+    private static func renderProducts(_ matched: [StoreBox.Product], how: String) -> String {
+      guard !matched.isEmpty else { return "no products match \(how)" }
+      let listed = matched.prefix(8).map {
+        "\($0.title) — \(StoreBox.yen($0.price)), stock \($0.stock), \($0.status)"
+      }
+      return "\(matched.count) product\(matched.count == 1 ? "" : "s") selected (\(how)):\n"
+        + listed.joined(separator: "\n") + (matched.count > 8 ? "\n… and \(matched.count - 8) more" : "")
+    }
+
+    private static func renderOrders(_ matched: [StoreBox.Order], how: String) -> String {
+      guard !matched.isEmpty else { return "no orders match \(how)" }
+      let listed = matched.prefix(8).map {
+        "#\($0.number) \($0.customer) — \(StoreBox.yen($0.total)), \($0.payment), \($0.fulfillment), \($0.daysAgo == 0 ? "today" : "\($0.daysAgo) d ago")"
+      }
+      return "\(matched.count) order\(matched.count == 1 ? "" : "s") selected (\(how)):\n"
+        + listed.joined(separator: "\n") + (matched.count > 8 ? "\n… and \(matched.count - 8) more" : "")
+    }
+
+    static func search(_ query: String) -> String {
+      let needle = query.lowercased().trimmingCharacters(in: .whitespaces)
+      let words = needle.split(separator: " ").map(String.init)
+      let matched = StoreData.products.filter { p in
+        needle.isEmpty || words.allSatisfy { p.title.lowercased().contains($0) }
+      }
+      return renderProducts(matched, how: needle.isEmpty ? "all products" : "search \"\(query)\"")
+    }
+
+    static func filter(by field: String, value: String) -> String {
+      let want = value.lowercased().trimmingCharacters(in: .whitespaces)
+      let matched = StoreData.products.filter { p in
+        switch field.lowercased() {
+        case "status": return p.status == want
+        case "vendor": return p.vendor.lowercased() == want || p.vendor.lowercased().contains(want)
+        case "tag": return p.tags.contains { $0.lowercased() == want }
+        case "product_type", "type": return p.type.lowercased() == want || p.type.lowercased().contains(want)
+        default: return false
+        }
+      }
+      return renderProducts(matched, how: "\(field.lowercased()) = \(value)")
+    }
+
+    static func lowStock(below: Int) -> String {
+      renderProducts(
+        StoreData.products.filter { $0.stock < below && $0.status != "archived" }
+          .sorted { $0.stock < $1.stock },
+        how: "stock below \(below)")
+    }
+
+    static func searchOrders(customer: String) -> String {
+      let needle = customer.lowercased().trimmingCharacters(in: .whitespaces)
+      return renderOrders(
+        StoreData.orders.filter { $0.customer.lowercased().contains(needle) }
+          .sorted { $0.daysAgo < $1.daysAgo },
+        how: "customer \"\(customer)\"")
+    }
+
+    static func filterOrders(payment: String, fulfillment: String) -> String {
+      let p = payment.lowercased()
+      let f = fulfillment.lowercased()
+      let matched = StoreData.orders.filter { o in
+        (p == "any" || o.payment == p) && (f == "any" || o.fulfillment == f)
+      }.sorted { $0.daysAgo < $1.daysAgo }
+      var parts: [String] = []
+      if p != "any" { parts.append("payment \(p)") }
+      if f != "any" { parts.append(f) }
+      return renderOrders(matched, how: parts.isEmpty ? "all orders" : parts.joined(separator: ", "))
+    }
+  }
+
+  /// Pure renders of the inbox finders over the frozen fifteen messages —
+  /// the same filter, search and row format as InboxBox, with the selection
+  /// and the undo history left out. Deterministic across cases by
+  /// construction: the data never moves.
+  enum InboxEcho {
+    private static var live: [InboxBox.Message] {
+      InboxData.messages.sorted { $0.daysAgo < $1.daysAgo }
+    }
+
+    static func message(_ id: Int) -> InboxBox.Message? {
+      InboxData.messages.first { $0.id == id }
+    }
+
+    private static func render(_ matched: [InboxBox.Message], how: String) -> String {
+      guard !matched.isEmpty else { return "no messages match \(how)" }
+      let listed = matched.prefix(8).map {
+        "#\($0.id) \($0.from) — \"\($0.subject)\" (\(MoneyBox.when($0.daysAgo))\($0.unread ? ", unread" : ""))"
+      }
+      return "\(matched.count) message\(matched.count == 1 ? "" : "s") (\(how)) — now the selection:\n"
+        + listed.joined(separator: "\n")
+        + (matched.count > 8 ? "\n… and \(matched.count - 8) more" : "")
+    }
+
+    static func list(_ filter: String) -> String {
+      switch filter.lowercased() {
+      case "unread": return render(live.filter(\.unread), how: "unread")
+      case "flagged": return render(live.filter(\.flagged), how: "flagged")
+      case "newsletters": return render(live.filter(\.newsletter), how: "newsletters")
+      case "read": return render(live.filter { !$0.unread }, how: "already read")
+      default: return render(live, how: "all")
+      }
+    }
+
+    static func search(_ query: String) -> String {
+      let needle = query.lowercased()
+      return render(
+        live.filter {
+          $0.from.lowercased().contains(needle) || $0.subject.lowercased().contains(needle)
+            || $0.snippet.lowercased().contains(needle)
+        },
+        how: "search \"\(query)\"")
+    }
+  }
 
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {

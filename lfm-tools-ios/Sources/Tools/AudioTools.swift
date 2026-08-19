@@ -549,6 +549,7 @@ final class AudioBox: @unchecked Sendable {
 /// song's tempo. Nothing here is music worth keeping; it is enough that
 /// muting the drums, panning the keys or an echo on the lead is something
 /// a viewer hears change.
+@available(iOS 27.0, *)
 enum Synth {
   private static func hz(_ midi: Int) -> Double { 440 * pow(2, Double(midi - 69) / 12) }
 

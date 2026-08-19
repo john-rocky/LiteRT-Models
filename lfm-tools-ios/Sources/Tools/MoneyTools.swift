@@ -129,7 +129,7 @@ final class MoneyBox: @unchecked Sendable {
   }
 
   func search(payee: String) -> String {
-    let needle = payee.lowercased()
+    let needle = MoneyData.romaji(payee)
     let rows = sync { transactions }.filter { $0.payee.lowercased().contains(needle) }
       .sorted { $0.daysAgo < $1.daysAgo }
     return select(rows, how: "payee \"\(payee)\"")
@@ -238,7 +238,26 @@ final class MoneyBox: @unchecked Sendable {
 /// A month of one person's spending, frozen. Two payees recur on the same
 /// amount (the subscriptions), five rows are uncategorized (the triage), and
 /// eating out is over budget (the report has something to say).
+@available(iOS 27.0, *)
 enum MoneyData {
+  /// The canned payees are romanized, the Japanese beats say them in kana —
+  /// 「マルエツでいくら使った?」 searched for マルエツ, matched nothing, and
+  /// the app answered "no transactions" over a month of Maruetsu rows
+  /// (Mac, 2026-08-19). A real search bar normalizes; so does this one.
+  static let kana: [String: String] = [
+    "マルエツ": "maruetsu", "セブンイレブン": "seven-eleven", "セブン": "seven-eleven",
+    "スターバックス": "starbucks", "スタバ": "starbucks", "ネットフリックス": "netflix",
+    "スポティファイ": "spotify", "ユニクロ": "uniqlo", "ドン・キホーテ": "don quijote",
+    "ドンキ": "don quijote", "スシロー": "sushiro", "サイゼリヤ": "saizeriya",
+    "吉野家": "yoshinoya", "一蘭": "ichiran", "くら寿司": "kura sushi",
+  ]
+
+  static func romaji(_ payee: String) -> String {
+    let needle = payee.lowercased().trimmingCharacters(in: .whitespaces)
+    for (kana, latin) in kana where needle.contains(kana.lowercased()) { return latin }
+    return needle
+  }
+
   static let transactions: [MoneyBox.Transaction] = [
     .init(id: 1, payee: "Maruetsu", amount: 4820, category: "groceries", daysAgo: 1),
     .init(id: 2, payee: "Seven-Eleven", amount: 680, category: nil, daysAgo: 0),
