@@ -174,6 +174,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [MoGe-2 ViT-S](#moge-2-vit-s)
   - [Depth Anything 3 ViT-S (Small)](#depth-anything-3-vit-s-small)
   - [Metric3D v2 ViT-S](#metric3d-v2-vit-s)
+  - [TIPSv2-B/14 DPT (depth, normals, segmentation)](#tipsv2-b14-dpt-depth-normals-segmentation)
 
 - [**Text Embedding (RAG)**](#text-embedding-rag)
   - [Qwen3-Embedding-0.6B](#qwen3-embedding-06b)
@@ -1686,6 +1687,25 @@ Converted via **litert-torch** at a fixed 448×448. Encoder = the MoGe-2 DINOv2 
 
 **Original project**: [YvanYin/Metric3D](https://github.com/YvanYin/Metric3D) | BSD-2-Clause
 
+### TIPSv2-B/14 DPT (depth, normals, segmentation)
+
+![TIPSv2 — input | depth | normals | ADE20K seg, on-device LiteRT GPU](https://huggingface.co/litert-community/TIPSv2-B14-DPT-LiteRT/resolve/main/hero.png)
+
+TIPSv2 (Google DeepMind, CVPR 2026): a DINOv2-style ViT-B/14 vision-language backbone with three DPT heads on the frozen backbone — **metric depth** and **surface normals** (NYU Depth V2) and **ADE20K semantic segmentation** (150 classes). One GPU graph returns all three; ~0.9 s/image on Pixel 8a for the full set. First multi-task dense-prediction model in this zoo.
+
+Re-authored GPU-clean via **litert-torch** with exact rewrites: fused-QKV → 4D attention, LayerScale baked, SafeLayerNorm, tanh-GELU (the only approximation), readout `cat+expand` → split Linear, ConvTranspose2d → zero-stuff + Conv2d, the DPT `align_corners=True` ×2 upsample → **two constant-RHS matmuls** (exact). The **depth decoder's activations reach ~1e8** (fp16 overflow → constant output on the GPU): its ReLU/affine chain ends in a scale-invariant normalisation, so power-of-2 scales are folded into the weights/biases to keep every stage ≲100 — bit-exact in fp32.
+
+| Download Link | Size | Input | Output | Original Project | License | Sample App |
+| ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
+| [tipsv2_b14_dpt_fp16.tflite](https://huggingface.co/litert-community/TIPSv2-B14-DPT-LiteRT) | 318 MB | Float32 [1, 3, 448, 448] NCHW, RGB [0,1] | Depth [1,1,448,448] (m) + Normals [1,3,448,448] + Seg logits [1,150,256,256] | [google/tipsv2-b14-dpt](https://huggingface.co/google/tipsv2-b14-dpt) | [Apache-2.0](https://huggingface.co/google/tipsv2-b14-dpt) | [tipsv2/](tipsv2/) |
+
+**Preprocessing**: resize/letterbox to 448×448, divide by 255 — **no mean/std normalization**, NCHW planar. **Decode**: depth is metric (0.001–10 m bins); normals are unit vectors (`(n+1)/2` → RGB); seg = `argmax` over the 150 channels at the head's 256×256 grid, nearest-upscale.
+
+**Fidelity**: vs the official PyTorch `google/tipsv2-b14-dpt`: depth corr 0.999998, normals 0.999999, seg argmax agreement 99.96 %. Pixel 8a GPU (fp16, 1434/1434 ops `LITERT_CL`): depth 0.99986, normals 0.99990, seg argmax 99.3 %.
+
+**Sample app**: [tipsv2/](tipsv2/) — photo picker → input | depth, normals | segmentation + ADE20K legend. Model staged via `scripts/install_to_device.sh` (318 MB).
+
+**Original project**: [google/tipsv2-b14](https://huggingface.co/google/tipsv2-b14) · [arXiv 2604.12012](https://arxiv.org/abs/2604.12012) | Apache-2.0
 
 # Face Detection
 
@@ -1818,7 +1838,6 @@ Converted via **litert-torch** with three numerically-exact re-authorings: the c
 **Preprocessing**: RGB normalized to 0-1 (divide by 255), NCHW planar. Output is the restored RGB image in [0,1].
 
 **Sample app**: [nafnet/](nafnet/) — image picker showing input | restored (GoPro deblur; the same app runs the SIDD **denoise** model via `scripts/build_sidd.py`, device-verified corr 0.999999).
-
 
 # GPU Compatibility Notes
 
