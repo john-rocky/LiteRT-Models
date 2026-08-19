@@ -221,7 +221,13 @@ final class StageModel {
     "Save it as 'lease-signed'.",
   ]
 
-  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look|polish|video|store|audio|docs`
+  /// See and choose, split (Tools/ChooseTools.swift): the model answers a
+  /// question about the photo with a @Generable enum, the app makes the
+  /// call. For the vision bundles too small to route; runs on Apple's model
+  /// too, so the two can be compared on the same beats.
+  static let chooseBeats = SeeAndChoose.steps.map { $0.question.isEmpty ? "(the app saves the result)" : $0.question }
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look|polish|video|store|audio|docs|choose`
   /// swaps the stage to that pack; default stays the coffee run. Beats and
   /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
@@ -241,14 +247,16 @@ final class StageModel {
     case "store": return storeBeats
     case "audio": return audioBeats
     case "docs": return docsBeats
+    case "choose": return chooseBeats
     default: return beats
     }
   }
 
   /// Packs that keep a photo on stage from the first frame.
   static var scenarioShowsPhoto: Bool {
-    scenarioIsPhoto || scenarioAttachesPhoto
+    scenarioIsPhoto || scenarioAttachesPhoto || scenarioIsChoose
   }
+  static var scenarioIsChoose: Bool { scenarioName == "choose" }
   /// Packs where the photo goes into the prompt as an image attachment, so
   /// the model routes on what it sees rather than on what it is told.
   static var scenarioAttachesPhoto: Bool {
@@ -299,6 +307,9 @@ final class StageModel {
 
 
   private(set) var question = ""
+  /// Who the bubble belongs to. "YOU" for a person's beat; the see-and-choose
+  /// scenario is the app asking the model, and the label says so.
+  private(set) var speaker = "YOU"
   /// What is in the composer right now, while the instruction is being typed.
   private(set) var typed = ""
   private(set) var live = ""
@@ -424,6 +435,7 @@ final class StageModel {
     case "store": tools = ToolBox.store
     case "audio": tools = ToolBox.audio
     case "docs": tools = ToolBox.docs
+    case "choose": tools = []  // the model answers; the app calls
     default: tools = ToolBox.demo
     }
     // The vision packs get their own instructions: the stock ones push tools
@@ -432,9 +444,11 @@ final class StageModel {
     // a beat said "if there's a person…". The state packs get theirs: the
     // model is told everything and asked to copy numbers, not look them up.
     let instructions =
-      Self.scenarioAttachesPhoto
-      ? ToolBox.visionInstructions
-      : (Self.scenarioSendsState ? Self.stateInstructions : ToolBox.instructions)
+      Self.scenarioIsChoose
+      ? SeeAndChoose.instructions
+      : Self.scenarioAttachesPhoto
+        ? ToolBox.visionInstructions
+        : (Self.scenarioSendsState ? Self.stateInstructions : ToolBox.instructions)
     toolCount = tools.count
     switch Self.backend {
     case .system:
@@ -534,6 +548,10 @@ final class StageModel {
 
   private func run() async {
     guard let session else { return }
+    if Self.scenarioIsChoose {
+      await runChoose(session)
+      return
+    }
     for (index, scripted) in Self.scenarioBeats.enumerated() {
       RunLog.flushStream()  // beat N's tail was landing at the head of beat N+1
       beatIndex = index
@@ -652,6 +670,57 @@ final class StageModel {
       RunLog.write("ANSWER[\(answer.count)] \(answer.prefix(200))")
       LastAnswer.shared.set(answer)
       set(.result(text: answer, artifact: ArtifactBox.shared.take()))
+      beatIndex = index + 1
+      try? await Task.sleep(for: .seconds(3))
+    }
+  }
+
+  /// The see-and-choose loop: the app asks, the model answers with an enum,
+  /// the app calls the tool. Same screen phases as the tool-calling loop —
+  /// the badge shows the call the app made and why — so the recording reads
+  /// the same whichever model is under it.
+  private func runChoose(_ session: LanguageModelSession) async {
+    speaker = "APP → MODEL"
+    for (index, step) in SeeAndChoose.steps.enumerated() {
+      RunLog.flushStream()
+      beatIndex = index
+      question = ""
+      typed = ""
+      set(.typing)
+      let shown = Self.chooseBeats[index]
+      RunLog.write("BEAT \(index + 1) (ask) \(shown)")
+      for character in shown {
+        typed.append(character)
+        try? await Task.sleep(for: .milliseconds(28))
+      }
+      try? await Task.sleep(for: .milliseconds(450))
+      question = shown
+      typed = ""
+      live = ""
+      set(.thinking)
+      _ = ArtifactBox.shared.take()
+      guard let photo = PhotoEditBox.shared.currentCGImage() else {
+        RunLog.write("ERROR no photo on stage")
+        set(.result(text: "no photo to look at", artifact: nil))
+        return
+      }
+      RunLog.write("ATTACH photo \(photo.width)x\(photo.height)")
+      let outcome = await Task.detached(priority: .userInitiated) {
+        await SeeAndChoose.run(step, session: session, photo: photo)
+      }.value
+      if !outcome.answer.isEmpty { RunLog.write("CHOSE \(outcome.answer)") }
+      if let call = outcome.call {
+        RunLog.write("TOOL \(call.name) -> \(call.returned.prefix(300))")
+        set(.calling(name: call.name, arguments: call.arguments, returned: nil))
+        try? await Task.sleep(for: .milliseconds(900))
+        refreshStageImage()
+        set(.calling(name: call.name, arguments: call.arguments, returned: call.returned))
+        try? await Task.sleep(for: .milliseconds(1400))
+      }
+      RunLog.write("STREAM[\(live.count)] \(live.replacingOccurrences(of: "\n", with: "⏎").prefix(400))")
+      RunLog.write("ANSWER[\(outcome.sentence.count)] \(outcome.sentence.prefix(200))")
+      LastAnswer.shared.set(outcome.sentence)
+      set(.result(text: outcome.sentence, artifact: ArtifactBox.shared.take()))
       beatIndex = index + 1
       try? await Task.sleep(for: .seconds(3))
     }

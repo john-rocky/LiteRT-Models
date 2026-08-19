@@ -101,7 +101,7 @@ struct StageView: View {
         HStack(alignment: .top, spacing: 8) {
           Spacer(minLength: 40)
           VStack(alignment: .trailing, spacing: 5) {
-            Text("YOU")
+            Text(stage.speaker)
               .font(.system(size: 10, weight: .heavy, design: .rounded))
               .foregroundStyle(.white.opacity(0.45))
             Text(stage.question)
