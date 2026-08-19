@@ -167,6 +167,9 @@ enum BenchRunner {
       #endif
 
       TranscriptBox.shared.attach(session)
+      // The fakes' selection, from this case's state line — so a bulk call
+      // with nothing selected gets the real app's refusal, not a lie.
+      BenchSelection.shared.prime(from: benchCase.state)
       // Written before the respond, so a hang is attributable to its case —
       // one engine freeze left a 30-minute silence with nothing to say where.
       out.write(["type": "start", "case": benchCase.id])

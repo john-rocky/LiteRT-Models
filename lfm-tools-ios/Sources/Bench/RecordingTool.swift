@@ -31,6 +31,55 @@ struct RecordingTool<Base: Tool>: Tool {
   }
 }
 
+/// What the fakes believe is selected — primed per case from the case's
+/// state line, replaced by each finder echo, read by the bulk fakes. The
+/// always-success canned results lied exactly where the bench needed
+/// honesty: "Snooze it." with "Selection: none" in the state got back
+/// "snoozed the selected messages", where the real app refuses. The fake
+/// cannot change the model's first call (the result arrives after it),
+/// but it keeps the bench from scoring a trajectory the real app would
+/// refuse, and lets mid-case recovery be measured.
+@available(iOS 27.0, *)
+final class BenchSelection: @unchecked Sendable {
+  static let shared = BenchSelection()
+  private let lock = NSLock()
+  private var storage: String?
+
+  /// nil = nothing selected; otherwise "products", "orders" or "rows" —
+  /// the store's order tools refuse a product selection, like the app.
+  var kind: String? {
+    get {
+      lock.lock()
+      defer { lock.unlock() }
+      return storage
+    }
+    set {
+      lock.lock()
+      defer { lock.unlock() }
+      storage = newValue
+    }
+  }
+
+  func prime(from state: String?) {
+    guard let state, let range = state.range(of: "Selection: ") else {
+      kind = nil
+      return
+    }
+    // "none…", "6 products from stock below 5: …", "5 orders from payment
+    // pending: …", "5 from uncategorized: …" — the head names the kind.
+    let head = state[range.upperBound...].prefix { $0 != ":" }
+    if head.hasPrefix("none") {
+      kind = nil
+    } else if head.contains("order") {
+      kind = "orders"
+    } else if head.contains("product") {
+      kind = "products"
+    } else {
+      kind = "rows"
+    }
+  }
+}
+
 @available(iOS 27.0, *)
 enum BenchToolBox {
   /// The demo six, neutralized. Canned results describe one fixed world —
@@ -170,18 +219,27 @@ enum BenchToolBox {
     RecordingTool(base: SearchProductsTool(), canned: "", respond: { StoreEcho.search($0.query) }),
     RecordingTool(base: FilterProductsTool(), canned: "", respond: { StoreEcho.filter(by: $0.by, value: $0.value) }),
     RecordingTool(base: LowStockTool(), canned: "", respond: { StoreEcho.lowStock(below: $0.below) }),
-    RecordingTool(base: UpdatePriceTool(), canned: "prices changed on the selected products"),
-    RecordingTool(base: SetPriceTool(), canned: "price set on the selected products"),
-    RecordingTool(base: AddTagTool(), canned: "tagged the selected products"),
-    RecordingTool(base: SetProductStatusTool(), canned: "status changed on the selected products"),
-    RecordingTool(base: AdjustInventoryTool(), canned: "stock adjusted on the selected products"),
+    // Bulk fakes are honest about the selection: with nothing selected the
+    // real app refuses, and so do these (BenchSelection, primed per case).
+    RecordingTool(base: UpdatePriceTool(), canned: "", respond: { _ in
+      StoreFake.onProducts("prices changed on the selected products") }),
+    RecordingTool(base: SetPriceTool(), canned: "", respond: { _ in
+      StoreFake.onProducts("price set on the selected products") }),
+    RecordingTool(base: AddTagTool(), canned: "", respond: { _ in
+      StoreFake.onProducts("tagged the selected products") }),
+    RecordingTool(base: SetProductStatusTool(), canned: "", respond: { _ in
+      StoreFake.onProducts("status changed on the selected products") }),
+    RecordingTool(base: AdjustInventoryTool(), canned: "", respond: { _ in
+      StoreFake.onProducts("stock adjusted on the selected products") }),
     RecordingTool(base: SearchOrdersTool(), canned: "", respond: { StoreEcho.searchOrders(customer: $0.customer) }),
     RecordingTool(base: ExportProductsTool(), canned: "exported 24 products to products.csv in the app's Documents"),
     RecordingTool(
       base: FilterOrdersTool(), canned: "",
       respond: { StoreEcho.filterOrders(payment: $0.payment_status, fulfillment: $0.fulfillment_status) }),
-    RecordingTool(base: FulfillOrdersTool(), canned: "fulfilled 5 orders: #1010, #1013, #1016, #1017, #1019"),
-    RecordingTool(base: SendInvoiceTool(), canned: "sent a payment reminder for 5 orders"),
+    RecordingTool(base: FulfillOrdersTool(), canned: "", respond: { _ in
+      StoreFake.onOrders("fulfilled 5 orders: #1010, #1013, #1016, #1017, #1019") }),
+    RecordingTool(base: SendInvoiceTool(), canned: "", respond: { _ in
+      StoreFake.onOrders("sent a payment reminder for 5 orders") }),
     RecordingTool(
       base: RefundOrderTool(), canned: "",
       respond: { args in
@@ -191,7 +249,8 @@ enum BenchToolBox {
       }),
     AskUserTool(),
     RecordingTool(base: UndoLastTool(target: .store), canned: "undid the last change"),
-    RecordingTool(base: OrderNoteTool(), canned: "note added to the selected orders"),
+    RecordingTool(base: OrderNoteTool(), canned: "", respond: { _ in
+      StoreFake.onOrders("note added to the selected orders") }),
     RecordingTool(base: SalesSummaryTool(), canned: "last 7 days: 13 orders, ¥104,500 in sales, up 44% on the 7 days before"),
   ]
 
@@ -281,8 +340,14 @@ enum BenchToolBox {
     RecordingTool(base: ListTransactionsTool(), canned: "", respond: { MoneyEcho.list(days: $0.days) }),
     RecordingTool(base: FilterTransactionsTool(), canned: "", respond: { MoneyEcho.filter($0.category) }),
     RecordingTool(base: SearchPayeeTool(), canned: "", respond: { MoneyEcho.search(payee: $0.payee) }),
-    RecordingTool(base: CategorizeTool(), canned: "categorized the selected transactions"),
-    RecordingTool(base: FlagTransactionsTool(), canned: "flagged the selected transactions"),
+    RecordingTool(base: CategorizeTool(), canned: "", respond: { _ in
+      BenchSelection.shared.kind != nil
+        ? "categorized the selected transactions"
+        : "nothing is selected — list, search or filter first" }),
+    RecordingTool(base: FlagTransactionsTool(), canned: "", respond: { _ in
+      BenchSelection.shared.kind != nil
+        ? "flagged the selected transactions"
+        : "nothing is selected — list, search or filter first" }),
     RecordingTool(base: SetBudgetTool(), canned: "budget set"),
     RecordingTool(base: SpendingReportTool(), canned: "last 7 days: ¥21,340 across 7 transactions — groceries ¥4,820, eating_out ¥1,180"),
     RecordingTool(base: BudgetReportTool(), canned: "this month against budgets: eating_out over by ¥2,460; groceries ¥13,810 left"),
@@ -311,10 +376,14 @@ enum BenchToolBox {
         }
         return "#\(message.id) from \(message.from), \(MoneyBox.when(message.daysAgo)) — \"\(message.subject)\": \(message.snippet)"
       }),
-    RecordingTool(base: ArchiveTool(), canned: "archived the selected messages"),
-    RecordingTool(base: MarkReadTool(), canned: "marked the selected messages read"),
-    RecordingTool(base: FlagMailTool(), canned: "flagged the selected messages"),
-    RecordingTool(base: SnoozeTool(), canned: "snoozed the selected messages"),
+    RecordingTool(base: ArchiveTool(), canned: "", respond: { _ in
+      InboxFake.onSelection("archived the selected messages") }),
+    RecordingTool(base: MarkReadTool(), canned: "", respond: { _ in
+      InboxFake.onSelection("marked the selected messages read") }),
+    RecordingTool(base: FlagMailTool(), canned: "", respond: { _ in
+      InboxFake.onSelection("flagged the selected messages") }),
+    RecordingTool(base: SnoozeTool(), canned: "", respond: { _ in
+      InboxFake.onSelection("snoozed the selected messages") }),
     RecordingTool(
       base: DraftReplyTool(), canned: "",
       respond: { args in
@@ -344,6 +413,28 @@ enum BenchToolBox {
     RecordingTool(base: UndoLastTool(target: .inbox), canned: "undid the last change"),
   ]
 
+  /// The honest-refusal halves of the bulk fakes, in each app's own words.
+  enum StoreFake {
+    static func onProducts(_ success: String) -> String {
+      BenchSelection.shared.kind == "products"
+        ? success
+        : "nothing is selected — search or filter products first, then act on them"
+    }
+    static func onOrders(_ success: String) -> String {
+      BenchSelection.shared.kind == "orders"
+        ? success
+        : "no orders are selected — filter orders first, then act on them"
+    }
+  }
+
+  enum InboxFake {
+    static func onSelection(_ success: String) -> String {
+      BenchSelection.shared.kind != nil
+        ? success
+        : "nothing is selected — list, search or filter first"
+    }
+  }
+
   /// Pure renders of the money finders over the frozen month — the same
   /// filter, search and row format as MoneyBox (total included), selection
   /// state left out.
@@ -353,6 +444,7 @@ enum BenchToolBox {
     }
 
     private static func render(_ matched: [MoneyBox.Transaction], how: String) -> String {
+      BenchSelection.shared.kind = matched.isEmpty ? nil : "rows"
       guard !matched.isEmpty else { return "no transactions match \(how)" }
       let listed = matched.prefix(8).map {
         "\(MoneyBox.when($0.daysAgo)) \($0.payee) — \(StoreBox.yen($0.amount))\($0.category.map { ", \($0)" } ?? ", uncategorized")"
@@ -385,6 +477,7 @@ enum BenchToolBox {
   /// the same matching and row format as StoreBox, selection state left out.
   enum StoreEcho {
     private static func renderProducts(_ matched: [StoreBox.Product], how: String) -> String {
+      BenchSelection.shared.kind = matched.isEmpty ? nil : "products"
       guard !matched.isEmpty else { return "no products match \(how)" }
       let listed = matched.prefix(8).map {
         "\($0.title) — \(StoreBox.yen($0.price)), stock \($0.stock), \($0.status)"
@@ -394,6 +487,7 @@ enum BenchToolBox {
     }
 
     private static func renderOrders(_ matched: [StoreBox.Order], how: String) -> String {
+      BenchSelection.shared.kind = matched.isEmpty ? nil : "orders"
       guard !matched.isEmpty else { return "no orders match \(how)" }
       let listed = matched.prefix(8).map {
         "#\($0.number) \($0.customer) — \(StoreBox.yen($0.total)), \($0.payment), \($0.fulfillment), \($0.daysAgo == 0 ? "today" : "\($0.daysAgo) d ago")"
@@ -467,6 +561,7 @@ enum BenchToolBox {
     }
 
     private static func render(_ matched: [InboxBox.Message], how: String) -> String {
+      BenchSelection.shared.kind = matched.isEmpty ? nil : "rows"
       guard !matched.isEmpty else { return "no messages match \(how)" }
       let listed = matched.prefix(8).map {
         "#\($0.id) \($0.from) — \"\($0.subject)\" (\(MoneyBox.when($0.daysAgo))\($0.unread ? ", unread" : ""))"
