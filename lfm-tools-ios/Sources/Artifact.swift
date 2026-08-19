@@ -28,6 +28,9 @@ enum Artifact: @unchecked Sendable {
   case brightness(percent: Int)
   case note(text: String)
   case area(place: String, accuracy: Int, coordinate: CLLocationCoordinate2D)
+  /// Rows of records — the store pack's selection, a sales line. Strings
+  /// only: the card is a table, not a spreadsheet.
+  case table(title: String, columns: [String], rows: [[String]])
 
   struct Place: Identifiable, @unchecked Sendable {
     let id = UUID()

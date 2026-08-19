@@ -181,7 +181,21 @@ final class StageModel {
     "Export it.",
   ]
 
-  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look|polish|video`
+  /// The store cut: a Shopify admin's menu over canned products and orders.
+  /// Filter → act is the shape: "their" in beat 2 is the selection beat 1
+  /// made, resolved by the app. Beat 6 is a two-call chain (filter →
+  /// fulfil); beat 7 is a report, no records change.
+  static let storeBeats = [
+    "Which products have fewer than 5 in stock?",
+    "Cut their prices by 10%.",
+    "Tag them 'clearance'.",
+    "Show me the orders that haven't been paid.",
+    "Send them a payment reminder.",
+    "Fulfil all the paid orders that haven't shipped yet.",
+    "How were sales this week?",
+  ]
+
+  /// `--scenario photo|focus|report|briefing|sensors|handoff|chains|compound|vision|look|polish|video|store`
   /// swaps the stage to that pack; default stays the coffee run. Beats and
   /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
@@ -198,6 +212,7 @@ final class StageModel {
     case "look": return lookBeats
     case "polish": return polishBeats
     case "video": return videoBeats
+    case "store": return storeBeats
     default: return beats
     }
   }
@@ -212,8 +227,18 @@ final class StageModel {
     ["vision", "look", "polish"].contains(scenarioName)
   }
   /// Packs where the app's state — not a picture — is the input: the model
-  /// is told the timeline and asked to operate it.
-  static var scenarioSendsState: Bool { scenarioName == "video" }
+  /// is told the timeline (video) or the store and its selection (store)
+  /// and asked to operate it.
+  static var scenarioSendsState: Bool { ["video", "store"].contains(scenarioName) }
+  static var scenarioIsVideo: Bool { scenarioName == "video" }
+
+  /// The state block for this beat, from whichever box owns the pack.
+  static func currentState() -> String {
+    scenarioName == "store" ? StoreBox.shared.describe() : VideoEditBox.shared.describe()
+  }
+  static var stateInstructions: String {
+    scenarioName == "store" ? ToolBox.storeInstructions : ToolBox.videoInstructions
+  }
 
   static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
@@ -278,7 +303,7 @@ final class StageModel {
   private(set) var stageTimeline: VideoEditBox.Snapshot?
 
   private func refreshStageVideo() async {
-    guard Self.scenarioSendsState else { return }
+    guard Self.scenarioIsVideo else { return }
     let frame = await Task.detached(priority: .userInitiated) {
       await VideoEditBox.shared.currentFrame()
     }.value
@@ -348,6 +373,7 @@ final class StageModel {
     case "look": tools = []
     case "polish": tools = ToolBox.vision
     case "video": tools = ToolBox.video
+    case "store": tools = ToolBox.store
     default: tools = ToolBox.demo
     }
     // The vision packs get their own instructions: the stock ones push tools
@@ -358,7 +384,7 @@ final class StageModel {
     let instructions =
       Self.scenarioAttachesPhoto
       ? ToolBox.visionInstructions
-      : (Self.scenarioSendsState ? ToolBox.stateInstructions : ToolBox.instructions)
+      : (Self.scenarioSendsState ? Self.stateInstructions : ToolBox.instructions)
     toolCount = tools.count
     switch Self.backend {
     case .system:
@@ -437,7 +463,7 @@ final class StageModel {
       try? await PhotoEditBox.shared.preload(label: SeenPhoto.singleLabel)
       refreshStageImage()
     }
-    if Self.scenarioSendsState {
+    if Self.scenarioIsVideo {
       // Same for the video: newest in the library, on stage from the first
       // frame, and the state line the model will read is in the log.
       do {
@@ -509,7 +535,7 @@ final class StageModel {
         // On screen only the words show; the log has the whole message.
         var message = prompt
         if Self.scenarioSendsState {
-          let state = VideoEditBox.shared.describe()
+          let state = Self.currentState()
           RunLog.write("STATE \(state)")
           message = AppState.compose(state: state, request: prompt)
         }

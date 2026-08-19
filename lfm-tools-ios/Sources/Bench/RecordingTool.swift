@@ -139,6 +139,26 @@ enum BenchToolBox {
     RecordingTool(base: ExportVideoTool(), canned: "exported to the photo library"),
   ]
 
+  /// The store pack, neutralized. The canned world is the pack's own
+  /// canned data, frozen at "6 products under 5 in stock, 5 orders awaiting
+  /// payment"; results claim success in the shape the real tools answer.
+  static let store: [any FoundationModels.Tool] = [
+    RecordingTool(base: SearchProductsTool(), canned: "3 products selected (search):\nLinen Shirt — ¥6,800, stock 3, active\nOxford Shirt — ¥7,200, stock 14, active\nCamp Shirt — ¥6,200, stock 7, active"),
+    RecordingTool(base: FilterProductsTool(), canned: "4 products selected (filter):\nField Jacket — ¥16,500, stock 4, draft\nCorduroy Pants — ¥9,800, stock 12, draft\nWool Cardigan — ¥13,800, stock 9, draft\nFlannel Shirt — ¥7,800, stock 15, draft"),
+    RecordingTool(base: LowStockTool(), canned: "6 products selected (stock below 5):\nWool Beanie — ¥3,200, stock 0, active\nStraw Hat — ¥4,600, stock 1, active\nWide Chinos — ¥8,900, stock 2, active\nLinen Shirt — ¥6,800, stock 3, active\nWool Scarf — ¥5,400, stock 4, active\nField Jacket — ¥16,500, stock 4, draft"),
+    RecordingTool(base: UpdatePriceTool(), canned: "prices changed on the selected products"),
+    RecordingTool(base: SetPriceTool(), canned: "price set on the selected products"),
+    RecordingTool(base: AddTagTool(), canned: "tagged the selected products"),
+    RecordingTool(base: SetProductStatusTool(), canned: "status changed on the selected products"),
+    RecordingTool(base: AdjustInventoryTool(), canned: "stock adjusted on the selected products"),
+    RecordingTool(base: FilterOrdersTool(), canned: "5 orders selected (filter):\n#1020 Uma Reddy — ¥1,800, pending, unfulfilled, today\n#1018 Sam Doyle — ¥5,900, pending, unfulfilled, 1 d ago\n#1015 Olivia Park — ¥15,800, pending, unfulfilled, 2 d ago\n#1012 Leo Brandt — ¥5,400, pending, unfulfilled, 4 d ago\n#1008 Hana Kim — ¥8,900, pending, unfulfilled, 6 d ago"),
+    RecordingTool(base: FulfillOrdersTool(), canned: "fulfilled 5 orders: #1010, #1013, #1016, #1017, #1019"),
+    RecordingTool(base: SendInvoiceTool(), canned: "sent a payment reminder for 5 orders"),
+    RecordingTool(base: RefundOrderTool(), canned: "refunded the order"),
+    RecordingTool(base: OrderNoteTool(), canned: "note added to the selected orders"),
+    RecordingTool(base: SalesSummaryTool(), canned: "last 7 days: 13 orders, ¥104,500 in sales, up 44% on the 7 days before"),
+  ]
+
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {
     switch name {
@@ -147,6 +167,7 @@ enum BenchToolBox {
     case "focus": return focus
     case "report": return report
     case "video": return video
+    case "store": return store
     default: return nil
     }
   }
@@ -154,6 +175,10 @@ enum BenchToolBox {
   /// The instructions that travel with a pack — the stage's, so a bench
   /// case is the same message the demo sends.
   static func instructions(for name: String) -> String {
-    name == "video" ? ToolBox.stateInstructions : ToolBox.instructions
+    switch name {
+    case "video": return ToolBox.videoInstructions
+    case "store": return ToolBox.storeInstructions
+    default: return ToolBox.instructions
+    }
   }
 }

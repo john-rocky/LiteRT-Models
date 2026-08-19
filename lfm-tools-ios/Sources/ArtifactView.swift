@@ -54,6 +54,8 @@ struct ArtifactView: View {
         NoteCard(text: text)
       case .area(let place, let accuracy, let coordinate):
         AreaCard(place: place, accuracy: accuracy, coordinate: coordinate)
+      case .table(let title, let columns, let rows):
+        TableCard(title: title, columns: columns, rows: rows)
       }
     }
   }
@@ -490,6 +492,44 @@ private struct BrightnessCard: View {
       }
       .frame(height: 12)
       Text("\(percent)%").font(.headline.monospacedDigit())
+    }
+  }
+}
+
+/// Records as a table: the store pack's selection after a search or a bulk
+/// action. Header row, then up to eight rows, first column bold — what an
+/// admin's list looks like at the size a phone recording can read.
+@available(iOS 27.0, *)
+private struct TableCard: View {
+  let title: String
+  let columns: [String]
+  let rows: [[String]]
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(title).font(.headline)
+      Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+        GridRow {
+          ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
+            Text(column.uppercased())
+              .font(.system(size: 10, weight: .heavy, design: .rounded))
+              .foregroundStyle(.secondary)
+          }
+        }
+        Divider()
+        ForEach(Array(rows.prefix(8).enumerated()), id: \.offset) { _, row in
+          GridRow {
+            ForEach(Array(row.enumerated()), id: \.offset) { index, cell in
+              Text(cell)
+                .font(.system(size: 14, weight: index == 0 ? .semibold : .regular, design: .rounded))
+                .lineLimit(1)
+            }
+          }
+        }
+      }
+      if rows.count > 8 {
+        Text("and \(rows.count - 8) more").font(.caption).foregroundStyle(.secondary)
+      }
     }
   }
 }

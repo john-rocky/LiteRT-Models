@@ -122,7 +122,9 @@ clipboard, notification, note), `chains` / `compound`, `vision` / `look` /
 `polish` (the photo goes in as an attachment; the model routes on what it
 sees), `video` (a CapCut-style menu — trim, split, speed, crop 9:16,
 caption, fade, stabilise, volume, export — on the newest library video;
-the app's state opens every message and the model never sees a frame).
+the app's state opens every message and the model never sees a frame),
+`store` (a Shopify admin's menu over canned products and orders: filter →
+selection → bulk action; records, not pixels).
 Without `--scenario` the stage runs the
 coffee-run beats; without `--backend apple` it runs on the newest LiteRT
 bundle (or `--model <substring>`).

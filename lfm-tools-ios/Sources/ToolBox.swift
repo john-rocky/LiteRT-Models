@@ -202,6 +202,19 @@ enum ToolBox {
     RevertVideoTool(), ExportVideoTool(),
   ]
 
+  /// The store pack (Tools/StoreTools.swift): a Shopify admin's menu over
+  /// canned products and orders. A filter or search makes a selection; the
+  /// bulk actions act on it. Discrimination axes: update_price (percent)
+  /// vs set_price (amount); search vs filter vs find_low_stock; fulfil vs
+  /// remind; and a selection that has to exist before an action — the
+  /// chain "filter, then act" is the pack.
+  static let store: [any FoundationModels.Tool] = [
+    SearchProductsTool(), FilterProductsTool(), LowStockTool(),
+    UpdatePriceTool(), SetPriceTool(), AddTagTool(), SetProductStatusTool(), AdjustInventoryTool(),
+    FilterOrdersTool(), FulfillOrdersTool(), SendInvoiceTool(), RefundOrderTool(), OrderNoteTool(),
+    SalesSummaryTool(),
+  ]
+
   static let all: [any FoundationModels.Tool] =
     ambient + actions + personal + photoEditing + compound
 
@@ -251,7 +264,7 @@ enum ToolBox {
   /// "you cannot know X without calling a tool" is wrong here — the model
   /// is told everything it needs at the top of each message and its job is
   /// to copy those numbers into arguments, not to look anything up.
-  static let stateInstructions = """
+  static let videoInstructions = """
     You are operating the user's video editor through tools. Every message
     starts with the app's current state: the clips on the timeline with their
     times in seconds, which clip is selected, where the playhead is, and the
@@ -260,6 +273,23 @@ enum ToolBox {
     clip. When a request lists several edits, call the tools one after
     another in that order. When a tool has returned, answer the user in one
     short sentence using its result.
+    """
+
+  /// The store pack's: same idea, records instead of a timeline. The
+  /// selection is the app's; "their prices" means the products the last
+  /// filter found, and an action with nothing selected is a filter the
+  /// model forgot to make.
+  static let storeInstructions = """
+    You are operating the user's online store admin through tools. Every
+    message starts with the store's current state: product and order counts,
+    and the current selection — the products or orders the last search or
+    filter found. Actions on prices, tags, status, stock, fulfilment and
+    payment reminders apply to the current selection: search or filter
+    first, then act. Take numbers and names from the request and the state;
+    never invent an order number. When a request lists several steps, call
+    the tools one after another in that order. Answer questions about counts
+    from the state without a tool. When a tool has returned, answer the user
+    in one short sentence using its result.
     """
 
   /// For the chat, where photos are one input among many: the stock
