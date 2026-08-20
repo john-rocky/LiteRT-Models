@@ -30,15 +30,20 @@ class ZeroPadMaxPool(nn.Module):
         x = F.pad(x, (1, 1, 1, 1), value=0.0)
         return F.max_pool2d(x, kernel_size=3, stride=2, padding=0)
 
-net = BiSeNet(n_classes=19).eval()
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   FP_CKPT=w.pth       your own face-parsing.PyTorch checkpoint
+#   FP_NUM_CLASSES=N    its class count (default 19; drives output width)
+#   FP_RES=N            square input size (default 512)
+NCLS = int(os.environ.get("FP_NUM_CLASSES", "19"))
+net = BiSeNet(n_classes=NCLS).eval()
 for name, mod in list(net.named_modules()):
     if isinstance(mod, nn.MaxPool2d):
         parent = net
         *path, last = name.split(".")
         for p in path: parent = getattr(parent, p)
         setattr(parent, last, ZeroPadMaxPool())
-net.load_state_dict(torch.load(hf_hub_download("AI2lab/face-parsing.PyTorch", "79999_iter.pth"),
-                               map_location="cpu", weights_only=True))
+ckpt = os.environ.get("FP_CKPT") or hf_hub_download("AI2lab/face-parsing.PyTorch", "79999_iter.pth")
+net.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
 
 class Wrap(nn.Module):
     def __init__(s, n): super().__init__(); s.n = n
@@ -46,7 +51,8 @@ class Wrap(nn.Module):
         o = s.n(x)
         return o[0] if isinstance(o, (list, tuple)) else o
 
-dummy = torch.randn(1, 3, 512, 512)
+R = int(os.environ.get("FP_RES", "512"))
+dummy = torch.randn(1, 3, R, R)
 with torch.no_grad(): ref = Wrap(net)(dummy); print("wrap out:", tuple(ref.shape))
 import litert_torch
 litert_torch.convert(Wrap(net).eval(), (dummy,)).export("faceparsing.tflite")

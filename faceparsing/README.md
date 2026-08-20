@@ -56,3 +56,18 @@ cp faceparsing.tflite app/src/main/assets/
 ## Notes
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
+
+### Converting your own fine-tuned checkpoint
+
+All three GPU patches are architecture-level, so a checkpoint trained with the
+face-parsing.PyTorch (BiSeNet) trainer converts the same way (defaults reproduce the
+official ship exactly):
+
+```bash
+FP_REPO=./fp FP_CKPT=/path/to/my_iter.pth FP_NUM_CLASSES=19 \
+    python scripts/build_faceparsing.py
+```
+
+`FP_NUM_CLASSES` drives the output width `[1, N, R, R]` — update the app's class/color
+table to match. `FP_RES` changes the fixed input size (default 512; app preprocessing
+must follow). ResNet-18-backbone BiSeNet only.
