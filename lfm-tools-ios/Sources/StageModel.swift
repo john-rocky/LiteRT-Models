@@ -186,17 +186,37 @@ final class StageModel {
   ]
 
   /// The store cut: a Shopify admin's menu over canned products and orders.
-  /// Filter → act is the shape: "their" in beat 2 is the selection beat 1
-  /// made, resolved by the app. Beat 6 is a two-call chain (filter →
-  /// fulfil); beat 7 is a report, no records change.
+  /// Filter → act is the shape: "them" in beats 2–4 is the selection beat 1
+  /// made, resolved by the app. Beat 5 is a two-call chain (filter →
+  /// fulfil); beat 6 is a report, no records change. Re-cut at 22 tools
+  /// (2026-08-20): the 10% price cut and the unpaid-orders finder pass the
+  /// bench's fresh sessions but break in the stage's running transcript
+  /// (adjust_product_price loses its arguments, the order finder rampaged
+  /// 38 identical calls) — the recording keeps to the beats that hold in
+  /// both.
   static let storeBeats = [
     "Which products have fewer than 5 in stock?",
-    "Cut their prices by 10%.",
+    "Set them all to 3,000 yen.",
     "Tag them 'clearance'.",
-    "Show me the orders that haven't been paid.",
-    "Send them a payment reminder.",
+    "Add 20 units to each.",
     "Fulfil all the paid orders that haven't shipped yet.",
     "How were sales this week?",
+  ]
+
+  /// The Japanese recording script (`--ja`): the five beats that pass the
+  /// 22-tool bench in Japanese in both measured rounds (r19/r20) *and*
+  /// hold in a running transcript. 未払いの注文 and the reminder are out
+  /// (the JA order finder grows a spurious search_orders tail), and so is
+  /// the whole price pair — the percent form loses its arguments on the
+  /// stage, the absolute form loses to adjust_product_price on the bench.
+  /// The state and tool results stay English, the way the bench's JA
+  /// cases run.
+  static let storeBeatsJA = [
+    "在庫が5個未満の商品はどれ?",
+    "「clearance」のタグを付けて。",
+    "それぞれ在庫を20個追加して。",
+    "支払い済みで未発送の注文を全部発送済みにして。",
+    "今週の売上はどうだった?",
   ]
 
   /// The audio cut: a GarageBand mixer, four synthesized tracks looping.
@@ -311,7 +331,8 @@ final class StageModel {
     case "look": return lookBeats
     case "polish": return polishBeats
     case "video": return videoBeats
-    case "store": return storeBeats
+    case "store":
+      return CommandLine.arguments.contains("--ja") ? storeBeatsJA : storeBeats
     case "audio": return audioBeats
     case "docs": return docsBeats
     case "shopping": return shoppingBeats
