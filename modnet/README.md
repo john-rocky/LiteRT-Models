@@ -59,3 +59,19 @@ litert-torch.
 ## Notes
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
+
+### Converting your own fine-tuned checkpoint
+
+Both GPU patches are architecture-level (SE Linear→1×1 conv, IBNorm hierarchical mean),
+so a checkpoint from the official MODNet trainer converts the same way — the trainer's
+`"module."`-prefixed state dict is stripped automatically (defaults reproduce the
+official ship exactly):
+
+```bash
+MODNET_REPO=./MODNet MODNET_CKPT=/path/to/my_matting.ckpt \
+    python scripts/build_modnet.py
+```
+
+Output stays `[1, 1, R, R]` alpha. `MODNET_RES` changes the fixed input size
+(default 512; the app's preprocessing must follow). Only the MobileNetV2-backbone
+MODNet architecture is covered.

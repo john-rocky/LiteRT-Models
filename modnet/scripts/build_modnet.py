@@ -50,8 +50,13 @@ def patch_ibnorm(ib, eps=1e-5):
     ib.forward = fwd
 
 
-ckpt = hf_hub_download("DavG25/modnet-pretrained-models",
-                       "models/modnet_photographic_portrait_matting.ckpt")
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   MODNET_CKPT=ckpt.pth  your own MODNet checkpoint (a "module."-prefixed
+#                         state dict from the official trainer works as-is)
+#   MODNET_RES=N          square input size (default 512)
+ckpt = os.environ.get("MODNET_CKPT") or hf_hub_download(
+    "DavG25/modnet-pretrained-models", "models/modnet_photographic_portrait_matting.ckpt")
+R = int(os.environ.get("MODNET_RES", "512"))
 m = MODNet(backbone_pretrained=False).eval()
 sd = {k.replace("module.", ""): v for k, v in torch.load(ckpt, map_location="cpu", weights_only=True).items()}
 m.load_state_dict(sd)
@@ -68,5 +73,5 @@ class Wrap(nn.Module):
 
 
 import litert_torch
-litert_torch.convert(Wrap(m).eval(), (torch.randn(1, 3, 512, 512),)).export("modnet.tflite")
+litert_torch.convert(Wrap(m).eval(), (torch.randn(1, 3, R, R),)).export("modnet.tflite")
 print("saved modnet.tflite (%.1f MB)" % (os.path.getsize("modnet.tflite") / 1e6))
