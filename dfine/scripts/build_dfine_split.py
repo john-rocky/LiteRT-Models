@@ -13,7 +13,12 @@ import transformers.models.d_fine.modeling_d_fine as M
 torch._shape_as_tensor = lambda t: torch.tensor(list(t.shape), dtype=torch.long)
 torch._assert = lambda *a, **k: None
 R = int(os.environ.get("DF_RES", "640")); HERE = os.path.dirname(os.path.abspath(__file__))
-MID = "ustc-community/dfine-small-coco"
+# Fine-tune override (default run reproduces the official COCO ship exactly):
+#   DF_MODEL_ID=<hf-repo-or-local-dir>  a fine-tuned DFineForObjectDetection
+#   saved with save_pretrained() (class count + id2label flow from its config).
+# build_dfine_fix3.py / pack_assets.py import this module, so the same env
+# var drives them too.
+MID = os.environ.get("DF_MODEL_ID", "ustc-community/dfine-small-coco")
 BANNED = {"GATHER", "GATHER_ND", "TOPK_V2", "GELU", "ERF", "WHERE", "SELECT", "SELECT_V2",
           "BROADCAST_TO", "POW", "TRANSPOSE_CONV", "CAST", "EMBEDDING_LOOKUP", "RFFT2D", "FFT",
           "STFT", "COMPLEX", "CUMSUM", "ARG_MAX", "ARG_MIN", "PACK", "UNPACK", "TILE"}

@@ -95,3 +95,22 @@ GPU-clean (no banned ops, no >4D tensors) and validate per-graph corr 1.0 vs PyT
 
 **Original project**: [Peterande/D-FINE](https://github.com/Peterande/D-FINE) ·
 `ustc-community/dfine-small-coco` · [Apache-2.0](https://github.com/Peterande/D-FINE/blob/main/LICENSE)
+
+### Converting your own fine-tuned checkpoint
+
+All GPU patches are class-level rewrites of the HF `DFine` modules, so any
+fine-tune of `ustc-community/dfine-small-coco` (HF `Trainer` + `save_pretrained()`)
+converts the same way. Point the build at your model directory or HF repo id
+(default run without the env var reproduces the official ship exactly):
+
+```bash
+DF_MODEL_ID=/path/to/your_saved_model python scripts/build_dfine_fix3.py fp16
+DF_MODEL_ID=/path/to/your_saved_model python scripts/build_dfine_split.py fp16   # Graph B
+DF_MODEL_ID=/path/to/your_saved_model python scripts/pack_assets.py <work_dir> .
+```
+
+Class count and label names flow from the model's `config.json` (`id2label`) into
+the logits width and `coco_labels.txt` — no separate flag. Update `DFine.NCLS` in
+the app to match (it also drives output-tensor resolution by size). Other D-FINE
+sizes (medium/large/xlarge) load the same way but have not been device-verified;
+`DF_RES` must match the fine-tune's eval resolution (default 640).

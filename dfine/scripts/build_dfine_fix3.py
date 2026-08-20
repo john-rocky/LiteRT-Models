@@ -10,7 +10,7 @@ import sys, os
 import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
 import build_dfine_split as S
 M = S.M
-HERE = os.path.dirname(os.path.abspath(__file__)); R = 640
+HERE = os.path.dirname(os.path.abspath(__file__)); R = S.R
 NQ, NCLS, HID = S.NQ, S.NCLS, S.HID
 SCALE = 2.0
 
