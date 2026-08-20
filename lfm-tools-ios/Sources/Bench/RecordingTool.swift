@@ -985,6 +985,7 @@ enum BenchToolBox {
     case "inbox": return ToolBox.inboxInstructions
     case "crm": return ToolBox.crmInstructions
     case "pm": return ToolBox.pmInstructions
+    case "business": return ToolBox.businessInstructions
     default: return ToolBox.instructions
     }
   }
