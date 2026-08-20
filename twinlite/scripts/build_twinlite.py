@@ -17,7 +17,10 @@ class ZeroStuffConvT2d(nn.Module):
         olH=(s.Hin-1)*s.s+s.k-2*s.p+s.op; olW=(s.Win-1)*s.s+s.k-2*s.p+s.op
         return y[:,:,s.p:s.p+olH, s.p:s.p+olW]
 
-net=Net(); sd=torch.load("TwinLiteNet/pretrained/best.pth", map_location="cpu")
+# Fine-tune override (default run reproduces the official ship exactly):
+#   TWINLITE_CKPT=w.pth  your own TwinLiteNet trainer checkpoint
+#   ('state_dict' wrapper and 'module.' prefixes stripped)
+net=Net(); sd=torch.load(os.environ.get("TWINLITE_CKPT", "TwinLiteNet/pretrained/best.pth"), map_location="cpu")
 sd=sd.get('state_dict',sd) if isinstance(sd,dict) else sd
 sd={k[7:] if k.startswith('module.') else k:v for k,v in sd.items()}
 print("load:", net.load_state_dict(sd, strict=False))

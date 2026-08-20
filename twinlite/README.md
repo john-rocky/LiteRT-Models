@@ -44,3 +44,16 @@ cp twinlite.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - BDD100K-trained — works best on forward dashcam driving views. `argmax` each head for the mask.
+
+### Converting your own fine-tuned checkpoint
+
+The ZeroStuffConvT2d swap is architecture-level (input sizes re-probed via hooks each
+build), so any checkpoint from the official TwinLiteNet trainer converts the same way
+(default run reproduces the official ship exactly):
+
+```bash
+TWINLITE_CKPT=/path/to/my_best.pth python scripts/build_twinlite.py
+```
+
+The two heads stay 2-class (drivable area / lane line) at 360×640 — remember the
+same-shape-outputs-in-order verify trap: match outputs by ORDER, not by size.
