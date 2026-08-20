@@ -42,3 +42,15 @@ cp ormbg.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Output is a raw matte — min-max normalize per frame before compositing.
+
+### Converting your own fine-tuned checkpoint
+
+Only the defensive align_corners patch touches the graph, so a checkpoint from the
+official ORMBG trainer converts directly (defaults reproduce the official ship exactly):
+
+```bash
+ORMBG_CKPT=/path/to/my_ormbg.pth python scripts/build_ormbg.py
+```
+
+Output stays a `[1, 1, R, R]` sigmoid mask; `ORMBG_RES` changes the fixed input size
+(default 1024 — the app's scaling must follow).
