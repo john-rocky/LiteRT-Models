@@ -41,3 +41,17 @@ cp dis.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Preprocessing `x/255 - 0.5` (not /255). Output is a soft alpha — threshold/composite as needed.
+
+### Converting your own fine-tuned checkpoint
+
+Only the defensive align_corners patch touches the graph, so a checkpoint from the
+official DIS IS-Net trainer (Apache-2.0 — the permissive path for custom cutout
+models) converts directly — wrappers and `module.` prefixes are stripped (defaults
+reproduce the official ship exactly):
+
+```bash
+DIS_SRC=./DIS/IS-Net DIS_CKPT=/path/to/my_isnet.pth python scripts/build_dis.py
+```
+
+Output stays a `[1, 1, R, R]` sigmoid mask; `DIS_RES` changes the fixed input size
+(default 1024 — app scaling must follow).
