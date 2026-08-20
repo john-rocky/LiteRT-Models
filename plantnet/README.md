@@ -47,3 +47,18 @@ cp plantnet.tflite app/src/main/assets/
 ## Notes
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
+
+### Converting your own fine-tuned checkpoint
+
+The ZeroPadMaxPool patch is architecture-level, so any torchvision `resnet18`
+classifier state dict converts the same way (defaults reproduce the official ship
+exactly):
+
+```bash
+PLANTNET_CKPT=/path/to/my_classifier.pth PLANTNET_NUM_CLASSES=42 \
+    python scripts/build_plantnet.py
+```
+
+`PLANTNET_NUM_CLASSES` drives the logits width — swap the app's species/label list to
+match. Input stays 224×224 ImageNet-normalized. ResNet-18 only (other torchvision
+backbones would need their own op check).
