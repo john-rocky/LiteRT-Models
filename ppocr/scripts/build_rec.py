@@ -12,10 +12,16 @@ from pytorchocr.modeling.backbones.rec_svtrnet import Attention as SVTRAttention
 from safetensors.torch import load_file
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-W_REC = os.path.join(HERE, "weights/ptocr_v5_mobile_rec.safetensors")
-Y_REC = os.path.join(REPO, "configs/rec/PP-OCRv5/PP-OCRv5_mobile_rec.yml")
-DICT = os.path.join(HERE, "weights/ppocrv5_dict.txt")
-Hh, Ww = 48, 320
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   PPOCR_REC_WEIGHTS=w.safetensors  your rec model, converted paddle->pytorch
+#                                    with PaddleOCR2Pytorch first
+#   PPOCR_REC_CFG=cfg.yml            its PaddleOCR2Pytorch config (arch must match)
+#   PPOCR_REC_DICT=dict.txt          your charset (char_num follows it)
+#   PPOCR_REC_H / PPOCR_REC_W        input size (default 48x320)
+W_REC = os.environ.get("PPOCR_REC_WEIGHTS", os.path.join(HERE, "weights/ptocr_v5_mobile_rec.safetensors"))
+Y_REC = os.environ.get("PPOCR_REC_CFG", os.path.join(REPO, "configs/rec/PP-OCRv5/PP-OCRv5_mobile_rec.yml"))
+DICT = os.environ.get("PPOCR_REC_DICT", os.path.join(HERE, "weights/ppocrv5_dict.txt"))
+Hh, Ww = int(os.environ.get("PPOCR_REC_H", "48")), int(os.environ.get("PPOCR_REC_W", "320"))
 BANNED = {"GATHER", "GATHER_ND", "TOPK_V2", "GELU", "ERF", "WHERE", "SELECT", "SELECT_V2",
           "BROADCAST_TO", "POW", "TRANSPOSE_CONV", "CAST", "EMBEDDING_LOOKUP",
           "RFFT2D", "FFT", "STFT", "COMPLEX", "RFFT", "IRFFT", "CUMSUM"}

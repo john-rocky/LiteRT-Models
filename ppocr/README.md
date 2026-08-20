@@ -66,3 +66,21 @@ PaddleOCR, no PaddlePaddle dependency); the converted PyTorch weights are on Hug
 - `scripts/build_rec.py` — recognizer + 4D-QKV attention, op-check, parity. CTC decode is host-side.
 
 **Original project**: [PaddlePaddle/PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) (PP-OCRv5) | [Apache-2.0](https://github.com/PaddlePaddle/PaddleOCR/blob/main/LICENSE)
+
+### Converting your own fine-tuned checkpoint
+
+Both recipes are architecture-level (ZeroStuffConvT2d / 4D-QKV), so PP-OCRv5-mobile
+models fine-tuned with the PaddleOCR trainer convert the same way after one extra step:
+PaddleOCR checkpoints are Paddle-format — convert them to PyTorch safetensors with
+[PaddleOCR2Pytorch](https://github.com/frotms/PaddleOCR2Pytorch) first, then (defaults
+reproduce the official ship exactly):
+
+```bash
+PPOCR_DET_WEIGHTS=my_det.safetensors python scripts/build_det.py all
+PPOCR_REC_WEIGHTS=my_rec.safetensors PPOCR_REC_DICT=my_dict.txt python scripts/build_rec.py all
+```
+
+For the recognizer, `char_num` follows the dict file (`len + 2`), so a custom charset
+flows into the CTC width automatically — bundle the same dict in the app's assets.
+`PPOCR_DET_RES` / `PPOCR_REC_H` / `PPOCR_REC_W` change the fixed input sizes.
+Mobile-size PP-OCRv5 architectures only (server variants differ).

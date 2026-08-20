@@ -12,9 +12,14 @@ from pytorchocr.base_ocr_v20 import BaseOCRV20
 from safetensors.torch import load_file
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-W_DET = os.path.join(HERE, "weights/ptocr_v5_mobile_det.safetensors")
-Y_DET = os.path.join(REPO, "configs/det/PP-OCRv5/PP-OCRv5_mobile_det.yml")
-H, Wd = 640, 640
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   PPOCR_DET_WEIGHTS=w.safetensors  your det model, converted paddle->pytorch
+#                                    with PaddleOCR2Pytorch first
+#   PPOCR_DET_CFG=cfg.yml            its PaddleOCR2Pytorch config (arch must match)
+#   PPOCR_DET_RES=N                  square input (default 640)
+W_DET = os.environ.get("PPOCR_DET_WEIGHTS", os.path.join(HERE, "weights/ptocr_v5_mobile_det.safetensors"))
+Y_DET = os.environ.get("PPOCR_DET_CFG", os.path.join(REPO, "configs/det/PP-OCRv5/PP-OCRv5_mobile_det.yml"))
+H = Wd = int(os.environ.get("PPOCR_DET_RES", "640"))
 BANNED = {"GATHER", "GATHER_ND", "TOPK_V2", "GELU", "ERF", "WHERE", "SELECT", "SELECT_V2",
           "BROADCAST_TO", "POW", "TRANSPOSE_CONV", "CAST", "EMBEDDING_LOOKUP",
           "RFFT2D", "FFT", "STFT", "COMPLEX", "RFFT", "IRFFT", "CUMSUM"}
