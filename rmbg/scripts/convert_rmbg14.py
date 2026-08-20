@@ -50,7 +50,10 @@ def load_model():
 
     model = ns["BriaRMBG"]()
     from safetensors.torch import load_file
-    model.load_state_dict(load_file(os.path.join(repo_path, "model.safetensors")))
+    # Fine-tune override: RMBG_WEIGHTS=model.safetensors swaps in your own ISNet
+    # weights (model code still comes from the official snapshot).
+    weights = os.environ.get("RMBG_WEIGHTS", os.path.join(repo_path, "model.safetensors"))
+    model.load_state_dict(load_file(weights))
     model.eval()
 
     print(f"Params: {sum(p.numel() for p in model.parameters()):,}")
