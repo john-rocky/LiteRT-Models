@@ -35,3 +35,27 @@ Zipformer2 (6 stacks) + CTC linear ─► greedy CTC + BPE detok (host)
 
 Model/conversion details: the model card above and the root README's Speech Recognition
 section.
+
+## Conversion
+
+`scripts/build_zipformer_ctc.py` — re-authors the icefall Zipformer2 CR-CTC encoder for
+CompiledModel GPU (additive {0,−1000} bias masks, no FFT in-graph; fbank stays host-side)
+and converts via litert-torch. Prereqs: an `icefall` checkout at `scripts/icefall` and the
+checkpoint dir at `scripts/en_<variant>/` (`exp/pretrained.pt` +
+`data/lang_bpe_500/tokens.txt`). `ZIP_VARIANT` picks small/medium/large.
+
+### Converting your own fine-tuned checkpoint
+
+The re-authoring is architecture-level, so any icefall zipformer CTC fine-tune with one of
+the three standard size configs (small/medium/large) converts the same way — pick the size
+with `ZIP_VARIANT` and point at your files (defaults reproduce the official ship exactly):
+
+```bash
+ZIP_VARIANT=medium ZIP_CKPT=exp/pretrained.pt ZIP_TOKENS=data/lang_bpe_500/tokens.txt \
+ZIP_WAV=my_test.wav python scripts/build_zipformer_ctc.py all
+```
+
+Use the checkpoint produced by icefall's `zipformer/export.py` (`pretrained.pt`, averaged).
+If your BPE vocab is not 500, set `ZIP_VOCAB=N` — the CTC logits become `[1, 398, N]`, and
+the app's `tokens.txt` asset must be swapped to match (blank stays id 0). Custom
+layer/dim configurations (outside the three standard sizes) are not covered.

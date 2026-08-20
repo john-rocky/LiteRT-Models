@@ -35,3 +35,24 @@ The bundled sample is a reading of the Preamble of the Constitution of Japan
 - `JaZipformerAsr.kt` — CompiledModel GPU runner (5 inputs resolved by capacity) +
   greedy CTC + BPE-3004 detokenize.
 - `assets/tokens.txt` — vocab, index-ordered; `assets/sample.wav` — CC0 sample.
+
+## Conversion
+
+`scripts/build_ja_zipformer.py` — re-authors `reazon-research/japanese-zipformer-base`
+(wav2vec2-style raw-waveform frontend + Zipformer2 + CTC) for CompiledModel GPU and
+converts via litert-torch. Prereq: the HF snapshot at `scripts/model/` (modeling code +
+weights), e.g. `hf download reazon-research/japanese-zipformer-base --local-dir scripts/model`.
+
+### Converting your own fine-tuned checkpoint
+
+A fine-tune of the reazon model saved with `save_pretrained()` converts the same way —
+the modeling code still comes from the base snapshot in `scripts/model/`, while config and
+weights load from your directory (defaults reproduce the official ship exactly):
+
+```bash
+ZIPJA_MODEL_DIR=/path/to/your_saved_model ZIPJA_WAV=my_test.wav \
+python scripts/build_ja_zipformer.py all
+```
+
+If the fine-tune changed the vocab, set `ZIPJA_VOCAB=N` (default 3004) and swap the app's
+`assets/tokens.txt` to match (blank id 0 convention unchanged).
