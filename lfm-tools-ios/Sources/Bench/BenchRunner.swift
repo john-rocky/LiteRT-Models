@@ -197,6 +197,24 @@ enum BenchRunner {
       #endif
 
       TranscriptBox.shared.attach(session)
+      // A loop case runs its own multi-turn protocol (goal-driven polish);
+      // an engine hang inside it aborts the run exactly like the
+      // single-turn path below.
+      if benchCase.loop == true {
+        guard let fixture = attached else {
+          out.write(["type": "skip", "case": benchCase.id, "why": "loop case without image"])
+          continue
+        }
+        let verdict = await runLoopCase(
+          benchCase, session: session, fixture: fixture, out: out,
+          model: modelName, toolset: toolsetName, toolCount: tools.count)
+        if verdict == .pass { passed += 1 } else { failed += 1 }
+        if verdict == .hang {
+          out.write(["type": "abort", "why": "engine hang; remaining cases not run"])
+          break
+        }
+        continue
+      }
       // The fakes' selection, from this case's state line — so a bulk call
       // with nothing selected gets the real app's refusal, not a lie.
       BenchSelection.shared.prime(from: benchCase.state)
@@ -285,10 +303,16 @@ enum BenchRunner {
       // a statement on stage).
       let asked = answer.contains("?") || answer.contains("?")
       let askPass = called == ["ask_user"] || (called.isEmpty && asked)
+      let answerPass: Bool
+      if let keywords = benchCase.answerContains, !keywords.isEmpty {
+        answerPass = keywords.contains { answer.range(of: $0, options: .caseInsensitive) != nil }
+      } else {
+        answerPass = true
+      }
       let pass =
         benchCase.expectAsk == true
         ? (askPass && errorText == nil)
-        : (selectionPass && argsPass && errorText == nil)
+        : (selectionPass && argsPass && answerPass && errorText == nil)
       if pass { passed += 1 } else { failed += 1 }
 
       var line: [String: Any] = [
@@ -301,6 +325,7 @@ enum BenchRunner {
         "ms": ms, "answer": String(answer.prefix(200)),
       ]
       if benchCase.expectAsk == true { line["expectAsk"] = true; line["asked"] = asked }
+      if benchCase.answerContains != nil { line["answerPass"] = answerPass }
       if let errorText { line["error"] = errorText }
       out.write(line)
       print("TOOLBENCH \(benchCase.id) \(pass ? "PASS" : "FAIL") \(ms)ms \(called)")
@@ -310,6 +335,138 @@ enum BenchRunner {
       "total": passed + failed,
     ])
     print("TOOLBENCH done \(passed)/\(passed + failed)")
+  }
+
+  private enum LoopVerdict { case pass, fail, hang }
+
+  /// The goal-driven loop: perceive → judge → act → perceive the result →
+  /// judge again. Round one is the case's input (usually the silent beat)
+  /// with the fixture attached; every later round attaches the photo as the
+  /// model's edits left it, behind the loop reprompt. A round with no tool
+  /// call is the stop — the score's `stopPass`; `maxRounds` is the cap a
+  /// run that will not stop hits. `needs`/`avoid` are scored over every op
+  /// of every round; oscillation (one tool pulled both ways) is recorded,
+  /// not gated — the fixture's `avoid` already names the wrong direction.
+  @MainActor
+  private static func runLoopCase(
+    _ benchCase: BenchCase, session: LanguageModelSession, fixture: CGImage,
+    out: JSONLWriter, model: String, toolset: String, toolCount: Int
+  ) async -> LoopVerdict {
+    out.write(["type": "start", "case": benchCase.id])
+    let started = Date()
+    let maxRounds = benchCase.maxRounds ?? 4
+    var opsPerRound: [[(tool: String, args: [String: Any], raw: String)]] = []
+    var roundMs: [Int] = []
+    var answer = ""
+    var errorText: String?
+    var stopped = false
+    var seenEntries = 0
+
+    for round in 1...maxRounds {
+      let prompt = round == 1 ? benchCase.input : ToolBox.loopReprompt(lang: benchCase.lang)
+      let image = round == 1 ? fixture : (PhotoEditBox.shared.currentCGImage() ?? fixture)
+      let roundStarted = Date()
+      do {
+        answer = try await firstToFinish(within: 180) {
+          try await Task.detached(priority: .userInitiated) {
+            // The silent beat sends the attachment alone, like the stage.
+            if prompt.isEmpty {
+              return try await session.respond(
+                to: Prompt { Attachment(image).label(SeenPhoto.singleLabel) }
+              ).content
+            }
+            return try await session.respond(
+              to: Prompt {
+                prompt
+                Attachment(image).label(SeenPhoto.singleLabel)
+              }
+            ).content
+          }.value
+        }
+      } catch let timeout as DeadlinePassed {
+        out.write([
+          "case": benchCase.id, "lang": benchCase.lang, "model": model,
+          "input": benchCase.input, "loop": true, "rounds": round,
+          "error": String(describing: timeout), "pass": false,
+          "ms": Int(Date().timeIntervalSince(started) * 1000),
+        ])
+        return .hang
+      } catch {
+        errorText = String(describing: error)
+      }
+      roundMs.append(Int(Date().timeIntervalSince(roundStarted) * 1000))
+
+      // The calls this round made: the transcript past last round's mark.
+      let entries = Array(session.transcript)
+      var calls: [(tool: String, args: [String: Any], raw: String)] = []
+      for entry in entries[seenEntries...] {
+        guard case .toolCalls(let toolCalls) = entry else { continue }
+        for call in toolCalls {
+          let raw = String(describing: call.arguments)
+          let args =
+            raw.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) }
+            as? [String: Any] ?? [:]
+          calls.append((call.toolName, args, raw))
+        }
+      }
+      seenEntries = entries.count
+      opsPerRound.append(calls)
+      if errorText != nil { break }
+      if calls.isEmpty {
+        stopped = true
+        break
+      }
+    }
+
+    let ops = opsPerRound.flatMap { $0 }
+    func hits(_ axis: OpAxis, _ call: (tool: String, args: [String: Any], raw: String)) -> Bool {
+      guard call.tool == axis.tool else { return false }
+      guard let direction = axis.direction else { return true }
+      return (call.args["direction"] as? String)?.lowercased() == direction.lowercased()
+    }
+    let needs = benchCase.needs ?? []
+    let avoid = benchCase.avoid ?? []
+    // Empty `needs` is the already-good fixture: the correct run is no op
+    // at all, exactly `expected: []`'s meaning on the single-turn side.
+    let needsPass =
+      needs.isEmpty
+      ? ops.isEmpty
+      : ops.contains { call in needs.contains { hits($0, call) } }
+    let avoidPass = !ops.contains { call in avoid.contains { hits($0, call) } }
+    let pass = needsPass && avoidPass && stopped && errorText == nil
+
+    let opposites = [
+      "brighter": "darker", "darker": "brighter", "up": "down", "down": "up",
+      "more": "less", "less": "more", "warmer": "cooler", "cooler": "warmer",
+      "more_vivid": "more_muted", "more_muted": "more_vivid",
+    ]
+    var oscillated = false
+    for (index, call) in ops.enumerated() {
+      guard let direction = (call.args["direction"] as? String)?.lowercased() else { continue }
+      for later in ops[(index + 1)...]
+      where later.tool == call.tool
+        && (later.args["direction"] as? String)?.lowercased() == opposites[direction] {
+        oscillated = true
+      }
+    }
+
+    var line: [String: Any] = [
+      "case": benchCase.id, "lang": benchCase.lang, "model": model,
+      "toolset": toolset, "tools": toolCount, "input": benchCase.input,
+      "loop": true, "rounds": opsPerRound.count, "stopped": stopped,
+      "oscillated": oscillated,
+      "ops": opsPerRound.map { round in round.map { ["tool": $0.tool, "args": $0.raw] } },
+      "needsPass": needsPass, "avoidPass": avoidPass, "stopPass": stopped,
+      "pass": pass, "msRounds": roundMs,
+      "ms": Int(Date().timeIntervalSince(started) * 1000),
+      "answer": String(answer.prefix(200)),
+    ]
+    if let errorText { line["error"] = errorText }
+    out.write(line)
+    print(
+      "TOOLBENCH \(benchCase.id) \(pass ? "PASS" : "FAIL") rounds=\(opsPerRound.count) stopped=\(stopped) \(ops.map(\.tool))"
+    )
+    return pass ? .pass : .fail
   }
 
 }

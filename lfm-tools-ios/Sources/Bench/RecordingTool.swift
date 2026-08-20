@@ -936,6 +936,22 @@ enum BenchToolBox {
     }
   }
 
+  /// The vision pack, and a deliberate break with the all-canned rule
+  /// above: the goal-driven loop re-attaches the edited photo and asks the
+  /// model to judge its own work, so the edits must actually land on
+  /// pixels — a canned "done" would loop the model over an unchanged
+  /// picture and measure nothing. Only the tools that leave the app are
+  /// faked: save (a photo-library consent dialog would hang a shell-driven
+  /// run) and the note.
+  static let vision: [any FoundationModels.Tool] = [
+    SeenBrightnessTool(), SeenExposureTool(), SeenContrastTool(), SeenSaturationTool(),
+    SeenWarmthTool(), SeenRotateTool(), SeenCropTool(), SeenFilterTool(),
+    SeenAutoEnhanceTool(), SeenRemoveBackgroundTool(), SeenReadTextTool(), SeenRedactTool(),
+    SeenRevertTool(),
+    RecordingTool(base: SeenSaveTool(), canned: "saved to the library"),
+    RecordingTool(base: WriteNoteTool(), canned: "noted"),
+  ]
+
   /// The business wing merged: CRM + PM + Commerce in one list, the rails
   /// deduplicated by name (three packs each carry ask_user and undo_last;
   /// a session cannot hold two tools with one name). 41 tools — the
@@ -968,6 +984,10 @@ enum BenchToolBox {
     case "crm": return crm
     case "pm": return pm
     case "business": return business
+    case "vision": return vision
+    // Sight alone, like the stage's look scenario: no tools in the room —
+    // the perception controls' clean condition.
+    case "look": return []
     default: return nil
     }
   }
@@ -986,6 +1006,10 @@ enum BenchToolBox {
     case "crm": return ToolBox.crmInstructions
     case "pm": return ToolBox.pmInstructions
     case "business": return ToolBox.businessInstructions
+    case "vision", "look": return ToolBox.visionInstructions
+    // The loop's own contract: one edit per round, judged on the result.
+    // Pinned by run-mac.sh's polish entry (--instructions loop).
+    case "loop": return ToolBox.visionLoopInstructions
     default: return ToolBox.instructions
     }
   }

@@ -433,6 +433,39 @@ enum ToolBox {
     why. When a tool has returned, answer in one short sentence.
     """
 
+  /// The goal-driven loop's contract: one edit per round, judged on the
+  /// result. Differs from visionInstructions in exactly one clause — "apply
+  /// those edits one after another" becomes "the single edit that helps
+  /// most", because between edits the app re-attaches the result and asks
+  /// again. The loop itself (reprompt, stop, round cap) is the runner's;
+  /// only the per-round contract lives here.
+  static let visionLoopInstructions = """
+    You are polishing the user's photo, one gentle step at a time, and you
+    can see the photo attached to each message. A photo sent with no words
+    means: judge what this picture needs most — exposure, brightness,
+    warmth, contrast, color — and make the single edit that helps most,
+    one tool call. After each edit you are shown the result and asked to
+    judge it again: another single edit if it still needs one, or no call
+    at all when it already looks its best — then say in one short sentence
+    why it is done. Pass the photo's label as the image argument.
+    """
+
+  /// What the loop says between rounds, attached to the freshly edited
+  /// photo. This is the archetype's new input: the app's own intermediate
+  /// output, not a user turn. Stopping is expressed by calling nothing —
+  /// the vision pack's "no call is an answer", made load-bearing.
+  ///
+  /// Forced-choice on purpose: the open form ("if it looks its best…",
+  /// r27/r28) never stopped — and the same model that answers "about
+  /// right" to every open quality question answers "too dark" when the
+  /// question is binary (r30/r31). Vague judgments land on the rail
+  /// exactly like vague amounts; the yes/no is the judgment's anyOf.
+  static func loopReprompt(lang: String) -> String {
+    lang == "ja"
+      ? "編集後の写真です。まず答えて: まだ改善が要る — はい か いいえ?はい なら、いちばん効く編集を1つだけ実行して。いいえ なら、ツールを呼ばず、仕上がったと一言で答えて。"
+      : "Here is the photo after your edit. First answer: does it still need improving — yes or no? If yes, make the one edit that helps most. If no, call no tool and say it is done."
+  }
+
   /// For packs where the app's state is in the message. The stock line
   /// "you cannot know X without calling a tool" is wrong here — the model
   /// is told everything it needs at the top of each message and its job is

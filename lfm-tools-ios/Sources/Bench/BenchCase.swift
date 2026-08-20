@@ -20,7 +20,33 @@ struct BenchCase: Decodable {
   /// `expected` stays [] on these cases; the runner additionally requires a
   /// question in the answer.
   var expectAsk: Bool?
+  /// The goal-driven loop (polish): the runner re-attaches the edited photo
+  /// after every round and asks the model to judge again, until a round
+  /// makes no tool call or `maxRounds` (default 4) cuts it off. `expected`
+  /// stays [] — a loop case is scored on `needs`/`avoid`, the fixture's
+  /// ground truth: ops of which a correct run makes at least one, and ops a
+  /// correct run never makes. Empty `needs` means the photo needs nothing —
+  /// a correct run stops in round one without a call.
+  var loop: Bool?
+  var maxRounds: Int?
+  var needs: [OpAxis]?
+  var avoid: [OpAxis]?
+  /// The perception control: the pixels are the question and the answer is
+  /// prose. Any listed keyword in the answer passes (case-insensitive);
+  /// `expected` still gates the calls — usually [], because an edit is not
+  /// an answer. Separates "cannot see the defect" from "sees it but the
+  /// judgment does not steer the op".
+  var answerContains: [String]?
   var expected: [ExpectedCall]
+}
+
+/// One op family on the loop's ground-truth axes: a tool, optionally pinned
+/// to a direction ("brighter", "up", "warmer"…). Strength is never scored —
+/// gentleness is the pack's character; the fixture's defect names only the
+/// direction that fixes it.
+struct OpAxis: Decodable {
+  var tool: String
+  var direction: String?
 }
 
 struct ExpectedCall: Decodable {
