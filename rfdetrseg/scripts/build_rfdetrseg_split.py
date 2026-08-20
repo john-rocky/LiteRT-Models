@@ -22,7 +22,15 @@ torch._shape_as_tensor = lambda t: torch.tensor(list(t.shape), dtype=torch.long)
 torch._assert = lambda *a, **k: None
 
 R = int(os.environ.get("RF_RES", "312"))
-NQ, NCLS, HID = 100, 91, 256
+# Fine-tune overrides (defaults reproduce the official COCO ship exactly):
+#   RF_WEIGHTS=ckpt.pth  fine-tuned rfdetr-trainer checkpoint (else official)
+#   RF_NUM_CLASSES=N     trainer class count (class logits become N+1 wide)
+#   RF_TRUST=1           allow full-pickle load (only your own checkpoints)
+# verify_real.py imports this module, so the same env vars drive it too.
+WEIGHTS = os.environ.get("RF_WEIGHTS")
+NUM_CLASSES = os.environ.get("RF_NUM_CLASSES")
+NQ, HID = 100, 256
+NCLS = int(NUM_CLASSES) + 1 if NUM_CLASSES else 91
 GH = GW = R // 12                     # 26x26 single deformable level
 MH = MW = R // 4                      # 78x78 mask grid (mask_downsample_ratio=4)
 BANNED = {"GATHER", "GATHER_ND", "TOPK_V2", "GELU", "ERF", "WHERE", "SELECT", "SELECT_V2",
@@ -197,7 +205,16 @@ class ManualMHA(nn.Module):
 
 def build_net():
     from rfdetr import RFDETRSegNano
-    m = RFDETRSegNano()
+    kw = {}
+    if WEIGHTS:
+        kw["pretrain_weights"] = WEIGHTS
+    if NUM_CLASSES:
+        kw["num_classes"] = int(NUM_CLASSES)
+    if R != 312:
+        kw["resolution"] = R
+    if os.environ.get("RF_TRUST"):
+        kw["trust_checkpoint"] = True
+    m = RFDETRSegNano(**kw)
     net = m.model.model.eval()
     net.export()
     bb = None

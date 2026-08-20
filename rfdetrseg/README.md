@@ -96,3 +96,22 @@ real-image ship criterion (device chain vs official PyTorch predict: box/mask Io
 
 **Original project**: [roboflow/rf-detr](https://github.com/roboflow/rf-detr) (RF-DETR-Seg Nano,
 tag 1.9.3) | [Apache-2.0](https://github.com/roboflow/rf-detr/blob/main/LICENSE)
+
+### Converting your own fine-tuned checkpoint
+
+The recipe is weight-agnostic: all GPU patches are weight-level rewrites and
+the host-fed `.bin` constants are re-emitted from whatever checkpoint loads.
+For a model fine-tuned with the `rfdetr` trainer, set the overrides via env
+vars (defaults reproduce the official COCO conversion exactly):
+
+```bash
+RF_WEIGHTS=checkpoint_best_ema.pth RF_NUM_CLASSES=3 RF_TRUST=1 \
+    python scripts/build_rfdetrseg_split.py all
+RF_WEIGHTS=checkpoint_best_ema.pth RF_NUM_CLASSES=3 RF_TRUST=1 \
+    python scripts/verify_real.py photo.jpg 0.5
+```
+
+`RF_NUM_CLASSES` is the trainer's dataset class count (class logits become
+N+1 wide, index 0 unused) — adapt the label table in the app accordingly.
+`RF_RES` must match the training resolution (multiple of 24, default 312).
+Seg-S/M variants are not covered (windowed attention stops at an assert).
