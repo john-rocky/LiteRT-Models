@@ -21,8 +21,14 @@ import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
 from types import SimpleNamespace as NS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CKPT = os.path.join(HERE, "matcha_ljspeech.ckpt")
-HIFI = os.path.join(HERE, "generator_v1")
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   MATCHA_CKPT=w.ckpt  your own Matcha-TTS Lightning checkpoint (same trainer
+#                       format; single-speaker, standard English symbol set)
+#   MATCHA_HIFI=path    HiFi-GAN generator weights (default: universal v1)
+# convert_final.py / e2e_masked.py import this module, so the same env vars
+# drive the full pipeline.
+CKPT = os.environ.get("MATCHA_CKPT", os.path.join(HERE, "matcha_ljspeech.ckpt"))
+HIFI = os.environ.get("MATCHA_HIFI", os.path.join(HERE, "generator_v1"))
 PHON_LIB = "/opt/homebrew/lib/libespeak-ng.dylib"
 os.environ.setdefault("PHONEMIZER_ESPEAK_LIBRARY", PHON_LIB)
 torch.manual_seed(0)

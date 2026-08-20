@@ -105,3 +105,19 @@ numerically exact.)
 - `MatchaG2P` normalizes text host-side before phonemizing: **ALL-CAPS acronyms are spelled
   letter-by-letter** ("GPU" → "gee pee you", via an espeak letter-name IPA table) and **numbers are
   read as words** ("4090" → "four thousand ninety"; decimals → "point").
+
+### Converting your own fine-tuned voice
+
+The GPU re-authoring is architecture-level, so a voice trained with the official
+Matcha-TTS trainer (its Lightning `.ckpt`) converts the same way — the classic
+"clone your own voice on-device" path (defaults reproduce the official ship exactly):
+
+```bash
+MATCHA_CKPT=/path/to/my_voice.ckpt python scripts/convert_final.py
+```
+
+Constraints: single-speaker checkpoints with the standard English cleaner/symbol set
+(n_vocab 178) only — multi-speaker models need a speaker-embedding input this graph
+does not have, and a different language means a different symbol table (the bundled
+G2P assets must be regenerated). `MATCHA_HIFI` can also point at your own HiFi-GAN v1
+generator if you fine-tuned the vocoder.
