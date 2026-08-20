@@ -31,7 +31,6 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIFileSharingEnabled: YES
         INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
-        CODE_SIGN_ENTITLEMENTS: SAM3.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: MFN25KNUGJ
         "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64

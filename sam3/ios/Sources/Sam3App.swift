@@ -70,6 +70,7 @@ final class Sam3ViewModel: ObservableObject {
                     self?.detector = detector
                     self?.state = .ready
                     print("SAM3 compile report:\n\(report)")
+                    self?.maybeRunDemo()
                 }
             } catch {
                 await MainActor.run { [weak self] in
@@ -124,6 +125,49 @@ final class Sam3ViewModel: ObservableObject {
 
     nonisolated private static func ms(_ v: Double) -> String {
         v >= 1000 ? String(format: "%.1f s", v / 1000) : String(format: "%.0f ms", v)
+    }
+
+    // MARK: Scripted demo — auto-runs when Documents/demo/demo.json exists, so a
+    // screen recording needs no hands on the device. Delete Documents/demo to disable.
+
+    private struct DemoStep: Decodable {
+        let photo: String
+        let prompt: String
+        let dwell: Double?
+    }
+    private struct DemoScript: Decodable {
+        let steps: [DemoStep]
+        let loop: Bool?
+        let startDelay: Double?
+    }
+
+    func maybeRunDemo() {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dir = docs.appendingPathComponent("demo")
+        guard let data = try? Data(contentsOf: dir.appendingPathComponent("demo.json")),
+              let script = try? JSONDecoder().decode(DemoScript.self, from: data)
+        else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64((script.startDelay ?? 1.5) * 1e9))
+            repeat {
+                for step in script.steps {
+                    guard let self else { return }
+                    let path = dir.appendingPathComponent(step.photo).path
+                    guard let image = UIImage(contentsOfFile: path) else { continue }
+                    self.setImage(image)
+                    self.prompt = ""
+                    try? await Task.sleep(nanoseconds: 700_000_000)
+                    for ch in step.prompt {
+                        self.prompt.append(ch)
+                        try? await Task.sleep(nanoseconds: UInt64.random(in: 55_000_000...120_000_000))
+                    }
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    self.detect()
+                    while self.running { try? await Task.sleep(nanoseconds: 100_000_000) }
+                    try? await Task.sleep(nanoseconds: UInt64((step.dwell ?? 3.0) * 1e9))
+                }
+            } while script.loop == true && self != nil
+        }
     }
 }
 
