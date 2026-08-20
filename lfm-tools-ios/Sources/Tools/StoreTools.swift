@@ -538,6 +538,14 @@ final class StoreBox: @unchecked Sendable {
     }
     let top = best.sorted { $0.value > $1.value }.prefix(3).map { "\($0.key) ×\($0.value)" }
     let change = previousTotal > 0 ? Int((Double(total - previousTotal) / Double(previousTotal) * 100).rounded()) : nil
+    // The report selects the orders it summed: its counts must be checkable
+    // against rows on screen, or the summary reads as invented. (A report
+    // still *needs* no selection — the state line's contract holds.)
+    sync {
+      selection = rows.isEmpty
+        ? .none
+        : .orders(rows.map(\.number), how: "last \(span) day\(span == 1 ? "" : "s")")
+    }
     ArtifactBox.shared.post(.table(
       title: "last \(span) day\(span == 1 ? "" : "s")",
       columns: ["Orders", "Sales", "vs previous", "Top items"],
