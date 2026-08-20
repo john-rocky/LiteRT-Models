@@ -51,3 +51,20 @@ cp ufld.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - CULane-trained — works best on forward dashcam highway views (the training distribution).
+
+### Converting your own fine-tuned checkpoint
+
+The only patch (ZeroPadMaxPool) is architecture-level, so any checkpoint from the
+official Ultra-Fast-Lane-Detection trainer converts the same way — `{'model': ...}`
+wrappers and `module.` prefixes are stripped (defaults reproduce the official CULane
+ship exactly):
+
+```bash
+UFLD_CKPT=/path/to/my_lanes.pth UFLD_GRIDING=200 UFLD_ROWS=18 UFLD_LANES=4 \
+    python scripts/build_ufld.py
+```
+
+`UFLD_GRIDING`/`UFLD_ROWS`/`UFLD_LANES` must match your training config — output becomes
+`[1, griding+1, rows, lanes]` (TuSimple presets: 100/56/4) — and the app's row-anchor
+table and decode constants must follow. Input stays 288×800. ResNet-18 backbone is the
+device-verified path.
