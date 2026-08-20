@@ -47,3 +47,20 @@ On launch the app self-tests on a bundled clip (synthesized speech → top tag "
 ## Original project & license
 
 [qiuqiangkong/audioset_tagging_cnn](https://github.com/qiuqiangkong/audioset_tagging_cnn) — code [Apache-2.0](https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/master/LICENSE), weights `Cnn14_mAP=0.431.pth` on [Zenodo](https://zenodo.org/record/3987831) [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). AudioSet ontology © Google, [CC-BY-4.0](https://research.google.com/audioset/).
+
+### Converting your own fine-tuned checkpoint
+
+The recipe splits the graph at the log-mel boundary (host STFT), which is
+checkpoint-independent, so a Cnn14 fine-tune from the audioset_tagging_cnn trainer
+(its `{"model": ...}` checkpoint format) converts the same way (defaults reproduce the
+official ship exactly):
+
+```bash
+PANNS_CKPT=/path/to/my_cnn14.pth PANNS_NUM_CLASSES=10 PANNS_LABELS=my_labels.csv \
+    python scripts/build_panns.py all
+```
+
+`PANNS_NUM_CLASSES` drives the sigmoid output width — bundle the matching label csv in
+the app. Audio front-end constants (32 kHz, 1024/320 STFT, 64 mel) are part of the
+Cnn14 architecture and must match your training setup. Cnn14 only (the other PANNs
+variants have different pooling structures).

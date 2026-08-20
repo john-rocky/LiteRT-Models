@@ -27,10 +27,17 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SR, NFFT, HOP, NMEL = 32000, 1024, 320, 64
 PAD = NFFT // 2
 CLIP_SAMPLES = 320000          # 10 s @ 32 kHz (PANNs canonical eval window)
-CFG = dict(sample_rate=SR, window_size=NFFT, hop_size=HOP, mel_bins=NMEL, fmin=50, fmax=14000, classes_num=527)
-CKPT = os.path.join(HERE, "Cnn14_mAP=0.431.pth")
-SAMPLE_WAV = os.path.expanduser("~/Downloads/meeting/wav2vec2-work/sample_speech.wav")
-LABELS_CSV = os.path.join(HERE, "class_labels_indices.csv")
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   PANNS_CKPT=w.pth        your own Cnn14 checkpoint ({"model": ...} format,
+#                           as saved by the audioset_tagging_cnn trainer)
+#   PANNS_NUM_CLASSES=N     its class count (default 527, AudioSet)
+#   PANNS_LABELS=file.csv   its label csv (same 3-column layout)
+#   PANNS_WAV=sample.wav    parity-check clip
+CFG = dict(sample_rate=SR, window_size=NFFT, hop_size=HOP, mel_bins=NMEL, fmin=50, fmax=14000,
+           classes_num=int(os.environ.get("PANNS_NUM_CLASSES", "527")))
+CKPT = os.environ.get("PANNS_CKPT", os.path.join(HERE, "Cnn14_mAP=0.431.pth"))
+SAMPLE_WAV = os.environ.get("PANNS_WAV", os.path.expanduser("~/Downloads/meeting/wav2vec2-work/sample_speech.wav"))
+LABELS_CSV = os.environ.get("PANNS_LABELS", os.path.join(HERE, "class_labels_indices.csv"))
 BANNED = {"GATHER", "GATHER_ND", "TOPK_V2", "GELU", "ERF", "WHERE", "SELECT", "SELECT_V2",
           "BROADCAST_TO", "POW", "TRANSPOSE_CONV", "CAST", "EMBEDDING_LOOKUP",
           "RFFT2D", "FFT", "STFT", "COMPLEX", "RFFT", "IRFFT", "CUMSUM"}
