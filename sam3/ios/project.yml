@@ -1,0 +1,37 @@
+name: SAM3
+options:
+  bundleIdPrefix: com.sam3
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  swift-litert-lm:
+    path: /Users/majimadaisuke/code/swift-litert-lm
+targets:
+  SAM3:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - path: Resources
+        buildPhase: resources
+        optional: true
+    dependencies:
+      - package: swift-litert-lm
+        product: LiteRTLM
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sam3.ios
+        SWIFT_OBJC_BRIDGING_HEADER: CLiteRT/SAM3-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - $(SRCROOT)/CLiteRT
+          - $(SRCROOT)/CLiteRT/include
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIFileSharingEnabled: YES
+        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
+        CODE_SIGN_ENTITLEMENTS: SAM3.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: MFN25KNUGJ
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64

@@ -1,0 +1,12 @@
+# SAM 3.1 precheck workspace: nothing large is committed
+.venv/
+.venv_install.log
+models/
+vendor_sam3/
+*.tflite
+*.pt
+*.log
+ios/stage/
+ios/SAM3.xcodeproj/
+*.bin
+scripts/_debug_*.py

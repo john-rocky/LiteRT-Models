@@ -723,6 +723,56 @@ Four stateless per-frame graphs run on the GPU; the rolling memory bank (7 spati
 
 **Original project**: [facebook/EdgeTAM](https://github.com/facebookresearch/EdgeTAM) ([yonigozlan/EdgeTAM-hf](https://huggingface.co/yonigozlan/EdgeTAM-hf)) | [Apache-2.0](https://github.com/facebookresearch/EdgeTAM/blob/main/LICENSE)
 
+### SAM 3 (text-prompted detection + segmentation)
+
+SAM 3 (Meta, `facebook/sam3.1`): open-vocabulary text-prompted detection + instance
+segmentation, fully on-device — type "wheel" (or any phrase) and get every match's box,
+score, and 288×288 instance mask. ViT-L/14 trunk @1008² + tri-neck → CLIP-L text encoder →
+text-conditioned DETR head (200 queries, presence token) — ~830M params, the largest model
+in this zoo on CompiledModel.
+
+| Graph | Download Link | Size (FP16) | Role | API |
+| ----- | ------------- | ----------- | ---- | --- |
+| Vision | [sam3_vision.tflite](https://huggingface.co/mlboydaisuke/SAM3-LiteRT) | 930 MB | image [1,3,1008,1008] → fpn288 \| fpn144 \| fpn72 | CompiledModel GPU |
+| Text | [sam3_text.tflite](https://huggingface.co/mlboydaisuke/SAM3-LiteRT) | 607 MB | token embeddings [1,32,1024] → text memory [32·256] | CompiledModel CPU (see below) |
+| Head | [sam3_head.tflite](https://huggingface.co/mlboydaisuke/SAM3-LiteRT) | 68 MB | [fpn×3 \| text_mem \| pad] → 200 logits + boxes + presence + 200×288² masks | CompiledModel GPU |
+| Token table | [sam3_token_embed.bin](https://huggingface.co/mlboydaisuke/SAM3-LiteRT) | 101 MB | fp16 [49408×1024] host lookup (+ CLIP BPE vocab/merges) | host |
+
+**Conversion** (litert-torch, every re-authoring exact vs PyTorch): litert-torch silently
+mis-lowers the >4-D ViT attention (corr 0.607) → the whole trunk is re-authored in ≤4-D
+(`sam3/scripts/vit4d.py`: tiled abs-pos baked, interleaved RoPE de-interleaved into the qkv
+weights + half-split rotation, exact 4-D window partition); SafeLayerNorm for the \|x\|≈300
+residual stream; the DETR decoder rebuilt **batch-first rank-4** (the rank-3 [1,N,C] fan-out
+is mis-executed by the delegate on-device); delegate-safe masked softmax; ZeroStuffConvT2d
+necks; GATHER_ND-free sine embeds. Full findings: [sam3/PRECHECK_2026-08-19.md](sam3/PRECHECK_2026-08-19.md).
+
+**Why text runs on CPU**: the CLIP-L residual stream reaches \|x\|≈1.2e3 — fp16 GPU execution
+corrupts some prompt embeddings ('window' loses all detections). CPU (or Metal `enforce_f32`
+on Apple) is exact, and the graph takes ~0.5 s. **Requires LiteRT ≥ 2.2.0** (2.1.5
+mis-executes the fixed head graph; see GPU Compatibility Notes).
+
+**Preprocessing**: resize to 1008×1008, `(x/255 − 0.5)/0.5`, NCHW planar. Score =
+`sigmoid(logit) · sigmoid(presence)`, keep > 0.5.
+
+**Fidelity / speed**: Pixel 8a — vision GPU 9.2 s, text CPU 0.5 s, head GPU 1.4 s
+(re-prompt on the same image 1.9 s); kept-set equal to PyTorch fp32, mask IoU ≥ 0.98.
+Mac Metal — ~0.75 s end-to-end; `enforce_f32` bit-parity mode ~0.95 s.
+
+**Sample apps**: [sam3/app](sam3/) (Android) and [sam3/ios](sam3/ios/) (SwiftUI iPhone,
+Metal GPU + `enforce_f32` head, CLIP BPE ported to Swift).
+
+**Tracker (video, stage 2)**: the Object-Multiplex tracker's host state machine
+(association / hotstart / recondition / memory bank + temporal pos-enc) is ported and
+verified in three forms — a LiteRT-only Python loop
+([sam3/scripts/tracker_host_loop.py](sam3/scripts/tracker_host_loop.py), ids identical /
+mask IoU ≥ 0.992 vs the official model over multi-clip references), Kotlin, and Swift
+(Mac-verified: ids identical, IoU 0.998) — spec in
+[sam3/TRACKER_HOST_PORT.md](sam3/TRACKER_HOST_PORT.md). All four tracker graphs run on the
+Pixel 8a GPU individually (memattn 7-slot: 16 s — the optimization seam); the full resident
+set exceeds an 8 GB phone, so on-device tracking targets iPhone-class memory for now.
+
+**Original project**: [facebookresearch/sam3](https://github.com/facebookresearch/sam3) | [SAM License](https://github.com/facebookresearch/sam3/blob/main/LICENSE)
+
 # Background Removal
 
 ### RMBG-1.4 (ISNet)

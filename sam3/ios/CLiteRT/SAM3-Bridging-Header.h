@@ -1,0 +1,10 @@
+// Exposes the LiteRT Next C API (symbols from the LiteRTLM package) to Swift.
+#include "litert/c/litert_common.h"
+#include "litert/c/litert_compiled_model.h"
+#include "litert/c/litert_environment.h"
+#include "litert/c/litert_model.h"
+#include "litert/c/litert_opaque_options.h"
+#include "litert/c/litert_options.h"
+#include "litert/c/litert_tensor_buffer.h"
+#include "litert/c/options/litert_gpu_options.h"
+#include "Sam3Helpers.h"
