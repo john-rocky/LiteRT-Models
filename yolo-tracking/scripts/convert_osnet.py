@@ -27,12 +27,18 @@ def build_osnet_x0_25():
     """Build OSNet x0.25 and load pretrained weights from torchreid."""
     from torchreid.models import build_model
 
+    # Fine-tune override: OSNET_CKPT=w.pth loads your own torchreid re-id
+    # fine-tune (classifier head is ignored — only featuremaps are exported).
+    ckpt = os.environ.get("OSNET_CKPT")
     model = build_model(
-        name="osnet_x0_25",
+        name=os.environ.get("OSNET_ARCH", "osnet_x0_25"),
         num_classes=1,  # dummy, we only use the feature extractor
         loss="softmax",
-        pretrained=True,
+        pretrained=not ckpt,
     )
+    if ckpt:
+        from torchreid.utils import load_pretrained_weights
+        load_pretrained_weights(model, ckpt)
     model.eval()
     return model
 

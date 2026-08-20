@@ -77,3 +77,18 @@ Open `yolo-tracking/` in Android Studio, or:
 2. **Matching Cascade** associates detections to confirmed tracks using appearance similarity (cosine distance on Re-ID embeddings), gated by Mahalanobis distance from the Kalman state
 3. **IOU Matching** handles remaining unconfirmed tracks and recently-lost confirmed tracks
 4. **Track Lifecycle**: Tentative → (3 consecutive hits) → Confirmed → (30 frames lost) → Deleted
+
+### Converting your own fine-tuned Re-ID checkpoint
+
+The exporter only wraps `featuremaps` (the classifier head is dropped), so a torchreid
+re-id fine-tune converts the same way (defaults reproduce the official ship exactly):
+
+```bash
+OSNET_CKPT=/path/to/my_osnet.pth python scripts/convert_osnet.py
+```
+
+`OSNET_ARCH` selects another torchreid OSNet width (default `osnet_x0_25`; larger
+widths change the embedding dim — the tracker's cosine-distance code follows the
+tensor shape automatically, but device latency has only been verified at x0_25).
+The detector side is a standard Ultralytics export and accepts any YOLO fine-tune
+(`yolo export model=best.pt format=tflite`).
