@@ -91,7 +91,7 @@ class TG(nn.Module):
     def forward(s,x): return 0.5*x*(1.0+torch.tanh(0.7978845608*(x+0.044715*x*x*x)))
 def build():
     from rfdetr import RFDETRNano
-    m=RFDETRNano(); net=m.model.model.eval()
+    m=RFDETRNano(**B.model_kwargs()); net=m.model.model.eval()
     net.export()   # re-wire backbone for plain-tensor input + submodule export paths
     # backbone gelu + pos bake (instance-level, mirror the bb build)
     bb=None

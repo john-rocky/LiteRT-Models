@@ -1,6 +1,21 @@
 import sys, os, collections
 import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
 R=int(os.environ.get("RF_RES","384")); HERE=os.path.dirname(os.path.abspath(__file__))
+# Fine-tune overrides (defaults reproduce the official COCO ship exactly):
+#   RF_WEIGHTS=ckpt.pth  fine-tuned rfdetr-trainer checkpoint (else official)
+#   RF_NUM_CLASSES=N     trainer class count (class logits become N+1 wide)
+#   RF_TRUST=1           allow full-pickle load (only your own checkpoints)
+# build_rfdetr_full / build_rfdetr_split import this module, so the same env
+# vars drive the full and split builds too (via model_kwargs()).
+WEIGHTS=os.environ.get("RF_WEIGHTS"); NUM_CLASSES=os.environ.get("RF_NUM_CLASSES")
+def model_kwargs():
+    """RFDETRNano kwargs from the RF_* env vars; empty dict for the default run."""
+    kw={}
+    if WEIGHTS: kw["pretrain_weights"]=WEIGHTS
+    if NUM_CLASSES: kw["num_classes"]=int(NUM_CLASSES)
+    if R!=384: kw["resolution"]=R
+    if os.environ.get("RF_TRUST"): kw["trust_checkpoint"]=True
+    return kw
 BANNED={"GATHER","GATHER_ND","TOPK_V2","GELU","ERF","WHERE","SELECT","SELECT_V2","BROADCAST_TO","POW","TRANSPOSE_CONV","CAST","EMBEDDING_LOOKUP","RFFT2D","FFT","STFT","COMPLEX","CUMSUM","MIRROR_PAD"}
 from rfdetr.models.backbone import dinov2_with_windowed_attn as D
 def sdpa_manual(self, hidden_states, output_attentions=False):
@@ -69,7 +84,7 @@ class TG(nn.Module):
     def forward(s,x): return _tg(x)
 def build():
     from rfdetr import RFDETRNano
-    m=RFDETRNano(); net=m.model.model.eval()
+    m=RFDETRNano(**model_kwargs()); net=m.model.model.eval()
     bb=None
     for mod in net.modules():
         if hasattr(mod,"encoder") and hasattr(getattr(mod,"encoder"),"layer") and hasattr(mod,"embeddings"): bb=mod; break

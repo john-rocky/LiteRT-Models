@@ -94,3 +94,19 @@ fixtures. `scripts/run_probe.sh` drives an on-device GPU residency/accuracy prob
 
 **Original project**: [roboflow/rf-detr](https://github.com/roboflow/rf-detr) (RF-DETR Nano) |
 [Apache-2.0](https://github.com/roboflow/rf-detr/blob/main/LICENSE)
+
+### Converting your own fine-tuned checkpoint
+
+The recipe is weight-agnostic: every GPU patch is a weight-level rewrite, so any
+checkpoint from the `rfdetr` trainer converts the same way. Set the overrides via
+env vars (defaults reproduce the official COCO conversion exactly):
+
+```bash
+RF_WEIGHTS=checkpoint_best_ema.pth RF_NUM_CLASSES=3 RF_TRUST=1 \
+    python scripts/build_rfdetr_split.py all
+```
+
+`RF_NUM_CLASSES` is the trainer's dataset class count (class logits become N+1 wide,
+index 0 unused) — swap `coco_labels.txt` and the app's label handling accordingly.
+`RF_RES` must match the training resolution (default 384). Only the Nano variant is
+covered (S/M differ in backbone windowing).
