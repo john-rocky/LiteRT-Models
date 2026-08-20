@@ -333,6 +333,51 @@ final class VideoEditBox: @unchecked Sendable {
     }
   }
 
+  /// Navigation, not an edit: no history entry, nothing to undo. The
+  /// playhead's "no edit moves it" rule stands — this is the user asking
+  /// to move it, the one thing that does.
+  func seek(to seconds: Double) -> String {
+    sync {
+      let clamped = min(max(0, seconds), max(0, state.duration - 0.1))
+      state.playhead = (clamped * 10).rounded() / 10
+      previewTime = state.playhead
+      return "playhead at \(Self.f(state.playhead)) s — the frame is on screen"
+    }
+  }
+
+  /// "Just the goal moment": keep only the timeline between two times. The
+  /// timeline re-bases to 0, so the playhead goes home rather than pointing
+  /// into footage that is gone.
+  func keepRange(start: Double, end: Double) -> String {
+    mutate("cut") { s in
+      let duration = s.duration
+      let from = max(0, min(start, end))
+      let to = min(duration, max(start, end))
+      guard to - from >= 0.2 else {
+        return "nothing between \(Self.f(from)) and \(Self.f(to)) s (timeline is 0–\(Self.f(duration)) s)"
+      }
+      let starts = s.starts
+      var kept: [Clip] = []
+      for (index, clip) in s.clips.enumerated() {
+        let clipStart = starts[index]
+        let overlapStart = max(clipStart, from)
+        let overlapEnd = min(clipStart + clip.timelineDuration, to)
+        guard overlapEnd - overlapStart > 0.05 else { continue }
+        kept.append(
+          Clip(
+            sourceStart: clip.sourceStart + (overlapStart - clipStart) * clip.speed,
+            sourceDuration: (overlapEnd - overlapStart) * clip.speed,
+            speed: clip.speed))
+      }
+      guard !kept.isEmpty else { return "nothing between \(Self.f(from)) and \(Self.f(to)) s" }
+      s.clips = kept
+      s.selected = 0
+      s.playhead = 0
+      previewTime = 0
+      return "kept \(Self.f(from))–\(Self.f(to)) s; the timeline is now \(Self.f(s.duration)) s (was \(Self.f(duration)) s)"
+    }
+  }
+
   func setSpeed(_ multiplier: Double) -> String {
     mutate { s in
       guard s.clips.indices.contains(s.selected) else { return "no clip selected" }
@@ -1110,5 +1155,115 @@ struct ExportVideoTool: Tool {
   func call(arguments: NoArguments) async throws -> String {
     try await VideoEditBox.shared.preload()
     return try await VideoEditBox.shared.export()
+  }
+}
+
+// MARK: - The moment index (find → seek → trim → export)
+
+/// The retrieval side of the room: three indexes over the video — what is
+/// seen (frame embeddings), what is said (the transcript), what is written
+/// (text on screen) — plus a forced-choice check on one moment. The bench
+/// runs these over a canned index (Bench/RecordingTool.swift's MomentEcho);
+/// on the stage the index build (~1 fps frames through Vision, the audio
+/// through Speech) is the next lane, and until it lands the honest answer
+/// is that there is no index yet.
+@available(iOS 27.0, *)
+enum MomentIndex {
+  static let notBuilt =
+    "this video has no index yet — indexing is not built on this device"
+}
+
+@available(iOS 27.0, *)
+struct SearchFramesTool: Tool {
+  let name = "search_frames"
+  let description =
+    "Find moments in the video by what is visible in the picture — objects, actions, scenes. Not for spoken words or for text shown on screen. Returns candidate moments with their times in seconds."
+  @Generable struct Arguments {
+    @Guide(description: "What to look for, as a short visual phrase.") var query: String
+  }
+  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+}
+
+@available(iOS 27.0, *)
+struct SearchTranscriptTool: Tool {
+  let name = "search_transcript"
+  let description =
+    "Find moments by the words spoken in the video. Returns the line and when it was said, in seconds."
+  @Generable struct Arguments {
+    @Guide(description: "The spoken words to search for.") var query: String
+  }
+  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+}
+
+@available(iOS 27.0, *)
+struct SearchScreenTextTool: Tool {
+  let name = "search_screen_text"
+  let description =
+    "Find moments where text is visible in the frame — signs, scoreboards, slides, banners. Not for the spoken words. Returns the text and when it is on screen, in seconds."
+  @Generable struct Arguments {
+    @Guide(description: "The on-screen text to search for.") var query: String
+  }
+  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+}
+
+@available(iOS 27.0, *)
+struct CheckMomentTool: Tool {
+  let name = "check_moment"
+  // Forced choice on the argument, the judge-study ruling: the check takes
+  // its candidates and answers with one of them, never an open judgment.
+  // The "never to check a search result" clause is r33's: without it the
+  // model called this after nearly every successful search, verifying its
+  // own retrieval (the remove_music "not for muting" pattern).
+  let description =
+    "Look at the frame at one moment and answer a question the user asked about it. Always give the possible answers — the reply is one of them. Never call this to check a search result you already have."
+  @Generable struct Arguments {
+    @Guide(description: "The moment to look at, in timeline seconds — from a search result or the state.")
+    var seconds: Double
+    @Guide(description: "The question about that frame.") var question: String
+    @Guide(description: "The possible answers to choose from.") var options: [String]
+  }
+  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+}
+
+@available(iOS 27.0, *)
+struct SeekTool: Tool {
+  let name = "seek"
+  // "Edits do not need a seek first": r34 grew a seek-seek-edit ritual
+  // (seek 30, seek 60, keep_range 30–60) — the edits take their own times.
+  let description =
+    "Move the playhead to a time in seconds and show that frame. Edits do not need a seek first — they take their own times."
+  @Generable struct Arguments {
+    @Guide(description: "Timeline time in seconds — from the request, the state, or a search result.")
+    var seconds: Double
+  }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    return VideoEditBox.shared.seek(to: arguments.seconds)
+  }
+}
+
+@available(iOS 27.0, *)
+struct KeepRangeTool: Tool {
+  let name = "keep_range"
+  // r33 taught this tool its three clauses: "no split_clip first" (the
+  // model prepended a split in three cases), the start guide's "the
+  // moment's own start, not 0" (it kept 0–226 for "just the goal
+  // moment"), and the ask on the argument (asked to cut "that one
+  // moment", it invented 0–240 from the playhead — the add_caption
+  // lesson: the ask lives where the decision is made).
+  // "nothing after" is gone (r34): the model obeyed it into dropping the
+  // export the request asked for — the clause meant "no cleanup calls"
+  // and was read as "the turn ends here".
+  let description =
+    "Keep only the part of the timeline between two times and cut away everything else. 'Just the goal moment' is this one call with the moment's start and end — no split_clip first. Not for shaving seconds off an edge; trim_clip does that."
+  @Generable struct Arguments {
+    @Guide(description: "Where the kept part starts, in timeline seconds — the moment's own start, from the request or a search result; not 0 unless the user means from the beginning. If no moment or times are named anywhere, do not call this — ask which moment.")
+    var start_seconds: Double
+    @Guide(description: "Where the kept part ends, in timeline seconds — the moment's own end.")
+    var end_seconds: Double
+  }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    return VideoEditBox.shared.keepRange(start: arguments.start_seconds, end: arguments.end_seconds)
   }
 }

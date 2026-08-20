@@ -203,6 +203,18 @@ enum ToolBox {
     UndoLastTool(target: .video), RevertVideoTool(), ExportVideoTool(), AskUserTool(),
   ]
 
+  /// The moment-seek pack (ROADMAP "Video moment-seek"): the video room
+  /// plus the retrieval side — three indexes (what is seen / said /
+  /// written), a forced-choice check on one moment, seek and keep_range.
+  /// The measured competencies are the retrieval archetype's: routing a
+  /// clause to the right index, copying a found moment's times into the
+  /// next call, and the find → seek → trim → export chain.
+  static let moments: [any FoundationModels.Tool] =
+    video + [
+      SearchFramesTool(), SearchTranscriptTool(), SearchScreenTextTool(),
+      CheckMomentTool(), SeekTool(), KeepRangeTool(),
+    ]
+
   /// The store pack (Tools/StoreTools.swift): a Shopify admin's menu over
   /// canned products and orders — the Commerce pack of the business wing,
   /// extended to the spec on 2026-08-20. A filter or search makes a
@@ -481,6 +493,48 @@ enum ToolBox {
     with no words given — call ask_user. Never ask about a detail the
     request or the state already gives, and never ask to confirm an edit. When a tool has
     returned, answer the user in one short sentence using its result.
+    """
+
+  /// The moment-seek pack's: the video contract plus the retrieval rules.
+  /// What is new is where numbers come from — a search result is a source
+  /// of times with the same authority as the state, and a moment the
+  /// request only describes must be searched for, never guessed at.
+  ///
+  /// The discipline lines are r33's harvest: routing was nearly perfect
+  /// and almost every failure was the ritual not stopping — a successful
+  /// search followed by check_moment on its own result, or by the other
+  /// two indexes. The one-index rule, the no-self-check rule and the
+  /// two-ended stop ("answer and stop" / "edit and nothing more") are the
+  /// stop contract, retrieval-shaped. The fallback license ("only when it
+  /// finds nothing, try the other two") was A/B'd out in r36 on suspicion
+  /// of licensing sweep-first — removing it made the run worse (12/40 vs
+  /// 17/40) and did not restore the one-index discipline: the sweep is
+  /// the model's character, not the clause's, so the license stays for
+  /// the miss cases it sanctions.
+  static let momentsInstructions = """
+    You are operating the user's video editor through tools. Every message
+    starts with the app's current state: the clips on the timeline with their
+    times in seconds, which clip is selected, where the playhead is, the
+    frame size, and whether the video's index is ready. The video is indexed
+    three ways: search_frames finds moments by what is visible in the
+    picture, search_transcript by the words spoken, search_screen_text by
+    text shown on screen. Search the one index the words name; when it
+    answers, do not search the others — only when it finds nothing, try the
+    other two before answering that the moment is not there. To show or cut
+    a moment the request only describes, search first, then copy the start
+    and end the result names into the next call. Take times from the state
+    or from a tool result — never guess one. check_moment answers a
+    question the user asked about the frame at one moment — never call it
+    to confirm a search result. When the request only asks where or when
+    something is, answer from the search result and stop. When it asks for
+    an edit, make the edit calls and nothing more. Tools act on the
+    selected clip unless they name a clip. When a request lists several
+    edits, call the tools one after another in that order. When something
+    required is truly absent — a caption with no words given, a cut with no
+    moment named — call ask_user. Never ask about a detail the request, the
+    state or a result already gives, and never ask to confirm an edit. When
+    a tool has returned, answer the user in one short sentence using its
+    result.
     """
 
   /// The store pack's: same idea, records instead of a timeline. The

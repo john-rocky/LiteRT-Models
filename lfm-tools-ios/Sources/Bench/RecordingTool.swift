@@ -205,6 +205,36 @@ enum BenchToolBox {
     RecordingTool(base: ExportVideoTool(), canned: "exported to the photo library"),
   ]
 
+  /// The moment-seek pack: the video fakes plus the canned index. The
+  /// searches echo the frozen match dynamically (like the store's finders);
+  /// seek and keep_range echo the numbers they were handed — the timestamp
+  /// copy from a result into an argument is the measured competence.
+  static let moments: [any FoundationModels.Tool] =
+    video + [
+      RecordingTool(
+        base: SearchFramesTool(), canned: "",
+        respond: { MomentEcho.search(MomentEcho.frames, in: "the picture", query: $0.query) }),
+      RecordingTool(
+        base: SearchTranscriptTool(), canned: "",
+        respond: { MomentEcho.search(MomentEcho.transcript, in: "the speech", query: $0.query) }),
+      RecordingTool(
+        base: SearchScreenTextTool(), canned: "",
+        respond: {
+          MomentEcho.search(MomentEcho.screenText, in: "the on-screen text", query: $0.query)
+        }),
+      RecordingTool(
+        base: CheckMomentTool(), canned: "",
+        respond: { MomentEcho.check(seconds: $0.seconds, options: $0.options) }),
+      RecordingTool(
+        base: SeekTool(), canned: "",
+        respond: { "playhead at \(VideoEditBox.f($0.seconds)) s — the frame is on screen" }),
+      RecordingTool(
+        base: KeepRangeTool(), canned: "",
+        respond: {
+          "kept \(VideoEditBox.f($0.start_seconds))–\(VideoEditBox.f($0.end_seconds)) s — the rest is cut"
+        }),
+    ]
+
   /// The store pack, neutralized. The canned world is the pack's own
   /// canned data, frozen at "6 products under 5 in stock, 5 orders awaiting
   /// payment"; results claim success in the shape the real tools answer.
@@ -967,6 +997,121 @@ enum BenchToolBox {
     return merged
   }()
 
+  /// The moment index's canned world: one 600 s soccer-match recording,
+  /// frozen. Three indexes over the same match — what is seen, what is
+  /// said, what is written on screen — so a clause's right index is a
+  /// scorable choice. Keywords carry the JA the cases can utter (recipes:
+  /// canned data must be findable in every language the pack tests). No
+  /// bare "card"/"カード" key on the yellow-card row on purpose: a red-card
+  /// query must come back empty, not find the wrong booking.
+  enum MomentEcho {
+    struct Row {
+      let start: Double
+      let end: Double
+      let text: String
+      let keys: [String]
+    }
+
+    static let frames: [Row] = [
+      Row(start: 3, end: 10, text: "kickoff", keys: ["kickoff", "kick-off", "キックオフ", "開始"]),
+      Row(
+        start: 130, end: 136, text: "the keeper's diving save",
+        keys: ["save", "dive", "keeper", "セーブ", "キーパー"]),
+      Row(
+        start: 158, end: 163, text: "a yellow card is shown",
+        keys: ["yellow", "booking", "イエロー", "黄色"]),
+      Row(
+        start: 214, end: 226, text: "a goal — a header — and the celebration",
+        keys: ["goal", "header", "celebrat", "ゴール", "ヘディング", "得点"]),
+      Row(start: 320, end: 330, text: "heavy rain starts falling", keys: ["rain", "雨"]),
+      Row(
+        start: 380, end: 390, text: "a substitution at the touchline",
+        keys: ["substitut", "交代"]),
+      Row(
+        start: 440, end: 462, text: "a penalty — awarded, then converted: a goal",
+        keys: ["penalty", "spot", "ペナルティ", "PK", "goal", "ゴール", "得点"]),
+      Row(
+        start: 592, end: 600, text: "the final whistle and the celebrations",
+        keys: ["whistle", "final", "終了", "ホイッスル", "笛"]),
+    ]
+
+    static let transcript: [Row] = [
+      Row(
+        start: 131.5, end: 134, text: "\"What an absolutely incredible save!\"",
+        keys: ["save", "incredible", "セーブ"]),
+      Row(
+        start: 213, end: 216, text: "\"He rises highest — and it's in! What a header!\"",
+        keys: ["header", "it's in", "ヘディング"]),
+      Row(
+        start: 299, end: 301, text: "\"And that's half time.\"",
+        keys: ["half time", "half-time", "ハーフタイム"]),
+      Row(
+        start: 440.5, end: 443, text: "\"The referee points to the spot — it's a penalty!\"",
+        keys: ["penalty", "referee", "spot", "ペナルティ", "PK"]),
+      Row(
+        start: 457, end: 459, text: "\"He sends the keeper the wrong way — two nil!\"",
+        keys: ["two nil", "two-nil", "2-0", "2対0"]),
+      Row(start: 575, end: 577, text: "\"Surely that's the win now.\"", keys: ["win", "勝"]),
+    ]
+
+    static let screenText: [Row] = [
+      Row(start: 0, end: 6, text: "scoreboard \"BLU 0-0 RED\"", keys: ["0-0", "0対0"]),
+      Row(
+        start: 218, end: 224, text: "the scoreboard changes to \"BLU 1-0 RED\"",
+        keys: ["1-0", "scoreboard", "スコア", "1対0"]),
+      Row(
+        start: 458, end: 464, text: "the scoreboard changes to \"BLU 2-0 RED\"",
+        keys: ["2-0", "2対0"]),
+      Row(
+        start: 520, end: 526, text: "banner \"ATTENDANCE 48,113\"",
+        keys: ["attendance", "観客"]),
+      Row(
+        start: 597, end: 600, text: "\"FULL TIME  BLU 2-0 RED\"",
+        keys: ["full time", "full-time", "フルタイム"]),
+    ]
+
+    /// A row matches when any of its keys appears in the query — multiword
+    /// queries carry the keyword; a bare keyword query is its own key.
+    static func search(_ index: [Row], in what: String, query: String) -> String {
+      let q = query.lowercased()
+      let hits = index.filter { row in row.keys.contains { q.contains($0.lowercased()) } }
+      guard !hits.isEmpty else { return "no moments found for \"\(query)\" in \(what)" }
+      let lines = hits.map {
+        "\(VideoEditBox.f($0.start))–\(VideoEditBox.f($0.end)) s — \($0.text)"
+      }
+      return "\(hits.count) moment\(hits.count == 1 ? "" : "s"):\n" + lines.joined(separator: "\n")
+    }
+
+    /// The forced-choice check, canned: the ground truth at one moment,
+    /// answered by picking from the options given — the stand-in for the
+    /// per-candidate VLM look. The truth is the score at that time plus
+    /// whatever rows cover it; an option no truth supports is refused by
+    /// name, not guessed.
+    static func check(seconds: Double, options: [String]) -> String {
+      let score = seconds < 218 ? "0-0" : (seconds < 458 ? "1-0" : "2-0")
+      var truths = [score, score.replacingOccurrences(of: "-", with: "対")]
+      for row in frames where seconds >= row.start && seconds <= row.end {
+        truths.append(row.text)
+        truths.append(contentsOf: row.keys)
+      }
+      for row in screenText where seconds >= row.start && seconds <= row.end {
+        truths.append(row.text)
+        truths.append(contentsOf: row.keys)
+      }
+      if let hit = options.first(where: { option in
+        let o = option.lowercased()
+        return truths.contains { truth in
+          let t = truth.lowercased()
+          return t.contains(o) || o.contains(t)
+        }
+      }) {
+        return hit
+      }
+      return "none of those — the frame at \(VideoEditBox.f(seconds)) s shows: "
+        + truths.prefix(3).joined(separator: "; ")
+    }
+  }
+
   /// `--toolset <name>` picks the pack a bench run offers the model.
   static func named(_ name: String) -> [any FoundationModels.Tool]? {
     switch name {
@@ -975,6 +1120,7 @@ enum BenchToolBox {
     case "focus": return focus
     case "report": return report
     case "video": return video
+    case "moments": return moments
     case "store": return store
     case "audio": return audio
     case "docs": return docs
@@ -997,6 +1143,7 @@ enum BenchToolBox {
   static func instructions(for name: String) -> String {
     switch name {
     case "video": return ToolBox.videoInstructions
+    case "moments": return ToolBox.momentsInstructions
     case "store": return ToolBox.storeInstructions
     case "audio": return ToolBox.audioInstructions
     case "docs": return ToolBox.docsInstructions
