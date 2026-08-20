@@ -185,6 +185,24 @@ final class StageModel {
     "Export it.",
   ]
 
+  /// The moment-seek cut (ROADMAP "Video moment-seek"): search the video in
+  /// words, then edit what you found. The index is real — Vision on ~1 fps
+  /// frames, the on-device recognizer on the audio — so the beats point at
+  /// what a scoreboard, a caption or a commentator actually put in the
+  /// video. Beat 1 is retrieval (where is it), beat 2 the payoff chain
+  /// (cut to it), beat 3 the export. The one-sentence hero
+  /// ("cut out just the goal and export it") is a chat take, not a
+  /// scripted beat — measured flaky (r33–r36), and a take can retry.
+  // Beat 2 says "keep only", not "cut down to": "Cut the video down" set
+  // off Apple FM's safety guardrails ("may contain sensitive or unsafe
+  // content", Mac, 2026-08-21) — the edit vocabulary itself can trip the
+  // rails, and the beat words route around them.
+  static let momentsBeats = [
+    "Find the moment they say goal.",
+    "Keep only that moment.",
+    "Export it.",
+  ]
+
   /// The store cut: a Shopify admin's menu over canned products and orders.
   /// Filter → act is the shape: "them" in beats 2–4 is the selection beat 1
   /// made, resolved by the app. Beat 5 is a two-call chain (filter →
@@ -336,6 +354,7 @@ final class StageModel {
     case "look": return lookBeats
     case "polish": return polishBeats
     case "video": return videoBeats
+    case "moments": return momentsBeats
     case "store":
       return CommandLine.arguments.contains("--ja") ? storeBeatsJA : storeBeats
     case "audio": return audioBeats
@@ -364,14 +383,18 @@ final class StageModel {
   /// is told the timeline (video) or the store and its selection (store)
   /// and asked to operate it.
   static var scenarioSendsState: Bool {
-    ["video", "store", "audio", "docs", "shopping", "money", "inbox", "crm", "pm"].contains(scenarioName)
+    ["video", "moments", "store", "audio", "docs", "shopping", "money", "inbox", "crm", "pm"]
+      .contains(scenarioName)
   }
-  static var scenarioIsVideo: Bool { scenarioName == "video" }
+  /// The moments pack is the video pack's stage plus the index.
+  static var scenarioIsVideo: Bool { ["video", "moments"].contains(scenarioName) }
   static var scenarioIsDocs: Bool { scenarioName == "docs" }
 
   /// The state block for this beat, from whichever box owns the pack.
   static func currentState() -> String {
     switch scenarioName {
+    case "moments":
+      return VideoEditBox.shared.describe() + " " + MomentIndexBox.shared.describe()
     case "store": return StoreBox.shared.describe()
     case "audio": return AudioBox.shared.describe()
     case "docs": return DocBox.shared.describe()
@@ -385,6 +408,7 @@ final class StageModel {
   }
   static var stateInstructions: String {
     switch scenarioName {
+    case "moments": return ToolBox.momentsInstructions
     case "store": return ToolBox.storeInstructions
     case "audio": return ToolBox.audioInstructions
     case "docs": return ToolBox.docsInstructions
@@ -582,6 +606,7 @@ final class StageModel {
     case "look": tools = []
     case "polish": tools = ToolBox.vision
     case "video": tools = ToolBox.video
+    case "moments": tools = ToolBox.moments
     case "store": tools = ToolBox.store
     case "audio": tools = ToolBox.audio
     case "docs": tools = ToolBox.docs
@@ -693,6 +718,12 @@ final class StageModel {
       do {
         try await VideoEditBox.shared.preload()
         RunLog.write("VIDEO loaded — \(VideoEditBox.shared.describe())")
+        // The moments pack builds its index before the first beat, so the
+        // state line the model reads says "Index: ready" and means it.
+        if Self.scenarioName == "moments" {
+          await MomentIndexBox.shared.ensureBuilt()
+          RunLog.write("MOMENTS \(MomentIndexBox.shared.describe())")
+        }
       } catch {
         RunLog.write("VIDEO load failed: \(error)")
       }

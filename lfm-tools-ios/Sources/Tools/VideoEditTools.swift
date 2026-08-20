@@ -21,6 +21,7 @@ import FoundationModels
 import Photos
 @preconcurrency import Speech
 import UIKit
+import Vision
 
 /// The timeline. One shared instance: the model operates "the video", and
 /// which asset and which clips that means is this class's problem, not the
@@ -132,11 +133,26 @@ final class VideoEditBox: @unchecked Sendable {
 
   // MARK: Loading
 
+  /// `--video <path>` loads a file straight from disk instead of the
+  /// library — no Photos permission, so a Mac run driven from a shell can
+  /// load a fixture without a TCC dialog. Export follows the same flag:
+  /// file in, file out.
+  static var filePath: URL? {
+    guard let flag = CommandLine.arguments.firstIndex(of: "--video"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    else { return nil }
+    return URL(fileURLWithPath: CommandLine.arguments[flag + 1])
+  }
+
   /// The newest library video becomes the timeline: one clip, the whole
   /// thing, playhead 40 % in, nothing applied. Called by the stage before
   /// the first beat so the permission prompt fires there and not mid-run.
   func preload() async throws {
     if isLoaded { return }
+    if let file = Self.filePath {
+      try await load(AVURLAsset(url: file))
+      return
+    }
     guard let asset = try await VideoLibrary.latestAsset() else { throw Failure.noVideo }
     try await load(asset)
   }
@@ -163,6 +179,7 @@ final class VideoEditBox: @unchecked Sendable {
       previewTime = fresh.playhead
       thumbnails = []
     }
+    MomentIndexBox.shared.reset()
     refreshThumbnails()
   }
 
@@ -544,8 +561,9 @@ final class VideoEditBox: @unchecked Sendable {
   }
 
   /// File-based on-device speech recognition, grouped into caption-sized
-  /// chunks (~3.5 s or 7 words).
-  private static func transcribe(_ url: URL) async throws -> [(text: String, start: Double, duration: Double)] {
+  /// chunks (~3.5 s or 7 words). Internal, not private: the moment index
+  /// builds its transcript through the same recognizer.
+  static func transcribe(_ url: URL) async throws -> [(text: String, start: Double, duration: Double)] {
     let auth = await withCheckedContinuation { continuation in
       SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
     }
@@ -554,34 +572,70 @@ final class VideoEditBox: @unchecked Sendable {
         domain: "Captions", code: 1,
         userInfo: [NSLocalizedDescriptionKey: "speech recognition permission refused"])
     }
-    guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
+    // The device locale is not always a recognition locale ("en_JP" is
+    // English-in-Japan, which Speech does not ship): fall back to en-US
+    // rather than to silence.
+    let chosen = [SFSpeechRecognizer(), SFSpeechRecognizer(locale: Locale(identifier: "en-US"))]
+      .compactMap { $0 }
+      .first { $0.isAvailable && $0.supportsOnDeviceRecognition }
+    guard let recognizer = chosen else {
       throw NSError(
         domain: "Captions", code: 2,
         userInfo: [NSLocalizedDescriptionKey: "the speech recognizer is not available"])
     }
     let request = SFSpeechURLRecognitionRequest(url: url)
     request.requiresOnDeviceRecognition = true
-    request.shouldReportPartialResults = false
+    // Partials on, and every callback's segments accumulate: with partials
+    // off, a file with pauses came back as its LAST utterance window only —
+    // the recognizer commits and resets across silences, the intermediate
+    // commits ride partial results, and the single final carries just the
+    // tail (measured: five commentary lines in, one out, 2026-08-21).
+    request.shouldReportPartialResults = true
     // The recognizer and its request cross into the deadline race's
     // @Sendable closure; Speech predates Sendable and the box carries them.
     struct Recognition: @unchecked Sendable {
       let recognizer: SFSpeechRecognizer
       let request: SFSpeechURLRecognitionRequest
     }
+    /// Segments from every callback, deduplicated by their timestamp — a
+    /// later window's partials never rewrite an earlier window's words.
+    final class Collector: @unchecked Sendable {
+      private let lock = NSLock()
+      private var byTime: [Int: (String, Double, Double)] = [:]
+      func merge(_ segments: [SFTranscriptionSegment]) {
+        lock.lock()
+        defer { lock.unlock() }
+        for segment in segments where !segment.substring.isEmpty {
+          byTime[Int(segment.timestamp * 10)] = (
+            segment.substring, segment.timestamp, segment.duration
+          )
+        }
+      }
+      var sorted: [(String, Double, Double)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return byTime.values.sorted { $0.1 < $1.1 }
+      }
+    }
     let recognition = Recognition(recognizer: recognizer, request: request)
+    let collector = Collector()
     let segments: [(String, Double, Double)] = try await firstToFinish(within: 45) {
       try await withCheckedThrowingContinuation { continuation in
         let once = OnceBox()
         recognition.recognizer.recognitionTask(with: recognition.request) { result, error in
+          if let result { collector.merge(result.bestTranscription.segments) }
           if let error {
-            if once.claim() { continuation.resume(throwing: error) }
+            guard once.claim() else { return }
+            let kept = collector.sorted
+            if kept.isEmpty {
+              continuation.resume(throwing: error)
+            } else {
+              continuation.resume(returning: kept)
+            }
             return
           }
           guard let result, result.isFinal, once.claim() else { return }
-          continuation.resume(
-            returning: result.bestTranscription.segments.map {
-              ($0.substring, $0.timestamp, $0.duration)
-            })
+          continuation.resume(returning: collector.sorted)
         }
       }
     }
@@ -786,6 +840,25 @@ final class VideoEditBox: @unchecked Sendable {
     return await frame(at: t, maxSize: 1280)
   }
 
+  /// The source asset and its duration, for the moment index build.
+  var sourceAsset: (asset: AVAsset, duration: Double)? {
+    sync { source.map { ($0, sourceDuration) } }
+  }
+
+  /// A raw source frame, no edits applied — what the index and check_moment
+  /// look at. Source seconds, which equal timeline seconds until a cut
+  /// re-bases the timeline (the pack's order is find, then cut).
+  func sourceFrame(at seconds: Double, maxSize: CGFloat = 640) async -> CGImage? {
+    guard let (asset, duration) = sourceAsset else { return nil }
+    let generator = AVAssetImageGenerator(asset: asset)
+    generator.appliesPreferredTrackTransform = true
+    generator.maximumSize = CGSize(width: maxSize, height: maxSize)
+    generator.requestedTimeToleranceBefore = CMTime(seconds: 0.3, preferredTimescale: 600)
+    generator.requestedTimeToleranceAfter = CMTime(seconds: 0.3, preferredTimescale: 600)
+    let t = min(max(0, seconds), max(0, duration - 0.05))
+    return try? await generator.image(at: CMTime(seconds: t, preferredTimescale: 600)).image
+  }
+
   private func frame(at seconds: Double, maxSize: CGFloat) async -> UIImage? {
     do {
       let (composition, videoComposition, _) = try await build()
@@ -861,18 +934,29 @@ final class VideoEditBox: @unchecked Sendable {
     session.videoComposition = videoComposition
     session.audioMix = mix
     session.shouldOptimizeForNetworkUse = true
-    let url = FileManager.default.temporaryDirectory
-      .appendingPathComponent("edit-\(Int(Date().timeIntervalSince1970)).mp4")
+    // File mode writes next to the app's own files instead of the photo
+    // library — the Photos add-permission dialog would hang a shell-driven
+    // Mac run just like the read one.
+    let fileMode = Self.filePath != nil
+    let url =
+      fileMode
+      ? AppFiles.documents.appendingPathComponent("export-\(Int(Date().timeIntervalSince1970)).mp4")
+      : FileManager.default.temporaryDirectory
+        .appendingPathComponent("edit-\(Int(Date().timeIntervalSince1970)).mp4")
     try await session.export(to: url, as: .mp4)
-    try await PHPhotoLibrary.shared().performChanges {
-      PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+    if !fileMode {
+      try await PHPhotoLibrary.shared().performChanges {
+        PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+      }
     }
     let s = sync { state }
     let (w, h) = frameSize(for: s, source: sync { sourceSize })
     if let poster = await frame(at: min(0.5, s.duration / 2), maxSize: 800) {
       ArtifactBox.shared.post(.photo(poster, caption: "exported \(Self.f(s.duration)) s, \(w)×\(h)"))
     }
-    return "exported \(Self.f(s.duration)) s at \(w)×\(h) to the photo library"
+    return fileMode
+      ? "exported \(Self.f(s.duration)) s at \(w)×\(h) to \(url.lastPathComponent)"
+      : "exported \(Self.f(s.duration)) s at \(w)×\(h) to the photo library"
   }
 }
 
@@ -1160,17 +1244,245 @@ struct ExportVideoTool: Tool {
 
 // MARK: - The moment index (find → seek → trim → export)
 
-/// The retrieval side of the room: three indexes over the video — what is
-/// seen (frame embeddings), what is said (the transcript), what is written
-/// (text on screen) — plus a forced-choice check on one moment. The bench
-/// runs these over a canned index (Bench/RecordingTool.swift's MomentEcho);
-/// on the stage the index build (~1 fps frames through Vision, the audio
-/// through Speech) is the next lane, and until it lands the honest answer
-/// is that there is no index yet.
+/// The retrieval side of the room, built from the loaded video with what
+/// the OS already ships — the orchestrator thesis's cheapest rungs, no
+/// extra models: ~1 fps source frames through VNClassifyImageRequest
+/// (what is seen) and VNRecognizeTextRequest (what is written), the audio
+/// track through the same on-device recognizer auto_captions uses (what
+/// is said). A CLIP rung slots in above the classifier when the model
+/// repo's embedding build lands — today "find the goal" is answered by
+/// the scoreboard's OCR and the commentator's words, not by an embedding,
+/// and that gap is the demo's honest edge. The bench never reaches this:
+/// it runs the canned MomentEcho (Bench/RecordingTool.swift).
+///
+/// Times are source seconds, which equal timeline seconds until a cut
+/// re-bases the timeline — index at load, search before editing: the
+/// pack's find → cut order, load-bearing here.
 @available(iOS 27.0, *)
-enum MomentIndex {
-  static let notBuilt =
-    "this video has no index yet — indexing is not built on this device"
+final class MomentIndexBox: @unchecked Sendable {
+  static let shared = MomentIndexBox()
+
+  struct Row: Sendable {
+    var start: Double
+    var end: Double
+    var text: String
+  }
+  enum Kind { case frames, transcript, screenText }
+  /// AVAsset predates Sendable; the box carries it into the deadline race,
+  /// where nothing else holds it (the VideoLibrary Handoff pattern).
+  struct UncheckedBox<T>: @unchecked Sendable {
+    let value: T
+    init(_ value: T) { self.value = value }
+  }
+  private enum Status: Equatable { case notBuilt, building, ready(String) }
+
+  private let lock = NSLock()
+  private var frames: [Row] = []
+  private var transcript: [Row] = []
+  private var screenText: [Row] = []
+  private var status = Status.notBuilt
+  private var buildJob: Task<Void, Never>?
+
+  private func sync<T>(_ body: () -> T) -> T {
+    lock.lock()
+    defer { lock.unlock() }
+    return body()
+  }
+
+  /// One line for the state block — the mirror rule: the state claims the
+  /// index only when it exists, and names which sides of it do.
+  func describe() -> String {
+    switch sync({ status }) {
+    case .notBuilt: return "Index: not built."
+    case .building: return "Index: building…"
+    case .ready(let what): return "Index: ready (\(what))."
+    }
+  }
+
+  func reset() {
+    let job = sync { () -> Task<Void, Never>? in
+      let old = buildJob
+      buildJob = nil
+      status = .notBuilt
+      frames = []
+      transcript = []
+      screenText = []
+      return old
+    }
+    job?.cancel()
+  }
+
+  /// Build once; a caller that arrives mid-build waits for the same build.
+  func ensureBuilt() async {
+    let job: Task<Void, Never>? = sync {
+      if status == .notBuilt {
+        status = .building
+        let job = Task.detached(priority: .userInitiated) { await self.build() }
+        buildJob = job
+        return job
+      }
+      return buildJob
+    }
+    await job?.value
+  }
+
+  private func build() async {
+    guard let (asset, duration) = VideoEditBox.shared.sourceAsset, duration > 0 else {
+      sync { status = .notBuilt }
+      return
+    }
+    let started = Date()
+    // ≤ ~90 samples however long the video: a 10-minute video indexes at
+    // one frame per ~7 s, a 40-second clip at 1 fps — the ROADMAP's
+    // "10-minute video indexes in ~10 s, once" budget, kept honest.
+    let step = max(1.0, duration / 90)
+    var sampleTimes: [Double] = []
+    var t = step / 2
+    while t < duration {
+      sampleTimes.append(t)
+      t += step
+    }
+    RunLog.write("MOMENTS indexing \(sampleTimes.count) frames at every \(VideoEditBox.f(step)) s…")
+    // Per-label and per-text runs: which samples saw them, merged into
+    // ranges afterwards (a gap of one missed sample keeps the run alive —
+    // classifiers flicker frame to frame).
+    var labelTimes: [String: [Double]] = [:]
+    var textTimes: [String: [Double]] = [:]
+    for time in sampleTimes {
+      if Task.isCancelled { return }
+      guard let cg = await VideoEditBox.shared.sourceFrame(at: time, maxSize: 512) else { continue }
+      let classify = VNClassifyImageRequest()
+      let read = VNRecognizeTextRequest()
+      read.recognitionLevel = .fast
+      read.usesLanguageCorrection = false
+      let handler = VNImageRequestHandler(cgImage: cg)
+      try? handler.perform([classify, read])
+      for result in (classify.results ?? []).filter({ $0.confidence > 0.35 }).prefix(8) {
+        labelTimes[result.identifier.lowercased().replacingOccurrences(of: "_", with: " "), default: []]
+          .append(time)
+      }
+      for text in (read.results ?? []).compactMap({ $0.topCandidates(1).first?.string }) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { continue }
+        textTimes[trimmed, default: []].append(time)
+      }
+    }
+    func runs(_ times: [Double], label: String) -> [Row] {
+      var out: [Row] = []
+      for time in times.sorted() {
+        if var last = out.last, time - last.end <= step * 2.2 {
+          last.end = time + step / 2
+          out[out.count - 1] = last
+        } else {
+          out.append(Row(start: max(0, time - step / 2), end: time + step / 2, text: label))
+        }
+      }
+      return out
+    }
+    let visual = labelTimes.flatMap { runs($0.value, label: $0.key) }.sorted { $0.start < $1.start }
+    let written = textTimes.flatMap { runs($0.value, label: "\"\($0.key)\"") }
+      .sorted { $0.start < $1.start }
+    RunLog.write(
+      "MOMENTS visual side done — \(labelTimes.count) labels, \(textTimes.count) texts seen")
+
+    // The spoken side: the source's audio through the caption recognizer.
+    // The whole side races a deadline — the permission prompt inside
+    // transcribe() has no timeout of its own, and an unclicked dialog must
+    // cost the transcript, not the demo (the withDeadline lesson).
+    var spoken: [Row] = []
+    if (try? await asset.loadTracks(withMediaType: .audio))?.first != nil {
+      RunLog.write("MOMENTS transcribing the audio track…")
+      let sendableAsset = UncheckedBox(asset)
+      let chunks =
+        (try? await firstToFinish(within: 75) { () -> [(String, Double, Double)] in
+          guard
+            let session = AVAssetExportSession(
+              asset: sendableAsset.value, presetName: AVAssetExportPresetAppleM4A)
+          else { return [] }
+          let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("index-\(Int(Date().timeIntervalSince1970)).m4a")
+          try await session.export(to: url, as: .m4a)
+          defer { try? FileManager.default.removeItem(at: url) }
+          return try await VideoEditBox.transcribe(url).map { ($0.text, $0.start, $0.duration) }
+        }) ?? []
+      spoken = chunks.map {
+        Row(start: $0.1, end: $0.1 + max(1, $0.2), text: "\"\($0.0)\"")
+      }
+      if spoken.isEmpty {
+        RunLog.write("MOMENTS transcript empty (no speech, or no permission)")
+      } else {
+        RunLog.write(
+          "MOMENTS transcript rows: "
+            + spoken.prefix(3).map { "\(VideoEditBox.f($0.start))s \($0.text)" }
+            .joined(separator: " | "))
+      }
+    }
+
+    var sides = ["frames"]
+    if !spoken.isEmpty { sides.append("transcript") }
+    if !written.isEmpty { sides.append("screen text") }
+    sync {
+      frames = visual
+      transcript = spoken
+      screenText = written
+      status = .ready(sides.joined(separator: ", "))
+    }
+    print(
+      "MOMENTS indexed — \(visual.count) visual, \(spoken.count) spoken, \(written.count) text rows in \(Int(Date().timeIntervalSince(started))) s"
+    )
+  }
+
+  func search(_ kind: Kind, query: String) -> String {
+    let (rows, what): ([Row], String) = sync {
+      switch kind {
+      case .frames: return (frames, "the picture")
+      case .transcript: return (transcript, "the speech")
+      case .screenText: return (screenText, "the on-screen text")
+      }
+    }
+    guard case .ready = sync({ status }) else { return "the index is not ready yet" }
+    if rows.isEmpty && kind == .transcript { return "this video has no recognized speech" }
+    // Any-word match, three letters or a number up ("to" and "the" match
+    // everything; "1-0" must match). Query words are the model's — expanding
+    // a phrase into index-friendly words is its half of the deal.
+    let tokens = query.lowercased()
+      .split(whereSeparator: { " ,.!?'\"「」『』、。".contains($0) })
+      .map(String.init)
+      .filter { $0.count >= 3 || $0.contains(where: \.isNumber) }
+    let hits = rows.filter { row in
+      let text = row.text.lowercased()
+      return tokens.contains { text.contains($0) }
+    }
+    guard !hits.isEmpty else { return "no moments found for \"\(query)\" in \(what)" }
+    let lines = hits.prefix(8).map { "\(VideoEditBox.f($0.start))–\(VideoEditBox.f($0.end)) s — \($0.text)" }
+    return "\(hits.count) moment\(hits.count == 1 ? "" : "s"):\n" + lines.joined(separator: "\n")
+      + (hits.count > 8 ? "\n(and \(hits.count - 8) more)" : "")
+  }
+
+  /// The forced-choice check: one real frame, the OS's judges, an answer
+  /// from the options given — never an open judgment (the judge-study
+  /// ruling holds on the real pixels too).
+  func check(at seconds: Double, options: [String]) async -> String {
+    guard let cg = await VideoEditBox.shared.sourceFrame(at: seconds, maxSize: 640) else {
+      return "no frame at \(VideoEditBox.f(seconds)) s"
+    }
+    let classify = VNClassifyImageRequest()
+    let read = VNRecognizeTextRequest()
+    read.recognitionLevel = .accurate
+    let handler = VNImageRequestHandler(cgImage: cg)
+    try? handler.perform([classify, read])
+    var truths = (classify.results ?? []).filter { $0.confidence > 0.2 }
+      .map { $0.identifier.lowercased().replacingOccurrences(of: "_", with: " ") }
+    truths += (read.results ?? []).compactMap { $0.topCandidates(1).first?.string.lowercased() }
+    if let hit = options.first(where: { option in
+      let o = option.lowercased()
+      return truths.contains { $0.contains(o) || o.contains($0) }
+    }) {
+      return hit
+    }
+    return "none of those — the frame at \(VideoEditBox.f(seconds)) s shows: "
+      + truths.prefix(5).joined(separator: ", ")
+  }
 }
 
 @available(iOS 27.0, *)
@@ -1181,7 +1493,11 @@ struct SearchFramesTool: Tool {
   @Generable struct Arguments {
     @Guide(description: "What to look for, as a short visual phrase.") var query: String
   }
-  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    await MomentIndexBox.shared.ensureBuilt()
+    return MomentIndexBox.shared.search(.frames, query: arguments.query)
+  }
 }
 
 @available(iOS 27.0, *)
@@ -1192,7 +1508,11 @@ struct SearchTranscriptTool: Tool {
   @Generable struct Arguments {
     @Guide(description: "The spoken words to search for.") var query: String
   }
-  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    await MomentIndexBox.shared.ensureBuilt()
+    return MomentIndexBox.shared.search(.transcript, query: arguments.query)
+  }
 }
 
 @available(iOS 27.0, *)
@@ -1203,7 +1523,11 @@ struct SearchScreenTextTool: Tool {
   @Generable struct Arguments {
     @Guide(description: "The on-screen text to search for.") var query: String
   }
-  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    await MomentIndexBox.shared.ensureBuilt()
+    return MomentIndexBox.shared.search(.screenText, query: arguments.query)
+  }
 }
 
 @available(iOS 27.0, *)
@@ -1222,7 +1546,10 @@ struct CheckMomentTool: Tool {
     @Guide(description: "The question about that frame.") var question: String
     @Guide(description: "The possible answers to choose from.") var options: [String]
   }
-  func call(arguments: Arguments) async throws -> String { MomentIndex.notBuilt }
+  func call(arguments: Arguments) async throws -> String {
+    try await VideoEditBox.shared.preload()
+    return await MomentIndexBox.shared.check(at: arguments.seconds, options: arguments.options)
+  }
 }
 
 @available(iOS 27.0, *)
