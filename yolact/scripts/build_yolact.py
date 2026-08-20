@@ -7,11 +7,15 @@ torch.cuda.device_count = lambda: 2              # -> use_jit=False so FPN is pl
 _load = torch.load
 torch.load = lambda *a, **k: _load(*a, **{**k, "map_location": "cpu"})
 from data import cfg, set_cfg
-set_cfg('yolact_resnet50_config')
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   YOLACT_CFG=<name>     a config registered in yolact/data/config.py (fine-tunes
+#                         register their own; num_classes/max_size flow from it)
+#   YOLACT_WEIGHTS=w.pth  your own checkpoint (else the official HF download)
+set_cfg(os.environ.get("YOLACT_CFG", "yolact_resnet50_config"))
 from yolact import Yolact
 from huggingface_hub import hf_hub_download
 
-pth=hf_hub_download("dbolya/yolact-resnet50","yolact_resnet50_54_800000.pth")
+pth=os.environ.get("YOLACT_WEIGHTS") or hf_hub_download("dbolya/yolact-resnet50","yolact_resnet50_54_800000.pth")
 net=Yolact(); net.load_weights(pth); net.eval()
 net.detect = lambda pred_outs, *a, **k: pred_outs   # bypass NMS -> raw dict
 
@@ -30,7 +34,7 @@ class Wrap(nn.Module):
         d=s.n(x)
         return d['loc'], d['conf'], d['mask'], d['proto']
 w=Wrap(net).eval()
-dummy=torch.randn(1,3,550,550)
+dummy=torch.randn(1,3,cfg.max_size,cfg.max_size)   # 550 for the official config
 with torch.no_grad():
     o=w(dummy)
 print("raw outs:", [tuple(t.shape) for t in o])

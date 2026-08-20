@@ -55,3 +55,20 @@ ZeroPadMaxPool, and exports the raw-head graph with litert-torch.
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Base YOLACT only — **not** YOLACT++ (DCNv2 deformable conv = GATHER_ND, GPU-incompatible).
+
+### Converting your own fine-tuned checkpoint
+
+The recipe is architecture-level (CUDA/JIT stubs, ZeroPadMaxPool, raw-head export), so a
+checkpoint trained with the official YOLACT trainer converts the same way. Register your
+config in `yolact/data/config.py` as the trainer requires, then (defaults reproduce the
+official ship exactly):
+
+```bash
+YOLACT_CFG=my_dataset_config YOLACT_WEIGHTS=weights/my_model.pth \
+    python scripts/build_yolact.py
+```
+
+`num_classes` and `max_size` flow from the config into the output shapes
+(`conf [1, 19248, num_classes]`; anchor count follows `max_size`) — update the app's
+label table and, if `max_size` ≠ 550, its input size and anchor generation to match.
+Base YOLACT only — YOLACT++ (DCNv2) remains GPU-incompatible.
