@@ -18,8 +18,13 @@ from transformers import Wav2Vec2ForSequenceClassification
 from transformers.activations import GELUActivation
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MID = "superb/wav2vec2-base-superb-ks"
-SR, DUR = 16000, 1.0
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   W2V2_MODEL_ID=<hf-repo-or-local-dir>  a fine-tuned Wav2Vec2ForSequenceClassification
+#   saved with save_pretrained() (labels + head width flow from its config).
+#   W2V2_DUR=seconds  clip length if your task is not 1.0 s windows.
+# build_w2v2_split.py imports this module, so the same env vars drive it too.
+MID = os.environ.get("W2V2_MODEL_ID", "superb/wav2vec2-base-superb-ks")
+SR, DUR = 16000, float(os.environ.get("W2V2_DUR", "1.0"))
 torch.manual_seed(0)
 BANNED = {"GATHER", "GATHER_ND", "TOPK_V2", "GELU", "ERF", "WHERE", "SELECT", "SELECT_V2",
           "BROADCAST_TO", "POW", "TRANSPOSE_CONV", "CAST", "EMBEDDING_LOOKUP",

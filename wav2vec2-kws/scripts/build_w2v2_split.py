@@ -60,7 +60,7 @@ def main():
     use_wls = m.config.use_weighted_layer_sum
     print(f"use_weighted_layer_sum={use_wls}")
 
-    x = torch.randn(1, 16000)
+    x = torch.randn(1, int(B.SR * B.DUR))
     with torch.no_grad():
         full = m(x, attention_mask=None).logits
         fe = FrontEnd(m.wav2vec2).eval(); hd = Head(m).eval()

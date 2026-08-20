@@ -70,3 +70,20 @@ fp16-exact on the GPU (no CPU fallback).
 - `scripts/build_w2v2_split.py` — the 2-graph deployment split (frontend + head, fp16), parity corr 1.0.
 
 **Original project**: [superb/wav2vec2-base-superb-ks](https://huggingface.co/superb/wav2vec2-base-superb-ks) | [Apache-2.0](https://huggingface.co/facebook/wav2vec2-base)
+
+### Converting your own fine-tuned checkpoint
+
+All patches are architecture-level rewrites of the HF `Wav2Vec2` modules, so any audio-
+classification fine-tune (`Wav2Vec2ForSequenceClassification` + `save_pretrained()`)
+converts the same way. Point the build at your model directory or HF repo id (default
+run without the env vars reproduces the official ship exactly):
+
+```bash
+W2V2_MODEL_ID=/path/to/your_saved_model python scripts/build_w2v2.py all
+W2V2_MODEL_ID=/path/to/your_saved_model python scripts/build_w2v2_split.py
+```
+
+Label count and names flow from the model's `config.json` (`id2label`) into the logits
+width — update the app's label table to match. `W2V2_DUR=seconds` changes the input
+window if your task is not 1 s clips (the app's recorder length must follow). Base-size
+(12-layer) wav2vec2 only; large variants have not been device-verified.
