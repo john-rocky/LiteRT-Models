@@ -19,12 +19,22 @@ import torch.nn.functional as F
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CKPT = os.path.join(HERE, "enet_b0_8_best_afew.pt")
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   HSE_CKPT=w.pt          your own checkpoint (pickled module, plain state dict,
+#                          or {"state_dict": ...} for a timm tf_efficientnet_b0)
+#   HSE_NUM_CLASSES=N      class count (default 8)
+#   HSE_LABELS=a,b,...     display names when not the AffectNet-8 set
+CKPT = os.environ.get("HSE_CKPT", os.path.join(HERE, "enet_b0_8_best_afew.pt"))
+NCLS = int(os.environ.get("HSE_NUM_CLASSES", "8"))
 FP32 = os.path.join(HERE, "hsemotion_b0.tflite")
 FP16 = os.path.join(HERE, "hsemotion_b0_fp16.tflite")
 SIZE = 224
 EMOTIONS = ["Anger", "Contempt", "Disgust", "Fear", "Happiness", "Neutral",
             "Sadness", "Surprise"]
+if os.environ.get("HSE_LABELS"):
+    EMOTIONS = os.environ["HSE_LABELS"].split(",")
+elif NCLS != 8:
+    EMOTIONS = ["class%d" % i for i in range(NCLS)]
 IN_MEAN = np.array([0.485, 0.456, 0.406], np.float32)
 IN_STD = np.array([0.229, 0.224, 0.225], np.float32)
 
@@ -58,10 +68,12 @@ def build_model():
     import timm
     from timm.models._efficientnet_blocks import SqueezeExcite
     SqueezeExcite.forward = _safe_se_forward
-    pickle = torch.load(CKPT, map_location="cpu", weights_only=False)
-    src = pickle.state_dict()
+    obj = torch.load(CKPT, map_location="cpu", weights_only=False)
+    src = obj.state_dict() if hasattr(obj, "state_dict") else obj
+    if isinstance(src, dict) and "state_dict" in src:
+        src = src["state_dict"]
     model = timm.create_model("tf_efficientnet_b0", pretrained=False,
-                              num_classes=8)
+                              num_classes=NCLS)
     dst = model.state_dict()
     remap = {}
     for k, v in src.items():

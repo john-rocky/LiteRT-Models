@@ -49,3 +49,20 @@ crops it, and shows the emotion distribution.
 | `app/src/main/java/com/hsemotion/EmotionClassifier.kt` | face crop + CompiledModel run + softmax |
 | `app/src/main/java/com/hsemotion/MainActivity.kt` | image picker + emotion display |
 | `scripts/build_hsemotion.py` | timm rebuild, safe-SE mean, parity, convert, fp16, device |
+
+### Converting your own fine-tuned checkpoint
+
+The safe-SE patch is architecture-level, so any `tf_efficientnet_b0` emotion classifier
+converts the same way — pickled module, plain state dict, or `{"state_dict": ...}` all
+load (defaults reproduce the official ship exactly):
+
+```bash
+HSE_CKPT=/path/to/my_emotions.pt HSE_NUM_CLASSES=7 \
+HSE_LABELS=Anger,Disgust,Fear,Happiness,Neutral,Sadness,Surprise \
+    python scripts/build_hsemotion.py all
+```
+
+`HSE_NUM_CLASSES` drives the logits width — update the label list in
+`EmotionClassifier.kt` to match (`HSE_LABELS` only affects the script's printouts).
+An unmapped-keys assert stops the build on a checkpoint that is not a B0. Other
+EfficientNet sizes are not covered.
