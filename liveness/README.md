@@ -42,3 +42,18 @@ cp silentface.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Feed a detected face crop (~2.7× the face box). The full repo ensembles a 2nd MiniFASNet (scale 4.0).
+
+### Converting your own fine-tuned checkpoint
+
+The recipe needs zero patches, so any MiniFASNetV2 checkpoint from the
+Silent-Face-Anti-Spoofing trainer converts directly — `module.` prefixes are stripped
+(defaults reproduce the official ship exactly):
+
+```bash
+SILENTFACE_SRC=./Silent-Face-Anti-Spoofing SILENTFACE_CKPT=/path/to/my_fas.pth \
+    python scripts/build_silentface.py
+```
+
+`SILENTFACE_NUM_CLASSES` drives the softmax width (default 3 = live/print/replay) and
+`SILENTFACE_RES` the input size + conv6 kernel (default 80) — the app's crop scale and
+class mapping must follow. MiniFASNetV2 only (the SE variant has its own class).
