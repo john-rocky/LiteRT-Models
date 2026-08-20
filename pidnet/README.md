@@ -51,3 +51,19 @@ litert-torch.
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Colors follow the official Cityscapes palette (`CityscapesPalette.kt`).
+
+### Converting your own fine-tuned checkpoint
+
+PIDNet needs zero GPU patches, so any checkpoint from the official XuJiacong/PIDNet
+trainer converts directly — point at your `.pt` (raw state dict or `{"state_dict": ...}`;
+`model.`/`module.` prefixes are stripped; defaults reproduce the official ship exactly):
+
+```bash
+PIDNET_REPO=./PIDNet PIDNET_CKPT=/path/to/best.pt PIDNET_NUM_CLASSES=19 \
+    python scripts/build_pidnet.py
+```
+
+`PIDNET_NUM_CLASSES` drives the output width `[1, N, R/8, R/8]` — update the app's
+class/color table to match. `PIDNET_MODEL` selects pidnet_s/m/l (only pidnet_s is
+device-verified) and `PIDNET_RES` the input size (default 1024). A weight-count assert
+stops the build if the checkpoint does not match the selected variant.

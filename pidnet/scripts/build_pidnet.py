@@ -20,12 +20,30 @@ from huggingface_hub import hf_hub_download
 sys.path.insert(0, os.environ.get("PIDNET_REPO", "PIDNet"))
 import models.pidnet as P
 
-onnx_path = hf_hub_download("oenpu/PIDNet_S_enlight_friendly_onnx",
-                            "PIDNet_S_enlight_friendly.onnx")
-w = {i.name: torch.from_numpy(numpy_helper.to_array(i).copy())
-     for i in onnx.load(onnx_path).graph.initializer}
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   PIDNET_CKPT=w.pt       your own PIDNet trainer checkpoint (raw state dict or
+#                          {"state_dict": ...}; "model."/"module." prefixes stripped)
+#   PIDNET_MODEL=pidnet_s  variant: pidnet_s / pidnet_m / pidnet_l
+#   PIDNET_NUM_CLASSES=N   class count (default 19; drives output width)
+#   PIDNET_RES=N           square input size (default 1024)
+CKPT = os.environ.get("PIDNET_CKPT")
+MODEL = os.environ.get("PIDNET_MODEL", "pidnet_s")
+NCLS = int(os.environ.get("PIDNET_NUM_CLASSES", "19"))
+if CKPT:
+    raw = torch.load(CKPT, map_location="cpu", weights_only=True)
+    if "state_dict" in raw: raw = raw["state_dict"]
+    w = {}
+    for k, v in raw.items():
+        for pre in ("model.", "module."):
+            if k.startswith(pre): k = k[len(pre):]
+        w[k] = v
+else:
+    onnx_path = hf_hub_download("oenpu/PIDNet_S_enlight_friendly_onnx",
+                                "PIDNet_S_enlight_friendly.onnx")
+    w = {i.name: torch.from_numpy(numpy_helper.to_array(i).copy())
+         for i in onnx.load(onnx_path).graph.initializer}
 
-net = P.get_pred_model("pidnet_s", 19).eval()
+net = P.get_pred_model(MODEL, NCLS).eval()
 sd = net.state_dict()
 matched = {k: w[k] for k in sd if k in w}
 assert len(matched) == len(sd), f"only {len(matched)}/{len(sd)} weights matched"
@@ -41,7 +59,9 @@ class Wrap(nn.Module):
 
 
 w_ = Wrap(net).eval()
-dummy = torch.randn(1, 3, 1024, 1024)
+R = int(os.environ.get("PIDNET_RES", "1024"))
+dummy = torch.randn(1, 3, R, R)
 import litert_torch
-litert_torch.convert(w_, (dummy,)).export("pidnet_s.tflite")
-print("saved pidnet_s.tflite (%.1f MB)" % (os.path.getsize("pidnet_s.tflite") / 1e6))
+out = f"{MODEL}.tflite"
+litert_torch.convert(w_, (dummy,)).export(out)
+print("saved %s (%.1f MB)" % (out, os.path.getsize(out) / 1e6))
