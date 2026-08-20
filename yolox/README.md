@@ -44,3 +44,29 @@ First launch compiles GPU shaders (~15 s, shown as "Compiling GPU model…"); su
 `scripts/convert_yolox.py` — downloads the official YOLOX-Nano ONNX (Megvii, Apache-2.0) and converts
 to GPU-clean TFLite via onnx2tf (pure CNN → no op rewrites). Verified GPU-clean: 0 banned ops, 0 Flex,
 0 >4D tensors, 0 dynamic dims.
+
+### Converting your own fine-tuned checkpoint
+
+The recipe is architecture-level, so any checkpoint trained with the official YOLOX
+trainer converts the same way. Two steps:
+
+1. Export raw-head ONNX with the official exporter (keep `--decode_in_inference` OFF,
+   its default — the decode stays in Kotlin):
+
+   ```bash
+   python tools/export_onnx.py -f exps/your_exp.py -c your_ckpt.pth \
+       --output-name your_model.onnx --batch-size 1
+   ```
+
+2. Convert it here (default run without the env var reproduces the official ship exactly):
+
+   ```bash
+   YOLOX_ONNX=your_model.onnx python scripts/convert_yolox.py
+   ```
+
+Shape changes to carry into the app: output becomes `[1, anchors, num_classes+5]`
+(no background slot). `anchors` follows the exp's `test_size` s as `(s/8)²+(s/16)²+(s/32)²`
+(416 → 3549). Update `YoloxDetector.NUM_CLASSES` and the `CocoLabels` name/color table;
+the input contract (BGR, 0-255, letterbox pad 114) is unchanged. Non-Nano variants
+(S/M/L/X) export the same head layout and should convert identically, but only Nano
+has been device-verified.

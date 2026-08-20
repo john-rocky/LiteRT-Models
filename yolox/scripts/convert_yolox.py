@@ -37,16 +37,27 @@ ONNX_URL = (
     "0.1.1rc0/yolox_nano.onnx"
 )
 
+# Fine-tune override (default run reproduces the official ship exactly):
+#   YOLOX_ONNX=model.onnx  your own fine-tuned checkpoint, exported with the
+#                          official YOLOX tools/export_onnx.py (raw head output,
+#                          --decode_in_inference OFF, which is its default).
+# Output lands in output/<onnx-stem>/<onnx-stem>_float32.tflite.
+CUSTOM_ONNX = os.environ.get("YOLOX_ONNX")
+
 
 def main():
     os.makedirs("output", exist_ok=True)
-    onnx_path = "output/yolox_nano.onnx"
+    if CUSTOM_ONNX:
+        onnx_path = CUSTOM_ONNX
+        stem = os.path.splitext(os.path.basename(CUSTOM_ONNX))[0]
+    else:
+        onnx_path = "output/yolox_nano.onnx"
+        stem = "yolox_nano"
+        if not os.path.exists(onnx_path):
+            print(f"Downloading YOLOX-Nano ONNX...\n  {ONNX_URL}")
+            urllib.request.urlretrieve(ONNX_URL, onnx_path)
 
-    if not os.path.exists(onnx_path):
-        print(f"Downloading YOLOX-Nano ONNX...\n  {ONNX_URL}")
-        urllib.request.urlretrieve(ONNX_URL, onnx_path)
-
-    out_dir = "output/yolox_nano"
+    out_dir = f"output/{stem}"
     print("Converting ONNX -> TFLite via onnx2tf (NCHW -> NHWC, batch 1)...")
     # onnx2tf downloads a calibration .npy on first run for its accuracy check;
     # if that download is flaky, drop calibration_image_sample_data_*.npy into CWD.
@@ -55,7 +66,7 @@ def main():
         check=True,
     )
 
-    fp32 = os.path.join(out_dir, "yolox_nano_float32.tflite")
+    fp32 = os.path.join(out_dir, f"{stem}_float32.tflite")
     if os.path.exists(fp32):
         size_mb = os.path.getsize(fp32) / 1e6
         print(f"\nSuccess! {fp32} ({size_mb:.1f} MB)")
