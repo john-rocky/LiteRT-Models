@@ -83,7 +83,10 @@ enum TrackerDemo {
         return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
             base.draw(in: CGRect(origin: .zero, size: size))
             ctx.cgContext.interpolationQuality = .medium
-            ctx.cgContext.draw(overlay, in: CGRect(origin: .zero, size: size))
+            // Draw through UIImage, NOT cgContext.draw(_:in:): this context is flipped
+            // for UIKit (top-left origin) and raw CGImage drawing assumes bottom-left,
+            // which renders every mask upside down.
+            UIImage(cgImage: overlay).draw(in: CGRect(origin: .zero, size: size))
         }
     }
 }

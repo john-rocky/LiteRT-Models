@@ -141,6 +141,12 @@ final class Sam3ViewModel: ObservableObject {
             do {
                 let detections = try detector.detect(image: image, prompt: query)
                 let composited = OverlayRenderer.render(image: image, detections: detections)
+                // Mirror the composite to Documents so a host can pull and inspect what
+                // the screen actually shows (this is how the flipped-mask bug is caught).
+                if let png = composited.pngData() {
+                    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    try? png.write(to: docs.appendingPathComponent("last_overlay.png"))
+                }
                 let t = detector.timing
                 await MainActor.run { [weak self] in
                     guard let self else { return }
@@ -255,7 +261,10 @@ enum OverlayRenderer {
                 if let maskImage = tintedMask(det.mask, color: color) {
                     cg.saveGState()
                     cg.interpolationQuality = .medium
-                    cg.draw(maskImage, in: CGRect(origin: .zero, size: size))
+                    // Draw through UIImage, NOT cgContext.draw(_:in:): this context is
+                    // flipped for UIKit (top-left origin) and raw CGImage drawing assumes
+                    // bottom-left, which renders every mask upside down.
+                    UIImage(cgImage: maskImage).draw(in: CGRect(origin: .zero, size: size))
                     cg.restoreGState()
                 }
             }
