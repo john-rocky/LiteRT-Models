@@ -1,12 +1,17 @@
 import sys, os, torch, torch.nn as nn, torch.nn.functional as F, numpy as np
-sys.path.insert(0, os.path.expanduser("~/Downloads/meeting/sinet-src"))
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   SINET_SRC=dir    SINet-V2 checkout (model code)
+#   SINET_CKPT=w.pth your own SINet-V2 trainer checkpoint
+#   SINET_RES=N      square input size (default 352)
+SRC = os.environ.get("SINET_SRC", os.path.expanduser("~/Downloads/meeting/sinet-src"))
+sys.path.insert(0, SRC)
 _o=F.interpolate; F.interpolate=lambda *a,**k:_o(*a,**{**k,**({'align_corners':False} if k.get('align_corners') is True else {})})
 from lib.Network_Res2Net_GRA_NCD import Network
 # ZeroPadMaxPool for res2net stem
 class ZeroPadMaxPool(nn.Module):
     def forward(s,x): x=F.pad(x,(1,1,1,1),value=0.0); return F.max_pool2d(x,3,stride=2,padding=0)
 net = Network(channel=32, imagenet_pretrained=False).eval()
-sd=torch.load(os.path.expanduser("~/Downloads/meeting/sinet-src/Net_epoch_best.pth"), map_location="cpu")
+sd=torch.load(os.environ.get("SINET_CKPT", os.path.join(SRC, "Net_epoch_best.pth")), map_location="cpu")
 sd=sd.get('model_state_dict', sd.get('state_dict', sd)) if isinstance(sd,dict) else sd
 sd={k[7:] if k.startswith('module.') else k:v for k,v in sd.items()}
 print("load:", net.load_state_dict(sd, strict=False))
@@ -21,7 +26,8 @@ class Wrap(nn.Module):
         out=s.n(x)                 # (S_g, S_5, S_4, S_3)
         return torch.sigmoid(out[-1])   # final camouflage map [1,1,352,352]
 w=Wrap(net).eval()
-dummy=torch.rand(1,3,352,352)
+R=int(os.environ.get("SINET_RES","352"))
+dummy=torch.rand(1,3,R,R)
 with torch.no_grad(): o=w(dummy)
 print("out:", tuple(o.shape), "range", round(float(o.min()),3), round(float(o.max()),3))
 np.save("ref_in.npy", dummy.numpy()); np.save("ref_out.npy", o.numpy())

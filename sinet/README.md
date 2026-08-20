@@ -41,3 +41,17 @@ cp sinet.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Res2Net stem needs ZeroPadMaxPool; the model uses `imagenet_pretrained=False` (full checkpoint loaded).
+
+### Converting your own fine-tuned checkpoint
+
+Both patches (align_corners, ZeroPadMaxPool) are architecture-level, so a checkpoint
+from the official SINet-V2 trainer converts the same way — wrappers and `module.`
+prefixes are stripped (defaults reproduce the official ship exactly):
+
+```bash
+SINET_SRC=./SINet-V2 SINET_CKPT=/path/to/Net_epoch_best.pth \
+    python scripts/build_sinet.py
+```
+
+Output stays a `[1, 1, R, R]` sigmoid map; `SINET_RES` changes the fixed input size
+(default 352 — app scaling must follow). Res2Net-50 backbone SINet-V2 only.
