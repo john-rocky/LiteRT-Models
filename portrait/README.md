@@ -40,3 +40,18 @@ cp portrait.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Works best on a centered face. Output is a soft map — min-max normalize then invert for the sketch.
+
+### Converting your own fine-tuned checkpoint
+
+Only the defensive align_corners patch touches the graph, so any U2NET (3→1)
+checkpoint from the official U-2-Net trainer converts directly — wrappers and
+`module.` prefixes are stripped (defaults reproduce the official ship exactly):
+
+```bash
+U2NET_SRC=./U-2-Net PORTRAIT_CKPT=/path/to/my_u2net.pth \
+    python scripts/build_portrait.py
+```
+
+Output stays `[1, 1, R, R]` (d0, already sigmoid); `PORTRAIT_RES` changes the fixed
+input size (default 512). Remember the render is pencil-on-white: the app inverts
+(1−x) — a mask-style fine-tune may want that inversion removed.
