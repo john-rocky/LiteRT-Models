@@ -67,6 +67,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 
 - [**Instance Segmentation**](#instance-segmentation)
   - [YOLACT-ResNet50](#yolact-resnet50)
+  - [RF-DETR-Seg Nano](#rf-detr-seg-nano)
 
 - [**Segmentation**](#segmentation)
   - [MobileSAM](#mobilesam)
@@ -635,6 +636,29 @@ Real-time **instance segmentation** (per-object COCO masks) running fully on the
 **Conversion** (`yolact/scripts/build_yolact.py`, litert-torch): base YOLACT (no deformable conv) is a pure CNN → fully GPU-compatible (**138/138 nodes on the delegate, 1 partition**; device corr 0.99999–1.0 on all 4 outputs, ~41 ms) with **one patch** — the ResNet50 stem `MaxPool2d(padding=1)` lowers to a `-inf` PADV2 (rejected by Mali), replaced by a 0-pad + unpadded maxpool (exact post-ReLU); the scripted FPN is made traceable by disabling YOLACT's JIT. The 3D `[1,19248,C]` head outputs survive the Mali delegate. CPU-exact vs PyTorch (corr 1.0).
 
 **Sample app**: [yolact/](yolact/) — live camera → YOLACT GPU → colored instance masks + boxes + COCO labels.
+
+### RF-DETR-Seg Nano
+
+RF-DETR-Seg (Roboflow, rf-detr 1.9.3): **transformer instance segmentation** (DINOv2-S/12 backbone +
+deformable-attention DETR decoder + ConvNeXt-style mask head) running **fully on CompiledModel GPU** —
+the first DETR-family segmenter in the zoo to do so. Converted with **litert-torch** + a **2-graph
+split** (two-stage `TOPK`/`GATHER` + reparam combine on the host) and the model-side fixes for the
+**ML Drift baked-constant execution bug** (cls+pos embedding, decoder query embedding and refpoint
+reparam are all host-fed inputs — a large baked constant inside the graph computes silently wrong,
+fp32 included). Device-verified on Pixel 8a: both graphs fully `LITERT_CL` (Graph A `1293/1293`
+@17.5 ms, Graph B `884/884` @9.1 ms); real-image device chain matches PyTorch at **box IoU ≥ 0.99,
+mask IoU ≥ 0.995, classes identical**.
+
+| Model | Size (fp16) | Input | Outputs | Original Project | License | Sample App |
+| ----- | ----------- | ----- | ------- | ---------------- | ------- | ---------- |
+| RF-DETR-Seg-Nano (Graph A + Graph B) | 47.0 MB + 14.8 MB | Float32 [1, 3, 312, 312] NCHW + clspos[1,1,384] + pospatch[1,676,384] | enc_class[1,676,91] / enc_delta[1,676,4] / memory×2[1,676,256] → boxes[1,100,4] / logits[1,100,91] / masks[1,100,78,78] | [roboflow/rf-detr](https://github.com/roboflow/rf-detr) | [Apache-2.0](https://github.com/roboflow/rf-detr/blob/main/LICENSE) | [rfdetrseg/](rfdetrseg/) |
+
+**Output format**: Graph B gives `boxes` (cxcywh, normalized 0-1), `logits` (91 = COCO id space) and
+per-query full-image `masks` (78×78 raw logits, inside = > 0). Host applies sigmoid + score threshold +
+per-class NMS; masks upsample bilinearly to the frame.
+
+**Preprocessing**: square resize to 312×312, RGB, ImageNet mean/std normalization. See
+[litert-community/RF-DETR-Seg-Nano-LiteRT](https://huggingface.co/litert-community/RF-DETR-Seg-Nano-LiteRT).
 
 # Segmentation
 
