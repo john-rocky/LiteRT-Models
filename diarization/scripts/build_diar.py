@@ -97,7 +97,9 @@ class GPUWeSpeaker(nn.Module):
 
 
 def main():
-    emb = Model.from_pretrained(os.path.join(HERE, "wespeaker", "pytorch_model.bin")).eval()
+    # Fine-tune override: DIAR_EMB_CKPT points at your own pyannote embedding ckpt
+    emb = Model.from_pretrained(os.environ.get("DIAR_EMB_CKPT",
+        os.path.join(HERE, "wespeaker", "pytorch_model.bin"))).eval()
     print("two_emb_layer:", emb.resnet.two_emb_layer)
 
     # fixture: 5.015 s of real speech -> fbank + CMN
@@ -144,7 +146,9 @@ def main():
         np.save(os.path.join(HERE, "emb_ref16.npy"), o16)
 
     # ---- B) segmentation -> ONNX
-    seg = Model.from_pretrained(os.path.join(HERE, "seg30", "pytorch_model.bin")).eval()
+    # Fine-tune override: DIAR_SEG_CKPT points at your own pyannote segmentation ckpt
+    seg = Model.from_pretrained(os.environ.get("DIAR_SEG_CKPT",
+        os.path.join(HERE, "seg30", "pytorch_model.bin"))).eval()
     x = torch.from_numpy(np.load(os.path.join(HERE, "seg_in.npy")))
     ref_ps = np.load(os.path.join(HERE, "seg_out.npy"))
     onnx_path = os.path.join(HERE, "pyannote_seg30.onnx")

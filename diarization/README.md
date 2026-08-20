@@ -47,3 +47,21 @@ The first launch fails with "Model not found" until the models are pushed. **Rec
 
 Models: `litert-community` (Hugging Face). Upstream: [pyannote.audio](https://github.com/pyannote/pyannote-audio)
 (MIT); WeSpeaker weights CC-BY-4.0.
+
+### Converting your own fine-tuned checkpoint
+
+Fine-tuning the pyannote **segmentation** model on your own domain (the documented
+pyannote.audio workflow) is the common case — point the build at your checkpoint
+(defaults reproduce the official ship exactly):
+
+```bash
+DIAR_SEG_CKPT=/path/to/my_segmentation.ckpt \
+DIAR_EMB_CKPT=/path/to/my_embedding.bin python scripts/build_diar.py
+```
+
+(One run builds both graphs; leave either env var unset to keep that side official.)
+
+`Model.from_pretrained` accepts pyannote `.ckpt`/`.bin` paths. Architectures must
+match the shipped pair (pyannote segmentation-3.0, wespeaker ResNet34 embedding) —
+the parity check runs against your weights. The host clustering pipeline needs no
+change.
