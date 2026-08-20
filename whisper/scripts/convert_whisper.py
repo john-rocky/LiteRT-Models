@@ -259,7 +259,8 @@ def verify(encoder_path, decoder_path, model):
 def main():
     parser = argparse.ArgumentParser(description="Convert Whisper for Android")
     parser.add_argument("--model", type=str, default="tiny",
-                        help="Whisper model name (tiny, tiny.en, base, base.en)")
+                        help="Whisper model name (tiny, tiny.en, base, base.en) or a "
+                             "path to a fine-tuned .pt in openai-whisper format")
     parser.add_argument("--output_dir", type=str, default="output")
     parser.add_argument("--verify", action="store_true")
     args = parser.parse_args()

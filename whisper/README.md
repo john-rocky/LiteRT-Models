@@ -49,3 +49,19 @@ On-device speech-to-text using OpenAI Whisper-tiny with LiteRT CompiledModel GPU
 - Mel spectrogram preprocessing fully in Kotlin (no native/C++ dependency)
 
 **Original project**: [openai/whisper](https://github.com/openai/whisper) | [MIT](https://github.com/openai/whisper/blob/main/LICENSE)
+
+### Converting your own fine-tuned checkpoint
+
+`--model` also accepts a filesystem path: `whisper.load_model()` loads any checkpoint
+saved in the **openai-whisper `.pt` format** (a dict with `dims` +
+`model_state_dict`), and the exported vocab/config follow its dims automatically:
+
+```bash
+python scripts/convert_whisper.py --model /path/to/my_finetune.pt --verify
+```
+
+Constraint: checkpoints fine-tuned with HF `transformers` (`WhisperForConditionalGeneration`)
+are a different key layout — convert them to the openai format first (the community
+`convert_hf_to_openai` scripts do this) before pointing `--model` at them. Sizes beyond
+tiny/base have not been device-verified (the decoder has no KV-cache, so larger sizes
+get slow quickly).
