@@ -811,7 +811,9 @@ final class StageModel {
           refreshStageImage()
           await refreshStageVideo()
           refreshStageDoc()
-          refreshStagePanel()
+          // The records panel is NOT refreshed here — see the result phase:
+          // updating the list at tool-return time erased the before/after
+          // the recording exists to show.
           if let call = pendingCall {
             set(.calling(name: call.name, arguments: call.arguments, returned: returned))
             try? await Task.sleep(for: .milliseconds(1400))
@@ -828,7 +830,13 @@ final class StageModel {
       LastAnswer.shared.set(answer)
       set(.result(text: answer, artifact: ArtifactBox.shared.take()))
       beatIndex = index + 1
-      try? await Task.sleep(for: .seconds(3))
+      // The comparison moment: the result below shows what the call did while
+      // the app's list above still shows the world before it. Hold the two on
+      // screen together, then fold the change into the list, then move on —
+      // in that order, or the before/after cannot be read.
+      try? await Task.sleep(for: .seconds(2.5))
+      refreshStagePanel()
+      try? await Task.sleep(for: .seconds(2))
     }
   }
 
