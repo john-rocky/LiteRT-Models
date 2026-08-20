@@ -48,3 +48,17 @@ cp 6drepnet.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - Trained on face crops — feed a detected+cropped face for best accuracy (demo uses a centered crop).
+
+### Converting your own fine-tuned checkpoint
+
+Any 6DRepNet (RepVGG-B1g2 backbone) checkpoint converts the same way, with one hard
+constraint: the recipe builds the **deploy** (re-parameterized) architecture, so a
+train-mode checkpoint must be collapsed with the repo's `repvgg_model_convert` first —
+train-mode multi-branch keys will not load (watch the printed `load:` line):
+
+```bash
+SIXDREPNET_CKPT=/path/to/my_deployed.pth python scripts/build_6drepnet.py
+```
+
+Output stays the 6D rotation `[1, 6]`; the Gram-Schmidt → Euler decode is host-side in
+the app and needs no change.

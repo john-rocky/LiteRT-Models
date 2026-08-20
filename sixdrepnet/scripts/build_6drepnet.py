@@ -1,8 +1,13 @@
 import torch, torch.nn as nn, numpy as np, os
 from sixdrepnet.model import SixDRepNet
 from huggingface_hub import hf_hub_download
+# Fine-tune override (default run reproduces the official ship exactly):
+#   SIXDREPNET_CKPT=w.pth  your own 6DRepNet checkpoint — MUST be DEPLOY
+#   (re-parameterized) RepVGG weights; convert train-mode checkpoints with
+#   repvgg_model_convert first (train-mode multi-branch keys will not load).
 net = SixDRepNet(backbone_name='RepVGG-B1g2', backbone_file='', deploy=True, pretrained=False).eval()
-sd = torch.load(hf_hub_download("osanseviero/6DRepNet_300W_LP_AFLW2000","model.pth"), map_location="cpu")
+ckpt = os.environ.get("SIXDREPNET_CKPT") or hf_hub_download("osanseviero/6DRepNet_300W_LP_AFLW2000","model.pth")
+sd = torch.load(ckpt, map_location="cpu")
 sd = sd.get('model_state_dict', sd.get('state_dict', sd)) if isinstance(sd, dict) else sd
 sd = {k[7:] if k.startswith('module.') else k: v for k,v in sd.items()}
 print("load:", net.load_state_dict(sd, strict=False))
