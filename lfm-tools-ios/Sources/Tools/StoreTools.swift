@@ -48,9 +48,35 @@ final class StoreBox: @unchecked Sendable {
     case orders([Int], how: String)
   }
 
+  /// `--usd` (stage recordings for the English audience): the same shop
+  /// priced in dollars — fixtures land at 1/100 of their yen values, the
+  /// formatter switches to $. Bench runs never pass the flag, so the
+  /// measured yen cases are untouched.
+  static let usd = CommandLine.arguments.contains("--usd")
+  /// The currency word the tool definitions speak. Any "yen" left in a
+  /// definition anchors the model's answers back to ¥ under `--usd` —
+  /// two takes wrote "set to ¥30" against an all-$ screen.
+  static let cw = usd ? "dollars" : "yen"
+
   private let lock = NSLock()
-  private var products: [Product] = StoreData.products
-  private var orders: [Order] = StoreData.orders
+  private var products: [Product] = usd
+    ? StoreData.products.map { var p = $0; p.price /= 100; return p }
+    : StoreData.products
+  /// `--usd` also swaps the Japanese customer names — a dollar store with
+  /// Tanaka-san's orders reads as a costume. The bench's kana→romaji
+  /// names stay untouched off the flag.
+  private static let usdNames: [String: String] = [
+    "Aoi Tanaka": "Ava Thompson", "Chiaki Mori": "Chloe Moore",
+    "Emi Sato": "Emma Scott", "Goro Ito": "Greg Irwin",
+    "Jun Watanabe": "June Walker", "Mio Hayashi": "Mia Hayes",
+    "Rin Kato": "Rachel Kane", "Tomo Nakamura": "Tom Nichols",
+  ]
+  private var orders: [Order] = usd
+    ? StoreData.orders.map { var o = $0
+        o.total /= 100
+        o.customer = usdNames[o.customer] ?? o.customer
+        return o }
+    : StoreData.orders
   private var selection: Selection = .none
   private var invoicesSent = 0
   private var discounts: [String] = []
@@ -87,7 +113,7 @@ final class StoreBox: @unchecked Sendable {
   static func yen(_ amount: Int) -> String {
     let formatter = NumberFormatter()
     formatter.numberStyle = .decimal
-    return "¥" + (formatter.string(from: NSNumber(value: amount)) ?? String(amount))
+    return (usd ? "$" : "¥") + (formatter.string(from: NSNumber(value: amount)) ?? String(amount))
   }
 
   // MARK: The state the model reads
@@ -283,7 +309,7 @@ final class StoreBox: @unchecked Sendable {
         p.price = max(0, p.price + amount)
       }
     }
-    return "give a percentage or a yen amount — one of the two"
+    return "give a percentage or a \(StoreBox.cw) amount — one of the two"
   }
 
   func setPrice(_ amount: Int) -> String {
@@ -479,7 +505,7 @@ final class StoreBox: @unchecked Sendable {
     } else if let amount, percentage == nil {
       off = "\(Self.yen(amount)) off"
     } else {
-      return "give a percentage or a yen amount — one of the two"
+      return "give a percentage or a \(StoreBox.cw) amount — one of the two"
     }
     let scope = (products?.isEmpty == false) ? "products matching \"\(products!)\"" : "all products"
     sync {
@@ -683,11 +709,13 @@ struct LowStockTool: Tool {
 struct AdjustProductPriceTool: Tool {
   let name = "adjust_product_price"
   let description =
-    "Change the price of the selected products by a percentage or a yen amount — relative; set_price sets the exact price."
+    "Change the price of the selected products by a percentage or a \(StoreBox.cw) amount — relative; set_price sets the exact price."
   @Generable struct Arguments {
     @Guide(description: "Percent change: -10 lowers prices by 10%, 15 raises them by 15%.")
     var percentage: Double?
-    @Guide(description: "Yen change: -500 cuts ¥500 off each price, 300 adds ¥300.")
+    @Guide(description: StoreBox.usd
+      ? "Dollar change: -5 lowers each price by 5 dollars, 3 raises it by 3."
+      : "Yen change: -500 cuts ¥500 off each price, 300 adds ¥300.")
     var amount: Int?
   }
   func call(arguments: Arguments) async throws -> String {
@@ -729,7 +757,7 @@ struct SearchCustomersTool: Tool {
   @Generable struct Arguments {
     @Guide(description: "Part of the customer's name.") var name: String?
     @Guide(description: "Part of their email address.") var email: String?
-    @Guide(description: "Only customers who have spent at least this much, in yen.") var total_spent_above: Int?
+    @Guide(description: "Only customers who have spent at least this much, in \(StoreBox.cw).") var total_spent_above: Int?
   }
   func call(arguments: Arguments) async throws -> String {
     StoreBox.shared.searchCustomers(
@@ -740,10 +768,12 @@ struct SearchCustomersTool: Tool {
 @available(iOS 27.0, *)
 struct CreateDiscountTool: Tool {
   let name = "create_discount"
-  let description = "Create a discount — a percentage or a yen amount off, for some products or all."
+  let description = "Create a discount — a percentage or a \(StoreBox.cw) amount off, for some products or all."
   @Generable struct Arguments {
     @Guide(description: "Percent off, e.g. 10 for 10% off.") var percentage: Double?
-    @Guide(description: "Yen off, e.g. 500 for ¥500 off.") var amount: Int?
+    @Guide(description: StoreBox.usd
+      ? "Dollars off, e.g. 5 for $5 off." : "Yen off, e.g. 500 for ¥500 off.")
+    var amount: Int?
     @Guide(description: "Words from product names or a tag it applies to; leave it out for all products.")
     var products: String?
     @Guide(description: "When it stops working, YYYY-MM-DD.") var expires_at: String?
@@ -760,7 +790,7 @@ struct SetPriceTool: Tool {
   let name = "set_price"
   let description = "Set the selected products to an exact price."
   @Generable struct Arguments {
-    @Guide(description: "New price in yen.") var price: Int
+    @Guide(description: "New price in \(StoreBox.cw).") var price: Int
   }
   func call(arguments: Arguments) async throws -> String {
     StoreBox.shared.setPrice(arguments.price)
@@ -823,7 +853,7 @@ struct SearchOrdersTool: Tool {
   let name = "search_orders"
   let description = "Find orders by customer name; the matches become the selection."
   @Generable struct Arguments {
-    @Guide(description: "Part of the customer's name, e.g. Tanaka.") var customer: String
+    @Guide(description: "Part of the customer's name, e.g. \(StoreBox.usd ? "Walker" : "Tanaka").") var customer: String
   }
   func call(arguments: Arguments) async throws -> String {
     StoreBox.shared.searchOrders(customer: arguments.customer)

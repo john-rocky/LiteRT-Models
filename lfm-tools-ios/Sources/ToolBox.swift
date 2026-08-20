@@ -473,6 +473,10 @@ enum ToolBox {
     that order. When a tool has returned, answer the user in one short
     sentence using its result.
     """
+    // `--usd` recordings: the fixtures speak dollars, so the instructions
+    // must too — the measured yen wording above stays byte-identical
+    // whenever the flag is absent (every bench run).
+    + (CommandLine.arguments.contains("--usd") ? " Prices are in dollars." : "")
 
   /// The merged business workspace in one instruction text — the unified
   /// side of the instructions A/B (the pinned side runs each pack's own

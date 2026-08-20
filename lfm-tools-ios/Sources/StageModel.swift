@@ -196,7 +196,12 @@ final class StageModel {
   /// both.
   static let storeBeats = [
     "Which products have fewer than 5 in stock?",
-    "Set them all to 3,000 yen.",
+    // `--usd` swaps the shop to dollars (fixtures at 1/100 of yen). The
+    // beat says "dollars", not "$30": the word matches set_price's "New
+    // price in dollars" guide the way "3,000 yen" matched "price in yen",
+    // while the bare $ figure kept grazing adjust_product_price first.
+    CommandLine.arguments.contains("--usd")
+      ? "Set them all to 30 dollars." : "Set them all to 3,000 yen.",
     "Tag them 'clearance'.",
     "Add 20 units to each.",
     "Fulfil all the paid orders that haven't shipped yet.",
