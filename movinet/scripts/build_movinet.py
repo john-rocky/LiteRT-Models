@@ -25,7 +25,19 @@ from movinets import MoViNet
 from movinets.config import _C
 import stream_model as sm
 
-m = MoViNet(_C.MODEL.MoViNetA0, causal=True, pretrained=True).eval()
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   MOVINET_CKPT=w.pth         your own MoViNet-pytorch fine-tune state dict
+#   MOVINET_NUM_CLASSES=N      its class count (default 600, Kinetics-600)
+CKPT = os.environ.get("MOVINET_CKPT")
+kw = {}
+if os.environ.get("MOVINET_NUM_CLASSES"):
+    kw["num_classes"] = int(os.environ["MOVINET_NUM_CLASSES"])
+m = MoViNet(_C.MODEL.MoViNetA0, causal=True, pretrained=not CKPT, **kw).eval()
+if CKPT:
+    sd = torch.load(CKPT, map_location="cpu")
+    sd = sd.get("state_dict", sd) if isinstance(sd, dict) else sd
+    sd = {k[7:] if k.startswith("module.") else k: v for k, v in sd.items()}
+    print("load:", m.load_state_dict(sd, strict=False))
 net = sm.MoViNetA0Stream(m).eval()
 
 # Reference: full-clip causal forward (== frame-by-frame streaming by design).

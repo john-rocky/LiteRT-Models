@@ -93,3 +93,18 @@ cp movinet_a0_stream.tflite app/src/main/assets/
 - The tf-`same` residual average pooling is reformulated as
   `count_include_pad=True` + a constant boundary-correction mask so it lowers to
   `AVERAGE_POOL_2D + MUL` (no GPU-incompatible composite).
+
+### Converting your own fine-tuned checkpoint
+
+The 5D→4D streaming re-authoring is architecture-level, so an A0 fine-tune made with
+the same MoViNet-pytorch package (e.g. its transfer-learning recipe on your dataset)
+converts the same way — the streaming parity check runs on your weights too (defaults
+reproduce the official ship exactly):
+
+```bash
+MOVINET_PYTORCH=./MoViNet-pytorch MOVINET_CKPT=/path/to/my_a0.pth \
+MOVINET_NUM_CLASSES=27 python scripts/build_movinet.py
+```
+
+`MOVINET_NUM_CLASSES` drives the logits width — swap the app's Kinetics-600 label list
+to match. A0 only (A1/A2 change the stream-buffer spec in `stream_model.py`).
