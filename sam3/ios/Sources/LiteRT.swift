@@ -16,7 +16,33 @@ enum LiteRTError: Error, CustomStringConvertible {
 }
 
 private func check(_ s: LiteRtStatus, _ what: String) throws {
-    if s != kLiteRtStatusOk { throw LiteRTError.status(what, Int32(s.rawValue)) }
+    if s != kLiteRtStatusOk {
+        Sam3Log.log("ERROR \(what) failed (status \(s.rawValue))")
+        throw LiteRTError.status(what, Int32(s.rawValue))
+    }
+}
+
+/// Status log every subsystem appends to; mirrored to Documents/demo_status.txt so a
+/// host can pull progress and failures off the device without anyone reading the screen.
+enum Sam3Log {
+    private static let url = FileManager.default
+        .urls(for: .documentDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("demo_status.txt")
+    private static let queue = DispatchQueue(label: "sam3.log")
+
+    static func log(_ line: String) {
+        print("SAM3 \(line)")
+        queue.sync {
+            let stamped = "\(Date().timeIntervalSince1970) \(line)\n"
+            if let handle = try? FileHandle(forWritingTo: url) {
+                handle.seekToEndOfFile()
+                handle.write(stamped.data(using: .utf8)!)
+                try? handle.close()
+            } else {
+                try? stamped.data(using: .utf8)!.write(to: url)
+            }
+        }
+    }
 }
 
 /// The one LiteRT environment shared by every compiled model in the process.
@@ -54,9 +80,18 @@ final class Sam3Graph {
     private var model: LiteRtModel?
     private var options: LiteRtOptions?
     private var compiled: LiteRtCompiledModel?
-    private var inputBuffers: [LiteRtTensorBuffer?] = []
+    private var inDimsList: [[Int32]] = []
     private var inputSizes: [Int] = []
-    private var outputBuffer: LiteRtTensorBuffer?
+    private var outDims: [Int32] = []
+    private var loggedBuffers = false
+    /// When false (default), I/O buffers are created on the first run() and reused —
+    /// per-run create/destroy churns wired GPU memory that the runtime frees lazily,
+    /// which accumulates until the device runs out. Per-run mode remains for graphs
+    /// that run rarely (initdec) to keep the ~512 MB tensor-buffer pool under budget.
+    let perRunBuffers: Bool
+    private var cachedInputs: [LiteRtTensorBuffer?] = []
+    private var cachedOutput: LiteRtTensorBuffer?
+    private var cachedOwnedMem: [UnsafeMutableRawPointer] = []
 
     let name: String
     let accel: Sam3Accel
@@ -69,14 +104,17 @@ final class Sam3Graph {
     /// run + readback of the last call (GPU compute blocks inside the read lock).
     private(set) var lastRunMs = 0.0
 
-    init(path: String, accel: Sam3Accel) throws {
+    init(path: String, accel: Sam3Accel, perRunBuffers: Bool = false) throws {
         self.name = (path as NSString).lastPathComponent
         self.accel = accel
+        self.perRunBuffers = perRunBuffers
         guard let env = LiteRTEnvHolder.shared.env else {
             throw LiteRTError.status("CreateEnvironment", -1)
         }
         try check(LiteRtCreateModelFromFile(env, path, &model), "CreateModelFromFile")
         let (inDimsList, outDims) = try interface()
+        self.inDimsList = inDimsList
+        self.outDims = outDims
         inputSizes = inDimsList.map { $0.reduce(1) { $0 * Int(max($1, 1)) } }
         inputCount = inputSizes.reduce(0, +)
         outputCount = outDims.reduce(1) { $0 * Int(max($1, 1)) }
@@ -97,14 +135,11 @@ final class Sam3Graph {
         var fully = false
         try check(LiteRtCompiledModelIsFullyAccelerated(compiled, &fully), "IsFullyAccelerated")
         fullyAccelerated = fully
-        print("SAM3 \(name): compiled \(accel.label) fully=\(fullyAccelerated) "
+        Sam3Log.log("\(name): compiled \(accel.label) fully=\(fullyAccelerated) "
             + "in \(String(format: "%.1f", compileSeconds))s; in=\(inDimsList) out=\(outDims)")
 
-        for (i, dims) in inDimsList.enumerated() {
-            inputBuffers.append(try makeBuffer(dims: dims, what: "input", index: i))
-        }
-        outputBuffer = try makeBuffer(dims: outDims, what: "output", index: 0)
-        print("SAM3 \(name): buffers ready")
+        // I/O buffers are created per run() call: the Metal tensor-buffer pool is
+        // ~512 MB and the tracker's persistent buffer set (~640 MB) exhausts it.
     }
 
     /// Dims of every input + output 0 of signature 0, falling back to subgraph 0
@@ -159,7 +194,8 @@ final class Sam3Graph {
     /// buffers are rejected above ~112 MiB by the Metal-backed runtime (status 3),
     /// so honor the model's buffer requirements — the same thing the Kotlin/Python
     /// `createInputBuffers()` conveniences do.
-    private func makeBuffer(dims: [Int32], what: String, index: Int) throws -> LiteRtTensorBuffer? {
+    private func makeBuffer(dims: [Int32], what: String, index: Int,
+                            ownedMem: inout [UnsafeMutableRawPointer]) throws -> LiteRtTensorBuffer? {
         guard let env = LiteRTEnvHolder.shared.env else {
             throw LiteRTError.status("Environment", -1)
         }
@@ -196,22 +232,59 @@ final class Sam3Graph {
         }
         let f32Bytes = dims.reduce(1) { $0 * Int(max($1, 1)) } * MemoryLayout<Float>.stride
 
-        // Candidates we can fill with plain float32 host writes, tried in order:
-        // host memory (interops with every accelerator), then a plain Metal f32
-        // buffer if the model lists it. Packed/fp16 types need layout conversion
-        // and are not attempted.
+        let hostBytes = max(reqBytes, f32Bytes)
+
+        // The Metal delegate accepts ONLY the buffer types it lists (host-memory
+        // buffers compile but the run fails with status 3), so create exactly what
+        // the requirements ask for, at exactly the size they ask for — Lock/Unlock
+        // does the canonical-layout conversion, same as the CL buffers on Android.
+        if let devType = supported.first, devType != kLiteRtTensorBufferTypeHostMemory {
+            var buffer: LiteRtTensorBuffer?
+            let status = LiteRtCreateManagedTensorBuffer(env, devType, &type, reqBytes, &buffer)
+            if status == kLiteRtStatusOk {
+                if !loggedBuffers {
+                    Sam3Log.log("\(name): \(what)[\(index)] device type=\(devType.rawValue) "
+                        + "req=\(reqBytes) B (f32 \(f32Bytes) B)")
+                }
+                return buffer
+            }
+            Sam3Log.log("\(name): \(what)[\(index)] device type=\(devType.rawValue) "
+                + "req=\(reqBytes) B failed (status \(status.rawValue)); trying host")
+        }
+
+        // Host-memory fallback: wrap memory WE allocate (managed host buffers come
+        // out of the GPU environment's finite pool, which the tracker set exhausts).
+        do {
+            let mem = UnsafeMutableRawPointer.allocate(
+                byteCount: hostBytes, alignment: 64)
+            memset(mem, 0, hostBytes)
+            var buffer: LiteRtTensorBuffer?
+            let status = LiteRtCreateTensorBufferFromHostMemory(&type, mem, hostBytes, nil, &buffer)
+            if status == kLiteRtStatusOk {
+                ownedMem.append(mem)
+                if !loggedBuffers {
+                    Sam3Log.log("\(name): \(what)[\(index)] wrapped-host \(hostBytes) B "
+                        + "(supported=\(supported.map { $0.rawValue }))")
+                }
+                return buffer
+            }
+            mem.deallocate()
+            Sam3Log.log("\(name): \(what)[\(index)] wrapped-host failed (status \(status.rawValue)); "
+                + "falling back to managed")
+        }
+
         var candidates: [(LiteRtTensorBufferType, Int)] = [
-            (kLiteRtTensorBufferTypeHostMemory, max(reqBytes, f32Bytes))
+            (kLiteRtTensorBufferTypeHostMemory, hostBytes)
         ]
         if supported.contains(kLiteRtTensorBufferTypeMetalBuffer) {
-            candidates.append((kLiteRtTensorBufferTypeMetalBuffer, max(reqBytes, f32Bytes)))
+            candidates.append((kLiteRtTensorBufferTypeMetalBuffer, hostBytes))
         }
         var lastError: Error?
         for (t, bytes) in candidates {
             var buffer: LiteRtTensorBuffer?
             let status = LiteRtCreateManagedTensorBuffer(env, t, &type, bytes, &buffer)
             if status == kLiteRtStatusOk {
-                print("SAM3 \(name): \(what)[\(index)] type=\(t.rawValue) \(bytes) B "
+                Sam3Log.log("\(name): \(what)[\(index)] type=\(t.rawValue) \(bytes) B "
                     + "(supported=\(supported.map { $0.rawValue }))")
                 return buffer
             }
@@ -219,34 +292,75 @@ final class Sam3Graph {
                 "\(name): create \(what)[\(index)] type=\(t.rawValue) dims=\(dims) (\(bytes) B, "
                     + "supported=\(supported.map { $0.rawValue }))",
                 Int32(status.rawValue))
-            print("SAM3 \(lastError!)")
+            Sam3Log.log("\(lastError!)")
         }
         throw lastError ?? LiteRTError.interface("\(name): no usable buffer type")
     }
 
     /// Run the graph on `input` (row-major float32, `inputCount` values, written
     /// across the input tensors in signature order) and return `outputCount` floats.
+    /// I/O buffers are created and destroyed per call — the Metal tensor-buffer pool
+    /// is ~512 MB, so only one graph's buffer set may be alive at a time.
     func run(_ input: [Float]) throws -> [Float] {
         precondition(input.count == inputCount, "\(name): input \(input.count) != \(inputCount)")
         let t0 = Date()
-        var offset = 0
-        for (i, buffer) in inputBuffers.enumerated() {
-            var addr: UnsafeMutableRawPointer?
-            try check(
-                LiteRtLockTensorBuffer(buffer, &addr, kLiteRtTensorBufferLockModeWrite),
-                "LockInput[\(i)]")
-            _ = input.withUnsafeBytes {
-                memcpy(addr, $0.baseAddress! + offset * MemoryLayout<Float>.stride,
-                       inputSizes[i] * MemoryLayout<Float>.stride)
+        var ownedMem: [UnsafeMutableRawPointer] = []
+        var inputBuffers: [LiteRtTensorBuffer?] = []
+        var outputBuffer: LiteRtTensorBuffer?
+        defer {
+            if perRunBuffers {
+                for b in inputBuffers where b != nil { LiteRtDestroyTensorBuffer(b) }
+                if let b = outputBuffer { LiteRtDestroyTensorBuffer(b) }
+                for m in ownedMem { m.deallocate() }
             }
-            try check(LiteRtUnlockTensorBuffer(buffer), "UnlockInput[\(i)]")
-            offset += inputSizes[i]
+        }
+
+        if !perRunBuffers && !cachedInputs.isEmpty {
+            inputBuffers = cachedInputs
+            outputBuffer = cachedOutput
+            var offset = 0
+            for (i, buffer) in inputBuffers.enumerated() {
+                var addr: UnsafeMutableRawPointer?
+                try check(
+                    LiteRtLockTensorBuffer(buffer, &addr, kLiteRtTensorBufferLockModeWrite),
+                    "LockInput[\(i)]")
+                _ = input.withUnsafeBytes {
+                    memcpy(addr, $0.baseAddress! + offset * MemoryLayout<Float>.stride,
+                           inputSizes[i] * MemoryLayout<Float>.stride)
+                }
+                try check(LiteRtUnlockTensorBuffer(buffer), "UnlockInput[\(i)]")
+                offset += inputSizes[i]
+            }
+        } else {
+            var offset = 0
+            for (i, dims) in inDimsList.enumerated() {
+                let buffer = try makeBuffer(dims: dims, what: "input", index: i, ownedMem: &ownedMem)
+                var addr: UnsafeMutableRawPointer?
+                try check(
+                    LiteRtLockTensorBuffer(buffer, &addr, kLiteRtTensorBufferLockModeWrite),
+                    "LockInput[\(i)]")
+                _ = input.withUnsafeBytes {
+                    memcpy(addr, $0.baseAddress! + offset * MemoryLayout<Float>.stride,
+                           inputSizes[i] * MemoryLayout<Float>.stride)
+                }
+                try check(LiteRtUnlockTensorBuffer(buffer), "UnlockInput[\(i)]")
+                inputBuffers.append(buffer)
+                offset += inputSizes[i]
+            }
+            outputBuffer = try makeBuffer(dims: outDims, what: "output", index: 0, ownedMem: &ownedMem)
+            loggedBuffers = true
+            if !perRunBuffers {
+                cachedInputs = inputBuffers
+                cachedOutput = outputBuffer
+                cachedOwnedMem.append(contentsOf: ownedMem)
+                ownedMem = []
+            }
         }
 
         var inputs: [LiteRtTensorBuffer?] = inputBuffers
         var outputs: [LiteRtTensorBuffer?] = [outputBuffer]
         try check(
-            LiteRtRunCompiledModel(compiled, 0, inputs.count, &inputs, 1, &outputs), "Run")
+            LiteRtRunCompiledModel(compiled, 0, inputs.count, &inputs, 1, &outputs), "\(name): run")
 
         var readAddr: UnsafeMutableRawPointer?
         try check(
@@ -258,12 +372,14 @@ final class Sam3Graph {
         }
         try check(LiteRtUnlockTensorBuffer(outputBuffer), "UnlockOutput")
         lastRunMs = Date().timeIntervalSince(t0) * 1000
+        Sam3Log.log("\(name): run \(String(format: "%.0f", lastRunMs)) ms")
         return result
     }
 
     deinit {
-        for b in inputBuffers where b != nil { LiteRtDestroyTensorBuffer(b) }
-        if let b = outputBuffer { LiteRtDestroyTensorBuffer(b) }
+        for b in cachedInputs where b != nil { LiteRtDestroyTensorBuffer(b) }
+        if let b = cachedOutput { LiteRtDestroyTensorBuffer(b) }
+        for m in cachedOwnedMem { m.deallocate() }
         if let c = compiled { LiteRtDestroyCompiledModel(c) }
         if let o = options { LiteRtDestroyOptions(o) }
         if let m = model { LiteRtDestroyModel(m) }

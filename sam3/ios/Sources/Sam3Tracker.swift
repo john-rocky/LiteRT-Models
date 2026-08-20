@@ -73,9 +73,10 @@ final class Sam3Tracker {
         var calls = 0
         var ms = 0.0
 
-        init(_ url: URL, _ accel: Sam3Accel, log: (String) -> Void) throws {
+        init(_ url: URL, _ accel: Sam3Accel, perRunBuffers: Bool = false,
+             log: (String) -> Void) throws {
             name = url.lastPathComponent
-            g = try Sam3Graph(path: url.path, accel: accel)
+            g = try Sam3Graph(path: url.path, accel: accel, perRunBuffers: perRunBuffers)
             log("loaded \(name)  \(Sam3Tracker.procMem())")
         }
 
@@ -420,11 +421,14 @@ final class Sam3Tracker {
         textMemPad = (mem, (0..<32).map { ids[$0] == 0 ? Float(1) : Float(0) })
 
         vis = try GraphT(try graphFileStatic(modelsRoot, trackerDir, "sam3_vision_tri.tflite"), gpuAccel, log: log)
-        head = try GraphT(try rootFileStatic(modelsRoot, "sam3_head.tflite"), gpuAccel, log: log)
+        // Head on CPU: its GPU intermediates are the largest wired-memory consumer
+        // after the trunk, and the device teeters at the system memory ceiling with
+        // every graph resident. XNNPACK is fp32-exact and ~1-2 s on this device.
+        head = try GraphT(try rootFileStatic(modelsRoot, "sam3_head.tflite"), .cpu, log: log)
         memattn = try GraphT(try graphFileStatic(modelsRoot, trackerDir, "trk_memattn_n7.tflite"), gpuAccel, log: log)
         maskdec = try GraphT(try graphFileStatic(modelsRoot, trackerDir, "trk_maskdec.tflite"), gpuAccel, log: log)
         memenc = try GraphT(try graphFileStatic(modelsRoot, trackerDir, "trk_memenc.tflite"), gpuAccel, log: log)
-        initdec = try GraphT(try graphFileStatic(modelsRoot, trackerDir, "trk_initdec.tflite"), gpuAccel, log: log)
+        initdec = try GraphT(try graphFileStatic(modelsRoot, trackerDir, "trk_initdec.tflite"), gpuAccel, perRunBuffers: true, log: log)
     }
 
     // ================================================================ frame loading
@@ -1642,13 +1646,21 @@ final class Sam3Tracker {
             .sorted { Int($0.deletingPathExtension().lastPathComponent)! <
                 Int($1.deletingPathExtension().lastPathComponent)! }
         numFrames = frameFiles.count
-        var frames: [[UInt16]] = []
-        for f in frameFiles { frames.append(try loadFrame(f)) }
+        // Frames are decoded on demand (sequential access, frame 0 twice): keeping
+        // all 48 fp16-decoded frames resident costs ~290 MB and the app already
+        // brushes the per-app memory ceiling during the vision graph's first run.
+        var frameCache: (idx: Int, data: [UInt16])?
+        func frameData(_ fi: Int) throws -> [UInt16] {
+            if let c = frameCache, c.idx == fi { return c.data }
+            let d = try loadFrame(frameFiles[fi])
+            frameCache = (fi, d)
+            return d
+        }
 
         let (textMem, pad) = textMemPad
 
         func runFrame(_ fi: Int) throws -> FrameOut {
-            try runVision(frames[fi])
+            try runVision(frameData(fi))
             let det = try runDetection(textMem, pad)
             return try detTrackOneFrame(fi, det)
         }

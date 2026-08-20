@@ -317,7 +317,12 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .onAppear { vm.start() }
+        .onAppear {
+            // Long unattended compiles/tracking die if the phone auto-locks
+            // (backgrounded Metal work is terminated) — keep the screen awake.
+            UIApplication.shared.isIdleTimerDisabled = true
+            vm.start()
+        }
     }
 
     private var header: some View {
