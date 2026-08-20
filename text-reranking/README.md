@@ -54,3 +54,23 @@ scripts/install_to_device.sh
 ```
 
 `minSdk 26`, `arm64-v8a`, LiteRT `CompiledModel` GPU.
+
+## Conversion
+
+`scripts/build_qwen3emb.py` (shared Qwen3 decoder recipe — this module's copy defaults
+to the Qwen3-Reranker-0.6B snapshot) + `scripts/check_qwen3emb.py` +
+`scripts/export_embeddings.py`, same flow as the text-embedding module.
+
+### Converting your own fine-tuned checkpoint
+
+A Qwen3-Reranker-0.6B fine-tune (merge LoRA first; `save_pretrained()` directory)
+converts the same way:
+
+```bash
+python scripts/build_qwen3emb.py --model-dir /path/to/your_merged_reranker
+python scripts/check_qwen3emb.py
+python scripts/export_embeddings.py /path/to/your_merged_reranker out/
+```
+
+The embedding table must come from the SAME checkpoint as the graph (tied weights);
+the yes/no scoring rows the app uses are part of that table. 0.6B only.

@@ -58,3 +58,24 @@ scripts/install_to_device.sh    # stage the model + embedding table
 ```
 
 `minSdk 26`, `arm64-v8a`, LiteRT `CompiledModel` GPU.
+
+## Conversion
+
+`scripts/build_qwen3emb.py` re-authors the 28-layer Qwen3 decoder GPU-clean (host
+token-embedding lookup, GQA broadcast matmul, SafeRMS, baked RoPE/causal mask) and
+converts via litert-torch; `scripts/check_qwen3emb.py` op-checks + fp16-casts;
+`scripts/export_embeddings.py` dumps the fp16 embedding table for the host lookup.
+
+### Converting your own fine-tuned checkpoint
+
+The re-authoring is architecture-level, so a Qwen3-Embedding-0.6B fine-tune (merge
+LoRA first; `save_pretrained()` directory) converts the same way:
+
+```bash
+python scripts/build_qwen3emb.py --model-dir /path/to/your_merged_model
+python scripts/check_qwen3emb.py
+python scripts/export_embeddings.py /path/to/your_merged_model out/
+```
+
+The embedding table export must come from the SAME checkpoint as the graph (tied
+weights). 0.6B (28-layer, hidden 1024) only — other sizes change the GQA layout.
