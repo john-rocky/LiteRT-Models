@@ -76,3 +76,25 @@ Verified on the Mac (same sources, all graphs on the CPU accelerator — the mac
 prebuilt's GPU is WebGPU and cannot run these graphs): ids identical on all 8
 frames vs the f32 host-loop fixtures, min mask IoU 0.998 with decode-matched
 frames (0.979 across the ImageIO-vs-PIL JPEG decoder gap), max |Δprob| 0.007.
+
+## Tracker demo mode (hands-free showcase)
+
+For screen recordings: when `Documents/trackerdemo/demo.json` exists the app boots
+into an automatic video-tracking showcase — compiles the tracker, types the prompt
+character-by-character, tracks it through the staged clip (raw frames advance with
+progress chips while the GPU works; final per-frame outputs only exist at the end
+of the run because of the tracker's hotstart delay), then loops the composited
+overlay playback forever. No touches needed. Takes precedence over the autotest.
+
+Payload layout (in the app's Documents):
+
+```
+tracker/graphs/*.tflite      tracker graphs (same as the autotest; expected/ not needed)
+tracker/consts/  tracker/flags.json
+trackerdemo/frames/0.jpg …   the clip, numbered, 1280×720
+trackerdemo/demo.json        { "prompt": "person", "fps": 7.5, "startDelay": 2.0 }
+```
+
+Plus the image-side root files (`sam3_vision_tri.tflite`, `sam3_text.tflite`,
+`sam3_head.tflite`, `sam3_token_embed.bin`, `vocab.json`, `merges.txt`). Delete
+`Documents/trackerdemo` to return to the autotest / image modes.

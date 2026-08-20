@@ -18,6 +18,7 @@ final class Sam3ViewModel: ObservableObject {
         case ready
         case failed(String)
         case trackerDone(String)
+        case trackerDemo(TrackerDemoModel)
     }
 
     @Published var state: State = .loading("Starting…")
@@ -38,6 +39,35 @@ final class Sam3ViewModel: ObservableObject {
         // video tracker instead of the image pipeline (loading both graph sets at
         // once would double the GPU memory). Delete Documents/tracker to go back.
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        // Tracker demo mode: hands-free video-tracking showcase for screen
+        // recordings (Documents/trackerdemo/demo.json). Takes precedence over the
+        // autotest; delete Documents/trackerdemo to fall through.
+        if let config = TrackerDemo.config(modelsRoot: docs) {
+            state = .loading("Compiling SAM 3 on the Metal GPU…")
+            let model = TrackerDemoModel()
+            Task.detached(priority: .userInitiated) { [weak self] in
+                do {
+                    let tracker = try Sam3Tracker(
+                        modelsRoot: docs, prompt: config.prompt, gpuAccel: .gpu
+                    ) { line in
+                        Task { @MainActor [weak self] in
+                            let step = line.split(separator: " ").count > 1
+                                ? String(line.split(separator: " ")[1]) : line
+                            self?.state = .loading("Compiling SAM 3 on the Metal GPU…\n\(step)")
+                        }
+                    }
+                    await MainActor.run { [weak self] in
+                        self?.state = .trackerDemo(model)
+                        model.begin(tracker: tracker, modelsRoot: docs, config: config)
+                    }
+                } catch {
+                    await MainActor.run { [weak self] in
+                        self?.state = .failed("tracker demo: \(error)")
+                    }
+                }
+            }
+            return
+        }
         if TrackerAutotest.shouldRun(modelsRoot: docs) {
             state = .loading("Tracker autotest — compiling graphs…")
             Task.detached(priority: .userInitiated) { [weak self] in
@@ -280,6 +310,8 @@ struct ContentView: View {
                 failedView(message)
             case .trackerDone(let verdict):
                 trackerDoneView(verdict)
+            case .trackerDemo(let model):
+                TrackerDemoView(model: model)
             case .ready:
                 mainView
             }
