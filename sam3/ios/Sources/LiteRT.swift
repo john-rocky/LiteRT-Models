@@ -54,11 +54,14 @@ final class Sam3Graph {
     private var model: LiteRtModel?
     private var options: LiteRtOptions?
     private var compiled: LiteRtCompiledModel?
-    private var inputBuffer: LiteRtTensorBuffer?
+    private var inputBuffers: [LiteRtTensorBuffer?] = []
+    private var inputSizes: [Int] = []
     private var outputBuffer: LiteRtTensorBuffer?
 
     let name: String
     let accel: Sam3Accel
+    /// Total float count across all inputs; a flat host array is written across
+    /// the input tensors in signature order (they are concatenation slices).
     private(set) var inputCount = 0
     private(set) var outputCount = 0
     private(set) var fullyAccelerated = false
@@ -73,8 +76,9 @@ final class Sam3Graph {
             throw LiteRTError.status("CreateEnvironment", -1)
         }
         try check(LiteRtCreateModelFromFile(env, path, &model), "CreateModelFromFile")
-        let (inDims, outDims) = try interface()
-        inputCount = inDims.reduce(1) { $0 * Int(max($1, 1)) }
+        let (inDimsList, outDims) = try interface()
+        inputSizes = inDimsList.map { $0.reduce(1) { $0 * Int(max($1, 1)) } }
+        inputCount = inputSizes.reduce(0, +)
         outputCount = outDims.reduce(1) { $0 * Int(max($1, 1)) }
 
         try check(LiteRtCreateOptions(&options), "CreateOptions")
@@ -88,19 +92,25 @@ final class Sam3Graph {
         }
 
         let t0 = Date()
-        try check(LiteRtCreateCompiledModel(env, model, options, &compiled), "CreateCompiledModel")
+        try check(LiteRtCreateCompiledModel(env, model, options, &compiled), "CreateCompiledModel \(name)")
         compileSeconds = Date().timeIntervalSince(t0)
         var fully = false
         try check(LiteRtCompiledModelIsFullyAccelerated(compiled, &fully), "IsFullyAccelerated")
         fullyAccelerated = fully
+        print("SAM3 \(name): compiled \(accel.label) fully=\(fullyAccelerated) "
+            + "in \(String(format: "%.1f", compileSeconds))s; in=\(inDimsList) out=\(outDims)")
 
-        inputBuffer = try makeBuffer(dims: inDims, what: "input")
-        outputBuffer = try makeBuffer(dims: outDims, what: "output")
+        for (i, dims) in inDimsList.enumerated() {
+            inputBuffers.append(try makeBuffer(dims: dims, what: "input", index: i))
+        }
+        outputBuffer = try makeBuffer(dims: outDims, what: "output", index: 0)
+        print("SAM3 \(name): buffers ready")
     }
 
-    /// Dims of input 0 / output 0 from signature 0, falling back to subgraph 0
-    /// (litert-torch exports sometimes carry no signature defs).
-    private func interface() throws -> (inDims: [Int32], outDims: [Int32]) {
+    /// Dims of every input + output 0 of signature 0, falling back to subgraph 0
+    /// (litert-torch exports sometimes carry no signature defs). Multiple inputs are
+    /// slices of one flat host array, in signature order.
+    private func interface() throws -> (inDimsList: [[Int32]], outDims: [Int32]) {
         func dims(of tensor: LiteRtTensor?) throws -> [Int32] {
             var type = LiteRtRankedTensorType()
             try check(LiteRtGetRankedTensorType(tensor, &type), "GetRankedTensorType")
@@ -116,62 +126,127 @@ final class Sam3Graph {
             try check(LiteRtGetModelSignature(model, 0, &sig), "GetModelSignature")
             var n: LiteRtParamIndex = 0
             try check(LiteRtGetNumSignatureInputs(sig, &n), "GetNumSignatureInputs")
-            guard n == 1 else { throw LiteRTError.interface("\(name): expected 1 input, got \(n)") }
-            var tin: LiteRtTensor?
-            try check(LiteRtGetSignatureInputTensorByIndex(sig, 0, &tin), "GetSignatureInputTensor")
+            var ins: [[Int32]] = []
+            for i in 0..<n {
+                var tin: LiteRtTensor?
+                try check(LiteRtGetSignatureInputTensorByIndex(sig, i, &tin), "GetSignatureInputTensor")
+                ins.append(try dims(of: tin))
+            }
             try check(LiteRtGetNumSignatureOutputs(sig, &n), "GetNumSignatureOutputs")
             guard n == 1 else { throw LiteRTError.interface("\(name): expected 1 output, got \(n)") }
             var tout: LiteRtTensor?
             try check(LiteRtGetSignatureOutputTensorByIndex(sig, 0, &tout), "GetSignatureOutputTensor")
-            return (try dims(of: tin), try dims(of: tout))
+            return (ins, try dims(of: tout))
         }
         var subgraph: LiteRtSubgraph?
         try check(LiteRtGetModelSubgraph(model, 0, &subgraph), "GetModelSubgraph")
         var n: LiteRtParamIndex = 0
         try check(LiteRtGetNumSubgraphInputs(subgraph, &n), "GetNumSubgraphInputs")
-        guard n == 1 else { throw LiteRTError.interface("\(name): expected 1 input, got \(n)") }
-        var tin: LiteRtTensor?
-        try check(LiteRtGetSubgraphInput(subgraph, 0, &tin), "GetSubgraphInput")
+        var ins: [[Int32]] = []
+        for i in 0..<n {
+            var tin: LiteRtTensor?
+            try check(LiteRtGetSubgraphInput(subgraph, i, &tin), "GetSubgraphInput")
+            ins.append(try dims(of: tin))
+        }
         try check(LiteRtGetNumSubgraphOutputs(subgraph, &n), "GetNumSubgraphOutputs")
         guard n == 1 else { throw LiteRTError.interface("\(name): expected 1 output, got \(n)") }
         var tout: LiteRtTensor?
         try check(LiteRtGetSubgraphOutput(subgraph, 0, &tout), "GetSubgraphOutput")
-        return (try dims(of: tin), try dims(of: tout))
+        return (ins, try dims(of: tout))
     }
 
-    private func makeBuffer(dims: [Int32], what: String) throws -> LiteRtTensorBuffer? {
+    /// Create the buffer the compiled model actually asks for. Plain host-memory
+    /// buffers are rejected above ~112 MiB by the Metal-backed runtime (status 3),
+    /// so honor the model's buffer requirements — the same thing the Kotlin/Python
+    /// `createInputBuffers()` conveniences do.
+    private func makeBuffer(dims: [Int32], what: String, index: Int) throws -> LiteRtTensorBuffer? {
         guard let env = LiteRTEnvHolder.shared.env else {
             throw LiteRTError.status("Environment", -1)
         }
+        var reqs: LiteRtTensorBufferRequirements?
+        if what == "input" {
+            try check(
+                LiteRtGetCompiledModelInputBufferRequirements(
+                    compiled, 0, LiteRtParamIndex(index), &reqs),
+                "\(name): \(what) buffer requirements")
+        } else {
+            try check(
+                LiteRtGetCompiledModelOutputBufferRequirements(
+                    compiled, 0, LiteRtParamIndex(index), &reqs),
+                "\(name): \(what) buffer requirements")
+        }
+        var nTypes: Int32 = 0
+        try check(
+            LiteRtGetNumTensorBufferRequirementsSupportedBufferTypes(reqs, &nTypes),
+            "\(name): \(what) supported type count")
+        var supported: [LiteRtTensorBufferType] = []
+        for i in 0..<nTypes {
+            var t = kLiteRtTensorBufferTypeHostMemory
+            try check(
+                LiteRtGetTensorBufferRequirementsSupportedTensorBufferType(reqs, i, &t),
+                "\(name): \(what) supported type[\(i)]")
+            supported.append(t)
+        }
+        var reqBytes = 0
+        try check(
+            LiteRtGetTensorBufferRequirementsBufferSize(reqs, &reqBytes),
+            "\(name): \(what) required size")
         var type = dims.withUnsafeBufferPointer {
             Sam3MakeType(1, $0.baseAddress, UInt32(dims.count))
         }
-        let bytes = dims.reduce(1) { $0 * Int(max($1, 1)) } * MemoryLayout<Float>.stride
-        var buffer: LiteRtTensorBuffer?
-        try check(
-            LiteRtCreateManagedTensorBuffer(
-                env, kLiteRtTensorBufferTypeHostMemory, &type, bytes, &buffer),
-            "Create \(what) buffer")
-        return buffer
+        let f32Bytes = dims.reduce(1) { $0 * Int(max($1, 1)) } * MemoryLayout<Float>.stride
+
+        // Candidates we can fill with plain float32 host writes, tried in order:
+        // host memory (interops with every accelerator), then a plain Metal f32
+        // buffer if the model lists it. Packed/fp16 types need layout conversion
+        // and are not attempted.
+        var candidates: [(LiteRtTensorBufferType, Int)] = [
+            (kLiteRtTensorBufferTypeHostMemory, max(reqBytes, f32Bytes))
+        ]
+        if supported.contains(kLiteRtTensorBufferTypeMetalBuffer) {
+            candidates.append((kLiteRtTensorBufferTypeMetalBuffer, max(reqBytes, f32Bytes)))
+        }
+        var lastError: Error?
+        for (t, bytes) in candidates {
+            var buffer: LiteRtTensorBuffer?
+            let status = LiteRtCreateManagedTensorBuffer(env, t, &type, bytes, &buffer)
+            if status == kLiteRtStatusOk {
+                print("SAM3 \(name): \(what)[\(index)] type=\(t.rawValue) \(bytes) B "
+                    + "(supported=\(supported.map { $0.rawValue }))")
+                return buffer
+            }
+            lastError = LiteRTError.status(
+                "\(name): create \(what)[\(index)] type=\(t.rawValue) dims=\(dims) (\(bytes) B, "
+                    + "supported=\(supported.map { $0.rawValue }))",
+                Int32(status.rawValue))
+            print("SAM3 \(lastError!)")
+        }
+        throw lastError ?? LiteRTError.interface("\(name): no usable buffer type")
     }
 
-    /// Run the graph on `input` (row-major float32, `inputCount` values) and
-    /// return `outputCount` floats.
+    /// Run the graph on `input` (row-major float32, `inputCount` values, written
+    /// across the input tensors in signature order) and return `outputCount` floats.
     func run(_ input: [Float]) throws -> [Float] {
         precondition(input.count == inputCount, "\(name): input \(input.count) != \(inputCount)")
         let t0 = Date()
-        var addr: UnsafeMutableRawPointer?
-        try check(
-            LiteRtLockTensorBuffer(inputBuffer, &addr, kLiteRtTensorBufferLockModeWrite),
-            "LockInput")
-        _ = input.withUnsafeBytes {
-            memcpy(addr, $0.baseAddress, input.count * MemoryLayout<Float>.stride)
+        var offset = 0
+        for (i, buffer) in inputBuffers.enumerated() {
+            var addr: UnsafeMutableRawPointer?
+            try check(
+                LiteRtLockTensorBuffer(buffer, &addr, kLiteRtTensorBufferLockModeWrite),
+                "LockInput[\(i)]")
+            _ = input.withUnsafeBytes {
+                memcpy(addr, $0.baseAddress! + offset * MemoryLayout<Float>.stride,
+                       inputSizes[i] * MemoryLayout<Float>.stride)
+            }
+            try check(LiteRtUnlockTensorBuffer(buffer), "UnlockInput[\(i)]")
+            offset += inputSizes[i]
         }
-        try check(LiteRtUnlockTensorBuffer(inputBuffer), "UnlockInput")
 
-        var inputs: [LiteRtTensorBuffer?] = [inputBuffer]
+        var inputs: [LiteRtTensorBuffer?] = inputBuffers
         var outputs: [LiteRtTensorBuffer?] = [outputBuffer]
-        try check(LiteRtRunCompiledModel(compiled, 0, 1, &inputs, 1, &outputs), "Run")
+        try check(
+            LiteRtRunCompiledModel(compiled, 0, inputs.count, &inputs, 1, &outputs), "Run")
 
         var readAddr: UnsafeMutableRawPointer?
         try check(
@@ -187,7 +262,7 @@ final class Sam3Graph {
     }
 
     deinit {
-        if let b = inputBuffer { LiteRtDestroyTensorBuffer(b) }
+        for b in inputBuffers where b != nil { LiteRtDestroyTensorBuffer(b) }
         if let b = outputBuffer { LiteRtDestroyTensorBuffer(b) }
         if let c = compiled { LiteRtDestroyCompiledModel(c) }
         if let o = options { LiteRtDestroyOptions(o) }

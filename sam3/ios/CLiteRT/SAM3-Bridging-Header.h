@@ -6,5 +6,6 @@
 #include "litert/c/litert_opaque_options.h"
 #include "litert/c/litert_options.h"
 #include "litert/c/litert_tensor_buffer.h"
+#include "litert/c/litert_tensor_buffer_requirements.h"
 #include "litert/c/options/litert_gpu_options.h"
 #include "Sam3Helpers.h"
