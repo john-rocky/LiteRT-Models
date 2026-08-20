@@ -1,7 +1,7 @@
 # Process A2 (NeMo only): REAL speech -> mel/enc/ctc reference + torch greedy-CTC transcript (ground truth).
 import _stub, torch, numpy as np, os, soundfile as sf
 from nemo.collections.asr.models import EncDecHybridRNNTCTCBPEModel
-m = EncDecHybridRNNTCTCBPEModel.restore_from("parakeet110m.nemo", map_location="cpu").eval()
+m = EncDecHybridRNNTCTCBPEModel.restore_from(os.environ.get("PARAKEET_NEMO", "parakeet110m.nemo"), map_location="cpu").eval()
 enc, ctc, prep, tok = m.encoder, m.ctc_decoder, m.preprocessor, m.tokenizer
 prep.featurizer.dither = 0.0          # deterministic mel (device gets this exact mel)
 prep.featurizer.pad_to = 0

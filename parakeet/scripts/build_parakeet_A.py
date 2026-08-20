@@ -1,7 +1,10 @@
 # Process A (NeMo only, NO litert_torch): load model, save encoder+ctc modules + reference I/O.
+# Fine-tune override (default run reproduces the official ship exactly):
+#   PARAKEET_NEMO=model.nemo  your own NeMo fine-tune of parakeet-tdt_ctc-110m
+#   (vocab/tokenizer flow from the .nemo; A2/extract_prep honor it too).
 import _stub, torch, numpy as np, os
 from nemo.collections.asr.models import EncDecHybridRNNTCTCBPEModel
-m = EncDecHybridRNNTCTCBPEModel.restore_from("parakeet110m.nemo", map_location="cpu").eval()
+m = EncDecHybridRNNTCTCBPEModel.restore_from(os.environ.get("PARAKEET_NEMO", "parakeet110m.nemo"), map_location="cpu").eval()
 enc, ctc, prep = m.encoder, m.ctc_decoder, m.preprocessor
 # reference: 5s random audio -> mel -> encoder -> ctc logits
 torch.manual_seed(0)

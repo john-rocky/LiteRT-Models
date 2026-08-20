@@ -1,7 +1,7 @@
 # Extract the exact preprocessor buffers (mel filterbank + STFT window) from the NeMo model.
 import _stub, torch, numpy as np, os
 from nemo.collections.asr.models import EncDecHybridRNNTCTCBPEModel
-m = EncDecHybridRNNTCTCBPEModel.restore_from("parakeet110m.nemo", map_location="cpu").eval()
+m = EncDecHybridRNNTCTCBPEModel.restore_from(os.environ.get("PARAKEET_NEMO", "parakeet110m.nemo"), map_location="cpu").eval()
 fe = m.preprocessor.featurizer
 fb = fe.fb.detach().numpy()                 # [80, 257]
 win = fe.window.detach().numpy()            # [400] or [512]?

@@ -81,3 +81,21 @@ NeMo and litert-torch can't share a process, so conversion is split (each ends w
    16 s window with the additive mask, convert to tflite.
 4. `fp16_parakeet.py` — fp16 quantize (`ai_edge_quantizer` FLOAT_CASTING) + op-check.
 5. `validate_mel.py` — verify the host log-mel against NeMo's reference.
+
+### Converting your own fine-tuned checkpoint
+
+The pipeline is stage-split and every GPU patch is architecture-level, so a NeMo
+fine-tune of `parakeet-tdt_ctc-110m` (the trainer's `.nemo` output) runs through the
+same stages — point stage A/A2 and the preprocessor extraction at your file (defaults
+reproduce the official ship exactly):
+
+```bash
+PARAKEET_NEMO=/path/to/my_finetune.nemo python scripts/build_parakeet_A2.py
+PARAKEET_NEMO=/path/to/my_finetune.nemo python scripts/extract_prep.py
+python scripts/build_parakeet_ship.py    # reads the modules stage A saved
+python scripts/fp16_parakeet.py
+```
+
+Tokenizer and CTC vocab flow from the `.nemo` into the logits width `[1, T', V+1]` —
+export the tokenizer's vocab for the app's detokenizer to match. Only the 110M hybrid
+(`EncDecHybridRNNTCTCBPEModel`, FastConformer-CTC path) architecture is covered.
