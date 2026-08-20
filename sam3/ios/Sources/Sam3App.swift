@@ -30,6 +30,8 @@ final class Sam3ViewModel: ObservableObject {
     @Published var visionLabel: String?
     @Published var textLabel: String?
     @Published var headLabel: String?
+    @Published var totalLabel: String?
+    @Published var visionCached = false
     @Published var errorLine: String?
 
     private var detector: Sam3Detector?
@@ -114,11 +116,18 @@ final class Sam3ViewModel: ObservableObject {
 
     func setImage(_ new: UIImage) {
         image = new
+        clearResult()
+    }
+
+    /// Drop the overlay and chips but keep the current image instance — the detector's
+    /// vision features are cached against it, so re-prompting stays instant.
+    func clearResult() {
         resultImage = nil
         detectionCount = nil
         visionLabel = nil
         textLabel = nil
         headLabel = nil
+        totalLabel = nil
         errorLine = nil
     }
 
@@ -137,8 +146,12 @@ final class Sam3ViewModel: ObservableObject {
                     guard let self else { return }
                     self.resultImage = composited
                     self.detectionCount = detections.count
+                    self.visionCached = t.visionCached
+                    self.totalLabel = t.visionCached
+                        ? "re-prompt \(Self.ms(t.textMs + t.headMs))"
+                        : Self.ms(t.visionMs + t.textMs + t.headMs)
                     self.visionLabel = t.visionCached
-                        ? "Vision cached"
+                        ? "Vision cached (same photo)"
                         : "Vision \(Self.ms(t.visionMs)) · \(detector.visionAccel)"
                     self.textLabel = "Text \(Self.ms(t.textMs)) · \(detector.textAccel)"
                     self.headLabel = "Head \(Self.ms(t.headMs)) · \(detector.headAccel)"
@@ -177,14 +190,26 @@ final class Sam3ViewModel: ObservableObject {
         guard let data = try? Data(contentsOf: dir.appendingPathComponent("demo.json")),
               let script = try? JSONDecoder().decode(DemoScript.self, from: data)
         else { return }
+        // One UIImage per file, reused across steps: the detector caches vision
+        // features per image INSTANCE, so re-loading the file would silently re-run
+        // the 5 s vision graph and hide the instant re-prompt this demo shows off.
+        var loaded: [String: UIImage] = [:]
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64((script.startDelay ?? 1.5) * 1e9))
             repeat {
                 for step in script.steps {
                     guard let self else { return }
                     let path = dir.appendingPathComponent(step.photo).path
-                    guard let image = UIImage(contentsOfFile: path) else { continue }
-                    self.setImage(image)
+                    let image: UIImage
+                    if let cached = loaded[step.photo] {
+                        image = cached
+                    } else if let fresh = UIImage(contentsOfFile: path) {
+                        loaded[step.photo] = fresh
+                        image = fresh
+                    } else {
+                        continue
+                    }
+                    if self.image !== image { self.setImage(image) } else { self.clearResult() }
                     self.prompt = ""
                     try? await Task.sleep(nanoseconds: 700_000_000)
                     for ch in step.prompt {
@@ -368,11 +393,19 @@ struct ContentView: View {
             .frame(maxHeight: .infinity)
 
             if let count = vm.detectionCount {
-                HStack(spacing: 8) {
-                    chip("\(count) found", system: "sparkles", emphasize: true)
-                    if let v = vm.visionLabel { chip(v, system: "bolt.fill") }
-                    if let t = vm.textLabel { chip(t, system: "textformat") }
-                    if let h = vm.headLabel { chip(h, system: "square.stack.3d.up") }
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        chip("\(count) found", system: "sparkles", emphasize: true)
+                        if let total = vm.totalLabel {
+                            chip(total, system: vm.visionCached ? "bolt.fill" : "timer",
+                                 emphasize: vm.visionCached)
+                        }
+                    }
+                    HStack(spacing: 8) {
+                        if let v = vm.visionLabel { chip(v, system: "eye") }
+                        if let t = vm.textLabel { chip(t, system: "textformat") }
+                        if let h = vm.headLabel { chip(h, system: "square.stack.3d.up") }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
