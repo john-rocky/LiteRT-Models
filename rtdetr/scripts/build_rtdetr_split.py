@@ -17,7 +17,12 @@ import transformers.models.rt_detr_v2.modeling_rt_detr_v2 as M
 torch._shape_as_tensor = lambda t: torch.tensor(list(t.shape), dtype=torch.long)
 torch._assert = lambda *a, **k: None
 R = int(os.environ.get("RT_RES", "640")); HERE = os.path.dirname(os.path.abspath(__file__))
-MID = "PekingU/rtdetr_v2_r18vd"
+# Fine-tune override (default run reproduces the official COCO ship exactly):
+#   RT_MODEL_ID=<hf-repo-or-local-dir>  a fine-tuned RTDetrV2ForObjectDetection
+#   saved with save_pretrained() (class count + id2label flow from its config).
+# build_rtdetr_fix3.py / pack_assets.py import this module, so the same env
+# var drives them too.
+MID = os.environ.get("RT_MODEL_ID", "PekingU/rtdetr_v2_r18vd")
 BANNED = {"GATHER", "GATHER_ND", "TOPK_V2", "GELU", "ERF", "WHERE", "SELECT", "SELECT_V2", "BROADCAST_TO",
           "POW", "TRANSPOSE_CONV", "CAST", "EMBEDDING_LOOKUP", "RFFT2D", "FFT", "STFT", "COMPLEX",
           "CUMSUM", "ARG_MAX", "ARG_MIN", "PACK", "UNPACK", "TILE", "RELU_0_TO_1", "PADV2"}

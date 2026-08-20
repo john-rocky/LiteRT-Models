@@ -26,9 +26,10 @@ blob = np.concatenate([z[k].astype(np.float32).ravel() for k in order])
 blob.astype("<f4").tofile(os.path.join(assets, "host_params.bin"))
 print(f"wrote host_params.bin ({blob.nbytes} bytes, {blob.size} floats)")
 
-# 80 contiguous COCO labels from the model config
+# Contiguous class labels from the model config (80 COCO for the official ship;
+# a fine-tuned RT_MODEL_ID writes its own id2label here).
 import build_rtdetr_split as S
 net = S.build_net(); id2 = net.config.id2label
 with open(os.path.join(assets, "coco_labels.txt"), "w") as f:
-    f.write("\n".join(id2[i] for i in range(80)) + "\n")
-print("wrote coco_labels.txt (80 classes)")
+    f.write("\n".join(id2[i] for i in range(len(id2))) + "\n")
+print(f"wrote coco_labels.txt ({len(id2)} classes)")

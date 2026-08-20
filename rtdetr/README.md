@@ -98,3 +98,23 @@ GPU-clean (no banned ops, no >4D tensors) and validate per-graph corr 1.0 vs PyT
 
 **Original project**: [lyuwenyu/RT-DETR](https://github.com/lyuwenyu/RT-DETR) (RT-DETRv2) ·
 `PekingU/rtdetr_v2_r18vd` · [Apache-2.0](https://github.com/lyuwenyu/RT-DETR/blob/main/LICENSE)
+
+### Converting your own fine-tuned checkpoint
+
+All GPU patches are class-level rewrites of the HF `RTDetrV2` modules, so any
+fine-tune of `PekingU/rtdetr_v2_r18vd` (HF `Trainer` + `save_pretrained()`)
+converts the same way. Point the build at your model directory or HF repo id
+(default run without the env var reproduces the official ship exactly):
+
+```bash
+RT_MODEL_ID=/path/to/your_saved_model python scripts/build_rtdetr_fix3.py fp16
+RT_MODEL_ID=/path/to/your_saved_model python scripts/build_rtdetr_split.py fp16   # Graph B
+RT_MODEL_ID=/path/to/your_saved_model python scripts/pack_assets.py <work_dir> .
+```
+
+Class count and label names flow from the model's `config.json` (`id2label`) into
+the logits width `[1, 300, num_labels]` and `coco_labels.txt` — no separate flag.
+The app reads the label file, so only the logits-width constant in `RtDetr.kt`
+needs to follow. Other RT-DETRv2 sizes (r34/r50/r101) load the same way but have
+not been device-verified; `RT_RES` must match the fine-tune's eval resolution
+(default 640).
