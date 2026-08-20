@@ -73,9 +73,25 @@ enum BenchRunner {
     {
       toolsetName = CommandLine.arguments[flag + 1].lowercased()
     }
-    guard let tools = BenchToolBox.named(toolsetName) else {
+    guard var tools = BenchToolBox.named(toolsetName) else {
       out.write(["type": "error", "what": "unknown toolset \(toolsetName)"])
       return
+    }
+    // `--only a,b,c` cuts the toolset down to the named tools, list order
+    // preserved — the ladder runs (evaluation program #1) vary nothing but
+    // the count. A name the toolset lacks is an error, not a silent shrink:
+    // a subset without a case's correct tool measures nothing.
+    if let flag = CommandLine.arguments.firstIndex(of: "--only"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    {
+      let want = CommandLine.arguments[flag + 1].split(separator: ",").map(String.init)
+      let have = Set(tools.map(\.name))
+      if let missing = want.first(where: { !have.contains($0) }) {
+        out.write(["type": "error", "what": "--only names \(missing), not in toolset \(toolsetName)"])
+        return
+      }
+      let keep = Set(want)
+      tools = tools.filter { keep.contains($0.name) }
     }
     // `--instructions <pack>` pins the instructions independently of the
     // tool list — the cross-domain runs grow the list while each pack's
@@ -139,8 +155,12 @@ enum BenchRunner {
     // "tomorrow" only means something relative to the day the run happened.
     let dayFormatter = DateFormatter()
     dayFormatter.dateFormat = "yyyy-MM-dd"
+    // The tool-list identity (evaluation program #5): the names on the run
+    // line, the count on every case line — cross-config analysis needs to
+    // know what list a row was measured against.
     out.write([
       "type": "run", "model": modelName, "cases": cases.count, "toolset": toolsetName,
+      "tools": tools.count, "toolNames": tools.map(\.name).joined(separator: ","),
       "date": dayFormatter.string(from: Date()),
     ])
 
@@ -273,7 +293,7 @@ enum BenchRunner {
 
       var line: [String: Any] = [
         "case": benchCase.id, "lang": benchCase.lang, "model": modelName,
-        "toolset": toolsetName,
+        "toolset": toolsetName, "tools": tools.count,
         "input": benchCase.input,
         "expected": expected, "called": called,
         "calls": calls.map { ["tool": $0.tool, "args": $0.raw] },
