@@ -19,6 +19,7 @@ Usage:
 
 from __future__ import annotations
 
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -33,8 +34,11 @@ ASSETS_DIR = MODULE_DIR / "app" / "src" / "main" / "assets"
 # Make litert_gpu_toolkit importable from repo root
 sys.path.insert(0, str(REPO_ROOT))
 
-IMG_SIZE = 384
-SOURCE = "yolo26n-pose.pt"
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   YOLO_POSE_PT=best.pt   your own ultralytics pose fine-tune (yolo pose train)
+#   YOLO_POSE_RES=N        input size, multiple of 32 (default 384)
+IMG_SIZE = int(os.environ.get("YOLO_POSE_RES", "384"))
+SOURCE = os.environ.get("YOLO_POSE_PT", "yolo26n-pose.pt")
 TARGET = "yolo26n_pose.tflite"
 
 

@@ -57,3 +57,18 @@ Real-time human pose estimation with YOLO26n-pose on LiteRT CompiledModel GPU.
 - `BATCH_MATMUL` from C2PSA attention is reported as "incompatible" by the
   toolkit checker, but the existing `yolo26n.tflite` in this repo also has
   4 BATCH_MATMUL ops and runs fine on GPU via the LiteRT delegate.
+
+### Converting your own fine-tuned checkpoint
+
+The wrapper only flips the head into raw export mode, so any Ultralytics pose
+fine-tune (`yolo pose train … model=yolo26n-pose.pt` → `best.pt`) converts the same
+way (defaults reproduce the official ship exactly):
+
+```bash
+YOLO_POSE_PT=/path/to/best.pt python scripts/convert_yolo26n_pose.py
+```
+
+Output becomes `[1, 4+1+K*3, N]` where K is your keypoint count (COCO: 17) and N
+follows `YOLO_POSE_RES` (default 384) — update the app's keypoint count, skeleton
+edges, and decode stride table to match. Note the AGPL-3.0 license of Ultralytics
+models applies to your fine-tune as well.
