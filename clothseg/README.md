@@ -41,3 +41,19 @@ cp clothseg.tflite app/src/main/assets/
 
 - `minSdk 26`, `arm64-v8a`, LiteRT `com.google.ai.edge.litert:litert:2.1.3`.
 - ⚠ The checkpoint has a `module.` prefix — strip it before `load_state_dict` (else random weights → garbage).
+
+### Converting your own fine-tuned checkpoint
+
+The only patch is align_corners normalization, so any checkpoint from the
+levindabhi/cloth-segmentation trainer converts the same way — `module.` prefixes and
+`model_state_dict`/`state_dict` wrappers are unwrapped automatically (defaults reproduce
+the official ship exactly):
+
+```bash
+CLOTHSEG_CKPT=/path/to/my_cloth_segm.pth python scripts/build_clothseg.py
+```
+
+Watch the printed `load:` line — missing/unexpected keys mean the checkpoint does not
+match (the classic silent-random-weights trap). `CLOTHSEG_NUM_CLASSES` drives the output
+width `[1, N, R, R]` (default 4) and the app's channel handling must follow;
+`CLOTHSEG_RES` changes the input size (default 768).
