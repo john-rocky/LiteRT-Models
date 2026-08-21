@@ -219,6 +219,25 @@ enum ToolBox {
       CheckMomentTool(), SeekTool(), KeepRangeTool(), DoneTool(),
     ]
 
+  /// The photo-library pack (Tools/PhotoLibraryTools.swift): the orchestrator
+  /// thesis's first pack. A camera roll searched and operated in words, where
+  /// the cost gradient is the tool list — metadata (find_photos), the picture
+  /// index (search_photos), the detectors (person, written text, blurry,
+  /// duplicates), and one per-photo forced choice (check_photo) as the long
+  /// tail. Which layer the model reaches for first is the measurement; the
+  /// instructions name each layer's domain and deliberately do not name a
+  /// cost order, so the routing is measured rather than instructed.
+  ///
+  /// Not the photo / vision / polish packs: those edit one photo, this one
+  /// finds photos across a library and acts on what it found.
+  static let photoLibrary: [any FoundationModels.Tool] = [
+    FindPhotosTool(), SearchPhotosTool(), FindPersonPhotosTool(), FindPhotoTextTool(),
+    FindBlurryPhotosTool(), FindDuplicatePhotosTool(),
+    CheckPhotoTool(), OpenPhotoTool(),
+    AddToAlbumTool(), FavoritePhotosTool(), DeletePhotosTool(),
+    UndoLastTool(target: .library), AskUserTool(),
+  ]
+
   /// The store pack (Tools/StoreTools.swift): a Shopify admin's menu over
   /// canned products and orders — the Commerce pack of the business wing,
   /// extended to the spec on 2026-08-20. A filter or search makes a
@@ -539,6 +558,51 @@ enum ToolBox {
     state or a result already gives, and never ask to confirm an edit. When
     a tool has returned, answer the user in one short sentence using its
     result.
+    """
+
+  /// The photo-library pack's. Two things it says and one it deliberately
+  /// does not.
+  ///
+  /// It says which layer answers what — the four search tools by their
+  /// domain, in the moments pack's shape, because a clause that names its
+  /// modality is the one thing that pack's routing got right in both
+  /// languages. And it says what the state does *not* contain (the docs
+  /// pack's lesson: a state block is an implicit claim of completeness, and
+  /// asked which pages mention the deposit the model answered from the page
+  /// titles) — here the counts and album names are all the state holds, and
+  /// every question about what a photo *shows* needs a search.
+  ///
+  /// What it does not say is the cost order. The pack exists to measure
+  /// whether a small router walks the cheap layers before the expensive one
+  /// on its own; a sentence telling it to would answer the question by
+  /// asking it. If a later round wants the order stated, that is an A/B
+  /// against this text, not a fix.
+  ///
+  /// The find-first contract stays out of the state line and rides in the
+  /// instructions and the act tools' own refusals — the money pack measured
+  /// what naming a small bulk family in the state costs (22/30 → 16/30, a
+  /// brand-new failure made of exactly the two tools the line named).
+  static let photoLibraryInstructions = """
+    You are operating the user's photo library through tools. Every message
+    starts with the library's current state: how many photos it holds, the
+    dates they span, the albums with their counts, today's date, and the
+    current selection — the photos the last search found. The library can be
+    searched four ways: find_photos by when, where and which album,
+    search_photos by what is in the picture, find_photos_of_person by who is
+    in it, find_photos_with_text by words written in the picture. Search the
+    one the request names; when it answers, do not search another way. The
+    state lists albums and counts, not what the photos show — a question
+    about what is in a photo needs a search. Albums, favourites and deleting
+    apply to the photos currently selected: find them first, then act.
+    check_photo answers a question the user asked about one photo — never
+    call it to confirm a search result. When the request only asks which or
+    how many, answer from the result and stop. When it asks for a change,
+    make the change calls and nothing more. Take photo numbers from the
+    state or from a result — never invent one. When something required is
+    truly absent — which person is meant, which album to use — call
+    ask_user. Never ask about a detail the request, the state or a result
+    already gives. When a tool has returned, answer the user in one short
+    sentence using its result.
     """
 
   /// The store pack's: same idea, records instead of a timeline. The

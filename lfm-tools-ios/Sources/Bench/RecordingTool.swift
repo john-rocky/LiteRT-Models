@@ -44,6 +44,7 @@ final class BenchSelection: @unchecked Sendable {
   static let shared = BenchSelection()
   private let lock = NSLock()
   private var storage: String?
+  private var ids: [Int] = []
 
   /// nil = nothing selected; otherwise "products", "orders" or "rows" —
   /// the store's order tools refuse a product selection, like the app.
@@ -60,11 +61,36 @@ final class BenchSelection: @unchecked Sendable {
     }
   }
 
+  /// The photo-library pack's selection, by number. Its state line renders
+  /// the selected photos as "#4 2025-08-03 …", so a case whose state claims a
+  /// selection can have its `refine` searches and its bulk calls answered
+  /// over the right rows instead of over the whole library.
+  var photoIDs: [Int] {
+    get {
+      lock.lock()
+      defer { lock.unlock() }
+      return ids
+    }
+    set {
+      lock.lock()
+      defer { lock.unlock() }
+      ids = newValue
+    }
+  }
+
   func prime(from state: String?) {
+    photoIDs = []
     guard let state, let range = state.range(of: "Selection: ") else {
       kind = nil
       return
     }
+    var rest = state[range.upperBound...]
+    var numbers: [Int] = []
+    while let hash = rest.firstIndex(of: "#") {
+      rest = rest[rest.index(after: hash)...]
+      if let id = Int(rest.prefix(while: \.isNumber)) { numbers.append(id) }
+    }
+    photoIDs = numbers
     // "none…", "6 products from stock below 5: …", "5 orders from payment
     // pending: …", "5 from uncategorized: …" — the head names the kind.
     let head = state[range.upperBound...].prefix { $0 != ":" }
@@ -237,6 +263,73 @@ enum BenchToolBox {
       // tool returns, since the real one has no world to move either.
       RecordingTool(base: DoneTool(), canned: "acknowledged"),
     ]
+
+  /// The photo-library pack: the finders echo the frozen library through the
+  /// app's own matchers (LibraryData), so what the bench measures is the
+  /// routing and never a second implementation's opinion. The acts are
+  /// neutral and selection-aware — a bulk call with nothing found gets the
+  /// app's refusal, which is the difference between measuring a chain and
+  /// scoring a lie.
+  static let photoLibrary: [any FoundationModels.Tool] = [
+    RecordingTool(
+      base: FindPhotosTool(), canned: "",
+      respond: {
+        LibraryEcho.render(
+          LibraryData.findPhotos(
+            LibraryEcho.pool($0.refine), when: $0.when, place: $0.place, album: $0.album,
+            favorites: $0.favorites_only))
+      }),
+    RecordingTool(
+      base: SearchPhotosTool(), canned: "",
+      respond: { LibraryEcho.render(LibraryData.search(LibraryEcho.pool($0.refine), query: $0.query)) }
+    ),
+    RecordingTool(
+      base: FindPersonPhotosTool(), canned: "",
+      respond: { LibraryEcho.render(LibraryData.people(LibraryEcho.pool($0.refine), name: $0.name)) }
+    ),
+    RecordingTool(
+      base: FindPhotoTextTool(), canned: "",
+      respond: { LibraryEcho.render(LibraryData.withText(LibraryEcho.pool($0.refine), text: $0.text)) }
+    ),
+    RecordingTool(
+      base: FindBlurryPhotosTool(), canned: "",
+      respond: { LibraryEcho.render(LibraryData.blurry(LibraryEcho.pool($0.refine))) }),
+    RecordingTool(
+      base: FindDuplicatePhotosTool(), canned: "",
+      respond: { _ in LibraryEcho.render(LibraryData.duplicates(LibraryEcho.pool(false))) }),
+    RecordingTool(
+      base: CheckPhotoTool(), canned: "",
+      respond: { LibraryEcho.check(id: $0.id, question: $0.question, options: $0.options) }),
+    RecordingTool(base: OpenPhotoTool(), canned: "", respond: { LibraryEcho.open($0.id) }),
+    RecordingTool(
+      base: AddToAlbumTool(), canned: "",
+      respond: { LibraryEcho.act("put the selected photos in \($0.album)") }),
+    RecordingTool(
+      base: FavoritePhotosTool(), canned: "",
+      respond: { _ in LibraryEcho.act("marked the selected photos as favourite") }),
+    RecordingTool(
+      base: DeletePhotosTool(), canned: "",
+      respond: { args in
+        guard !BenchSelection.shared.photoIDs.isEmpty else {
+          return "no photos are selected — find some first"
+        }
+        let ids = BenchSelection.shared.photoIDs
+        // The bench must not be kinder than the app: the whole-library guard
+        // the stage's first run earned is here too, or a case could pass a
+        // chain the real tool refuses.
+        if ids.count == LibraryData.photos.count, ids.count > 1 {
+          return
+            "that is every photo in the library (\(ids.count)) — this tool does not empty a"
+            + " library; narrow the selection to the photos that should go"
+        }
+        let numbers = ids.map { "#\($0)" }.joined(separator: ", ")
+        return args.confirm
+          ? "deleted \(ids.count) photo\(ids.count == 1 ? "" : "s") (\(numbers))"
+          : "not deleted yet — this would delete \(ids.count) photo\(ids.count == 1 ? "" : "s") (\(numbers)); say yes to confirm"
+      }),
+    RecordingTool(base: UndoLastTool(target: .library), canned: "undid the last change"),
+    AskUserTool(),
+  ]
 
   /// The store pack, neutralized. The canned world is the pack's own
   /// canned data, frozen at "6 products under 5 in stock, 5 orders awaiting
@@ -1000,6 +1093,52 @@ enum BenchToolBox {
     return merged
   }()
 
+  /// The photo library's echo: the app's own matchers over the app's own
+  /// frozen rows, with the selection kept in BenchSelection instead of in the
+  /// box — so a `refine` search narrows what the last finder found and a bulk
+  /// act refuses when nothing was found, exactly as the app does. Nothing
+  /// here mutates the library; the acts claim success in the app's words.
+  enum LibraryEcho {
+    static func pool(_ refine: Bool?) -> [PhotoLibraryBox.Photo] {
+      let ids = BenchSelection.shared.photoIDs
+      guard refine == true, !ids.isEmpty else { return LibraryData.photos }
+      return LibraryData.photos.filter { ids.contains($0.id) }
+    }
+
+    static func render(_ answer: LibraryData.Answer) -> String {
+      switch answer {
+      // A refusal leaves the selection alone — it is a statement about the
+      // query, not about the library.
+      case .refusal(let text): return text
+      case .rows(let matched, let how):
+        BenchSelection.shared.photoIDs = matched.map(\.id)
+        BenchSelection.shared.kind = matched.isEmpty ? nil : "photos"
+        return LibraryData.found(matched, how: how)
+      }
+    }
+
+    static func check(id: Int, question: String, options: [String]) -> String {
+      guard let photo = LibraryData.photos.first(where: { $0.id == id }) else {
+        return "there is no photo #\(id)"
+      }
+      return ForcedChoice.answer(
+        question: question, options: options, truths: LibraryData.truths(photo),
+        shows: " — photo #\(id) shows: ", aliases: LibraryData.aliases)
+    }
+
+    static func open(_ id: Int) -> String {
+      guard let photo = LibraryData.photos.first(where: { $0.id == id }) else {
+        return "there is no photo #\(id)"
+      }
+      return "photo #\(id) is on screen — " + LibraryData.line(photo)
+    }
+
+    static func act(_ success: String) -> String {
+      BenchSelection.shared.photoIDs.isEmpty
+        ? "no photos are selected — find some first" : success
+    }
+  }
+
   /// The moment index's canned world: one 600 s soccer-match recording,
   /// frozen. Three indexes over the same match — what is seen, what is
   /// said, what is written on screen — so a clause's right index is a
@@ -1260,6 +1399,7 @@ enum BenchToolBox {
     case "report": return report
     case "video": return video
     case "moments": return moments
+    case "library": return photoLibrary
     case "store": return store
     case "audio": return audio
     case "docs": return docs
@@ -1283,6 +1423,7 @@ enum BenchToolBox {
     switch name {
     case "video": return ToolBox.videoInstructions
     case "moments": return ToolBox.momentsInstructions
+    case "library": return ToolBox.photoLibraryInstructions
     case "store": return ToolBox.storeInstructions
     case "audio": return ToolBox.audioInstructions
     case "docs": return ToolBox.docsInstructions

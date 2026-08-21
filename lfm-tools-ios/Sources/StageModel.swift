@@ -331,6 +331,19 @@ final class StageModel {
     "Archive everything I've already read.",
   ]
 
+  /// The photo-library cut: the cost gradient, one beat per layer, ending on
+  /// the gate. Beat 1 is the composition (a date clause and a picture clause
+  /// in one sentence), beat 2 acts on what beat 1 found, beat 3 is a
+  /// detector no search phrase can stand in for, and beat 4 is the confirm
+  /// gate's yes-turn — the visible change is the table, four times.
+  static let libraryBeats = [
+    "Show me the beach photos from last summer.",
+    "Put them in an album called Beach.",
+    "Which of my photos came out blurry?",
+    "Delete those.",
+    "Yes, delete them.",
+  ]
+
   /// See and choose, split (Tools/ChooseTools.swift): the model answers a
   /// question about the photo with a @Generable enum, the app makes the
   /// call. For the vision bundles too small to route; runs on Apple's model
@@ -364,6 +377,7 @@ final class StageModel {
     case "polish": return polishBeats
     case "video": return videoBeats
     case "moments": return momentsBeats
+    case "library": return libraryBeats
     case "store":
       return CommandLine.arguments.contains("--ja") ? storeBeatsJA : storeBeats
     case "audio": return audioBeats
@@ -392,7 +406,7 @@ final class StageModel {
   /// is told the timeline (video) or the store and its selection (store)
   /// and asked to operate it.
   static var scenarioSendsState: Bool {
-    ["video", "moments", "store", "audio", "docs", "shopping", "money", "inbox", "crm", "pm"]
+    ["video", "moments", "library", "store", "audio", "docs", "shopping", "money", "inbox", "crm", "pm"]
       .contains(scenarioName)
   }
   /// The moments pack is the video pack's stage plus the index.
@@ -404,6 +418,7 @@ final class StageModel {
     switch scenarioName {
     case "moments":
       return VideoEditBox.shared.describe() + " " + MomentIndexBox.shared.describe()
+    case "library": return PhotoLibraryBox.shared.describe()
     case "store": return StoreBox.shared.describe()
     case "audio": return AudioBox.shared.describe()
     case "docs": return DocBox.shared.describe()
@@ -418,6 +433,7 @@ final class StageModel {
   static var stateInstructions: String {
     switch scenarioName {
     case "moments": return ToolBox.momentsInstructions
+    case "library": return ToolBox.photoLibraryInstructions
     case "store": return ToolBox.storeInstructions
     case "audio": return ToolBox.audioInstructions
     case "docs": return ToolBox.docsInstructions
@@ -536,6 +552,9 @@ final class StageModel {
     case "audio":
       stageMixer = AudioBox.shared.snapshot()
       stageImageID += 1
+    case "library":
+      stageTable = PhotoLibraryBox.shared.snapshot()
+      stageImageID += 1
     case "store":
       stageTable = StoreBox.shared.snapshot()
       stageImageID += 1
@@ -640,6 +659,7 @@ final class StageModel {
     case "polish": tools = ToolBox.vision
     case "video": tools = ToolBox.video
     case "moments": tools = ToolBox.moments
+    case "library": tools = ToolBox.photoLibrary
     case "store": tools = ToolBox.store
     case "audio": tools = ToolBox.audio
     case "docs": tools = ToolBox.docs

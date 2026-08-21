@@ -29,7 +29,7 @@ struct AskUserTool: Tool {
 @available(iOS 27.0, *)
 struct UndoLastTool: Tool {
   enum Target: Sendable {
-    case video, store, audio, docs, shopping, money, inbox, crm, pm
+    case video, store, audio, docs, shopping, money, inbox, crm, pm, library
   }
   let target: Target
   let name = "undo_last"
@@ -49,6 +49,7 @@ struct UndoLastTool: Tool {
     case .inbox: return InboxBox.shared.undoLast()
     case .crm: return CrmBox.shared.undoLast()
     case .pm: return IssueBox.shared.undoLast()
+    case .library: return PhotoLibraryBox.shared.undoLast()
     }
   }
 }
