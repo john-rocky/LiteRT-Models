@@ -1613,8 +1613,15 @@ final class MomentIndexBox: @unchecked Sendable {
       // all-positive: a miss falls through to "none of those" and the
       // verdict word vetoes a correct retrieval — the findability rule
       // (playbook spec D) applies to the verdict, not only to the index.
-      for marker in ["なし", "ない", "いない", "ありません", "いません"]
-      where option.contains(marker) { return true }
+      // The second row is spec D2's: 「いいえ」 is the no half of the
+      // plainest pair a model can offer, and without it はい/いいえ reads
+      // all-positive (measured, r38 m-ja-check-2). 「ません」 is the polite
+      // negation ありません/いません are two instances of, so it catches
+      // 写っていません too; 無い/無し are the kanji spellings.
+      for marker in [
+        "なし", "ない", "いない", "ありません", "いません",
+        "いいえ", "ません", "無い", "無し",
+      ] where option.contains(marker) { return true }
       let o = " " + option.lowercased() + " "
       return o.contains(" no ") || o.contains(" not ") || o.contains("n't ")
         || o.contains(" none ") || o.contains(" without ") || o.contains(" nothing ")
@@ -1648,6 +1655,29 @@ final class MomentIndexBox: @unchecked Sendable {
     for (ja, en) in [("犬", "dog"), ("いぬ", "dog"), ("猫", "cat"), ("ねこ", "cat")]
     where asked.contains(ja) {
       words.append(en)
+    }
+    // A check that cannot read the question must not veto (playbook spec
+    // D2). contentWords splits on non-letters and JA writes no spaces, so
+    // a Japanese question arrives as one whole-clause token — and the
+    // presence test asks whether a truth *contains* that token, which no
+    // English label can and no short JA key can either (the direct option
+    // match above is where JA truths get their chance). What follows is
+    // then not an absence but blindness, and blind, the code below used to
+    // fall through to the negative option, where the model reads the
+    // verdict word as "not there": a confident no from a tool that never
+    // read the question is the failure this lane keeps rediscovering
+    // (verification vetoes retrieval). So test what the code can see — the
+    // truths are written in Latin letters and digits (Vision labels, OCR
+    // lines, scores), and a content word holding no ASCII letter or digit
+    // could not appear in them whatever the frame held. No such word, the
+    // empty list included, means the check could not evaluate: it says so
+    // and leaves the model the search hit it already has. A word that does
+    // hold one is testable, and an absence found with it is a real one.
+    let testable = words.contains { word in
+      word.contains { $0.isASCII && ($0.isLetter || $0.isNumber) }
+    }
+    guard testable else {
+      return "cannot tell from this frame" + shows + truths.prefix(8).joined(separator: ", ")
     }
     let present = words.contains { word in truths.contains { $0.contains(word) } }
     if present {
