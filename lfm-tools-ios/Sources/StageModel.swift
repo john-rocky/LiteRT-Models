@@ -599,7 +599,7 @@ final class StageModel {
     RunLog.startNewRun()
     // A take is minutes of nobody touching the screen; auto-lock would end it.
     UIApplication.shared.isIdleTimerDisabled = true
-    let tools: [any FoundationModels.Tool]
+    var tools: [any FoundationModels.Tool]
     switch Self.scenarioName {
     case "photo": tools = ToolBox.photoStage
     case "focus": tools = ToolBox.focus
@@ -626,6 +626,34 @@ final class StageModel {
     case "pm": tools = ToolBox.pm
     case "choose": tools = []  // the model answers; the app calls
     default: tools = ToolBox.demo
+    }
+    // `--without a,b` takes the named tools out of whatever pack the scenario
+    // chose — the bench's `--only` in reverse, and for the other lane: a take's
+    // room is a product decision, where the bench's toolset is a measurement.
+    // The ruling it exists for (demo-playbook.md § B step 2): check_moment is
+    // the long tail and never the stop condition of anything, and it is the
+    // single largest retake risk — it vetoes retrieval, and the ritual that
+    // calls it has a floor no wording has moved. A four-beat take asks nothing
+    // about one frame, so the tool earns nothing and costs takes. What changes
+    // is the product's tool list on this screen; the bench keeps all 24 tools
+    // and keeps scoring the ritual honestly. A name the pack does not hold is
+    // an error, not a silent shrink (`--only`'s rule): a room quietly missing
+    // the tool a beat needs is a take that fails for the wrong reason.
+    if let flag = CommandLine.arguments.firstIndex(of: "--without"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    {
+      let drop = CommandLine.arguments[flag + 1].split(separator: ",").map(String.init)
+      let have = Set(tools.map(\.name))
+      if let missing = drop.first(where: { !have.contains($0) }) {
+        let complaint =
+          "--without names \(missing), not in scenario \(Self.scenarioName)"
+        RunLog.write("ERROR \(complaint)")
+        question = complaint
+        return
+      }
+      let cut = Set(drop)
+      tools = tools.filter { !cut.contains($0.name) }
+      RunLog.write("TOOLS \(tools.count) — without \(drop.joined(separator: ", "))")
     }
     // The vision packs get their own instructions: the stock ones push tools
     // ("prefer a tool over guessing"), which is the wrong bias for a model
