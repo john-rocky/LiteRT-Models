@@ -1163,8 +1163,15 @@ enum BenchToolBox {
       // long enough, carries a digit, or is written as an acronym (2+
       // uppercase letters as the model typed it); compare lowercased as
       // before.
+      //
+      // The boundary has to agree too, and did not: search splits on spaces
+      // and punctuation and so keeps "1-0" whole, while this one split on
+      // every non-alphanumeric and handed back "1" and "0" — a one-digit
+      // content word, which is a looser presence test than the search side
+      // would ever run. Same separator set as search, so a question naming
+      // "1-0" meets the truths' own "1-0" directly.
       func contentWords(_ text: String) -> [String] {
-        text.split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+        text.split(whereSeparator: { " ,.!?'\"「」『』、。".contains($0) })
           .map { (typed: String($0), word: String($0).lowercased()) }
           .filter { token in
             guard !stop.contains(token.word) else { return false }
@@ -1202,7 +1209,26 @@ enum BenchToolBox {
       // empty list included, means the check could not evaluate: it says so
       // and leaves the model the search hit it already has. A word that does
       // hold one is testable, and an absence found with it is a real one.
-      let testable = words.contains { word in
+      //
+      // The same ruling has a second edge, and there the check *can*
+      // evaluate — wrongly. A wrapper noun builds the frame of a question
+      // without naming what it asks about, so a question left holding only
+      // wrapper nouns is being tested for a word it never asked about: the
+      // absence is real and the verdict is not. Measured (r39,
+      // m-ja-check-2): "Is the PK scene at 460 seconds?" lost "PK" to the
+      // old floor, tested "scene" against a frame the penalty row covers,
+      // found it absent honestly, and told the model the PK was not there.
+      // The floor is fixed above; this is the case that survives it,
+      // because a question can also simply be worded that way. Wrappers are
+      // their own list, not stopwords — a stopword is dropped and the rest
+      // of the question still carries it, while a question that is *all*
+      // wrapper has nothing left to carry.
+      let wrapper: Set<String> = [
+        "scene", "moment", "part", "section", "place", "spot", "thing", "area",
+        "場面", "瞬間", "部分", "箇所", "ところ",
+      ]
+      let named = words.filter { !wrapper.contains($0) }
+      let testable = named.contains { word in
         word.contains { $0.isASCII && ($0.isLetter || $0.isNumber) }
       }
       guard testable else {

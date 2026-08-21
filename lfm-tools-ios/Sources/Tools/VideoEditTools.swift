@@ -1641,9 +1641,10 @@ final class MomentIndexBox: @unchecked Sendable {
 
   #if canImport(CoreAIKitVision)
     /// Text embedding of the model's phrase, cosine against every sampled
-    /// frame, the over-threshold samples merged into the same Row shape the
-    /// label side returns — strongest window first, because a scored index has
-    /// a ranking the label side never had.
+    /// frame, the over-threshold samples merged into windows — strongest
+    /// first, because a scored index has a ranking the label side never had.
+    /// It is rendered as a ranked candidate rather than as a find: the row
+    /// shape is the label side's, the verdict word is not (see below).
     private func clipSearch(query: String) async -> String? {
       let (vectors, step) = sync { (clipVectors, sampleStep) }
       guard !vectors.isEmpty, let encoder = await Self.clipLoader.ready(download: false),
@@ -1677,12 +1678,33 @@ final class MomentIndexBox: @unchecked Sendable {
           + windows.prefix(3).map {
             "\(VideoEditBox.f($0.row.start))–\(VideoEditBox.f($0.row.end)) s \(String(format: "%.3f", $0.peak))"
           }.joined(separator: ", "))
-      // "found" leads here too: the verdict word carries the truth.
-      let lines = windows.prefix(8).map {
-        "\(VideoEditBox.f($0.row.start))–\(VideoEditBox.f($0.row.end)) s — \($0.row.text)"
+      // The rung may rank, so it must not claim (playbook spec E). The A/B
+      // found no cosine that separates a true hit (0.232–0.329 on this
+      // footage) from a query the footage never contained (0.199–0.265),
+      // because the scale is per-query rather than per-corpus, and no
+      // calibration tried rescued it — so presence is not buyable with a
+      // number and the threshold above stays what it is, a noise gate.
+      // The verdict word decides it instead (answers follow the verdict
+      // word): ranking and detection are different competences, and a
+      // ranker that says "found" launders one into the other. So a CLIP row
+      // opens with the label shelf's own negative verdict — the model must
+      // still be able to answer "there isn't one" — and then offers the
+      // best window as what it is, a candidate with a similarity attached.
+      // Never a presence verb, whatever the score.
+      let best = windows[0]
+      var answer =
+        "no labelled moment matches \"\(query)\" — the closest-looking window is "
+        + "\(VideoEditBox.f(best.row.start))–\(VideoEditBox.f(best.row.end)) s "
+        + "(visual similarity \(String(format: "%.2f", best.peak)), not a confirmed sighting)"
+      if windows.count > 1 {
+        answer +=
+          "\nother close-looking windows: "
+          + windows.dropFirst().prefix(4).map {
+            "\(VideoEditBox.f($0.row.start))–\(VideoEditBox.f($0.row.end)) s "
+              + "(\(String(format: "%.2f", $0.peak)))"
+          }.joined(separator: ", ")
       }
-      return "found \(windows.count) moment\(windows.count == 1 ? "" : "s"):\n"
-        + lines.joined(separator: "\n")
+      return answer
     }
   #endif
 
@@ -1809,8 +1831,15 @@ final class MomentIndexBox: @unchecked Sendable {
     // wrong word. Keep a token that is long enough, carries a digit, or is
     // written as an acronym (2+ uppercase letters as the model typed it);
     // compare lowercased as before.
+    //
+    // The boundary has to agree too, and did not: search splits on spaces
+    // and punctuation and so keeps "1-0" whole, while this one split on
+    // every non-alphanumeric and handed back "1" and "0" — a one-digit
+    // content word, which is a looser presence test than the search side
+    // would ever run. Same separator set as search, so a question naming
+    // "1-0" meets the truths' own "1-0" directly.
     func contentWords(_ text: String) -> [String] {
-      text.split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+      text.split(whereSeparator: { " ,.!?'\"「」『』、。".contains($0) })
         .map { (typed: String($0), word: String($0).lowercased()) }
         .filter { token in
           guard !stop.contains(token.word) else { return false }
@@ -1846,7 +1875,25 @@ final class MomentIndexBox: @unchecked Sendable {
     // empty list included, means the check could not evaluate: it says so
     // and leaves the model the search hit it already has. A word that does
     // hold one is testable, and an absence found with it is a real one.
-    let testable = words.contains { word in
+    //
+    // The same ruling has a second edge, and there the check *can* evaluate
+    // — wrongly. A wrapper noun builds the frame of a question without
+    // naming what it asks about, so a question left holding only wrapper
+    // nouns is being tested for a word it never asked about: the absence is
+    // real and the verdict is not. Measured (r39, m-ja-check-2): "Is the PK
+    // scene at 460 seconds?" lost "PK" to the old floor, tested "scene"
+    // against a frame the penalty row covers, found it absent honestly, and
+    // told the model the PK was not there. The floor is fixed above; this
+    // is the case that survives it, because a question can also simply be
+    // worded that way. Wrappers are their own list, not stopwords — a
+    // stopword is dropped and the rest of the question still carries it,
+    // while a question that is *all* wrapper has nothing left to carry.
+    let wrapper: Set<String> = [
+      "scene", "moment", "part", "section", "place", "spot", "thing", "area",
+      "場面", "瞬間", "部分", "箇所", "ところ",
+    ]
+    let named = words.filter { !wrapper.contains($0) }
+    let testable = named.contains { word in
       word.contains { $0.isASCII && ($0.isLetter || $0.isNumber) }
     }
     guard testable else {
