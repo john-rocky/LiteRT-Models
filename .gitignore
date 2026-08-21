@@ -56,3 +56,7 @@ mobile_sam.pt
 CLIENT_QUESTIONS.md
 INVESTIGATION.md
 REALTIME_REPORT.md
+
+# Vendor NPU runtime libraries — fetched from QAIRT and the LiteRT GitHub Release,
+# never committed (libQnnHtpPrepare.so alone is 82 MB). See npubench/README.md.
+**/jniLibs/**/*.so

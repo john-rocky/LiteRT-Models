@@ -1710,6 +1710,105 @@ CompiledModel GPU requires **all ops** to be GPU-compatible. Key constraints:
 
 > **Note**: litert-torch models use NCHW layout (PyTorch native). Large models (>150 MB) should be loaded from `filesDir` via `CompiledModel.create(path, options, null)` instead of APK assets.
 
+# Snapdragon NPU (Hexagon)
+
+The same `.tflite` files also run on the Qualcomm Hexagon NPU, ahead-of-time compiled
+per SoC. Measured on a physical **Galaxy S24** (Snapdragon 8 Gen 3 / SM8650) through
+LiteRT `CompiledModel` — median of 50 runs after warmup, one accelerator per process:
+
+| Model | NPU (AOT) | GPU | NPU first load | GPU first load |
+|---|---|---|---|---|
+| SSDLite-MobileNetV3 320 fp16 (see [`ssdlite/`](ssdlite/)) | **1.78 ms** | 5.71 ms | **222 ms** | 1414 ms |
+| [Silent-Face](#silent-face-minifasnetv2) | **0.89 ms** | 1.40 ms | **218 ms** | 997 ms |
+| [TwinLiteNet](#twinlitenet) | 24.15 ms | **18.44 ms** | **258 ms** | 2131 ms |
+
+**Inference speed goes either way; load time does not.** The NPU wins inference on two
+of these three, and TwinLiteNet is faster on the GPU. But an AOT context arrives
+pre-compiled while the GPU builds its shaders on every launch, so the NPU loads 4.6–8.3×
+sooner on all three. If cold start dominates your app, that is the axis that matters.
+
+**fp16 needs no int8 quantization to reach the NPU.** All three compile with every
+operation placed on the NPU and nothing falling back.
+
+## Compiling for the NPU
+
+AOT compilation is **Linux x86_64 only** — the macOS wheel ships no `apply_plugin_main`,
+and the vendor SDK shims refuse to run. Docker `linux/amd64` works:
+
+```bash
+pip install ai-edge-litert==2.2.0 ai-edge-litert-sdk-qualcomm==2.2.0
+```
+
+```python
+from ai_edge_litert.aot import aot_compile
+from ai_edge_litert.aot.vendors.qualcomm import target as qc
+aot_compile("model.tflite", output_dir="out",
+            target=qc.Target(soc_model=qc.SocModel.SM8650))
+```
+
+Three traps, all of which cost a build cycle:
+
+- The SDK package downloads QAIRT at `pip install` time and **swallows a truncated
+  download**, leaving a wheel with no `data/` directory. Verify it exists before compiling.
+- A slim base image lacks `libc++1`, `libc++abi1` and `libatomic1`; the plugin `dlopen`
+  reports them one at a time.
+- `aot_compile()` does not forward arbitrary flags to the plugin. Call
+  `apply_plugin_main` directly if you need one — but note the HTP performance mode is a
+  runtime setting, not something the compile bakes in (the artifact is byte-identical).
+
+## Running on the NPU
+
+Package these into `jniLibs/arm64-v8a/`, then pass the directory to LiteRT:
+
+| File | From |
+|---|---|
+| `libLiteRtDispatch_Qualcomm.so` | `litert_npu_runtime_libraries.zip`, a **GitHub Release asset** — it is not in the Maven AAR |
+| `libQnnHtp.so`, `libQnnSystem.so`, `libQnnHtpV75Stub.so` | QAIRT `lib/aarch64-android/` |
+| `libQnnHtpV75Skel.so` | QAIRT `lib/hexagon-v75/unsigned/` |
+
+```kotlin
+val env = Environment.create(
+    context,
+    mapOf(Environment.Option.DispatchLibraryDir to context.applicationInfo.nativeLibraryDir),
+)
+val options = CompiledModel.Options(Accelerator.NPU).apply {
+    qualcommOptions = CompiledModel.QualcommOptions(
+        htpPerformanceMode = CompiledModel.QualcommOptions.HtpPerformanceMode.BURST
+    )
+}
+val model = CompiledModel.create(context.assets, "model_npu_aot.tflite", options, env)
+```
+
+Pick the `vNN` runtime module from the device's Hexagon version: SM8550 → v73,
+SM8650 → v75, SM8750 → v79, SM8850 → v81.
+
+⛔ **LiteRT has no default for the dispatch library directory, and an unset one is a
+warning, not an error** — `compiled_model.cc` logs `You should provide the
+DispatchLibraryDir option to use NPU` and the run continues without the NPU. Judge from
+the presence of `NPU accelerator registered.` in logcat, never from output appearing.
+(Placing the `.so` next to the model works only under LiteRT-LM, which fills the option
+in for you; `CompiledModel` has no such layer.)
+
+Two build requirements: `useLegacyPackaging = true` in `packaging { jniLibs { … } }`,
+or `nativeLibraryDir` points inside the APK and the DSP cannot open the skel; and Kotlin
+**2.3+**, because LiteRT 2.2.0 ships Kotlin metadata 2.3.0.
+
+The benchmark harness these figures came from is [`npubench/`](npubench/).
+
+## Reading NPU benchmark numbers
+
+On-device latency here moves with three things, so a figure without its conditions will
+not reproduce:
+
+- **Option state.** LiteRT's `Environment` is shared per process and the **first** model
+  load fixes the dispatch options for every later one. A CPU model loaded first left the
+  NPU without `BURST` and cost 6.2× on SSDLite. Measure one accelerator per process.
+- **Execution order.** Pinning the NPU first fixed the NPU and made the GPU 29% slower —
+  the confound moves to whatever you measure second.
+- **Temperature.** Running alone is not running cold. `PowerManager.getThermalHeadroom()`
+  (API 30+, no permission, ~1 Hz, `NaN` when called faster) is the value to watch;
+  `THERMAL_STATUS` stayed `NONE` through a drift that cost 13.5%.
+
 # Text Embedding (RAG)
 
 ### Qwen3-Embedding-0.6B
