@@ -27,8 +27,11 @@
 // what makes the ROADMAP's "real Vision calls" true. That rung replaces
 // `looks` / `people` / `text` / `sharp` with what the OS says about fixture
 // images; the tool boundary and every case above it stay exactly as they are.
+import CoreGraphics
 import Foundation
 import FoundationModels
+import ImageIO
+import Vision
 
 @available(iOS 27.0, *)
 final class PhotoLibraryBox: @unchecked Sendable {
@@ -52,6 +55,11 @@ final class PhotoLibraryBox: @unchecked Sendable {
     /// Words written in the picture (OCR's half).
     var text: String? = nil
     var sharp: Bool = true
+    /// Variance of the Laplacian, when the row came from pixels. The canned
+    /// world leaves it nil and keeps `sharp` as a verdict; a measured library
+    /// has only a *ranking* here, and the difference is a tool's verdict word
+    /// (see `findBlurry`).
+    var softness: Double? = nil
     /// The other half of a near-identical pair.
     var twin: Int? = nil
     var deleted: Bool = false
@@ -184,12 +192,19 @@ final class PhotoLibraryBox: @unchecked Sendable {
     return LibraryData.found(matched, how: how)
   }
 
-  func findPhotos(when: String?, place: String?, album: String?, favorites: Bool?, refine: Bool?)
-    -> String
-  {
+  func findPhotos(when: String?, place: String?, favorites: Bool?, refine: Bool?) -> String {
     answer(
       LibraryData.findPhotos(
-        pool(refine), when: when, place: place, album: album, favorites: favorites))
+        pool(refine), when: when, place: place, album: nil, favorites: favorites))
+  }
+
+  /// The album filter, as a tool of its own (l5). It was `find_photos`'
+  /// fourth optional slot, and it was in every chain failure of l1–l4: the
+  /// album word attracts the album slot whichever tool the sentence means it
+  /// for, so "put them in an album called Summer" filtered by an album that
+  /// does not exist instead of making one.
+  func findInAlbum(album: String, refine: Bool?) -> String {
+    answer(LibraryData.findPhotos(pool(refine), when: nil, place: nil, album: album, favorites: nil))
   }
 
   func searchPhotos(query: String, refine: Bool?) -> String {
@@ -302,6 +317,146 @@ final class PhotoLibraryBox: @unchecked Sendable {
     }
     post()
     return "deleted \(rows.count) photo\(rows.count == 1 ? "" : "s") (\(numbers))"
+  }
+}
+
+// MARK: - The perception rung (real pixels, the OS's own judges)
+
+@available(iOS 27.0, *)
+extension PhotoLibraryBox {
+  /// Replace the canned rows with what Vision and CoreImage say about a folder
+  /// of real photographs — the ROADMAP's "mock library + real Vision/CoreImage
+  /// calls", with the boundary between the two drawn where it honestly falls:
+  ///
+  /// - **Mock, and unavoidably so**: dates, places, albums, favourites, and
+  ///   the people's *names*. No pixel carries any of it. A real Photos app has
+  ///   EXIF and a person the user tagged; a fixture library has a manifest.
+  /// - **Measured**: what the picture shows (VNClassifyImageRequest plus the
+  ///   animal detector), the words written in it (VNRecognizeTextRequest),
+  ///   whether a face is there at all (VNDetectFaceRectanglesRequest), how
+  ///   much edge detail it has (variance of the Laplacian), and which photos
+  ///   are the same shot twice (an 8×8 average hash).
+  ///
+  /// Build the folder with `ios/bench/libraryfixture.swift`; absent, the pack
+  /// keeps the canned world and the bench keeps its control — the bench never
+  /// reaches this code at all, it runs LibraryEcho over LibraryData.
+  func indexFixtures() async {
+    let dir = AppFiles.documents.appendingPathComponent(
+      "toolbench-fixtures/photo-library", isDirectory: true)
+    guard let data = try? Data(contentsOf: dir.appendingPathComponent("library.json")),
+      let manifest = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]],
+      !manifest.isEmpty
+    else { return }
+    var rows: [Photo] = []
+    var hashes: [(id: Int, bits: UInt64)] = []
+    var faceCount = 0
+    for entry in manifest {
+      guard let id = entry["id"] as? Int, let file = entry["file"] as? String,
+        let date = entry["date"] as? String, let place = entry["place"] as? String,
+        let source = CGImageSourceCreateWithURL(
+          dir.appendingPathComponent(file) as CFURL, nil),
+        let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+      else { continue }
+      let classify = VNClassifyImageRequest()
+      let animals = VNRecognizeAnimalsRequest()
+      let text = VNRecognizeTextRequest()
+      text.recognitionLevel = .accurate
+      text.recognitionLanguages = ["en-US", "ja-JP"]
+      let faces = VNDetectFaceRectanglesRequest()
+      try? VNImageRequestHandler(cgImage: image).perform([classify, animals, text, faces])
+      var looks = (classify.results ?? []).filter { $0.confidence > 0.35 }.prefix(8)
+        .map { $0.identifier.lowercased().replacingOccurrences(of: "_", with: " ") }
+      looks += (animals.results ?? []).flatMap { observation in
+        observation.labels.filter { $0.confidence > 0.5 }.map { $0.identifier.lowercased() }
+      }
+      var seen = Set<String>()
+      looks = looks.filter { seen.insert($0).inserted }
+      let lines = (text.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { $0.count >= 2 }
+      let detected = (faces.results ?? []).count
+      faceCount += detected
+      rows.append(
+        Photo(
+          id: id, date: date, place: place, album: entry["album"] as? String,
+          favorite: entry["favorite"] as? Bool ?? false, looks: looks,
+          // Names are the library's, never the detector's — Vision finds a
+          // face, it has never known whose. The scout found no face at all in
+          // this fixture set (workplace footage, nobody facing the camera),
+          // which is worth knowing before anyone claims the face rung runs:
+          // the log says how many were actually detected.
+          people: (entry["people"] as? [String]) ?? [],
+          text: lines.isEmpty ? nil : lines.joined(separator: " "),
+          sharp: true, softness: Self.softness(image)))
+      hashes.append((id, Self.averageHash(image)))
+    }
+    guard !rows.isEmpty else { return }
+    // Same shot twice, measured: ≤ 3 bits apart. The scout swept it — at the
+    // 8-bit gap three office frames of one room all matched each other, and at
+    // 3 exactly the three intended pairs survive.
+    for (index, row) in rows.enumerated() {
+      guard let mine = hashes.first(where: { $0.id == row.id })?.bits else { continue }
+      if let twin = hashes.first(where: { $0.id != row.id && (($0.bits ^ mine).nonzeroBitCount) <= 3 })
+      {
+        rows[index].twin = twin.id
+      }
+    }
+    sync {
+      photos = rows
+      selection = []
+      selectionHow = ""
+      pendingDelete = []
+    }
+    let vocabulary = Set(rows.flatMap(\.looks)).sorted().prefix(14).joined(separator: ", ")
+    RunLog.write(
+      "LIBRARY indexed \(rows.count) photos from pixels — \(faceCount) faces detected, "
+        + "\(rows.filter { $0.text != nil }.count) with text, "
+        + "\(rows.filter { $0.twin != nil }.count) in near-identical pairs")
+    RunLog.write("LIBRARY labels: \(vocabulary)")
+    RunLog.write(
+      "LIBRARY softness: "
+        + rows.sorted { ($0.softness ?? 0) < ($1.softness ?? 0) }.prefix(6)
+        .map { "#\($0.id) \(Int($0.softness ?? 0))" }.joined(separator: ", "))
+  }
+
+  /// Variance of the Laplacian over a 256-px grey render — the standard focus
+  /// measure, and (see `LibraryData.blurry`) a measure of edge detail rather
+  /// than of focus. Kept identical to ios/bench/libraryscout.swift so a
+  /// scouted number and an indexed one are the same number.
+  static func grey(_ image: CGImage, side: Int) -> [Double] {
+    var pixels = [UInt8](repeating: 0, count: side * side)
+    guard
+      let context = CGContext(
+        data: &pixels, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side,
+        space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+    else { return [] }
+    context.interpolationQuality = .high
+    context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+    return pixels.map(Double.init)
+  }
+
+  static func softness(_ image: CGImage) -> Double {
+    let side = 256
+    let g = grey(image, side: side)
+    guard g.count == side * side else { return 0 }
+    var values: [Double] = []
+    values.reserveCapacity((side - 2) * (side - 2))
+    for y in 1..<(side - 1) {
+      for x in 1..<(side - 1) {
+        let i = y * side + x
+        values.append(g[i - side] + g[i + side] + g[i - 1] + g[i + 1] - 4 * g[i])
+      }
+    }
+    let mean = values.reduce(0, +) / Double(values.count)
+    return values.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)
+  }
+
+  static func averageHash(_ image: CGImage) -> UInt64 {
+    let g = grey(image, side: 8)
+    guard g.count == 64 else { return 0 }
+    let mean = g.reduce(0, +) / 64
+    var bits: UInt64 = 0
+    for (index, value) in g.enumerated() where value > mean { bits |= (1 << UInt64(index)) }
+    return bits
   }
 }
 
@@ -637,8 +792,25 @@ enum LibraryData {
     return .rows(matched, "\"\(text)\" written in the picture")
   }
 
+  /// Two different tools wearing one name, and the difference is the rung.
+  ///
+  /// Over the canned world `sharp` is a *fact* someone wrote down, so the
+  /// answer is a verdict: these came out of focus. Over pixels there is no
+  /// such fact — the meter is the variance of the Laplacian, and the scout
+  /// (ios/bench/libraryscout.swift) measured what that actually ranks: a flat
+  /// wooden sign scored 153 and a leafy path 1536, with nothing out of focus
+  /// anywhere in the set. It reads *edge energy*, so a smooth sea or a plain
+  /// wall is "soft" exactly as motion blur is. That is the CLIP rung's
+  /// situation with a different sensor (playbook spec E), so it takes the same
+  /// ruling: a rung that can rank but cannot decide must not use the deciding
+  /// word. The measured library returns the softest third as candidates, with
+  /// the numbers, and never says a photo is blurry.
   static func blurry(_ pool: [PhotoLibraryBox.Photo]) -> Answer {
-    .rows(pool.filter { !$0.sharp }, "out of focus")
+    let measured = pool.compactMap(\.softness)
+    guard !measured.isEmpty else { return .rows(pool.filter { !$0.sharp }, "out of focus") }
+    let ranked = pool.filter { $0.softness != nil }.sorted { ($0.softness ?? 0) < ($1.softness ?? 0) }
+    let take = max(1, ranked.count / 3)
+    return .rows(Array(ranked.prefix(take)), "softest-looking (edge detail, lowest first)")
   }
 
   static func duplicates(_ pool: [PhotoLibraryBox.Photo]) -> Answer {
@@ -787,20 +959,38 @@ enum LibraryData {
 struct FindPhotosTool: Tool {
   let name = "find_photos"
   let description =
-    "Find photos by when they were taken, where, which album they are in, or whether they are favourites. Not for what is in the picture. The matches become the selection."
+    "Find photos by when they were taken, where, or whether they are favourites. Not for what is in the picture and not for an album. The matches become the selection."
   @Generable struct Arguments {
     @Guide(description: "When, in the user's own words — \"last summer\", \"yesterday\", \"October 2025\", \"2025-10-13\".")
     var when: String?
     @Guide(description: "Where — a place name from the state or the request.") var place: String?
-    @Guide(description: "One album's name.") var album: String?
     @Guide(description: "True for favourites only.") var favorites_only: Bool?
     @Guide(description: "True to narrow the photos already selected instead of searching the whole library.")
     var refine: Bool?
   }
   func call(arguments: Arguments) async throws -> String {
     PhotoLibraryBox.shared.findPhotos(
-      when: arguments.when, place: arguments.place, album: arguments.album,
+      when: arguments.when, place: arguments.place,
       favorites: arguments.favorites_only, refine: arguments.refine)
+  }
+}
+
+@available(iOS 27.0, *)
+struct FindPhotosInAlbumTool: Tool {
+  let name = "find_photos_in_album"
+  // l5's whole variable: the album filter leaves find_photos and becomes a
+  // tool, because a slot named album takes any album word in the sentence —
+  // including the album the user wants *made*. Now the destination has only
+  // one tool it can land on, and it is the one that creates.
+  let description =
+    "Find the photos in one album the library already has. Not for putting photos into an album — add_to_album does that."
+  @Generable struct Arguments {
+    @Guide(description: "The album's name, as the state lists it.") var album: String
+    @Guide(description: "True to narrow the photos already selected instead of searching the whole library.")
+    var refine: Bool?
+  }
+  func call(arguments: Arguments) async throws -> String {
+    PhotoLibraryBox.shared.findInAlbum(album: arguments.album, refine: arguments.refine)
   }
 }
 

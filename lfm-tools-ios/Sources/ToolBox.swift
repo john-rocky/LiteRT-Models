@@ -231,7 +231,8 @@ enum ToolBox {
   /// Not the photo / vision / polish packs: those edit one photo, this one
   /// finds photos across a library and acts on what it found.
   static let photoLibrary: [any FoundationModels.Tool] = [
-    FindPhotosTool(), SearchPhotosTool(), FindPersonPhotosTool(), FindPhotoTextTool(),
+    FindPhotosTool(), FindPhotosInAlbumTool(),
+    SearchPhotosTool(), FindPersonPhotosTool(), FindPhotoTextTool(),
     FindBlurryPhotosTool(), FindDuplicatePhotosTool(),
     CheckPhotoTool(), OpenPhotoTool(),
     AddToAlbumTool(), FavoritePhotosTool(), DeletePhotosTool(),
@@ -587,9 +588,10 @@ enum ToolBox {
     starts with the library's current state: how many photos it holds, the
     dates they span, the albums with their counts, today's date, and the
     current selection — the photos the last search found. The library can be
-    searched four ways: find_photos by when, where and which album,
-    search_photos by what is in the picture, find_photos_of_person by who is
-    in it, find_photos_with_text by words written in the picture. Search the
+    searched five ways: find_photos by when and where,
+    find_photos_in_album by the album it is in, search_photos by what is in
+    the picture, find_photos_of_person by who is in it, find_photos_with_text
+    by words written in the picture. Search the
     one the request names; when it answers, do not search another way. The
     state lists albums and counts, not what the photos show — a question
     about what is in a photo needs a search. Albums, favourites and deleting

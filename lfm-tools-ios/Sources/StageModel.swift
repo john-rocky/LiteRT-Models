@@ -815,6 +815,14 @@ final class StageModel {
       }
       await refreshStageVideo()
     }
+    if Self.scenarioName == "library" {
+      // The perception rung, when a fixture library of real photographs is on
+      // disk (ios/bench/libraryfixture.swift builds one). Absent, the pack
+      // runs its canned rows and says nothing it cannot back — the bench is
+      // canned either way and never reaches this code.
+      await PhotoLibraryBox.shared.indexFixtures()
+      RunLog.write("LIBRARY \(PhotoLibraryBox.shared.describe())")
+    }
     if Self.scenarioIsDocs {
       DocBox.shared.preload()
       RunLog.write("DOC loaded — \(DocBox.shared.describe())")

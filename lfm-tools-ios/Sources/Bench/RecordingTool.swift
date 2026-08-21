@@ -276,8 +276,15 @@ enum BenchToolBox {
       respond: {
         LibraryEcho.render(
           LibraryData.findPhotos(
-            LibraryEcho.pool($0.refine), when: $0.when, place: $0.place, album: $0.album,
+            LibraryEcho.pool($0.refine), when: $0.when, place: $0.place, album: nil,
             favorites: $0.favorites_only))
+      }),
+    RecordingTool(
+      base: FindPhotosInAlbumTool(), canned: "",
+      respond: {
+        LibraryEcho.render(
+          LibraryData.findPhotos(
+            LibraryEcho.pool($0.refine), when: nil, place: nil, album: $0.album, favorites: nil))
       }),
     RecordingTool(
       base: SearchPhotosTool(), canned: "",
