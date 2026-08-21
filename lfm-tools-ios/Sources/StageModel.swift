@@ -430,6 +430,17 @@ final class StageModel {
     }
   }
 
+  /// The stage's own line, added on top of whatever the pack says. The
+  /// answer's language is the stage's contract, not the pack's: on a take
+  /// the reply bubble is the whole muted narrative, so it belongs to the
+  /// language the person actually spoke. Measured on journey.mp4
+  /// 2026-08-21 — with check_moment out of the room, 5 of 6 JA runs
+  /// answered an English bubble to a Japanese sentence, where 8 of 12
+  /// answered in Japanese with the check still in. It lives here and never
+  /// in `ToolBox.momentsInstructions`, which the bench shares and which is
+  /// the control for r38–r41.
+  static let answerLanguageLine = "Answer in the language the request was made in."
+
   static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
       CommandLine.arguments.indices.contains(flag + 1)
@@ -660,12 +671,14 @@ final class StageModel {
     // that can see — it removed the background from a mountain range because
     // a beat said "if there's a person…". The state packs get theirs: the
     // model is told everything and asked to copy numbers, not look them up.
-    let instructions =
+    let packInstructions =
       Self.scenarioIsChoose
       ? SeeAndChoose.instructions
       : Self.scenarioAttachesPhoto
         ? ToolBox.visionInstructions
         : (Self.scenarioSendsState ? Self.stateInstructions : ToolBox.instructions)
+    // Every pack on the stage gets the language line; no pack text moves.
+    let instructions = packInstructions + "\n" + Self.answerLanguageLine
     toolCount = tools.count
     switch Self.backend {
     case .system:
