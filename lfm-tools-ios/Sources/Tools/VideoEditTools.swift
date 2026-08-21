@@ -1640,11 +1640,26 @@ final class MomentIndexBox: @unchecked Sendable {
       "appears", "visible", "have", "has", "any", "still", "you", "can", "see", "around",
       "second", "seconds", "present", "yes", "true", "what", "which", "contain", "contains",
     ]
+    // The two tokenizers must agree on short tokens: this one and the
+    // search tokenizer above both decide what of the model's wording ever
+    // reaches the truths, and search already keeps a 2-character token that
+    // carries a digit ("1-0"). A bare 3-character floor here does not.
+    // Measured (r39, m-ja-check-2): the model asked "Is the PK scene at 460
+    // seconds?" of a frame the penalty row covers — and the floor dropped
+    // "PK", the one word that row holds by name, leaving the wrapper noun
+    // "scene" to test with, so the check reported a real absence of the
+    // wrong word. Keep a token that is long enough, carries a digit, or is
+    // written as an acronym (2+ uppercase letters as the model typed it);
+    // compare lowercased as before.
     func contentWords(_ text: String) -> [String] {
-      text.lowercased()
-        .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
-        .map(String.init)
-        .filter { $0.count >= 3 && !stop.contains($0) }
+      text.split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+        .map { (typed: String($0), word: String($0).lowercased()) }
+        .filter { token in
+          guard !stop.contains(token.word) else { return false }
+          return token.word.count >= 3 || token.word.contains(where: \.isNumber)
+            || (token.typed.count >= 2 && token.typed.allSatisfy { $0.isUppercase })
+        }
+        .map(\.word)
     }
     var words = contentWords(question) + positives.flatMap(contentWords)
     // JA writes no spaces, so contentWords hands back whole clauses that no
