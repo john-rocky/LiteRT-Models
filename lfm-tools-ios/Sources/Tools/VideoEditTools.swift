@@ -1502,10 +1502,18 @@ final class MomentIndexBox: @unchecked Sendable {
     // Any-word match, three letters or a number up ("to" and "the" match
     // everything; "1-0" must match). Query words are the model's — expanding
     // a phrase into index-friendly words is its half of the deal.
-    let tokens = query.lowercased()
+    var tokens = query.lowercased()
       .split(whereSeparator: { " ,.!?'\"「」『』、。".contains($0) })
       .map(String.init)
       .filter { $0.count >= 3 || $0.contains(where: \.isNumber) }
+    // Detector nouns in the languages a voice take can utter: the labels
+    // are English, a JA query names them in JA, and data must be findable
+    // in every language the pack tests (the findability rule; playbook
+    // spec D chose the alias table over failing the JA case honestly).
+    for (ja, en) in [("犬", "dog"), ("いぬ", "dog"), ("猫", "cat"), ("ねこ", "cat")]
+    where query.contains(ja) {
+      tokens.append(en)
+    }
     let hits = rows.filter { row in
       let text = row.text.lowercased()
       return tokens.contains { text.contains($0) }
