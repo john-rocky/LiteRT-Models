@@ -1355,11 +1355,21 @@ final class MomentIndexBox: @unchecked Sendable {
       let read = VNRecognizeTextRequest()
       read.recognitionLevel = .fast
       read.usesLanguageCorrection = false
+      // The classifier answers in scene nouns (outdoor, ocean, street) and
+      // missed a backlit puppy filling half the frame — the specialized
+      // detector row of the OS shelf exists for exactly that (measured
+      // 2026-08-21, the Pexels beach take).
+      let animals = VNRecognizeAnimalsRequest()
       let handler = VNImageRequestHandler(cgImage: cg)
-      try? handler.perform([classify, read])
+      try? handler.perform([classify, read, animals])
       for result in (classify.results ?? []).filter({ $0.confidence > 0.35 }).prefix(8) {
         labelTimes[result.identifier.lowercased().replacingOccurrences(of: "_", with: " "), default: []]
           .append(time)
+      }
+      for animal in animals.results ?? [] {
+        for label in animal.labels where label.confidence > 0.5 {
+          labelTimes[label.identifier.lowercased(), default: []].append(time)
+        }
       }
       for text in (read.results ?? []).compactMap({ $0.topCandidates(1).first?.string }) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1370,7 +1380,10 @@ final class MomentIndexBox: @unchecked Sendable {
     func runs(_ times: [Double], label: String) -> [Row] {
       var out: [Row] = []
       for time in times.sorted() {
-        if var last = out.last, time - last.end <= step * 2.2 {
+        // A generous gap: the animal detector dropped a mid-run frame or
+        // two while the dog turned, and a split row made "that moment"
+        // ambiguous downstream (measured 2026-08-21).
+        if var last = out.last, time - last.end <= step * 3.2 {
           last.end = time + step / 2
           out[out.count - 1] = last
         } else {
@@ -1384,6 +1397,11 @@ final class MomentIndexBox: @unchecked Sendable {
       .sorted { $0.start < $1.start }
     RunLog.write(
       "MOMENTS visual side done — \(labelTimes.count) labels, \(textTimes.count) texts seen")
+    // The rows themselves, longest-covered labels first: a take's beat
+    // words have to name what the classifier actually said.
+    let coverage = labelTimes.sorted { $0.value.count > $1.value.count }.prefix(10)
+      .map { "\($0.key)×\($0.value.count)" }
+    RunLog.write("MOMENTS visual labels: " + coverage.joined(separator: ", "))
 
     // The spoken side: the source's audio through the caption recognizer.
     // The whole side races a deadline — the permission prompt inside
@@ -1454,34 +1472,86 @@ final class MomentIndexBox: @unchecked Sendable {
       return tokens.contains { text.contains($0) }
     }
     guard !hits.isEmpty else { return "no moments found for \"\(query)\" in \(what)" }
+    // "found" leads: the model's final answer follows the strongest
+    // verdict word in recent results, and a bare count lost to two
+    // later "no moments found" sweeps — the hit itself must carry the
+    // verdict (demo-playbook: answers follow the verdict word).
     let lines = hits.prefix(8).map { "\(VideoEditBox.f($0.start))–\(VideoEditBox.f($0.end)) s — \($0.text)" }
-    return "\(hits.count) moment\(hits.count == 1 ? "" : "s"):\n" + lines.joined(separator: "\n")
+    return "found \(hits.count) moment\(hits.count == 1 ? "" : "s"):\n" + lines.joined(separator: "\n")
       + (hits.count > 8 ? "\n(and \(hits.count - 8) more)" : "")
   }
 
   /// The forced-choice check: one real frame, the OS's judges, an answer
   /// from the options given — never an open judgment (the judge-study
   /// ruling holds on the real pixels too).
-  func check(at seconds: Double, options: [String]) async -> String {
-    guard let cg = await VideoEditBox.shared.sourceFrame(at: seconds, maxSize: 640) else {
-      return "no frame at \(VideoEditBox.f(seconds)) s"
+  func check(at seconds: Double, question: String, options: [String]) async -> String {
+    // A "moment" is a range and detectors flicker frame to frame — a check
+    // pinned to one exact frame vetoed a correct search hit (the dog the
+    // index saw at 14.5 s was absent from the 14.0 s frame, 2026-08-21).
+    // Three frames around the asked time, truths merged, detectors first.
+    var truths: [String] = []
+    for offset in [-0.6, 0.0, 0.6] {
+      guard let cg = await VideoEditBox.shared.sourceFrame(at: seconds + offset, maxSize: 640)
+      else { continue }
+      let classify = VNClassifyImageRequest()
+      let read = VNRecognizeTextRequest()
+      read.recognitionLevel = .accurate
+      let animals = VNRecognizeAnimalsRequest()
+      let handler = VNImageRequestHandler(cgImage: cg)
+      try? handler.perform([classify, read, animals])
+      truths += (animals.results ?? []).flatMap { $0.labels.map { $0.identifier.lowercased() } }
+      truths += (read.results ?? []).compactMap { $0.topCandidates(1).first?.string.lowercased() }
+      truths += (classify.results ?? []).filter { $0.confidence > 0.2 }
+        .map { $0.identifier.lowercased().replacingOccurrences(of: "_", with: " ") }
     }
-    let classify = VNClassifyImageRequest()
-    let read = VNRecognizeTextRequest()
-    read.recognitionLevel = .accurate
-    let handler = VNImageRequestHandler(cgImage: cg)
-    try? handler.perform([classify, read])
-    var truths = (classify.results ?? []).filter { $0.confidence > 0.2 }
-      .map { $0.identifier.lowercased().replacingOccurrences(of: "_", with: " ") }
-    truths += (read.results ?? []).compactMap { $0.topCandidates(1).first?.string.lowercased() }
-    if let hit = options.first(where: { option in
+    guard !truths.isEmpty else { return "no frame at \(VideoEditBox.f(seconds)) s" }
+    var seen = Set<String>()
+    truths = truths.filter { seen.insert($0).inserted }
+    let shows = " — around \(VideoEditBox.f(seconds)) s the frame shows: "
+
+    // The model words its options freely — "yes"/"no", "appears"/"does
+    // not appear", "dog"/"no dog" — and a matcher that only compared
+    // option text to labels answered "none of those" while its own
+    // message listed the dog; the model then read the verdict word, not
+    // the evidence list (measured 2026-08-21; the semantics here are
+    // demo-playbook spec A). Negation partition first, then a direct
+    // label match on the positive options, then presence decided by the
+    // content words of the question and positive options together.
+    func negated(_ option: String) -> Bool {
+      let o = " " + option.lowercased() + " "
+      return o.contains(" no ") || o.contains(" not ") || o.contains("n't ")
+        || o.contains(" none ") || o.contains(" without ") || o.contains(" nothing ")
+    }
+    let positives = options.filter { !negated($0) }
+    let negatives = options.filter { negated($0) }
+    if let hit = positives.first(where: { option in
       let o = option.lowercased()
       return truths.contains { $0.contains(o) || o.contains($0) }
     }) {
-      return hit
+      return hit + shows + truths.prefix(6).joined(separator: ", ")
     }
-    return "none of those — the frame at \(VideoEditBox.f(seconds)) s shows: "
-      + truths.prefix(5).joined(separator: ", ")
+    let stop: Set<String> = [
+      "the", "there", "this", "that", "does", "did", "is", "are", "was", "were", "and",
+      "not", "moment", "frame", "video", "clip", "show", "shows", "shown", "appear",
+      "appears", "visible", "have", "has", "any", "still", "you", "can", "see", "around",
+      "second", "seconds", "present", "yes", "true", "what", "which", "contain", "contains",
+    ]
+    func contentWords(_ text: String) -> [String] {
+      text.lowercased()
+        .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+        .map(String.init)
+        .filter { $0.count >= 3 && !stop.contains($0) }
+    }
+    let words = contentWords(question) + positives.flatMap(contentWords)
+    let present = words.contains { word in truths.contains { $0.contains(word) } }
+    if present {
+      let verdict = positives.first { !["yes", "true"].contains($0.lowercased()) } ?? "yes"
+      return verdict + shows + truths.prefix(6).joined(separator: ", ")
+    }
+    if let no = negatives.first ?? options.first(where: { ["no", "false"].contains($0.lowercased()) }) {
+      return no + shows + truths.prefix(6).joined(separator: ", ")
+    }
+    return "none of those" + shows + truths.prefix(8).joined(separator: ", ")
   }
 }
 
@@ -1548,7 +1618,8 @@ struct CheckMomentTool: Tool {
   }
   func call(arguments: Arguments) async throws -> String {
     try await VideoEditBox.shared.preload()
-    return await MomentIndexBox.shared.check(at: arguments.seconds, options: arguments.options)
+    return await MomentIndexBox.shared.check(
+      at: arguments.seconds, question: arguments.question, options: arguments.options)
   }
 }
 

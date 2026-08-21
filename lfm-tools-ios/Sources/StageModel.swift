@@ -341,6 +341,15 @@ final class StageModel {
   /// swaps the stage to that pack; default stays the coffee run. Beats and
   /// tools travel together, same as the bench.
   static var scenarioBeats: [String] {
+    // `--beats "a|b|c"` overrides the scripted beats — a take on new
+    // footage (--video) needs beats that name what that footage holds,
+    // and a rebuild per take is the wrong tool for that.
+    if let flag = CommandLine.arguments.firstIndex(of: "--beats"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    {
+      return CommandLine.arguments[flag + 1]
+        .split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+    }
     switch scenarioName {
     case "photo": return photoBeats
     case "focus": return focusBeats
