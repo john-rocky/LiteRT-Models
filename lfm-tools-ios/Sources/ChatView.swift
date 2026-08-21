@@ -127,6 +127,18 @@ struct ChatView: View {
   }
 
   private func autostart() async {
+    // Spec E: pull the CLIP bundle into the model store once, on purpose. The
+    // index build never downloads — a 305 MB fetch inside a take is how a demo
+    // dies — so the rung stays dark until this has run at least once.
+    if CommandLine.arguments.contains("--prime-clip") {
+      #if canImport(CoreAIKitVision)
+        let ok = await MomentIndexBox.primeCLIP()
+        print("CLIP bundle \(ok ? "ready" : "unavailable")")
+      #else
+        print("CLIP bundle unavailable — CoreAI is not on this platform")
+      #endif
+      return
+    }
     if CommandLine.arguments.contains("--export-video") {
       await exportNewestVideo()
       return

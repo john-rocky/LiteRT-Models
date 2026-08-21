@@ -23,6 +23,16 @@ import Photos
 import UIKit
 import Vision
 
+// The CLIP rung (playbook spec E). CoreAI.framework ships in the iphoneos 27
+// SDK but is absent from the Mac Catalyst iOSSupport tree, so this import
+// resolves on the device target and nowhere else — the same shape as
+// #if canImport(LiteRTLM) for the engine with no macabi slice. Catalyst (the
+// whole Mac bench/stage lane) keeps the label shelf and behaves exactly as it
+// did before this file learned the word "embedding".
+#if canImport(CoreAIKitVision)
+  import CoreAIKitVision
+#endif
+
 /// The timeline. One shared instance: the model operates "the video", and
 /// which asset and which clips that means is this class's problem, not the
 /// model's.
@@ -1282,6 +1292,63 @@ final class MomentIndexBox: @unchecked Sendable {
   private var screenText: [Row] = []
   private var status = Status.notBuilt
   private var buildJob: Task<Void, Never>?
+  /// The sample cadence this index was built on — the CLIP side merges its
+  /// runs with the same 3.2×step rule the label side uses.
+  private var sampleStep = 1.0
+
+  #if canImport(CoreAIKitVision)
+    /// The embedding rung: one L2-normalized vector per sampled frame, filled
+    /// in the same loop that runs the OS judges so both sides see one decode.
+    private var clipVectors: [(time: Double, vector: [Float])] = []
+
+    /// Cosine floor for a CLIP hit. Measured rather than guessed:
+    /// `ios/bench/cliprung` (edge-agent-lab) swept it on journey.mp4 with 11
+    /// queries and the four scenes as ground truth. Labels-first, CLIP where
+    /// the shelf is silent: 0.27 answers every query the labels miss and adds
+    /// no false positive, while 0.24 lets two of the three should-miss queries
+    /// through. The scale is per-query, not per-corpus — "a person walking
+    /// away" peaks at 0.265 on footage with no person in it — so this floor is
+    /// a property of this rung, not a universal constant.
+    static let clipThreshold: Float = 0.27
+
+    /// Loaded once per process: the graph compile is the expensive part and a
+    /// second video must not pay it again. Never downloads — a 305 MB fetch
+    /// inside an index build is a demo-killer, so the rung stays dark until
+    /// the bundle is in the store (prime it once with `primeCLIP()`).
+    private actor ClipLoader {
+      private var encoder: ImageTextEncoder?
+      private var tried = false
+
+      func ready(download: Bool) async -> ImageTextEncoder? {
+        if let encoder { return encoder }
+        if tried && !download { return nil }
+        tried = true
+        let local = ModelStore.default.localURL(for: .clipViTB32)
+        guard download || local != nil else {
+          RunLog.write("MOMENTS CLIP bundle not in the store — labels only")
+          return nil
+        }
+        do {
+          let made =
+            local == nil
+            ? try await ImageTextEncoder(model: .clipViTB32)
+            : try await ImageTextEncoder(bundleAt: local!)
+          encoder = made
+          return made
+        } catch {
+          RunLog.write("MOMENTS CLIP unavailable: \(error.localizedDescription)")
+          return nil
+        }
+      }
+    }
+    private static let clipLoader = ClipLoader()
+
+    /// Downloads the CLIP bundle if it is not already in the store. Explicit
+    /// and off the index's path: call it before a take, never during one.
+    static func primeCLIP() async -> Bool {
+      await clipLoader.ready(download: true) != nil
+    }
+  #endif
 
   private func sync<T>(_ body: () -> T) -> T {
     lock.lock()
@@ -1307,6 +1374,9 @@ final class MomentIndexBox: @unchecked Sendable {
       frames = []
       transcript = []
       screenText = []
+      #if canImport(CoreAIKitVision)
+        clipVectors = []
+      #endif
       return old
     }
     job?.cancel()
@@ -1352,6 +1422,13 @@ final class MomentIndexBox: @unchecked Sendable {
     /// labels came from a detector — the scene-snap below needs both.
     var samples: [(time: Double, scene: Set<String>)] = []
     var detectorLabels = Set<String>()
+    #if canImport(CoreAIKitVision)
+      // Same frames, same loop: the rung above the classifier, if its bundle
+      // is already on the device. Absent, the whole side is skipped and the
+      // index is exactly the one every round up to r42 measured.
+      let clip = await Self.clipLoader.ready(download: false)
+      var vectors: [(time: Double, vector: [Float])] = []
+    #endif
     for time in sampleTimes {
       if Task.isCancelled { return }
       guard let cg = await VideoEditBox.shared.sourceFrame(at: time, maxSize: 512) else { continue }
@@ -1384,6 +1461,11 @@ final class MomentIndexBox: @unchecked Sendable {
         guard trimmed.count >= 2 else { continue }
         textTimes[trimmed, default: []].append(time)
       }
+      #if canImport(CoreAIKitVision)
+        if let clip, let vector = try? await clip.encode(image: cg) {
+          vectors.append((time, vector))
+        }
+      #endif
     }
     func runs(_ times: [Double], label: String) -> [Row] {
       var out: [Row] = []
@@ -1478,10 +1560,20 @@ final class MomentIndexBox: @unchecked Sendable {
     var sides = ["frames"]
     if !spoken.isEmpty { sides.append("transcript") }
     if !written.isEmpty { sides.append("screen text") }
+    #if canImport(CoreAIKitVision)
+      if !vectors.isEmpty {
+        sides.append("clip")
+        RunLog.write("MOMENTS CLIP embedded \(vectors.count) frames")
+      }
+    #endif
     sync {
       frames = visual
       transcript = spoken
       screenText = written
+      sampleStep = step
+      #if canImport(CoreAIKitVision)
+        clipVectors = vectors
+      #endif
       status = .ready(sides.joined(separator: ", "))
     }
     print(
@@ -1527,6 +1619,72 @@ final class MomentIndexBox: @unchecked Sendable {
     return "found \(hits.count) moment\(hits.count == 1 ? "" : "s"):\n" + lines.joined(separator: "\n")
       + (hits.count > 8 ? "\n(and \(hits.count - 8) more)" : "")
   }
+
+  /// The frames index, answered labels-first: the OS shelf keeps every case it
+  /// already wins, and the CLIP rung speaks only where the shelf is silent —
+  /// "a puppy running on the sand", "tall buildings seen from above", the
+  /// queries with no detector, no scene noun and no on-screen text. Measured
+  /// labels-first rather than blended because blending is where a rung starts
+  /// costing you rounds you had already won (ios/bench/cliprung).
+  ///
+  /// On Mac Catalyst there is no CoreAI framework, so this is the label search
+  /// and nothing else — the bench and the stage behave byte-for-byte as they
+  /// did before the rung existed.
+  func searchFrames(query: String) async -> String {
+    let labels = search(.frames, query: query)
+    #if canImport(CoreAIKitVision)
+      guard labels.hasPrefix("no moments found") else { return labels }
+      if let found = await clipSearch(query: query) { return found }
+    #endif
+    return labels
+  }
+
+  #if canImport(CoreAIKitVision)
+    /// Text embedding of the model's phrase, cosine against every sampled
+    /// frame, the over-threshold samples merged into the same Row shape the
+    /// label side returns — strongest window first, because a scored index has
+    /// a ranking the label side never had.
+    private func clipSearch(query: String) async -> String? {
+      let (vectors, step) = sync { (clipVectors, sampleStep) }
+      guard !vectors.isEmpty, let encoder = await Self.clipLoader.ready(download: false),
+        let wanted = try? await encoder.encode(text: query)
+      else { return nil }
+      let scored = vectors.map {
+        ($0.time, ImageTextEncoder.cosineSimilarity($0.vector, wanted))
+      }
+      let hitTimes = scored.filter { $0.1 >= Self.clipThreshold }.map { $0.0 }
+      guard !hitTimes.isEmpty else {
+        RunLog.write(
+          "MOMENTS CLIP \"\(query)\" best \(String(format: "%.3f", scored.map(\.1).max() ?? 0)) — under \(Self.clipThreshold)"
+        )
+        return nil
+      }
+      var windows: [(row: Row, peak: Float)] = []
+      for time in hitTimes.sorted() {
+        let score = scored.first { $0.0 == time }?.1 ?? 0
+        if var last = windows.last, time - last.row.end <= step * 3.2 {
+          last.row.end = time + step / 2
+          last.peak = max(last.peak, score)
+          windows[windows.count - 1] = last
+        } else {
+          windows.append(
+            (Row(start: max(0, time - step / 2), end: time + step / 2, text: query), score))
+        }
+      }
+      windows.sort { $0.peak > $1.peak }
+      RunLog.write(
+        "MOMENTS CLIP \"\(query)\" → "
+          + windows.prefix(3).map {
+            "\(VideoEditBox.f($0.row.start))–\(VideoEditBox.f($0.row.end)) s \(String(format: "%.3f", $0.peak))"
+          }.joined(separator: ", "))
+      // "found" leads here too: the verdict word carries the truth.
+      let lines = windows.prefix(8).map {
+        "\(VideoEditBox.f($0.row.start))–\(VideoEditBox.f($0.row.end)) s — \($0.row.text)"
+      }
+      return "found \(windows.count) moment\(windows.count == 1 ? "" : "s"):\n"
+        + lines.joined(separator: "\n")
+    }
+  #endif
 
   /// The forced-choice check: one real frame, the OS's judges, an answer
   /// from the options given — never an open judgment (the judge-study
@@ -1717,7 +1875,7 @@ struct SearchFramesTool: Tool {
   func call(arguments: Arguments) async throws -> String {
     try await VideoEditBox.shared.preload()
     await MomentIndexBox.shared.ensureBuilt()
-    return MomentIndexBox.shared.search(.frames, query: arguments.query)
+    return await MomentIndexBox.shared.searchFrames(query: arguments.query)
   }
 }
 

@@ -14,6 +14,13 @@ packages:
   # resolves.
   LiteRTLM:
     path: ../../litert-lm-ios-host
+  # The CLIP rung behind search_frames (playbook spec E). Same story as
+  # LiteRTLM, different reason: CoreAI.framework is in the iphoneos 27 SDK and
+  # in the macOS 27 SDK, but NOT in the Mac Catalyst iOSSupport tree — so this
+  # package is on the device target only and every use of it is behind
+  # #if canImport(CoreAIKitVision). The Mac lane keeps the OS label shelf.
+  CoreAIKit:
+    path: ../../coreai-kit
 targets:
   LFMTools:
     type: application
@@ -25,6 +32,8 @@ targets:
         product: LiteRTLM
       - package: LiteRTLM
         product: LiteRTLMFoundationModels
+      - package: CoreAIKit
+        product: CoreAIKitVision
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lfmtools.app
