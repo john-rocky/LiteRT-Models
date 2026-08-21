@@ -1119,6 +1119,13 @@ enum BenchToolBox {
       let shows = " — around \(VideoEditBox.f(seconds)) s the frame shows: "
 
       func negated(_ option: String) -> Bool {
+        // JA carries the negation inside the word and writes no spaces, so
+        // these match as bare substrings. Without them a JA option pair is
+        // all-positive: a miss falls through to "none of those" and the
+        // verdict word vetoes a correct retrieval — the findability rule
+        // (playbook spec D) applies to the verdict, not only to the index.
+        for marker in ["なし", "ない", "いない", "ありません", "いません"]
+        where option.contains(marker) { return true }
         let o = " " + option.lowercased() + " "
         return o.contains(" no ") || o.contains(" not ") || o.contains("n't ")
           || o.contains(" none ") || o.contains(" without ") || o.contains(" nothing ")
@@ -1143,7 +1150,18 @@ enum BenchToolBox {
           .map(String.init)
           .filter { $0.count >= 3 && !stop.contains($0) }
       }
-      let words = contentWords(question) + positives.flatMap(contentWords)
+      var words = contentWords(question) + positives.flatMap(contentWords)
+      // JA writes no spaces, so contentWords hands back whole clauses that no
+      // English label can ever contain. The same JA→EN detector-noun aliases
+      // search_frames carries (the real index's search) carry the presence
+      // test across — the findability rule, applied to the check (playbook
+      // spec D). The canned rows keep JA keys of their own, so this only
+      // matters for the detector nouns a real take utters.
+      let asked = ([question] + positives).joined(separator: " ")
+      for (ja, en) in [("犬", "dog"), ("いぬ", "dog"), ("猫", "cat"), ("ねこ", "cat")]
+      where asked.contains(ja) {
+        words.append(en)
+      }
       let present = words.contains { word in lower.contains { $0.contains(word) } }
       if present {
         let verdict = positives.first { !["yes", "true"].contains($0.lowercased()) } ?? "yes"

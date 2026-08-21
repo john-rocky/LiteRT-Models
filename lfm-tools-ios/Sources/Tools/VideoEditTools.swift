@@ -1536,21 +1536,64 @@ final class MomentIndexBox: @unchecked Sendable {
     // pinned to one exact frame vetoed a correct search hit (the dog the
     // index saw at 14.5 s was absent from the 14.0 s frame, 2026-08-21).
     // Three frames around the asked time, truths merged, detectors first.
-    var truths: [String] = []
-    for offset in [-0.6, 0.0, 0.6] {
-      guard let cg = await VideoEditBox.shared.sourceFrame(at: seconds + offset, maxSize: 640)
-      else { continue }
+    /// One frame read: its truths, plus the scene signature the indexer
+    /// builds (classifier labels over 0.35, first eight — see the indexing
+    /// loop above), so the window below can tell a cut from a flicker with
+    /// the same instrument scene-snap uses.
+    func look(at time: Double) async -> (scene: Set<String>, truths: [String])? {
+      guard let cg = await VideoEditBox.shared.sourceFrame(at: time, maxSize: 640)
+      else { return nil }
       let classify = VNClassifyImageRequest()
       let read = VNRecognizeTextRequest()
       read.recognitionLevel = .accurate
       let animals = VNRecognizeAnimalsRequest()
       let handler = VNImageRequestHandler(cgImage: cg)
       try? handler.perform([classify, read, animals])
+      var truths: [String] = []
       truths += (animals.results ?? []).flatMap { $0.labels.map { $0.identifier.lowercased() } }
       truths += (read.results ?? []).compactMap { $0.topCandidates(1).first?.string.lowercased() }
       truths += (classify.results ?? []).filter { $0.confidence > 0.2 }
         .map { $0.identifier.lowercased().replacingOccurrences(of: "_", with: " ") }
+      let scene = Set(
+        (classify.results ?? []).filter { $0.confidence > 0.35 }.prefix(8)
+          .map { $0.identifier.lowercased().replacingOccurrences(of: "_", with: " ") })
+      return (scene, truths)
     }
+    /// The indexer's scene test at the same threshold (`snapped`, above),
+    /// with its empty-set guard: no signature is no evidence of a cut.
+    func agrees(_ a: Set<String>, _ b: Set<String>) -> Bool {
+      let union = a.union(b).count
+      guard union > 0 else { return true }
+      return Double(a.intersection(b).count) / Double(union) >= 0.5
+    }
+    var reads: [(offset: Double, scene: Set<String>, truths: [String])] = []
+    for offset in [-0.6, 0.0, 0.6] {
+      guard let frame = await look(at: seconds + offset) else { continue }
+      reads.append((offset, frame.scene, frame.truths))
+    }
+    // A ±0.6 s window on a cut reads two scenes at once and answers about
+    // whichever one spoke loudest — the check at the dog scene's head came
+    // back describing the forest before it. Scene-snap moves a detector
+    // row's start back to the cut, so a check *at* a boundary time asks
+    // about the scene that starts there: the forward side is the asked
+    // scene. Keep the frames whose signature agrees with +0.6 (the centre
+    // only if it agrees) and walk further forward for replacements.
+    let back = reads.first { $0.offset == -0.6 }
+    let forward = reads.first { $0.offset == 0.6 }
+    if let back, let forward, !back.scene.isEmpty, !forward.scene.isEmpty,
+      !agrees(back.scene, forward.scene)
+    {
+      reads = reads.filter { agrees($0.scene, forward.scene) }
+      for offset in [1.2, 1.8] where reads.count < 3 {
+        guard let frame = await look(at: seconds + offset), agrees(frame.scene, forward.scene)
+        else { continue }
+        reads.append((offset, frame.scene, frame.truths))
+      }
+      RunLog.write(
+        "MOMENTS check at \(VideoEditBox.f(seconds)) s sits on a cut — keeping the forward scene: "
+          + reads.map { "\(VideoEditBox.f(seconds + $0.offset)) s" }.joined(separator: ", "))
+    }
+    var truths = reads.flatMap { $0.truths }
     guard !truths.isEmpty else { return "no frame at \(VideoEditBox.f(seconds)) s" }
     var seen = Set<String>()
     truths = truths.filter { seen.insert($0).inserted }
@@ -1565,6 +1608,13 @@ final class MomentIndexBox: @unchecked Sendable {
     // label match on the positive options, then presence decided by the
     // content words of the question and positive options together.
     func negated(_ option: String) -> Bool {
+      // JA carries the negation inside the word and writes no spaces, so
+      // these match as bare substrings. Without them a JA option pair is
+      // all-positive: a miss falls through to "none of those" and the
+      // verdict word vetoes a correct retrieval — the findability rule
+      // (playbook spec D) applies to the verdict, not only to the index.
+      for marker in ["なし", "ない", "いない", "ありません", "いません"]
+      where option.contains(marker) { return true }
       let o = " " + option.lowercased() + " "
       return o.contains(" no ") || o.contains(" not ") || o.contains("n't ")
         || o.contains(" none ") || o.contains(" without ") || o.contains(" nothing ")
@@ -1589,7 +1639,16 @@ final class MomentIndexBox: @unchecked Sendable {
         .map(String.init)
         .filter { $0.count >= 3 && !stop.contains($0) }
     }
-    let words = contentWords(question) + positives.flatMap(contentWords)
+    var words = contentWords(question) + positives.flatMap(contentWords)
+    // JA writes no spaces, so contentWords hands back whole clauses that no
+    // English label can ever contain. The same JA→EN detector-noun aliases
+    // search_frames carries (above) carry the presence test across — the
+    // findability rule, applied to the check (playbook spec D).
+    let asked = ([question] + positives).joined(separator: " ")
+    for (ja, en) in [("犬", "dog"), ("いぬ", "dog"), ("猫", "cat"), ("ねこ", "cat")]
+    where asked.contains(ja) {
+      words.append(en)
+    }
     let present = words.contains { word in truths.contains { $0.contains(word) } }
     if present {
       let verdict = positives.first { !["yes", "true"].contains($0.lowercased()) } ?? "yes"
