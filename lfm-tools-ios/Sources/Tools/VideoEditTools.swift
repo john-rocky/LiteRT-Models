@@ -2021,3 +2021,24 @@ struct KeepRangeTool: Tool {
     return VideoEditBox.shared.keepRange(start: arguments.start_seconds, end: arguments.end_seconds)
   }
 }
+
+@available(iOS 27.0, *)
+struct DoneTool: Tool {
+  let name = "done"
+  // The ritual sink (r45). Three lanes measured the same habit: after the
+  // model answers, it calls something. Teaching check_moment to answer
+  // doubled its own call rate and the floor ratcheted; taking check_moment
+  // out of a take's room did not remove the ritual — the first beat grew a
+  // seek instead, 9 of 9. So the hypothesis under test is that the slot
+  // wants an occupant rather than a particular tool, and this is the
+  // harmless occupant: no world, no state, no verdict, nothing a later
+  // call can be built on. It is a tool in the room and never a clause in
+  // the instructions — r34 measured what a stop sentence costs, when
+  // keep_range's "nothing after" was read as "the turn ends here" and the
+  // export the request asked for was dropped.
+  let description =
+    "Call when the request has been carried out and nothing is left to do. Takes no arguments and changes nothing."
+  func call(arguments: NoArguments) async throws -> String {
+    "acknowledged"
+  }
+}

@@ -233,6 +233,9 @@ enum BenchToolBox {
         respond: {
           "kept \(VideoEditBox.f($0.start_seconds))–\(VideoEditBox.f($0.end_seconds)) s — the rest is cut"
         }),
+      // The ritual sink (r45): the same neutral acknowledgement the real
+      // tool returns, since the real one has no world to move either.
+      RecordingTool(base: DoneTool(), canned: "acknowledged"),
     ]
 
   /// The store pack, neutralized. The canned world is the pack's own

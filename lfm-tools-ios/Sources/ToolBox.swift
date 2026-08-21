@@ -209,10 +209,14 @@ enum ToolBox {
   /// The measured competencies are the retrieval archetype's: routing a
   /// clause to the right index, copying a found moment's times into the
   /// next call, and the find → seek → trim → export chain.
+  /// `done` is r45's experiment and the pack's only free tool: a sink for
+  /// the post-answer call the model makes whatever the room holds. The
+  /// instructions are untouched — the tool list is the round's only
+  /// variable, 24 → 25.
   static let moments: [any FoundationModels.Tool] =
     video + [
       SearchFramesTool(), SearchTranscriptTool(), SearchScreenTextTool(),
-      CheckMomentTool(), SeekTool(), KeepRangeTool(),
+      CheckMomentTool(), SeekTool(), KeepRangeTool(), DoneTool(),
     ]
 
   /// The store pack (Tools/StoreTools.swift): a Shopify admin's menu over
