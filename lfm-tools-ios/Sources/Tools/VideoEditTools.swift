@@ -1348,6 +1348,10 @@ final class MomentIndexBox: @unchecked Sendable {
     // classifiers flicker frame to frame).
     var labelTimes: [String: [Double]] = [:]
     var textTimes: [String: [Double]] = [:]
+    /// Per-sample scene signature (classifier labels only) and which
+    /// labels came from a detector — the scene-snap below needs both.
+    var samples: [(time: Double, scene: Set<String>)] = []
+    var detectorLabels = Set<String>()
     for time in sampleTimes {
       if Task.isCancelled { return }
       guard let cg = await VideoEditBox.shared.sourceFrame(at: time, maxSize: 512) else { continue }
@@ -1362,13 +1366,17 @@ final class MomentIndexBox: @unchecked Sendable {
       let animals = VNRecognizeAnimalsRequest()
       let handler = VNImageRequestHandler(cgImage: cg)
       try? handler.perform([classify, read, animals])
+      var scene = Set<String>()
       for result in (classify.results ?? []).filter({ $0.confidence > 0.35 }).prefix(8) {
-        labelTimes[result.identifier.lowercased().replacingOccurrences(of: "_", with: " "), default: []]
-          .append(time)
+        let label = result.identifier.lowercased().replacingOccurrences(of: "_", with: " ")
+        labelTimes[label, default: []].append(time)
+        scene.insert(label)
       }
+      samples.append((time, scene))
       for animal in animals.results ?? [] {
         for label in animal.labels where label.confidence > 0.5 {
           labelTimes[label.identifier.lowercased(), default: []].append(time)
+          detectorLabels.insert(label.identifier.lowercased())
         }
       }
       for text in (read.results ?? []).compactMap({ $0.topCandidates(1).first?.string }) {
@@ -1392,7 +1400,38 @@ final class MomentIndexBox: @unchecked Sendable {
       }
       return out
     }
-    let visual = labelTimes.flatMap { runs($0.value, label: $0.key) }.sorted { $0.start < $1.start }
+    // Detector rows start late — the animal detector first fired 2 s after
+    // the cut that opens the dog scene, and a seek to the row start
+    // visibly missed the scene's head (user, 2026-08-21). Snap a detector
+    // row's start backward through samples whose scene signature still
+    // matches (Jaccard ≥ 0.5 on classifier labels): "the moment" a person
+    // means is the scene containing the detection, and the scene starts
+    // at the cut, not at the detector's first confident frame.
+    func snapped(_ rows: [Row]) -> [Row] {
+      rows.map { row in
+        var row = row
+        let firstSample = row.start + step / 2
+        guard var i = samples.firstIndex(where: { abs($0.time - firstSample) < step / 4 })
+        else { return row }
+        let base = samples[i].scene
+        guard !base.isEmpty else { return row }
+        var budget = 4.0
+        while i > 0, budget > 0 {
+          let prev = samples[i - 1].scene
+          let union = base.union(prev).count
+          guard union > 0, Double(base.intersection(prev).count) / Double(union) >= 0.5
+          else { break }
+          i -= 1
+          budget -= step
+        }
+        row.start = max(0, samples[i].time - step / 2)
+        return row
+      }
+    }
+    let visual = labelTimes.flatMap { entry -> [Row] in
+      let rows = runs(entry.value, label: entry.key)
+      return detectorLabels.contains(entry.key) ? snapped(rows) : rows
+    }.sorted { $0.start < $1.start }
     let written = textTimes.flatMap { runs($0.value, label: "\"\($0.key)\"") }
       .sorted { $0.start < $1.start }
     RunLog.write(
