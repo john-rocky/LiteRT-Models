@@ -224,7 +224,7 @@ enum BenchToolBox {
         }),
       RecordingTool(
         base: CheckMomentTool(), canned: "",
-        respond: { MomentEcho.check(seconds: $0.seconds, options: $0.options) }),
+        respond: { MomentEcho.check(seconds: $0.seconds, question: $0.question, options: $0.options) }),
       RecordingTool(
         base: SeekTool(), canned: "",
         respond: { "playhead at \(VideoEditBox.f($0.seconds)) s — the frame is on screen" }),
@@ -1079,15 +1079,29 @@ enum BenchToolBox {
       let lines = hits.map {
         "\(VideoEditBox.f($0.start))–\(VideoEditBox.f($0.end)) s — \($0.text)"
       }
-      return "\(hits.count) moment\(hits.count == 1 ? "" : "s"):\n" + lines.joined(separator: "\n")
+      // "found" leads, exactly as the real index answers: the model's final
+      // answer follows the strongest verdict word among recent results, and
+      // a bare count loses to a later "no moments found" (demo-playbook:
+      // answers follow the verdict word). The bench must ask the same
+      // question the app does.
+      return "found \(hits.count) moment\(hits.count == 1 ? "" : "s"):\n"
+        + lines.joined(separator: "\n")
     }
 
     /// The forced-choice check, canned: the ground truth at one moment,
     /// answered by picking from the options given — the stand-in for the
     /// per-candidate VLM look. The truth is the score at that time plus
-    /// whatever rows cover it; an option no truth supports is refused by
-    /// name, not guessed.
-    static func check(seconds: Double, options: [String]) -> String {
+    /// whatever rows cover it.
+    ///
+    /// The matcher is the real check's, transplanted onto the canned truths
+    /// (VideoEditTools.MomentIndexBox.check — keep the two readable side by
+    /// side): negation partition first, then a direct match on the positive
+    /// options, then presence decided by the content words of the question
+    /// and the positive options, and the verdict word always leads with the
+    /// evidence tail behind it for humans and logs. The bench must not be
+    /// kinder than the app — r33–36 were scored against a stricter canned
+    /// check that refused anything it could not match by name.
+    static func check(seconds: Double, question: String, options: [String]) -> String {
       let score = seconds < 218 ? "0-0" : (seconds < 458 ? "1-0" : "2-0")
       var truths = [score, score.replacingOccurrences(of: "-", with: "対")]
       for row in frames where seconds >= row.start && seconds <= row.end {
@@ -1098,17 +1112,49 @@ enum BenchToolBox {
         truths.append(row.text)
         truths.append(contentsOf: row.keys)
       }
-      if let hit = options.first(where: { option in
-        let o = option.lowercased()
-        return truths.contains { truth in
-          let t = truth.lowercased()
-          return t.contains(o) || o.contains(t)
-        }
-      }) {
-        return hit
+      // The real check collects its truths already lowercased; the canned
+      // rows keep their casing for the evidence tail, so match on a
+      // lowercased mirror and print the rows as written.
+      let lower = truths.map { $0.lowercased() }
+      let shows = " — around \(VideoEditBox.f(seconds)) s the frame shows: "
+
+      func negated(_ option: String) -> Bool {
+        let o = " " + option.lowercased() + " "
+        return o.contains(" no ") || o.contains(" not ") || o.contains("n't ")
+          || o.contains(" none ") || o.contains(" without ") || o.contains(" nothing ")
       }
-      return "none of those — the frame at \(VideoEditBox.f(seconds)) s shows: "
-        + truths.prefix(3).joined(separator: "; ")
+      let positives = options.filter { !negated($0) }
+      let negatives = options.filter { negated($0) }
+      if let hit = positives.first(where: { option in
+        let o = option.lowercased()
+        return lower.contains { $0.contains(o) || o.contains($0) }
+      }) {
+        return hit + shows + truths.prefix(6).joined(separator: ", ")
+      }
+      let stop: Set<String> = [
+        "the", "there", "this", "that", "does", "did", "is", "are", "was", "were", "and",
+        "not", "moment", "frame", "video", "clip", "show", "shows", "shown", "appear",
+        "appears", "visible", "have", "has", "any", "still", "you", "can", "see", "around",
+        "second", "seconds", "present", "yes", "true", "what", "which", "contain", "contains",
+      ]
+      func contentWords(_ text: String) -> [String] {
+        text.lowercased()
+          .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+          .map(String.init)
+          .filter { $0.count >= 3 && !stop.contains($0) }
+      }
+      let words = contentWords(question) + positives.flatMap(contentWords)
+      let present = words.contains { word in lower.contains { $0.contains(word) } }
+      if present {
+        let verdict = positives.first { !["yes", "true"].contains($0.lowercased()) } ?? "yes"
+        return verdict + shows + truths.prefix(6).joined(separator: ", ")
+      }
+      if let no = negatives.first
+        ?? options.first(where: { ["no", "false"].contains($0.lowercased()) })
+      {
+        return no + shows + truths.prefix(6).joined(separator: ", ")
+      }
+      return "none of those" + shows + truths.prefix(8).joined(separator: ", ")
     }
   }
 
