@@ -112,6 +112,9 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
 - [**Vision-Language Model**](#vision-language-model)
   - [SmolVLM-256M](#smolvlm-256m)
 
+- [**Screen Agent**](#screen-agent)
+  - [LFM2.5-VL-3B (Android UI grounding)](#lfm25-vl-3b-android-ui-grounding)
+
 - [**Text Generation**](#text-generation)
   - [RWKV-7 World 0.1B](#rwkv-7-world-01b)
 
@@ -1111,6 +1114,28 @@ Vision encoder converted via **litert-torch** with SigLIP position embedding pre
 **Sample app**: [smolvlm/](smolvlm/) — Image picker + text prompt + streaming response.
 
 **Original project**: [HuggingFaceTB/SmolVLM-256M-Instruct](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct) | [Apache-2.0](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/blob/main/LICENSE)
+
+# Screen Agent
+
+### LFM2.5-VL-3B (Android UI grounding)
+
+An Android app that operates the phone by looking at it: screenshot in, the coordinates to press out, then a real press. The app being driven needs no accessibility tree, no selectors and no integration of any kind. Everything runs on the device and the app holds no `INTERNET` permission.
+
+Runs on the **LiteRT-LM** engine (`.litertlm` bundle) on **CPU**, not CompiledModel GPU — the GPU backend dies during engine init on an 8 GB device.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| LFM2.5-VL-3B int4 | [litert-community/LFM2.5-VL-3B](https://huggingface.co/litert-community/LFM2.5-VL-3B) | 2.35 GB | Image 512x512 + text | JSON `point_2d` normalized 0–1000 | LiteRT-LM CPU |
+
+**Repair the bundle first.** On the released runtime only the top quarter of the image reaches the model, so positional answers are wrong with no error ([LiteRT-LM#3246](https://github.com/google-ai-edge/LiteRT-LM/issues/3246)). `screen-agent/tools/` re-exports the vision encoder with the pooling moved into it and repacks the bundle in place.
+
+**Prompting**: the vendor grounding prompt, verbatim, with the image content part **before** the text. Act mode adds a second prompt that picks `tap` / `scroll` / `back` / `type` before anything is grounded.
+
+**Measured**: Pixel 8a, 11–23 s per turn. `open the notification history` reaches Settings → Notifications → Notification history in 3 turns.
+
+**Sample app**: [screen-agent/](screen-agent/) — type a goal, press Run; the app backgrounds itself and works on whatever is underneath. Bazel, not Gradle.
+
+**Original project**: [LiquidAI/LFM2.5-VL-3B](https://huggingface.co/LiquidAI/LFM2.5-VL-3B) | [LFM Open License v1.0](https://huggingface.co/LiquidAI/LFM2.5-VL-3B/blob/main/LICENSE)
 
 # Text Generation
 

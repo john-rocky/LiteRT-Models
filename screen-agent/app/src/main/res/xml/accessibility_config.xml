@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gestures, plus one write.
+
+     The service watches nothing: it subscribes to a single event type it
+     ignores, and the screen is understood by the model from pixels, never from
+     this tree.
+
+     canRetrieveWindowContent is on only because typing needs it. Android has no
+     way to put characters into a field by gesture, so text input means asking
+     for the input-focused node and setting its text — a write path. Nothing in
+     this app enumerates windows or reads node text back. Turning the flag off
+     costs exactly one capability: Act.Type. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeViewClicked"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/accessibility_description"
+    android:notificationTimeout="100" />

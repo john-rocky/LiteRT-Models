@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Deliberately NOT sandboxed: a sandboxed container is TCC-protected
+	     and the Mac-side scripts could not push cases or pull results from it.
+	     Unsandboxed, the app's Documents is the real ~/Documents — bench files
+	     land there as toolbench-*.jsonl / run-*.log and are cleaned up by the
+	     scripts that read them. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+</dict>
+</plist>
