@@ -433,13 +433,26 @@ final class StageModel {
   /// The stage's own line, added on top of whatever the pack says. The
   /// answer's language is the stage's contract, not the pack's: on a take
   /// the reply bubble is the whole muted narrative, so it belongs to the
-  /// language the person actually spoke. Measured on journey.mp4
-  /// 2026-08-21 — with check_moment out of the room, 5 of 6 JA runs
-  /// answered an English bubble to a Japanese sentence, where 8 of 12
-  /// answered in Japanese with the check still in. It lives here and never
-  /// in `ToolBox.momentsInstructions`, which the bench shares and which is
-  /// the control for r38–r41.
-  static let answerLanguageLine = "Answer in the language the request was made in."
+  /// language the person actually spoke. It lives here and never in
+  /// `ToolBox.momentsInstructions`, which the bench shares and which is the
+  /// control for r38 onward.
+  ///
+  /// **It is written in Japanese, and that is the whole finding.** The same
+  /// sentence in English is what r42 shipped and measured at 1 of 6 JA runs
+  /// — the rate with no line at all. r43 put four conditions through 31 JA
+  /// runs of journey.mp4 in one sitting, all three bubbles counted: the
+  /// English line in the preamble (**1 of 11**), the English line appended
+  /// to each turn's message instead (0 of 5), this Japanese sentence
+  /// appended to each turn's message (0 of 5), and this Japanese sentence
+  /// in the preamble (**6 of 10**, plus a seventh run answering Japanese in
+  /// two bubbles of three). So what the model follows is not what the
+  /// instruction says — all four say the same thing — nor the language of
+  /// the request, which was Japanese in all 31. It is the language of the
+  /// instruction block, and only of that block: the identical Japanese
+  /// sentence beside the turn moved nothing. Nor does it override the
+  /// request — three EN runs under this line answered in English, 3 of 3,
+  /// with the same clean arc.
+  static let answerLanguageLine = "リクエストと同じ言語で回答してください。"
 
   static var scenarioName: String {
     guard let flag = CommandLine.arguments.firstIndex(of: "--scenario"),
@@ -679,6 +692,9 @@ final class StageModel {
         : (Self.scenarioSendsState ? Self.stateInstructions : ToolBox.instructions)
     // Every pack on the stage gets the language line; no pack text moves.
     let instructions = packInstructions + "\n" + Self.answerLanguageLine
+    // Which sentence this binary carries, in the run's own log: r42 had to
+    // hash the source to prove the string had reached the model.
+    RunLog.write("LANG \(Self.answerLanguageLine)")
     toolCount = tools.count
     switch Self.backend {
     case .system:
