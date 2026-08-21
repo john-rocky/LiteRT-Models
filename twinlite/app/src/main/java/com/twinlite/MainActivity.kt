@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.TextView
+import com.google.ai.edge.litert.Accelerator
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
@@ -64,8 +65,14 @@ class MainActivity : ComponentActivity() {
     private fun loadModel() {
         backgroundExecutor.execute {
             try {
-                segmenter = TwinLiteSegmenter(this)
-                statusText.post { statusText.text = "TwinLiteNet GPU ready — drivable area + lanes" }
+                val acc = if (BuildConfig.USE_NPU) Accelerator.NPU else Accelerator.GPU
+                val asset = if (BuildConfig.USE_NPU) "twinlite_npu_aot.tflite" else "twinlite.tflite"
+                val seg = TwinLiteSegmenter(this, asset, acc)
+                segmenter = seg
+                val label = if (BuildConfig.USE_NPU) "NPU (Hexagon, AOT)" else "GPU (Adreno)"
+                statusText.post {
+                    statusText.text = "TwinLiteNet — $label — ready in ${seg.loadMs} ms"
+                }
                 pipeline?.enabled = true
             } catch (e: Exception) {
                 Log.e(TAG, "Load failed: ${e.message}", e)
