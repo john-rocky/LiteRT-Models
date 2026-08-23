@@ -75,19 +75,41 @@ class NpuBenchmark(private val context: Context) {
     }
   }
 
+  fun runPath(
+    modelPath: String,
+    accelerator: Accelerator,
+    warmup: Int = 5,
+    iterations: Int = 50,
+  ): BenchResult = runInternal(modelPath, accelerator, warmup, iterations, fromPath = true)
+
   fun run(
     assetName: String,
     accelerator: Accelerator,
     warmup: Int = 5,
     iterations: Int = 50,
+  ): BenchResult = runInternal(assetName, accelerator, warmup, iterations, fromPath = false)
+
+  private fun runInternal(
+    assetName: String,
+    accelerator: Accelerator,
+    warmup: Int,
+    iterations: Int,
+    fromPath: Boolean,
   ): BenchResult {
     val thermalBefore = thermalStatus()
     val headroomBefore = thermalHeadroom()
     Log.i(TAG, "nativeLibraryDir=$libDir thermalBefore=$thermalBefore headroomBefore=$headroomBefore")
 
     // DispatchLibraryDir also becomes ADSP_LIBRARY_PATH inside LiteRT's QNN manager,
-    // which is how the Hexagon skel next to it gets found.
-    val envOptions = mapOf(Environment.Option.DispatchLibraryDir to libDir)
+    // which is how the Hexagon skel next to it gets found. CompilerPluginLibraryDir is a
+    // separate option and is what an un-compiled model needs: without it LiteRT cannot
+    // find libLiteRtCompilerPlugin_Qualcomm.so, and a stock model asked for on the NPU
+    // lands on XNNPACK instead — with no error, just a CPU-speed number.
+    val envOptions =
+      mapOf(
+        Environment.Option.DispatchLibraryDir to libDir,
+        Environment.Option.CompilerPluginLibraryDir to libDir,
+      )
 
     Environment.create(context, envOptions).use { env ->
       Log.i(TAG, "availableAccelerators=${env.getAvailableAccelerators()}")
@@ -103,7 +125,9 @@ class NpuBenchmark(private val context: Context) {
       }
 
       val loadStart = System.nanoTime()
-      val model = CompiledModel.create(context.assets, assetName, options, env)
+      val model =
+        if (fromPath) CompiledModel.create(assetName, options, env)
+        else CompiledModel.create(context.assets, assetName, options, env)
       val loadMs = (System.nanoTime() - loadStart) / 1e6
 
       model.use {

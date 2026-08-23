@@ -66,6 +66,42 @@ class NpuBenchmarkTest {
   @Test
   fun d03_drift_npu_last() = report(Accelerator.NPU, "ssdlite_npu_aot_sm8650.tflite")
 
+
+  /**
+   * Sweep entry point: model and accelerator come from instrumentation arguments, so a
+   * whole zoo can be measured without packing it into the APK.
+   *
+   *   -e model /data/local/tmp/npubench/foo.tflite -e accel npu
+   */
+  @Test
+  fun sweep() {
+    val args = InstrumentationRegistry.getArguments()
+    val path = args.getString("model") ?: error("pass -e model <path>")
+    val accel = when (args.getString("accel")?.lowercase()) {
+      "npu" -> Accelerator.NPU
+      "cpu" -> Accelerator.CPU
+      else -> Accelerator.GPU
+    }
+    val iterations = args.getString("iters")?.toIntOrNull() ?: 50
+    reportPath(accel, path, iterations)
+  }
+
+  private fun reportPath(accelerator: Accelerator, path: String, iterations: Int) {
+    try {
+      val r = bench.runPath(path, accelerator, iterations = iterations)
+      Log.i(
+        TAG,
+        "SWEEP ${r.accelerator} [${r.asset}] median=${"%.3f".format(r.medianMs)}ms " +
+          "min=${"%.3f".format(r.minMs)}ms max=${"%.3f".format(r.maxMs)}ms " +
+          "load=${"%.1f".format(r.loadMs)}ms runs=${r.runs} " +
+          "thermal=${r.thermalBefore}->${r.thermalAfter} " +
+          "headroom=${r.headroomBefore}->${r.headroomAfter}",
+      )
+    } catch (e: Throwable) {
+      Log.e(TAG, "SWEEP ${accelerator.name} [$path] FAILED: ${e::class.java.simpleName}: ${e.message}")
+    }
+  }
+
   @Test
   fun z_reportDevice() {
     Log.i(TAG, "DEVICE ${android.os.Build.MODEL} / SoC ${android.os.Build.SOC_MODEL}")
