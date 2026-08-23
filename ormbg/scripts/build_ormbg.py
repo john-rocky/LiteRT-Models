@@ -7,15 +7,19 @@ def _patched(*a, **k):
     return _orig(*a, **k)
 F.interpolate = _patched
 from ormbg.models.ormbg import ORMBG
+# Fine-tune overrides (defaults reproduce the official ship exactly):
+#   ORMBG_CKPT=w.pth  your own ORMBG trainer checkpoint
+#   ORMBG_RES=N       square input size (default 1024)
 net = ORMBG()
-sd = torch.load("models/ormbg.pth", map_location="cpu")
+sd = torch.load(os.environ.get("ORMBG_CKPT", "models/ormbg.pth"), map_location="cpu")
 net.load_state_dict(sd); net.eval()
 
 class Wrap(nn.Module):
     def __init__(s, n): super().__init__(); s.n = n
     def forward(s, x): return s.n(x)[0][0]   # sigmoid(d1) main mask [1,1,1024,1024]
 w = Wrap(net).eval()
-dummy = torch.rand(1, 3, 1024, 1024)
+R = int(os.environ.get("ORMBG_RES", "1024"))
+dummy = torch.rand(1, 3, R, R)
 with torch.no_grad(): o = w(dummy)
 print("out:", tuple(o.shape), "range", float(o.min()), float(o.max()))
 np.save("ref_in.npy", dummy.numpy()); np.save("ref_out.npy", o.numpy())

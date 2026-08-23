@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.util.Log
 import com.google.ai.edge.litert.Accelerator
 import com.google.ai.edge.litert.CompiledModel
+import com.google.ai.edge.litert.Environment
 import com.google.ai.edge.litert.TensorBuffer
 
 /**
@@ -19,7 +20,11 @@ import com.google.ai.edge.litert.TensorBuffer
  * ESPNet-based, pure CNN, fully GPU (ConvTranspose2d → ZeroStuffConvT2d). 3.1 MB.
  * Returns two byte masks (1 = foreground) at the model resolution.
  */
-class TwinLiteSegmenter(context: Context, modelFileName: String = "twinlite.tflite") : AutoCloseable {
+class TwinLiteSegmenter(
+    context: Context,
+    modelFileName: String = "twinlite.tflite",
+    accelerator: Accelerator = Accelerator.GPU,
+) : AutoCloseable {
 
     companion object {
         private const val TAG = "TwinLiteNet"
@@ -27,6 +32,11 @@ class TwinLiteSegmenter(context: Context, modelFileName: String = "twinlite.tfli
     }
 
     private val model: CompiledModel
+    private var env: Environment? = null
+
+    /** Milliseconds from construction to a model ready to run — what the demo shows. */
+    var loadMs: Long = 0
+        private set
     private val inBufs: List<TensorBuffer>
     private val outBufs: List<TensorBuffer>
     private var iDa = 0; private var iLl = 1
@@ -40,11 +50,28 @@ class TwinLiteSegmenter(context: Context, modelFileName: String = "twinlite.tfli
     private val llMask = ByteArray(W * H)
 
     init {
-        val options = CompiledModel.Options(Accelerator.GPU)
-        model = CompiledModel.create(context.assets, modelFileName, options, null)
+        val t0 = System.nanoTime()
+        val options = CompiledModel.Options(accelerator)
+        if (accelerator == Accelerator.NPU) {
+            // The NPU needs the dispatch library directory explicitly: LiteRT only warns
+            // when it is missing and then runs without the NPU. The same directory also
+            // becomes ADSP_LIBRARY_PATH, which is how the Hexagon skel is found.
+            env = Environment.create(
+                context,
+                mapOf(
+                    Environment.Option.DispatchLibraryDir to
+                        context.applicationInfo.nativeLibraryDir
+                ),
+            )
+            options.qualcommOptions = CompiledModel.QualcommOptions(
+                htpPerformanceMode = CompiledModel.QualcommOptions.HtpPerformanceMode.BURST
+            )
+        }
+        model = CompiledModel.create(context.assets, modelFileName, options, env)
         inBufs = model.createInputBuffers()
         outBufs = model.createOutputBuffers()
-        Log.i(TAG, "GPU compiled OK — ${inBufs.size} in / ${outBufs.size} out")
+        loadMs = (System.nanoTime() - t0) / 1_000_000
+        Log.i(TAG, "$accelerator ready in ${loadMs}ms — ${inBufs.size} in / ${outBufs.size} out")
     }
 
     /** Returns (drivableMask, laneMask) each W*H bytes (1 = foreground) + time (ms). */
@@ -73,6 +100,7 @@ class TwinLiteSegmenter(context: Context, modelFileName: String = "twinlite.tfli
 
     override fun close() {
         model.close()
+        env?.close()
         if (!resized.isRecycled) resized.recycle()
     }
 }
