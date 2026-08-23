@@ -7,7 +7,9 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
 import android.widget.FrameLayout
+import android.view.TextureView
 import android.widget.TextView
+import com.google.ai.edge.litert.Accelerator
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
@@ -19,11 +21,17 @@ private const val TAG = "TwinLiteNet"
 class MainActivity : ComponentActivity() {
 
     private var segmenter: TwinLiteSegmenter? = null
+    private var loadedMs: Long = 0
+    private var fps = 0
+    private var frameCount = 0
+    private var fpsWindowStart = System.currentTimeMillis()
     private var pipeline: RealtimeCameraPipeline? = null
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
     private lateinit var previewView: PreviewView
     private lateinit var overlayView: SegOverlayView
+    private lateinit var videoView: TextureView
+    private var videoPipeline: VideoFramePipeline? = null
     private lateinit var statusText: TextView
 
     private val W = TwinLiteSegmenter.W; private val H = TwinLiteSegmenter.H
@@ -45,28 +53,41 @@ class MainActivity : ComponentActivity() {
     private fun initUi() {
         val root = FrameLayout(this)
         previewView = PreviewView(this)
+        videoView = TextureView(this)
         overlayView = SegOverlayView(this)
         statusText = TextView(this).apply {
             setTextColor(0xFFFFFFFF.toInt()); setShadowLayer(4f, 0f, 0f, 0xFF000000.toInt())
-            textSize = 16f; setPadding(24, 48, 24, 0); text = "Loading TwinLiteNet (GPU)..."
+            textSize = 16f; setPadding(24, 48, 24, 0); text = if (BuildConfig.USE_NPU) "Loading TwinLiteNet (NPU)..." else "Loading TwinLiteNet (GPU)..."
         }
-        root.addView(previewView, FrameLayout.LayoutParams(
+        // A bundled clip drives both builds, so the two accelerators see identical
+        // frames and the comparison does not depend on where a camera was pointed.
+        root.addView(videoView, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         root.addView(overlayView, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         root.addView(statusText, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP))
         setContentView(root)
+        // The clip starts only once the model is ready: decoding in parallel competes
+        // with shader construction and inflated the GPU load figure by 1.9x.
         loadModel()
-        startCamera()
     }
 
     private fun loadModel() {
         backgroundExecutor.execute {
             try {
-                segmenter = TwinLiteSegmenter(this)
-                statusText.post { statusText.text = "TwinLiteNet GPU ready — drivable area + lanes" }
-                pipeline?.enabled = true
+                val acc = if (BuildConfig.USE_NPU) Accelerator.NPU else Accelerator.GPU
+                val asset = if (BuildConfig.USE_NPU) "twinlite_npu_aot.tflite" else "twinlite.tflite"
+                val seg = TwinLiteSegmenter(this, asset, acc)
+                segmenter = seg
+                loadedMs = seg.loadMs
+                val label = if (BuildConfig.USE_NPU) "NPU (Hexagon, AOT)" else "GPU (Adreno)"
+                statusText.post {
+                    statusText.text = "TwinLiteNet — $label — ready in ${seg.loadMs} ms"
+                }
+                // startVideo() hops to the UI thread, so enabling must happen inside it
+                // — setting it here would run before the pipeline exists.
+                runOnUiThread { startVideo() }
             } catch (e: Exception) {
                 Log.e(TAG, "Load failed: ${e.message}", e)
                 statusText.post { statusText.text = "Load failed: ${e.message}" }
@@ -74,10 +95,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startCamera() {
-        pipeline = RealtimeCameraPipeline(activity = this, previewView = previewView) { bmp ->
+    private fun startVideo() {
+        videoPipeline = VideoFramePipeline(this, videoView, "demo_road.mp4") { bmp ->
             runInference(bmp)
-        }.also { it.enabled = false; it.start(this) }
+        }.also { it.enabled = true; it.start() }
     }
 
     private fun runInference(bmp: Bitmap) {
@@ -93,13 +114,26 @@ class MainActivity : ComponentActivity() {
         ovBitmap.setPixels(ovPixels, 0, W, 0, 0, W, H)
         val bw = bmp.width; val bh = bmp.height
         overlayView.post { overlayView.setOverlay(ovBitmap, bw, bh) }
-        val fps = pipeline?.fps ?: 0
-        statusText.post { statusText.text = "TwinLiteNet GPU  |  $fps FPS  |  ${ms}ms  |  drivable + lanes" }
+        frameCount++
+        val now = System.currentTimeMillis()
+        if (now - fpsWindowStart >= 1000) {
+            fps = (frameCount * 1000L / (now - fpsWindowStart)).toInt()
+            frameCount = 0; fpsWindowStart = now
+        }
+        // The running line must name the accelerator it is actually on, and keep the
+        // load figure visible — it is overwritten within a frame otherwise.
+        val accLabel = if (BuildConfig.USE_NPU) "NPU" else "GPU"
+        statusText.post {
+            statusText.text =
+                // No frame rate here: it would report the demo pipeline's bitmap
+                // grab, not the model. Load and inference are the model's own numbers.
+                "TwinLiteNet $accLabel   |   loaded ${loadedMs} ms   |   inference ${ms} ms"
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        pipeline?.close()
+        videoPipeline?.stop()
         backgroundExecutor.shutdown()
         segmenter?.close()
     }

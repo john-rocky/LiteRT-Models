@@ -19,6 +19,26 @@ android {
         }
     }
 
+    buildFeatures { buildConfig = true }
+
+    // Two APKs, not two modes in one: cold start is the thing being filmed, and a shared
+    // LiteRT Environment would let whichever ran first fix the dispatch options.
+    flavorDimensions += "accel"
+    productFlavors {
+        create("gpu") {
+            dimension = "accel"
+            buildConfigField("boolean", "USE_NPU", "false")
+        }
+        create("npu") {
+            dimension = "accel"
+            applicationIdSuffix = ".npu"
+            buildConfigField("boolean", "USE_NPU", "true")
+            // The Hexagon skel is opened by the DSP through a real path, so the libs must
+            // be extracted rather than left inside the APK.
+            packaging { jniLibs { useLegacyPackaging = true } }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -31,8 +51,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 
     packaging {
@@ -52,7 +74,7 @@ android {
 
 dependencies {
     // LiteRT (CompiledModel API)
-    implementation("com.google.ai.edge.litert:litert:2.1.3")
+    implementation("com.google.ai.edge.litert:litert:2.2.0")
 
     // CameraX
     val cameraVersion = "1.4.1"

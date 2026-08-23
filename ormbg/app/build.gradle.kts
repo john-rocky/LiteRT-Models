@@ -31,8 +31,31 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    flavorDimensions += "accel"
+    productFlavors {
+        create("gpu") {
+            dimension = "accel"
+            buildConfigField("boolean", "USE_NPU", "false")
+        }
+        create("npu") {
+            dimension = "accel"
+            applicationIdSuffix = ".npu"
+            buildConfigField("boolean", "USE_NPU", "true")
+            minSdk = 31
+            // The Hexagon skel is opened by the DSP through a real path, so the libs must
+            // be extracted rather than left inside the APK.
+            packaging { jniLibs { useLegacyPackaging = true } }
+        }
     }
 
     packaging {
@@ -52,7 +75,7 @@ android {
 
 dependencies {
     // LiteRT (CompiledModel API)
-    implementation("com.google.ai.edge.litert:litert:2.1.3")
+    implementation("com.google.ai.edge.litert:litert:2.2.0")
 
     // CameraX
     val cameraVersion = "1.4.1"
