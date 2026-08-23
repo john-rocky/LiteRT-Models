@@ -60,3 +60,7 @@ REALTIME_REPORT.md
 # Vendor NPU runtime libraries — fetched from QAIRT and the LiteRT GitHub Release,
 # never committed (libQnnHtpPrepare.so alone is 82 MB). See npubench/README.md.
 **/jniLibs/**/*.so
+
+# Demo clips are Pexels-licensed source material, fetched not committed.
+# Provenance: twinlite/DEMO_ASSETS.md
+**/assets/*.mp4
