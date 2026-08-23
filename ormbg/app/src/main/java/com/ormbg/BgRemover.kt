@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.util.Log
 import com.google.ai.edge.litert.Accelerator
 import com.google.ai.edge.litert.CompiledModel
+import com.google.ai.edge.litert.Environment
 import com.google.ai.edge.litert.TensorBuffer
 
 /**
@@ -19,7 +20,11 @@ import com.google.ai.edge.litert.TensorBuffer
  * ISNet (RSU / U²-Net-style blocks) — a pure CNN, fully GPU-compatible with one
  * defensive patch (align_corners=False on the bilinear upsamples). ~10 ms/frame.
  */
-class BgRemover(context: Context, modelFileName: String = "ormbg.tflite") : AutoCloseable {
+class BgRemover(
+    context: Context,
+    modelFileName: String = "ormbg.tflite",
+    private val accelerator: Accelerator = Accelerator.GPU,
+) : AutoCloseable {
 
     companion object {
         private const val TAG = "ormbg"
@@ -27,7 +32,22 @@ class BgRemover(context: Context, modelFileName: String = "ormbg.tflite") : Auto
         const val OUT = 256   // downscaled matte returned to the UI (fast compositing)
     }
 
+    private var env: Environment? = null
     private val model: CompiledModel
+
+    /** Wall time of the one-off compile/load, which is where the NPU separates itself. */
+    var loadMs: Long = 0
+        private set
+
+    /**
+     * Time for the model alone — run plus the readback that forces it to finish. This is
+     * the figure the published benchmarks quote. [matte] also returns a whole-frame time,
+     * which additionally carries resize, NCHW packing and matte normalization; those are
+     * identical on both accelerators and would dilute the comparison.
+     */
+    var modelMs: Long = 0
+        private set
+
     private val inBufs: List<TensorBuffer>
     private val outBufs: List<TensorBuffer>
 
@@ -38,11 +58,32 @@ class BgRemover(context: Context, modelFileName: String = "ormbg.tflite") : Auto
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
     init {
-        val options = CompiledModel.Options(Accelerator.GPU)
-        model = CompiledModel.create(context.assets, modelFileName, options, null)
+        val t0 = System.nanoTime()
+        val options = CompiledModel.Options(accelerator)
+        if (accelerator == Accelerator.NPU) {
+            // The NPU needs the dispatch library directory explicitly: LiteRT only warns
+            // when it is missing and then runs without the NPU. The same directory also
+            // becomes ADSP_LIBRARY_PATH, which is how the Hexagon skel is found.
+            env = Environment.create(
+                context,
+                mapOf(
+                    Environment.Option.DispatchLibraryDir to
+                        context.applicationInfo.nativeLibraryDir,
+                    // On-device (JIT) compilation needs the compiler plugin as well.
+                    // Without it the model silently runs on CPU and still returns a number.
+                    Environment.Option.CompilerPluginLibraryDir to
+                        context.applicationInfo.nativeLibraryDir,
+                ),
+            )
+            options.qualcommOptions = CompiledModel.QualcommOptions(
+                htpPerformanceMode = CompiledModel.QualcommOptions.HtpPerformanceMode.BURST
+            )
+        }
+        model = CompiledModel.create(context.assets, modelFileName, options, env)
         inBufs = model.createInputBuffers()
         outBufs = model.createOutputBuffers()
-        Log.i(TAG, "GPU compiled OK — ${inBufs.size} in / ${outBufs.size} out")
+        loadMs = (System.nanoTime() - t0) / 1_000_000
+        Log.i(TAG, "$accelerator ready in ${loadMs}ms — ${inBufs.size} in / ${outBufs.size} out")
     }
 
     /** Returns an [OUT]×[OUT] alpha matte (0..1, min-max normalized) + time (ms). */
@@ -59,8 +100,11 @@ class BgRemover(context: Context, modelFileName: String = "ormbg.tflite") : Auto
             inputFloats[2 * plane + i] = (p and 0xFF) / 255f
         }
         inBufs[0].writeFloat(inputFloats)
+        val tm = System.nanoTime()
         model.run(inBufs, outBufs)
+        // run() only enqueues; reading the output is what waits for the compute.
         val full = outBufs[0].readFloat()   // [1024*1024]
+        modelMs = (System.nanoTime() - tm) / 1_000_000
 
         // min-max normalize then downsample to OUT×OUT (nearest) for fast UI compositing
         var mn = Float.MAX_VALUE; var mx = -Float.MAX_VALUE
@@ -79,6 +123,7 @@ class BgRemover(context: Context, modelFileName: String = "ormbg.tflite") : Auto
 
     override fun close() {
         model.close()
+        env?.close()
         if (!resized.isRecycled) resized.recycle()
     }
 }

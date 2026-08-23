@@ -1,17 +1,14 @@
 package com.ormbg
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
+import android.view.TextureView
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.view.PreviewView
-import androidx.core.content.ContextCompat
+import com.google.ai.edge.litert.Accelerator
 import java.util.concurrent.Executors
 
 private const val TAG = "ormbg"
@@ -19,12 +16,18 @@ private const val TAG = "ormbg"
 class MainActivity : ComponentActivity() {
 
     private var remover: BgRemover? = null
-    private var pipeline: RealtimeCameraPipeline? = null
+    private var pipeline: VideoFramePipeline? = null
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
-    private lateinit var previewView: PreviewView
+    private lateinit var textureView: TextureView
     private lateinit var overlayView: MatteOverlayView
     private lateinit var statusText: TextView
+
+    // One flavor per accelerator, so a run is never a mix of the two.
+    private val accelerator = if (BuildConfig.USE_NPU) Accelerator.NPU else Accelerator.GPU
+    private val accLabel = if (BuildConfig.USE_NPU) "NPU" else "GPU"
+    // Both flavors read the same published file; only the accelerator differs.
+    private val modelFile = "ormbg.tflite"
 
     private val O = BgRemover.OUT
     private val compPixels = IntArray(O * O)
@@ -36,23 +39,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val launcher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { granted -> if (granted) initUi() }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            == PackageManager.PERMISSION_GRANTED
-        ) initUi() else launcher.launch(Manifest.permission.CAMERA)
-    }
-
-    private fun initUi() {
         val root = FrameLayout(this)
-        previewView = PreviewView(this)
+        textureView = TextureView(this)
         overlayView = MatteOverlayView(this)
         statusText = TextView(this).apply {
             setTextColor(0xFFFFFFFF.toInt()); setShadowLayer(4f, 0f, 0f, 0xFF000000.toInt())
-            textSize = 16f; setPadding(24, 48, 24, 0); text = "Loading ormbg (GPU)..."
+            textSize = 13f; setPadding(24, 120, 24, 0); text = "Loading ormbg ($accLabel)..."
         }
-        root.addView(previewView, FrameLayout.LayoutParams(
+        root.addView(textureView, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         root.addView(overlayView, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
@@ -60,15 +54,22 @@ class MainActivity : ComponentActivity() {
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP))
         setContentView(root)
         loadModel()
-        startCamera()
     }
 
+    /**
+     * The load is timed with nothing else running, because video decoding on the same
+     * device inflated it by ~80% when the two overlapped. Playback starts only once the
+     * model is ready.
+     */
     private fun loadModel() {
         backgroundExecutor.execute {
             try {
-                remover = BgRemover(this)
-                statusText.post { statusText.text = "ormbg GPU ready — background removal" }
-                pipeline?.enabled = true
+                val r = BgRemover(this, modelFile, accelerator)
+                remover = r
+                statusText.post {
+                    statusText.text = "ormbg $accLabel   |   loaded ${r.loadMs} ms"
+                    startVideo()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Load failed: ${e.message}", e)
                 statusText.post { statusText.text = "Load failed: ${e.message}" }
@@ -76,10 +77,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startCamera() {
-        pipeline = RealtimeCameraPipeline(activity = this, previewView = previewView) { bmp ->
+    private fun startVideo() {
+        pipeline = VideoFramePipeline(this, textureView, "demo_person.mp4") { bmp ->
             runInference(bmp)
-        }.also { it.enabled = false; it.start(this) }
+        }.also { it.enabled = true; it.start() }
     }
 
     private fun runInference(bmp: Bitmap) {
@@ -103,13 +104,18 @@ class MainActivity : ComponentActivity() {
         compBitmap.setPixels(compPixels, 0, O, 0, 0, O, O)
         val bw = bmp.width; val bh = bmp.height
         overlayView.post { overlayView.setComposite(compBitmap, bw, bh) }
-        val fps = pipeline?.fps ?: 0
-        statusText.post { statusText.text = "ormbg GPU  |  $fps FPS  |  ${ms}ms  |  bg removed" }
+        // No FPS here: it would measure the decode-and-composite loop, not the model.
+        val loaded = r.loadMs
+        val model = r.modelMs
+        statusText.post {
+            statusText.text =
+                "ormbg $accLabel   |   loaded $loaded ms   |   inference $model ms   |   frame $ms ms"
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        pipeline?.close()
+        pipeline?.stop()
         backgroundExecutor.shutdown()
         remover?.close()
     }
