@@ -38,3 +38,19 @@ Launch the app — it scores the bundled sample on start; tap **Pick image** for
 Models are small enough to bundle in the APK (`app/src/main/assets/`). Also on Hugging Face:
 `litert-community/NIMA-LiteRT`. Upstream:
 [idealo/image-quality-assessment](https://github.com/idealo/image-quality-assessment) (Apache-2.0).
+
+## Known limitation: the published graphs carry a dynamic batch axis
+
+`nima_aesthetic_fp16.tflite` / `nima_technical_fp16.tflite` declare their input as
+`Float32[-1, 224, 224, 3]`. The Android app is unaffected (CompiledModel resolves the
+batch at run time), but **LiteRT.js refuses to run them**: both graphs load on
+`wasm_xnnpack` and `webgpu_mldrift` and then fail with
+
+```
+TensorBuffer ranked tensor type Float32[1, 224, 224, 3]
+does not match expected ranked tensor type Float32[-1, 224, 224, 3]
+```
+
+(measured 2026-08-24). Re-exporting with a fixed batch of 1 would make them usable
+from the browser; until then they are recorded as an explicit exclusion in the
+browser-sweep catalog rather than as a failing row.
