@@ -1,0 +1,9 @@
+# SAM 3D Body workspace: nothing large is committed
+.venv/
+models/
+vendor_sam3dbody/
+*.tflite
+*.pt
+*.ckpt
+*.log
+*.bin
