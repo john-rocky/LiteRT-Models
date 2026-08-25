@@ -105,6 +105,7 @@ Each model includes a standalone Android sample app (Kotlin) with real-time came
   - [Kokoro-82M](#kokoro-82m)
   - [Matcha-TTS](#matcha-tts)
   - [VibeVoice-Realtime-0.5B](#vibevoice-realtime-05b)
+  - [Pocket TTS (Kyutai)](#pocket-tts-kyutai)
 
 - [**Vision-Language Model**](#vision-language-model)
   - [SmolVLM-256M](#smolvlm-256m)
@@ -1056,6 +1057,23 @@ VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-di
 
 **Original project**: [microsoft/VibeVoice-Realtime-0.5B](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [MIT](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
 
+### Pocket TTS (Kyutai)
+
+Pocket TTS (Kyutai, ~100M): a **flow-matching LM over continuous 32-dim Mimi latents** — per 12.5 Hz frame a 6-layer/1024-wide transformer conditions an AdaLN MLP flow head that turns one Gaussian draw into the next latent (LSD, **1 step** — no diffusion loop), and a 20M quantizer-free tiny Mimi (×16 ConvTranspose upsample + 2-layer transformer + SEANet) decodes to 24 kHz. **FFT-free**, and the first TTS in this zoo whose **entire pipeline runs on the GPU**: on a Snapdragon SM8850 (LiteRT 2.1.6) all four graphs delegate every node (`LITERT_CL`) and end-to-end synthesis runs at **4.3–5.0× real-time** including decode (8.2 s of speech in 1.63 s). The KV cache is host-side packed 4D (the VibeVoice/dia2 pattern); the voice is a precomputed prompt KV state (6 CC-BY/CC0 voices bundled; Whisper-transcribing the on-device WAVs reproduces the input text).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Flow-LM step (6L) | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 151 MB fp16 | emb [1,1,1024] + cos,sin [1,1,1,64] + mask [1,16,1,513] + pk,pv [1,96,512,64] | cond [1,1024] + eos [1,1] + k,v [1,96,1,64] | CompiledModel GPU |
+| Flow head (AdaLN MLP) | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 18 MB fp16 | cond [1,1024] + noise [1,32] | latent [1,32] | CompiledModel GPU |
+| Mimi dec transformer | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 17 MB fp16 | lat [1,65,32] (slot 0 = previous frame) | feat [1,512,1024] | CompiledModel GPU |
+| Mimi SEANet decoder | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 11 MB fp16 | feat [1,512,4096] | wav [1,1,491520] @ 24 kHz | CompiledModel GPU |
+
+**Conversion** (litert-torch): interleaved RoPE **de-interleaved by baking a row permutation into the QKV projection** (bit-exact — q·k is permutation-invariant), host cos/sin per step; packed KV with tail-concat + additive mask; erf-GELU → **fitted odd tanh-polynomial** (max err 7.1e-5, ~15× closer than tanh-GELU, which measurably shifted latents); the two LSD time embeddings (s=0, t=1) are constants folded into the flow head's cond bias; Mimi decoded in **64-frame blocks overlapping 32** because the 2-layer sliding-window (250) attention stacks to a 498-position receptive field — a single-window overlap is subtly wrong; the ×16 upsample gets the previous latent frame as an explicit input slot (neutral latent `−mean/std` = "no frame"); SEANet one-shot over a causal 256-frame window (dia2 pattern). Full-pipeline tflite-vs-eager audio corr 0.997 with identical EOS timing; per-graph corr 1.000000. See [pockettts/README.md](pockettts/README.md).
+
+**Sample app**: [pockettts/](pockettts/) — voice picker (alba, marius, javert, charles, mary, eve), text → speech, AudioTrack playback, WAV export. Voice cloning needs the Mimi encoder, which only ships in Kyutai's gated repo (zeroed in the ungated weights) — preset voices only.
+
+**Original project**: [kyutai-labs/pocket-tts](https://github.com/kyutai-labs/pocket-tts) | weights [CC-BY-4.0](https://huggingface.co/kyutai/pocket-tts), code MIT
+
 ### KittenTTS nano 0.8 (dynamic length)
 
 KittenTTS nano (KittenML, 15M params, StyleTTS2 + ISTFTNet + mini-ALBERT, 8 voices, 24 kHz, Apache-2.0), the **first dynamic-sequence-length TTS in this zoo** — any sentence length runs on the same graphs, no padding buckets. Upstream is ONNX-only; this port **re-authors the model in TF/Keras from the ONNX weights** and converts with the official `TFLiteConverter`, whose **fused dynamic-length TFLite LSTM kernels** clear the wall that keeps torch-path TTS exports fixed-length (torch.export specializes the LSTM time axis; litert-torch additionally bakes trace lengths into RESHAPEs on any dynamic graph). CPU/XNNPACK target (Raspberry Pi class); Mac M-series RTF **0.017** (fp32 or fp16). Fidelity sits inside the reference's own stochastic noise floor: log-mel corr **0.984** vs the deterministic ONNX, where two runs of the stochastic ONNX itself agree only to 0.983. Streaming: sentence-level = exact; chunked vocoder = approximate (AdaIN whole-utterance statistics), log-mel 0.970.
@@ -1744,8 +1762,29 @@ GPU-friendly equivalents has no lever here, because nothing is falling back:
 | `zipformer_ctc_large_fp16` | 118.69 ms | **45.61 ms** | 0.38× | **615 ms** | 3071 ms |
 | `edgetam-video__memorize` | 251.04 ms | **11.08 ms** | 0.04× | **140 ms** | 1336 ms |
 
-The cause is not established; op count, dtype and architecture family are all unmeasured
-here, so treat this as a result to check per model rather than a rule.
+The cause is not the architecture family. Single-variable experiments on this device
+([NPU_OP_FACTOR_REPORT.md](NPU_OP_FACTOR_REPORT.md)) isolated what actually moves NPU
+latency — and what doesn't:
+
+- **Weight dtype does nothing.** Folding a fp16-weight file (DEQUANTIZE ops) to fp32
+  changed dinov2 by <3% and zipformer not at all, both accelerators, replicated.
+- **GELU flavor: up to 5.8×.** A matched transformer probe runs 9.4 ms with
+  sigmoid-GELU and 53.8 ms with the tanh approximation. The losers carry TANH ops
+  (dinov2, tipsv2, zipformer); the winners carry LOGISTIC or builtin GELU.
+- **Sequence-length shape: up to 2.3×.** Same probe at T=1024 → 2.24 GF/ms,
+  T=1025 → 1.71, T=1500 → 0.97, T=2048 → 2.32. Non-monotonic: awkward lengths fall
+  off the fast path, big friendly ones don't. Whisper (T=1500) loses on this alone;
+  a tanh-GELU + manual-LayerNorm probe at T=1025 reproduces dinov2's rate exactly
+  (0.71 vs 0.74 GF/ms).
+- The GPU is indifferent to all of the above — it stays in a 0.9–4.4 GF/ms band across
+  all 50 models, while the NPU spans 0.05–12.5 depending on graph style.
+- **The flip, measured**: DINOv2-S rebuilt with the builtin GELU op instead of the tanh
+  decomposition goes from **85.9 → 41.9 ms** on the NPU (GPU unchanged at ~54–55 ms) —
+  from losing 0.63× to winning 1.32× — while matching the shipped features at
+  corr 0.999992. One op type decided which accelerator wins.
+
+`memorize` (0.04×) is still unexplained, and zipformer's deficit is only partly
+attributed (TANH present, but 3085 ops at lengths 796/398/199 are untested factors).
 
 **fp16 needs no int8 quantization to reach the NPU.** Every model above compiles with all
 operations placed on the NPU and nothing falling back.
