@@ -22,16 +22,23 @@
 // The library is canned (LibraryData below), the same way the store's
 // products and the CRM's pipeline are: one frozen world both the stage and
 // the bench render, so "it went to the metadata layer" is a checkable claim.
-// What is *not* here yet is the perception rung — VNClassify / VNDetectFace /
-// VNRecognizeText / a CoreImage sharpness meter over real pixels, which is
-// what makes the ROADMAP's "real Vision calls" true. That rung replaces
-// `looks` / `people` / `text` / `sharp` with what the OS says about fixture
-// images; the tool boundary and every case above it stay exactly as they are.
+// Over it sit two rungs that are not canned at all and that the bench never
+// reaches: `indexFixtures()` replaces the canned content with what Vision and
+// CoreImage say about a folder of real photographs, and above that — device
+// only, because CoreAI.framework is absent from the Catalyst SDK tree — the
+// CLIP rung answers where the label shelf is silent, ranking and never
+// claiming (playbook spec E).
 import CoreGraphics
 import Foundation
 import FoundationModels
 import ImageIO
 import Vision
+// Device only: CoreAI.framework is in the iphoneos and macOS SDKs and absent
+// from the Mac Catalyst iOSSupport tree, so every use of it is behind this
+// import and the Catalyst build compiles the rung out entirely.
+#if canImport(CoreAIKitVision)
+  import CoreAIKitVision
+#endif
 
 @available(iOS 27.0, *)
 final class PhotoLibraryBox: @unchecked Sendable {
@@ -64,6 +71,15 @@ final class PhotoLibraryBox: @unchecked Sendable {
     var twin: Int? = nil
     var deleted: Bool = false
   }
+
+  #if canImport(CoreAIKitVision)
+    /// The embedding rung: one L2-normalized vector per indexed photo, filled
+    /// in the same loop that runs the OS judges so both sides see one decode.
+    /// Device-only — CoreAI.framework is absent from the Mac Catalyst SDK tree
+    /// (playbook spec E), so Catalyst compiles this whole side out and the
+    /// Mac rounds l1–l5b measure exactly what they measured.
+    private var clipVectors: [(id: Int, vector: [Float])] = []
+  #endif
 
   private let lock = NSLock()
   private var photos: [Photo] = LibraryData.photos
@@ -207,8 +223,22 @@ final class PhotoLibraryBox: @unchecked Sendable {
     answer(LibraryData.findPhotos(pool(refine), when: nil, place: nil, album: album, favorites: nil))
   }
 
-  func searchPhotos(query: String, refine: Bool?) -> String {
-    answer(LibraryData.search(pool(refine), query: query))
+  /// Labels first, the embedding only where the shelf is silent — the shipped
+  /// wiring of the moments pack's CLIP rung (playbook spec E), which measured
+  /// labels-first as the best arm on the same footage and blending as the way
+  /// to lose rounds you had already won. The order below is that ruling plus
+  /// this pack's own: the cross-rung redirect comes *before* CLIP, because a
+  /// word another rung literally holds is a certainty and a cosine is a guess.
+  func searchPhotos(query: String, refine: Bool?) async -> String {
+    let labels = LibraryData.search(pool(refine), query: query)
+    #if canImport(CoreAIKitVision)
+      if case .rows(let matched, _) = labels, matched.isEmpty,
+        let candidates = await clipSearch(query: query, pool: pool(refine))
+      {
+        return candidates
+      }
+    #endif
+    return answer(labels)
   }
 
   func findPeople(name: String, refine: Bool?) -> String {
@@ -350,6 +380,13 @@ extension PhotoLibraryBox {
     var rows: [Photo] = []
     var hashes: [(id: Int, bits: UInt64)] = []
     var faceCount = 0
+    #if canImport(CoreAIKitVision)
+      // Same images, same loop, one decode: the rung above the classifier, if
+      // its bundle is already in the store. Absent, the whole side is skipped
+      // and the index is exactly the label shelf's.
+      let clip = await Self.clipLoader.ready(download: false)
+      var vectors: [(id: Int, vector: [Float])] = []
+    #endif
     for entry in manifest {
       guard let id = entry["id"] as? Int, let file = entry["file"] as? String,
         let date = entry["date"] as? String, let place = entry["place"] as? String,
@@ -388,6 +425,11 @@ extension PhotoLibraryBox {
           text: lines.isEmpty ? nil : lines.joined(separator: " "),
           sharp: true, softness: Self.softness(image)))
       hashes.append((id, Self.averageHash(image)))
+      #if canImport(CoreAIKitVision)
+        if let clip, let vector = try? await clip.encode(image: image) {
+          vectors.append((id, vector))
+        }
+      #endif
     }
     guard !rows.isEmpty else { return }
     // Same shot twice, measured: ≤ 3 bits apart. The scout swept it — at the
@@ -405,6 +447,9 @@ extension PhotoLibraryBox {
       selection = []
       selectionHow = ""
       pendingDelete = []
+      #if canImport(CoreAIKitVision)
+        clipVectors = vectors
+      #endif
     }
     let vocabulary = Set(rows.flatMap(\.looks)).sorted().prefix(14).joined(separator: ", ")
     RunLog.write(
@@ -412,11 +457,111 @@ extension PhotoLibraryBox {
         + "\(rows.filter { $0.text != nil }.count) with text, "
         + "\(rows.filter { $0.twin != nil }.count) in near-identical pairs")
     RunLog.write("LIBRARY labels: \(vocabulary)")
+    #if canImport(CoreAIKitVision)
+      RunLog.write(
+        vectors.isEmpty
+          ? "LIBRARY CLIP dark — labels only" : "LIBRARY CLIP embedded \(vectors.count) photos")
+    #endif
     RunLog.write(
       "LIBRARY softness: "
         + rows.sorted { ($0.softness ?? 0) < ($1.softness ?? 0) }.prefix(6)
         .map { "#\($0.id) \(Int($0.softness ?? 0))" }.joined(separator: ", "))
   }
+
+  #if canImport(CoreAIKitVision)
+    /// Cosine floor, inherited rather than re-measured: `ios/bench/cliprung`
+    /// swept it on journey.mp4's frames and 0.27 was where labels-first added
+    /// no false positive. **These are stills, and the scale is per-query**
+    /// (spec E's central finding), so this number has never been swept on a
+    /// photo library and is a noise gate, not an operating point. Nothing
+    /// rests on it: the rung's answer never claims presence whatever the
+    /// score, which is exactly why an un-swept threshold is survivable here.
+    static let clipThreshold: Float = 0.27
+
+    /// One encoder per process, never downloaded on the index's path — a
+    /// 305 MB fetch inside a demo is how a demo dies. `--prime-clip` pulls
+    /// the bundle once; the store is shared, so priming for either pack
+    /// primes for both.
+    private actor ClipLoader {
+      private var encoder: ImageTextEncoder?
+      private var tried = false
+
+      func ready(download: Bool) async -> ImageTextEncoder? {
+        if let encoder { return encoder }
+        if tried && !download { return nil }
+        tried = true
+        let local = ModelStore.default.localURL(for: .clipViTB32)
+        guard download || local != nil else {
+          RunLog.write("LIBRARY CLIP bundle not in the store — labels only")
+          return nil
+        }
+        do {
+          let made =
+            local == nil
+            ? try await ImageTextEncoder(model: .clipViTB32)
+            : try await ImageTextEncoder(bundleAt: local!)
+          encoder = made
+          return made
+        } catch {
+          RunLog.write("LIBRARY CLIP unavailable: \(error.localizedDescription)")
+          return nil
+        }
+      }
+    }
+    private static let clipLoader = ClipLoader()
+
+    static func primeCLIP() async -> Bool { await clipLoader.ready(download: true) != nil }
+
+    /// The rung may rank, so it must not claim (spec E). No threshold on this
+    /// lane's footage separated a true hit from a query the world never held,
+    /// because the cosine scale is per-query rather than per-corpus, and no
+    /// calibration rescued it — so presence is not buyable with a number and
+    /// the verdict word decides instead. A CLIP answer therefore opens with
+    /// the label shelf's own negative and offers photos as *candidates*,
+    /// never as a sighting.
+    ///
+    /// It does set the selection, and that is a deliberate tension worth
+    /// naming: a candidate list the next sentence can act on is the whole
+    /// point of the rung ("put those in an album"), while a selection is
+    /// itself a small claim. The wording carries the honesty; the selection
+    /// carries the usefulness.
+    private func clipSearch(query: String, pool: [Photo]) async -> String? {
+      let vectors = sync { clipVectors }
+      guard !vectors.isEmpty, let encoder = await Self.clipLoader.ready(download: false),
+        let wanted = try? await encoder.encode(text: query)
+      else { return nil }
+      let scored =
+        pool
+        .compactMap { photo -> (photo: Photo, score: Float)? in
+          guard let vector = vectors.first(where: { $0.id == photo.id })?.vector else { return nil }
+          return (photo, ImageTextEncoder.cosineSimilarity(vector, wanted))
+        }
+        .sorted { $0.score > $1.score }
+      guard let best = scored.first else { return nil }
+      let hits = scored.filter { $0.score >= Self.clipThreshold }
+      guard !hits.isEmpty else {
+        RunLog.write(
+          "LIBRARY CLIP \"\(query)\" best \(String(format: "%.3f", best.score)) — under \(Self.clipThreshold)"
+        )
+        return nil
+      }
+      RunLog.write(
+        "LIBRARY CLIP \"\(query)\" → "
+          + hits.prefix(3).map { "#\($0.photo.id) \(String(format: "%.3f", $0.score))" }
+          .joined(separator: ", "))
+      sync {
+        selection = hits.map { $0.photo.id }
+        selectionHow = "closest-looking to \"\(query)\""
+        pendingDelete = []
+      }
+      post()
+      let lines = hits.prefix(5).map {
+        LibraryData.line($0.photo) + " (visual similarity \(String(format: "%.2f", $0.score)))"
+      }
+      return "no photo is labelled \"\(query)\" — the closest-looking \(hits.count == 1 ? "one is" : "\(hits.count) are"), not confirmed sightings:\n"
+        + lines.joined(separator: "\n")
+    }
+  #endif
 
   /// Variance of the Laplacian over a 256-px grey render — the standard focus
   /// measure, and (see `LibraryData.blurry`) a measure of edge detail rather
@@ -710,7 +855,7 @@ enum LibraryData {
       return .refusal(blind(query, "the picture"))
     }
     let matched = pool.filter { row in
-      words.contains { word in row.looks.contains { $0.contains(word) } }
+      words.contains { word in row.looks.contains { holds($0, word) } }
     }
     if matched.isEmpty, let elsewhere = otherRung(words, than: .picture) {
       return .refusal(elsewhere)
@@ -829,6 +974,20 @@ enum LibraryData {
       .filter { $0.count >= 3 || $0.contains(where: \.isNumber) }
     for (from, to) in aliases where query.contains(from) { tokens.append(to) }
     return tokens
+  }
+
+  /// Does a label hold this query word? Substring either way, plus the one
+  /// piece of morphology a label shelf cannot do without: the classifier says
+  /// `building` and a person says "buildings". Measured on the device, and it
+  /// mattered more than it looks — "tall buildings from above" fell through to
+  /// the CLIP rung purely because of the missing `s`, which would have made an
+  /// embedding look necessary where the free shelf already had the answer.
+  /// Ask the shelf before claiming a rung, and make sure the shelf was asked
+  /// in a form it could answer.
+  static func holds(_ label: String, _ word: String) -> Bool {
+    if label.contains(word) { return true }
+    if word.count > 3, word.hasSuffix("s"), label.contains(word.dropLast()) { return true }
+    return false
   }
 
   /// The check's cannot-tell branch, in the finders. A JA clause arrives as
@@ -1005,7 +1164,7 @@ struct SearchPhotosTool: Tool {
     var refine: Bool?
   }
   func call(arguments: Arguments) async throws -> String {
-    PhotoLibraryBox.shared.searchPhotos(query: arguments.query, refine: arguments.refine)
+    await PhotoLibraryBox.shared.searchPhotos(query: arguments.query, refine: arguments.refine)
   }
 }
 
