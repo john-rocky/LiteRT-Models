@@ -46,6 +46,13 @@ TFLite has no native `Erf` op. The standard GELU `x * 0.5 * (1 + erf(x/√2))` p
 
 **Solution**: Replace with sigmoid approximation before conversion:
 
+**When downstream is latent/logit-sensitive** (continuous latents, flow/diffusion heads), the
+classic approximations measurably shift outputs (Pocket TTS: tanh-GELU moved flow latents by up
+to 0.1). Use the fitted odd tanh-polynomial instead — max |gelu err| 7.1e-5, still MUL/ADD/TANH/RELU
+only: `erf(z) ≈ tanh(z(c1 + z²(c3 + z²(c5 + z²·c7))))`, c1=1.1280827604, c3=0.10434222081,
+c5=-1.9996018773e-3, c7=4.5717509263e-5, with z clamped to ±5.5 via RELUs before the Horner so
+fp16 never sees large powers. Implementation: `ErfGELU` in `pockettts/scripts/build_pockettts.py`.
+
 ```python
 class SigmoidGELU(nn.Module):
     def forward(self, x):
@@ -391,6 +398,29 @@ mispronounces common/function words ("this"→ðaɪz), so the dictionary must be
 
 Scripts: `matcha/scripts/{build_matcha,convert_final,convert_g2p_matcha}.py`. Models:
 [`litert-community/Matcha-TTS`](https://huggingface.co/litert-community/Matcha-TTS).
+
+### Pocket TTS (Kyutai 100M) — flow-matching LM over continuous Mimi latents (litert 2.1.6)
+
+Converter: litert-torch. Full recipe + parity numbers: `pockettts/` (fused packed-KV step graph,
+LSD time-embeddings folded into the cond bias, 64-frame block decode). Delegate facts worth the
+catalog:
+
+- **KV-step `FULLY_CONNECTED` shapes need litert ≥ 2.1.5 on Mali** (2.1.3 rejects them — same
+  class VibeVoice hit; 2.1.6 used here).
+- **Block-decoding a sliding-window transformer needs overlap ≥ layers×(window−1)**, not one
+  window: layer-2 keys are layer-1 outputs whose own windows reach further back (2 layers ×
+  window 250 → 498 positions; overlap 256 was silently wrong from block 2 on, corr 0.999).
+- **Mali "compiles + runs but degraded" case, transformer-shaped**: the 2-layer Mimi decoder
+  transformer delegates fully (`LITERT_CL` 210/210) but its GPU OUTPUT is audibly degraded
+  (voicing HNR 0.9 dB vs 2.8 dB on CPU = the fp32 reference), and `GpuOptions(precision=FP32)`
+  does NOT recover it — so not fp16 rounding. Same graph class as the mimi/ module's decoder
+  transformer and the VibeVoice σ-VAE finding: ships on CPU (7 calls/utterance, ~2%). The
+  SEANet conv graph and the 6-layer LM on the same GPU are clean. Diagnose voice quality with
+  HNR + high-band noise vs the fp32 reference, then bisect placement per graph.
+- Mali per-step cost on packed-KV AR graphs is **dispatch/sync-bound, not FLOP-bound** (78-MMAC
+  step ≈ 43 ms: 11 ms cache upload + ~30 ms spread over run + 4 readbacks). Fusing the flow head
+  into the step graph and concatenating all outputs into ONE tensor (one invocation, one
+  readback per frame) recovered ~8 ms/frame; Adreno runs the same graphs ~10× faster.
 
 ### Mimi (Kyutai 2024 codec) — the C33 generalization test (and its negative result)
 
