@@ -43,6 +43,9 @@ class MainActivity : Activity() {
             hint = "Enter text to speak"
             setText("Hello! I am Pocket TTS, a tiny hundred million parameter model speaking to you from this phone.")
             minLines = 2
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         }
         voices = Spinner(this).apply {
             adapter = ArrayAdapter(
@@ -91,7 +94,7 @@ class MainActivity : Activity() {
                 val s = synth ?: return@execute
                 try {
                     val r = s.synthesize(text, voice)
-                    saveWav(r.audio)
+                    saveWav(r.audio, voice)
                     val secs = r.audio.size.toFloat() / PocketTtsSynthesizer.SAMPLE_RATE
                     val rtf = secs * 1000f / r.ms
                     val line = "Spoke %.1fs (%d frames) in %d ms — %.2fx real-time (%s)"
@@ -129,7 +132,7 @@ class MainActivity : Activity() {
     }
 
     /** Save the last output as a 24 kHz mono 16-bit WAV in filesDir (adb-pullable). */
-    private fun saveWav(audio: FloatArray) {
+    private fun saveWav(audio: FloatArray, voice: String) {
         val sr = PocketTtsSynthesizer.SAMPLE_RATE
         val data = audio.size * 2
         val bb = java.nio.ByteBuffer.allocate(44 + data).order(java.nio.ByteOrder.LITTLE_ENDIAN)
@@ -139,6 +142,7 @@ class MainActivity : Activity() {
         bb.put("data".toByteArray()); bb.putInt(data)
         for (v in audio) bb.putShort((v.coerceIn(-1f, 1f) * 32767f).toInt().toShort())
         java.io.File(filesDir, "output.wav").writeBytes(bb.array())
+        java.io.File(filesDir, "output_$voice.wav").writeBytes(bb.array())
     }
 
     private fun play(audio: FloatArray) {
