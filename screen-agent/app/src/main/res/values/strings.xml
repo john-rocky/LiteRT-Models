@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_description">Lets the screen agent act where the on-device model says to act: taps, swipes, back, and typing into the field you have focused. It does not read window content — the screen is understood from pixels.</string>
+</resources>

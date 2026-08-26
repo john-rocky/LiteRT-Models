@@ -10,7 +10,7 @@ The README at the repo root is the canonical user-facing index of every model, i
 
 ## Repository layout
 
-Each top-level directory listed below is **its own independent Gradle project** with its own `build.gradle.kts`, `gradlew`, `settings.gradle.kts`, and an `:app` module — there is no multi-module setup, no shared library, and no root Gradle build that includes them. Open the specific module's directory in Android Studio (or run its own `./gradlew`) to build it.
+Each top-level directory listed below is **its own independent Gradle project** with its own `build.gradle.kts`, `gradlew`, `settings.gradle.kts`, and an `:app` module — there is no multi-module setup, no shared library, and no root Gradle build that includes them. Open the specific module's directory in Android Studio (or run its own `./gradlew`) to build it. The one exception is `screen-agent/`, which is a Bazel workspace (`MODULE.bazel`, `//app` and `//sdk`) because it links the LiteRT-LM Android AAR rather than a `.tflite`.
 
 | Directory          | Android `applicationId`     | What it demos                                       |
 |--------------------|-----------------------------|-----------------------------------------------------|
@@ -35,6 +35,7 @@ Each top-level directory listed below is **its own independent Gradle project** 
 | `zimage/`          | `com.zimage`                | Z-Image-Turbo 6B text-to-image (chunked int8 DiT)   |
 | `klein/`           | `com.klein`                 | FLUX.2-klein-4B text-to-image (12 chunked int8 graphs) |
 | `musicgen/`        | —                           | (work in progress)                                  |
+| `screen-agent/`    | `com.edgeagent.lab`         | LFM2.5-VL-3B driving the phone's UI by coordinates (LiteRT-LM, **Bazel**) |
 
 Each module's `app/src/main/java/com/<module>/` typically contains a `MainActivity.kt`, a model wrapper (e.g. `ObjectDetector.kt`, `MobileSAMSegmenter.kt`, `WhisperTranscriber.kt`), and a custom view for visualization. The voice assistant deliberately bundles its own copies of `WhisperTranscriber.kt`, `KokoroSynthesizer.kt`, etc. instead of cross-referencing other modules — see `voiceassistant/README.md` for the rationale (each module must remain standalone and independently runnable).
 

@@ -1,0 +1,98 @@
+name: LFMTools
+options:
+  bundleIdPrefix: com.lfmtools
+  deploymentTarget:
+    iOS: "27.0"
+packages:
+  # The local checkout, not the released package: the Foundation Models adapter
+  # this demo needs (constrained tool routing) lives on that branch.
+  # A worktree pinned at the branch's last commit that builds against the
+  # v0.16.0 prebuilt (72345f92 = the code every measurement was made with):
+  # the branch's 2026-08-19 rebase onto upstream pulled in EmbeddingEngine.swift,
+  # which calls an embedding C API the pinned xcframework does not ship
+  # (LiteRT-LM #3296). Re-point at ../../litert-lm-applefm-fix when that
+  # resolves.
+  LiteRTLM:
+    path: ../../litert-lm-ios-host
+  # The CLIP rung behind search_frames (playbook spec E). Same story as
+  # LiteRTLM, different reason: CoreAI.framework is in the iphoneos 27 SDK and
+  # in the macOS 27 SDK, but NOT in the Mac Catalyst iOSSupport tree — so this
+  # package is on the device target only and every use of it is behind
+  # #if canImport(CoreAIKitVision). The Mac lane keeps the OS label shelf.
+  CoreAIKit:
+    path: ../../coreai-kit
+targets:
+  LFMTools:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    dependencies:
+      - package: LiteRTLM
+        product: LiteRTLM
+      - package: LiteRTLM
+        product: LiteRTLMFoundationModels
+      - package: CoreAIKit
+        product: CoreAIKitVision
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lfmtools.app
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: MFN25KNUGJ
+        # Drop a .litertlm in with Files.app.
+        INFOPLIST_KEY_UIFileSharingEnabled: YES
+        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
+        # One line per tool that asks. iOS kills the app on a missing string, so
+        # every permissioned tool in ToolBox.personal has to be represented here.
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Answers questions about where you are.
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: Reads and adds calendar events.
+        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: Reads and adds reminders.
+        INFOPLIST_KEY_NSContactsUsageDescription: Looks people up in your address book.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Counts what is in your photo library.
+        INFOPLIST_KEY_NSCameraUsageDescription: Switches the rear flashlight on and off.
+        INFOPLIST_KEY_NSMotionUsageDescription: Reads step count, compass heading and air pressure.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Hears what you ask, and measures how loud the room is.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: Turns what you say into a request, on the device.
+        INFOPLIST_KEY_NSAlarmKitUsageDescription: Sets timers and alarms you asked for.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Saves edited copies of your photos.
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+
+  # The same app on the Mac, via Catalyst — no LiteRT engine (the binary
+  # xcframework has no macabi slice; every LiteRT use is behind
+  # #if canImport(LiteRTLM)), so Apple's model is the only backend. What it
+  # buys: every pack's stage and the whole bench run on the Mac while the
+  # phone is away — `LFMToolsMac.app/Contents/MacOS/LFMToolsMac --toolbench
+  # --toolset video --model apple`, cases pushed by copying files into
+  # ~/Library/Containers/com.lfmtools.mac/Data/Documents.
+  LFMToolsMac:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lfmtools.mac
+        SWIFT_VERSION: "6.0"
+        SUPPORTS_MACCATALYST: YES
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
+        TARGETED_DEVICE_FAMILY: "2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: MFN25KNUGJ
+        CODE_SIGN_ENTITLEMENTS: LFMToolsMac.entitlements
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Answers questions about where you are.
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: Reads and adds calendar events.
+        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: Reads and adds reminders.
+        INFOPLIST_KEY_NSContactsUsageDescription: Looks people up in your address book.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Counts what is in your photo library.
+        INFOPLIST_KEY_NSCameraUsageDescription: Switches the rear flashlight on and off.
+        INFOPLIST_KEY_NSMotionUsageDescription: Reads step count, compass heading and air pressure.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Hears what you ask, and measures how loud the room is.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: Turns what you say into a request, on the device.
+        INFOPLIST_KEY_NSAlarmKitUsageDescription: Sets timers and alarms you asked for.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Saves edited copies of your photos.

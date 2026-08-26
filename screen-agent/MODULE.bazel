@@ -1,0 +1,52 @@
+module(name = "screen_agent")
+
+bazel_dep(name = "rules_android", version = "0.7.1")
+bazel_dep(name = "rules_kotlin", version = "2.3.20")
+bazel_dep(name = "rules_java", version = "7.12.2")
+bazel_dep(name = "rules_jvm_external", version = "6.2")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    artifacts = [
+        "androidx.core:core-ktx:1.12.0",
+        "com.google.ai.edge.litertlm:litertlm-android:latest.release",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1",
+    ],
+    # androidx lives on maven.google.com; without it the resolve fails.
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+    version_conflict_policy = "pinned",
+    use_starlark_android_rules = True,
+    aar_import_bzl_label = "@rules_android//rules:rules.bzl",
+)
+use_repo(maven, "maven")
+
+android_sdk_repository_extension = use_extension(
+    "@rules_android//rules/android_sdk_repository:rule.bzl",
+    "android_sdk_repository_extension",
+)
+android_sdk_repository_extension.configure(
+    # Machine-specific: point this at your own SDK. Bazel fails at analysis
+    # time with an opaque "can't readdir()" when it is wrong.
+    path = "/Users/you/Library/Android/sdk",
+    api_level = 35,
+    build_tools_version = "35.0.0",
+)
+use_repo(android_sdk_repository_extension, "androidsdk")
+
+register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
+
+bazel_dep(name = "rules_android_ndk", version = "0.1.5")
+android_ndk_repository_extension = use_extension(
+    "@rules_android_ndk//:extension.bzl",
+    "android_ndk_repository_extension",
+)
+android_ndk_repository_extension.configure(
+    # Machine-specific, and it moves whenever the SDK manager updates the NDK.
+    path = "/Users/you/Library/Android/sdk/ndk/28.2.13676358",
+)
+use_repo(android_ndk_repository_extension, "androidndk")
+
+register_toolchains("@androidndk//:all")

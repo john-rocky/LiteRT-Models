@@ -1,0 +1,4 @@
+common --repo_env=DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+common --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+build --action_env=DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+build --host_action_env=DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
