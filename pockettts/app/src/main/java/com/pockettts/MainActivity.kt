@@ -29,6 +29,7 @@ class MainActivity : Activity() {
     private lateinit var input: EditText
     private lateinit var voices: Spinner
     private lateinit var button: Button
+    private lateinit var waveform: WaveformView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +53,7 @@ class MainActivity : Activity() {
         }
         button = Button(this).apply { text = "Generate"; isEnabled = false }
         status = TextView(this).apply { text = "Loading model…"; textSize = 14f }
+        waveform = WaveformView(this)
         val topMargins = intArrayOf(0, 24, 32, 24)
         for ((index, view) in listOf(input, voices, button, status).withIndex()) {
             val params = LinearLayout.LayoutParams(
@@ -59,6 +61,8 @@ class MainActivity : Activity() {
             params.topMargin = topMargins[index]
             root.addView(view, params)
         }
+        root.addView(waveform, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = 24 })
         setContentView(root)
 
         bg.execute {
@@ -70,18 +74,11 @@ class MainActivity : Activity() {
                 return@execute
             }
             synth = s
+            android.util.Log.i("PocketTTS", "ready (${s.placements})")
             runOnUiThread {
                 status.text = "Ready (${s.placements})."
                 button.isEnabled = true
-                // Headless driving: adb shell am start ... --es text "..." --es voice alba
-                intent.getStringExtra("text")?.let { t ->
-                    input.setText(t)
-                    intent.getStringExtra("voice")?.let { v ->
-                        val i = PocketTtsSynthesizer.VOICES.indexOf(v)
-                        if (i >= 0) voices.setSelection(i)
-                    }
-                    button.performClick()
-                }
+                runFromIntent(intent)
             }
         }
 
@@ -100,7 +97,11 @@ class MainActivity : Activity() {
                     val line = "Spoke %.1fs (%d frames) in %d ms — %.2fx real-time (%s)"
                         .format(secs, r.frames, r.ms, rtf, s.placements)
                     android.util.Log.i("PocketTTS", line)
-                    runOnUiThread { status.text = line; button.isEnabled = true }
+                    runOnUiThread {
+                        status.text = line
+                        button.isEnabled = true
+                        waveform.start(r.audio, PocketTtsSynthesizer.SAMPLE_RATE)
+                    }
                     play(r.audio)
                 } catch (e: Throwable) {
                     android.util.Log.e("PocketTTS", "generation failed", e)
@@ -108,6 +109,23 @@ class MainActivity : Activity() {
                 }
             }
         }
+    }
+
+    /** Headless driving: adb shell am start ... --es text "..." --es voice alba
+     *  (singleTop, so a second am start generates again without reloading). */
+    private fun runFromIntent(i: android.content.Intent?) {
+        val t = i?.getStringExtra("text") ?: return
+        input.setText(t)
+        i.getStringExtra("voice")?.let { v ->
+            val idx = PocketTtsSynthesizer.VOICES.indexOf(v)
+            if (idx >= 0) voices.setSelection(idx)
+        }
+        if (button.isEnabled) button.performClick()
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        runFromIntent(intent)
     }
 
     /** Save the last output as a 24 kHz mono 16-bit WAV in filesDir (adb-pullable). */

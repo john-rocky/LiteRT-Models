@@ -73,8 +73,10 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
         const val FRAME_RATE = 12.5
         const val MASK_NEG = -1e4f
 
-        const val LM = "pt_flowlm_step_fp16.tflite"
-        const val HEAD = "pt_flow_head_fp16.tflite"
+        // step + flow head fused into one graph with one output tensor: on
+        // Mali the per-frame cost is dispatch/sync-bound, and two invocations
+        // plus four readbacks per frame cost more than the math itself.
+        const val LM = "pt_flowlm_fused_fp16.tflite"
         const val DEC_TX = "pt_mimi_dec_tx_fp16.tflite"
         const val DECONLY = "pt_mimi_deconly_fp16.tflite"
         const val EMBED = "pt_embed_f16.bin"
@@ -97,30 +99,40 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
         return f
     }
 
+    // Debug override: a `force_cpu.txt` in the files dir listing keys (lm, head,
+    // dectx, dec — comma/newline separated) pins those graphs to CPU without a
+    // rebuild. Placement experiments on new devices only; absent in normal use.
+    private val forceCpu: Set<String> =
+        File(modelDir, "force_cpu.txt").takeIf { it.exists() }
+            ?.readText()?.split(',', '\n')?.map { it.trim() }?.filter { it.isNotEmpty() }
+            ?.toSet() ?: emptySet()
+
     /** Compile on GPU; fall back to CPU (fp16 weights dequantize to fp32 there). */
-    private fun load(name: String): Pair<CompiledModel, String> = try {
-        CompiledModel.create(path(name).absolutePath, CompiledModel.Options(Accelerator.GPU), null) to "GPU"
-    } catch (e: Throwable) {
-        CompiledModel.create(path(name).absolutePath, CompiledModel.Options(Accelerator.CPU), null) to "CPU"
+    private fun load(name: String, key: String): Pair<CompiledModel, String> {
+        val p = path(name).absolutePath
+        if (key in forceCpu) {
+            return CompiledModel.create(p, CompiledModel.Options(Accelerator.CPU), null) to "CPU*"
+        }
+        return try {
+            CompiledModel.create(p, CompiledModel.Options(Accelerator.GPU), null) to "GPU"
+        } catch (e: Throwable) {
+            CompiledModel.create(p, CompiledModel.Options(Accelerator.CPU), null) to "CPU"
+        }
     }
 
-    private val lmP = load(LM)
-    private val headP = load(HEAD)
-    private val dectxP = load(DEC_TX)
-    private val deconlyP = load(DECONLY)
+    private val lmP = load(LM, "lm")
+    private val dectxP = load(DEC_TX, "dectx")
+    private val deconlyP = load(DECONLY, "dec")
     private val lm = lmP.first
-    private val head = headP.first
     private val dectx = dectxP.first
     private val deconly = deconlyP.first
 
-    /** e.g. "lm:GPU head:GPU dectx:GPU dec:GPU" — shown in the UI status line. */
+    /** e.g. "lm:GPU dectx:GPU dec:GPU" — shown in the UI status line. */
     val placements =
-        "lm:${lmP.second} head:${headP.second} dectx:${dectxP.second} dec:${deconlyP.second}"
+        "lm:${lmP.second} dectx:${dectxP.second} dec:${deconlyP.second}"
 
     private val lmIn = lm.createInputBuffers()
     private val lmOut = lm.createOutputBuffers()
-    private val headIn = head.createInputBuffers()
-    private val headOut = head.createOutputBuffers()
     private val dectxIn = dectx.createInputBuffers()
     private val dectxOut = dectx.createOutputBuffers()
     private val deconlyIn = deconly.createInputBuffers()
@@ -217,8 +229,15 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
         }
     }
 
-    /** One flow-LM step: returns (cond[1024], eosLogit) and appends this step's K/V. */
-    private fun step(emb: FloatArray): Pair<FloatArray, Float> {
+    private val zeroNoise = FloatArray(LDIM)
+
+    /**
+     * One fused frame: flow-LM step + flow head in a single invocation.
+     * Output layout: eos(1) | latent(32) | new-k(96*64) | new-v(96*64).
+     * Returns (latent, eosLogit) and appends this step's K/V at [pos].
+     * Text prompting passes zero noise and ignores the latent.
+     */
+    private fun step(emb: FloatArray, noise: FloatArray): Pair<FloatArray, Float> {
         check(pos < PMAX) { "KV cache overflow at $pos" }
         ropeFill(pos)
         lmIn[0].writeFloat(emb)
@@ -227,26 +246,19 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
         lmIn[3].writeFloat(mask)
         lmIn[4].writeFloat(pk)
         lmIn[5].writeFloat(pv)
+        lmIn[6].writeFloat(noise)
         lm.run(lmIn, lmOut)
-        val cond = lmOut[0].readFloat()
-        val eos = lmOut[1].readFloat()[0]
-        val nk = lmOut[2].readFloat()
-        val nv = lmOut[3].readFloat()
+        val out = lmOut[0].readFloat()
+        val eos = out[0]
+        val latent = out.copyOfRange(1, 1 + LDIM)
+        val kvBase = 1 + LDIM
         for (g in 0 until G) {
-            System.arraycopy(nk, g * HD, pk, g * PMAX * HD + pos * HD, HD)
-            System.arraycopy(nv, g * HD, pv, g * PMAX * HD + pos * HD, HD)
+            System.arraycopy(out, kvBase + g * HD, pk, g * PMAX * HD + pos * HD, HD)
+            System.arraycopy(out, kvBase + G * HD + g * HD, pv, g * PMAX * HD + pos * HD, HD)
         }
         for (h in 0 until NH) mask[h * (PMAX + 1) + pos] = 0f
         pos++
-        return cond to eos
-    }
-
-    private fun sampleLatent(cond: FloatArray): FloatArray {
-        val noise = FloatArray(LDIM) { (rnd.nextGaussian() * sqrt(TEMP.toDouble())).toFloat() }
-        headIn[0].writeFloat(cond)
-        headIn[1].writeFloat(noise)
-        head.run(headIn, headOut)
-        return headOut[0].readFloat()
+        return latent to eos
     }
 
     /** Generate speech for `text` with the currently loaded voice. */
@@ -277,17 +289,19 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
     /** The reference autoregressive loop for one <=50-token chunk. */
     private fun generateChunk(ids: IntArray, framesAfterEos: Int): List<FloatArray> {
         resetToVoice()
-        for (id in ids) step(embRow(id))
+        for (id in ids) step(embRow(id), zeroNoise)
         val estimate = ceil((ids.size / TOKENS_PER_SECOND + GEN_SECONDS_PADDING) * FRAME_RATE)
         val maxGen = minOf(estimate.toInt(), PMAX - pos - 1)
         val latents = ArrayList<FloatArray>(maxGen)
         var emb = bosInput
         var eosStep = -1
         for (g in 0 until maxGen) {
-            val (cond, eosLogit) = step(emb)
+            val noise = FloatArray(LDIM) {
+                (rnd.nextGaussian() * sqrt(TEMP.toDouble())).toFloat()
+            }
+            val (lat, eosLogit) = step(emb, noise)
             if (eosLogit > EOS_THRESHOLD && eosStep < 0) eosStep = g
             if (eosStep >= 0 && g >= eosStep + framesAfterEos) break
-            val lat = sampleLatent(cond)
             latents.add(lat)
             emb = projectLatent(lat)
         }
@@ -398,9 +412,9 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
     }
 
     override fun close() {
-        listOf(lmIn, lmOut, headIn, headOut, dectxIn, dectxOut, deconlyIn, deconlyOut)
+        listOf(lmIn, lmOut, dectxIn, dectxOut, deconlyIn, deconlyOut)
             .forEach { l -> l.forEach { it.close() } }
-        lm.close(); head.close(); dectx.close(); deconly.close(); embChannel.close()
+        lm.close(); dectx.close(); deconly.close(); embChannel.close()
     }
 
     private fun readF32(f: File): FloatArray {

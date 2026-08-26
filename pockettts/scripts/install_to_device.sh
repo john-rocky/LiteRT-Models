@@ -7,8 +7,7 @@ SRC="${1:-$(dirname "$0")/out}"
 DST="/sdcard/Android/data/com.pockettts/files"
 
 FILES=(
-  pt_flowlm_step_fp16.tflite
-  pt_flow_head_fp16.tflite
+  pt_flowlm_fused_fp16.tflite
   pt_mimi_dec_tx_fp16.tflite
   pt_mimi_deconly_fp16.tflite
   pt_embed_f16.bin
