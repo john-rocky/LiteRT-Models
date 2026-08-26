@@ -356,6 +356,108 @@ class FlowHead(nn.Module):
         return noise + self.final_layer.linear(h)
 
 
+class FusedStep(nn.Module):
+    """flow-LM step + flow head in ONE graph with ONE output tensor.
+
+    On Mali the per-step cost is dispatch/sync-bound, not FLOP-bound: two
+    CompiledModel invocations per frame (step + head) plus four separate
+    output readbacks cost more than the math. This variant runs the whole
+    frame in one invocation and concatenates every result into a single
+    [1, 1+32+6144+6144] vector: eos | latent | new-k | new-v. During text
+    prompting the host feeds zero noise and ignores the latent slot.
+    """
+
+    def __init__(self, flow_lm):
+        super().__init__()
+        self.step = FlowLMStep(flow_lm)
+        self.head = FlowHead(flow_lm)
+
+    def forward(self, x, cos, sin, mask, pk, pv, noise):
+        cond, eos, nk, nv = self.step(x, cos, sin, mask, pk, pv)
+        lat = self.head(cond, noise)
+        return torch.cat(
+            [eos, lat, nk.reshape(1, -1), nv.reshape(1, -1)], dim=-1)
+
+
+def stage_fused(model):
+    print("\n=== fused step graph (step + head, single output) ===")
+    flm = model.flow_lm
+    fused = FusedStep(flm).eval()
+    step = fused.step
+    head = fused.head
+
+    ks, vs, off0 = load_voice_state("alba")
+    pk, pv = pack_voice(ks, vs, off0)
+    emb_w = flm.conditioner.embed.weight.detach()
+    in_w = flm.input_linear.weight.detach()
+    bos_in = (flm.bos_emb.detach() @ in_w.T)
+
+    # teacher-forced 12-step free-run vs the separate modules
+    torch.manual_seed(3)
+    noises = [torch.randn(1, LDIM) * math.sqrt(0.3) for _ in range(12)]
+    off_a = off0
+    pk_a, pv_a = pk.clone(), pv.clone()
+    lat_sep = []
+    x_in = bos_in.view(1, 1, -1)
+    with torch.no_grad():
+        for i in range(12):
+            c, s = rope_cos_sin_deint(off_a)
+            cond, eos, nk, nv = step(x_in, torch.from_numpy(c).view(1, 1, 1, HD),
+                                     torch.from_numpy(s).view(1, 1, 1, HD),
+                                     torch.from_numpy(make_mask(off_a)), pk_a, pv_a)
+            pk_a[0, :, off_a] = nk[0, :, 0]
+            pv_a[0, :, off_a] = nv[0, :, 0]
+            off_a += 1
+            lat = head(cond, noises[i])
+            lat_sep.append(lat)
+            x_in = (lat[0] @ in_w.T).view(1, 1, -1)
+    off_b = off0
+    pk_b, pv_b = pk.clone(), pv.clone()
+    lat_fused = []
+    x_in = bos_in.view(1, 1, -1)
+    with torch.no_grad():
+        for i in range(12):
+            c, s = rope_cos_sin_deint(off_b)
+            out = fused(x_in, torch.from_numpy(c).view(1, 1, 1, HD),
+                        torch.from_numpy(s).view(1, 1, 1, HD),
+                        torch.from_numpy(make_mask(off_b)), pk_b, pv_b, noises[i])
+            lat = out[:, 1:1 + LDIM]
+            nk = out[:, 1 + LDIM:1 + LDIM + G_KV].reshape(1, N_LAYERS * N_HEADS, 1, HD)
+            nv = out[:, 1 + LDIM + G_KV:].reshape(1, N_LAYERS * N_HEADS, 1, HD)
+            pk_b[0, :, off_b] = nk[0, :, 0]
+            pv_b[0, :, off_b] = nv[0, :, 0]
+            off_b += 1
+            lat_fused.append(lat)
+            x_in = (lat[0] @ in_w.T).view(1, 1, -1)
+    d = max(maxd(a.numpy(), b.numpy()) for a, b in zip(lat_sep, lat_fused))
+    print(f"fused vs separate modules over 12 free-run steps: max|d| {d:.2e}")
+
+    example = (torch.zeros(1, 1, D_MODEL), torch.zeros(1, 1, 1, HD),
+               torch.zeros(1, 1, 1, HD), torch.zeros(1, N_HEADS, 1, PMAX + 1),
+               torch.zeros(1, N_LAYERS * N_HEADS, PMAX, HD),
+               torch.zeros(1, N_LAYERS * N_HEADS, PMAX, HD),
+               torch.zeros(1, LDIM))
+    p = convert(fused, example, os.path.join(OUT, "pt_flowlm_fused.tflite"))
+    opcheck(p, "flowlm_fused")
+    to_fp16(p, os.path.join(OUT, "pt_flowlm_fused_fp16.tflite"))
+    opcheck(os.path.join(OUT, "pt_flowlm_fused_fp16.tflite"), "flowlm_fused_fp16")
+
+    cm = CM(p)
+    c, s = rope_cos_sin_deint(off0)
+    with torch.no_grad():
+        ref = fused(bos_in.view(1, 1, -1), torch.from_numpy(c).view(1, 1, 1, HD),
+                    torch.from_numpy(s).view(1, 1, 1, HD),
+                    torch.from_numpy(make_mask(off0)), pk, pv, noises[0])
+    outs = cm(bos_in.view(1, 1, -1).numpy(), c.reshape(1, 1, 1, HD),
+              s.reshape(1, 1, 1, HD), make_mask(off0), pk.numpy(), pv.numpy(),
+              noises[0].numpy())
+    print(f"tflite fused one-step corr {corr(outs[0], ref.numpy()):.6f} "
+          f"max|d| {maxd(outs[0], ref.numpy()):.2e}")
+
+
+G_KV = N_LAYERS * N_HEADS * HD
+
+
 # ============================================================ mimi dec graphs
 def banded_bias(seq, window, neg=MASK_NEG):
     i = torch.arange(seq)[:, None]
@@ -1012,6 +1114,8 @@ def main():
         stage_flowlm(model)
     if stage in ("head", "all"):
         stage_head(model)
+    if stage in ("fused", "all"):
+        stage_fused(model)
     if stage in ("dectx", "all"):
         stage_dectx(model)
     if stage in ("deconly", "all"):

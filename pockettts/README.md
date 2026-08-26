@@ -24,23 +24,39 @@ pipeline — language model, flow head and codec decoder — runs on the GPU**.
 
 ## Graphs and placement
 
-All four graphs are stateless; KV caches, RoPE tables, the token-embedding lookup, the
+Every graph is stateless; KV caches, RoPE tables, the token-embedding lookup, the
 32→1024 latent projection, noise draws and EOS logic live in Kotlin
 (`PocketTtsSynthesizer.kt`) — the dia2/vibevoice packed-KV pattern.
 
 | graph | I/O | fp16 size |
 |---|---|---|
-| `pt_flowlm_step` | emb[1,1,1024] + cos/sin[1,1,1,64] + mask[1,16,1,513] + pk/pv[1,96,512,64] → cond[1,1024], eos[1,1], nk/nv[1,96,1,64] | 151 MB |
-| `pt_flow_head` | cond[1,1024] + noise[1,32] → latent[1,32] | 18 MB |
+| `pt_flowlm_fused` | emb[1,1,1024] + cos/sin[1,1,1,64] + mask[1,16,1,513] + pk/pv[1,96,512,64] + noise[1,32] → [1,12321] = eos ∣ latent ∣ new-k ∣ new-v | 169 MB |
 | `pt_mimi_dec_tx` | lat[1,65,32] → feat[1,512,1024] | 17 MB |
 | `pt_mimi_deconly` | feat[1,512,4096] → audio[1,1,491520] | 11 MB |
+| `pt_flowlm_step` / `pt_flow_head` | the same frame split into two graphs (cond exposed) — reference variant, not loaded by the app | 151 + 18 MB |
 
-Measured on a Samsung SM-S942Q (Snapdragon SM8850, Adreno) with LiteRT 2.1.6: **all four
-graphs delegate every node** (`Replacing N out of N node(s) with delegate (LITERT_CL)`),
-and end-to-end generation runs at **4.3–5.0× real-time** (8.2 s of speech in 1.63 s;
-13.0 s in 3.05 s, decode included). Whisper-transcribing the on-device WAVs reproduces the
-input text. The KV-step `FULLY_CONNECTED` shapes are the class Mali rejects on LiteRT
-2.1.3 and accepts from 2.1.5, hence the 2.1.6 pin here.
+The app runs the **fused** frame graph: on Mali the per-frame cost is dispatch/sync-bound,
+not FLOP-bound — with the split graphs one frame measured ~11 ms input write + ~12 ms
+`run()` + ~20 ms readback (the readback hides the asynchronous GPU completion, spread over
+four separate output reads) plus a second invocation for the head. Fusing the head and
+concatenating everything into one output removes one invocation and three readbacks per
+frame (−1.1 s on an 8 s utterance, measured).
+
+Measured with LiteRT 2.1.6, decode included, app process warm — **every graph delegates
+every node** (`Replacing N out of N node(s) with delegate (LITERT_CL)`) on both devices:
+
+* Samsung SM-S942Q (Snapdragon SM8850, Adreno): **4.3–5.0× real-time** (8.2 s of speech in
+  1.63 s; 13.0 s in 3.05 s over 3 chunks) — measured with the split step+head graphs; the
+  fused graph only removes overhead.
+* Pixel 8a (Tensor G3, Mali-G715): **~1.0× real-time** (7.9 s in 7.7 s; 12.5 s in 13.1 s
+  over 3 chunks) with the fused graph. The gap to Adreno is per-step overhead (25 MB of
+  packed-KV upload plus ~500 kernel dispatches per 78-MMAC step), not arithmetic. For
+  reference, pinning the flow-LM to CPU via `force_cpu.txt` measures 1.24× on this device;
+  the shipped configuration keeps everything on the GPU.
+
+Whisper-transcribing the on-device WAVs reproduces the input text on both devices. The
+KV-step `FULLY_CONNECTED` shapes are the class Mali rejects on LiteRT 2.1.3 and accepts
+from 2.1.5, hence the 2.1.6 pin here.
 
 ## Re-authoring (numerically equivalent except one op)
 
@@ -100,6 +116,7 @@ app's external files dir.
 |---|---|
 | flow-LM step vs eager (teacher-forced, 41 steps) | cond corr 1.000000, latent max\|d\| 1.4e-2 (all from the GELU polynomial; erf-GELU control: 1.7e-5) |
 | flow head vs eager `lsd_decode` | max\|d\| 2.4e-7 |
+| fused frame graph vs split step+head modules (12 free-run steps) | max\|d\| 0.0 (identical); tflite corr 1.000000 |
 | dec_tx blocks vs full-sequence eager | corr 1.000000, max\|d\| 5.2e-4 |
 | dec_tx + SEANet vs eager `decode_from_latent` | corr 1.000000, max\|d\| 2.0e-4 |
 | full tflite pipeline vs eager, same noise | audio corr 0.997, identical EOS step |
