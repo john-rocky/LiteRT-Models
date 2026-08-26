@@ -99,13 +99,17 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
         return f
     }
 
-    // Debug override: a `force_cpu.txt` in the files dir listing keys (lm, head,
-    // dectx, dec — comma/newline separated) pins those graphs to CPU without a
-    // rebuild. Placement experiments on new devices only; absent in normal use.
-    private val forceCpu: Set<String> =
-        File(modelDir, "force_cpu.txt").takeIf { it.exists() }
+    // Debug overrides, read from the files dir (comma/newline-separated keys:
+    // lm, dectx, dec). `force_cpu.txt` pins graphs to CPU; `force_fp32.txt`
+    // keeps them on the GPU but at FP32 compute precision (the delegate's
+    // default is fp16). Placement experiments only; absent in normal use.
+    private fun overrideSet(file: String): Set<String> =
+        File(modelDir, file).takeIf { it.exists() }
             ?.readText()?.split(',', '\n')?.map { it.trim() }?.filter { it.isNotEmpty() }
             ?.toSet() ?: emptySet()
+
+    private val forceCpu = overrideSet("force_cpu.txt")
+    private val forceFp32 = overrideSet("force_fp32.txt")
 
     /** Compile on GPU; fall back to CPU (fp16 weights dequantize to fp32 there). */
     private fun load(name: String, key: String): Pair<CompiledModel, String> {
@@ -114,14 +118,33 @@ class PocketTtsSynthesizer(context: Context) : Closeable {
             return CompiledModel.create(p, CompiledModel.Options(Accelerator.CPU), null) to "CPU*"
         }
         return try {
-            CompiledModel.create(p, CompiledModel.Options(Accelerator.GPU), null) to "GPU"
+            if (key in forceFp32) {
+                val opts = CompiledModel.Options(Accelerator.GPU)
+                opts.gpuOptions =
+                    CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
+                CompiledModel.create(p, opts, null) to "GPU32"
+            } else {
+                CompiledModel.create(p, CompiledModel.Options(Accelerator.GPU), null) to "GPU"
+            }
         } catch (e: Throwable) {
             CompiledModel.create(p, CompiledModel.Options(Accelerator.CPU), null) to "CPU"
         }
     }
 
+    // The Mimi decoder transformer runs on CPU BY DEFAULT: on Mali its GPU
+    // output is audibly degraded (alba HNR 2.8 dB on CPU vs 0.9 dB on GPU,
+    // recovered exactly to the fp32 eager level by this one move), and GPU
+    // FP32 precision does NOT fix it — the same delegate behavior the Mimi
+    // zoo module documents for its decoder transformer. It is 7 small calls
+    // per utterance, so the speed cost is ~2% (1.03x -> 1.01x on a Pixel 8a).
+    // `force_gpu.txt` with "dectx" re-enables GPU for experiments.
+    private val forceGpu = overrideSet("force_gpu.txt")
+
     private val lmP = load(LM, "lm")
-    private val dectxP = load(DEC_TX, "dectx")
+    private val dectxP =
+        if ("dectx" in forceGpu) load(DEC_TX, "dectx")
+        else CompiledModel.create(
+            path(DEC_TX).absolutePath, CompiledModel.Options(Accelerator.CPU), null) to "CPU"
     private val deconlyP = load(DECONLY, "dec")
     private val lm = lmP.first
     private val dectx = dectxP.first

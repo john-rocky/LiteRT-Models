@@ -42,17 +42,29 @@ four separate output reads) plus a second invocation for the head. Fusing the he
 concatenating everything into one output removes one invocation and three readbacks per
 frame (−1.1 s on an 8 s utterance, measured).
 
-Measured with LiteRT 2.1.6, decode included, app process warm — **every graph delegates
-every node** (`Replacing N out of N node(s) with delegate (LITERT_CL)`) on both devices:
+**Placement: the Mimi decoder transformer (`pt_mimi_dec_tx`) ships on CPU.** Every graph
+compiles fully on the GPU (`Replacing N out of N node(s) with delegate (LITERT_CL)`) on
+both devices tried, but on the Pixel 8a's Mali the GPU OUTPUT of that one graph is audibly
+degraded — gravelly, hissy voicing. Measured on the alba voice: HNR 0.9 dB and −32 dB
+high-band noise on GPU vs **2.8 dB / −37 dB on CPU, which matches the fp32 desktop eager
+reference exactly**; requesting `GpuOptions(precision = FP32)` does NOT recover it (0.6 dB),
+so this is not fp16 rounding — the same decoder-transformer behavior the mimi/ module
+documents, and the σ-VAE class of finding from vibevoice/. The SEANet graph on GPU is
+clean (CPU-pinning it changes nothing but speed), as are the LM and flow head. The
+transformer is 7 small calls per utterance: 1.03× → 1.01× real-time on the Pixel.
+`force_gpu.txt` containing `dectx` restores the all-GPU placement for experiments.
 
-* Samsung SM-S942Q (Snapdragon SM8850, Adreno): **4.3–5.0× real-time** (8.2 s of speech in
-  1.63 s; 13.0 s in 3.05 s over 3 chunks) — measured with the split step+head graphs; the
-  fused graph only removes overhead.
-* Pixel 8a (Tensor G3, Mali-G715): **~1.0× real-time** (7.9 s in 7.7 s; 12.5 s in 13.1 s
-  over 3 chunks) with the fused graph. The gap to Adreno is per-step overhead (25 MB of
-  packed-KV upload plus ~500 kernel dispatches per 78-MMAC step), not arithmetic. For
-  reference, pinning the flow-LM to CPU via `force_cpu.txt` measures 1.24× on this device;
-  the shipped configuration keeps everything on the GPU.
+Measured with LiteRT 2.1.6, decode included, app process warm:
+
+* Pixel 8a (Tensor G3, Mali-G715), shipped placement: **~1.0× real-time** (8.8 s of
+  speech in 8.75 s; 12.5 s in 13.1 s over 3 chunks). The gap to Adreno is per-step
+  overhead (25 MB of packed-KV upload plus ~500 kernel dispatches per 78-MMAC step), not
+  arithmetic. Pinning the flow-LM to CPU instead measures 1.24–1.60× here, but the LM
+  stays on the GPU by policy.
+* Samsung SM-S942Q (Snapdragon SM8850, Adreno): **4.3–5.0× real-time** (8.2 s in 1.63 s;
+  13.0 s in 3.05 s over 3 chunks) — measured with the all-GPU placement and the split
+  step+head graphs before the placement change; the dec-tx-on-CPU delta measured ~2% on
+  the Pixel.
 
 Whisper-transcribing the on-device WAVs reproduces the input text on both devices. The
 KV-step `FULLY_CONNECTED` shapes are the class Mali rejects on LiteRT 2.1.3 and accepts
