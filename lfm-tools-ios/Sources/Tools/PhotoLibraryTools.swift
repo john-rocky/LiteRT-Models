@@ -462,6 +462,18 @@ extension PhotoLibraryBox {
         vectors.isEmpty
           ? "LIBRARY CLIP dark — labels only" : "LIBRARY CLIP embedded \(vectors.count) photos")
     #endif
+    // One line per photo, because the scout has to run where the app runs:
+    // the Mac's libraryscout.swift read text in seven of these photos and the
+    // phone's Vision read it in five, and a beat worded against the Mac's
+    // vocabulary is a beat that misses on the device. Cheap, and it is the
+    // only instrument the take has.
+    for row in rows {
+      RunLog.write(
+        "LIBRARY #\(row.id) \(row.looks.prefix(6).joined(separator: ", "))"
+          + (row.people.isEmpty ? "" : " | tagged \(row.people.joined(separator: ", "))")
+          + (row.text.map { " | text \"\($0.prefix(60))\"" } ?? "")
+          + " | soft \(Int(row.softness ?? 0))")
+    }
     RunLog.write(
       "LIBRARY softness: "
         + rows.sorted { ($0.softness ?? 0) < ($1.softness ?? 0) }.prefix(6)
@@ -703,12 +715,20 @@ enum LibraryData {
   /// be. So the alias table is a load-bearing part, not a canned-world
   /// convenience — it is the only reason 「犬」 finds a row that says "dog",
   /// and it is the first thing the Vision rung will inherit unchanged.
+  /// Duplicate keys are deliberate: one Japanese noun may have to reach two
+  /// different English vocabularies, because the canned world says `sea` and
+  /// the OS's classifier says `ocean` about the same water. A table that
+  /// tracks one shelf and not the other is a table that silently stops
+  /// working the day the pack indexes real pixels — which is what happened
+  /// here, and what the fixture scout caught.
   static let aliases: [(String, String)] = [
-    ("海", "sea"), ("ビーチ", "beach"), ("砂浜", "beach"), ("波", "sea"),
+    ("海", "sea"), ("海", "ocean"), ("ビーチ", "beach"), ("砂浜", "beach"),
+    ("波", "sea"), ("波", "ocean"), ("紅葉", "autumn leaves"), ("紅葉", "maple"),
+    ("着物", "kimono"), ("人", "people"), ("ラーメン", "ramen"),
     ("犬", "dog"), ("いぬ", "dog"), ("猫", "cat"), ("ねこ", "cat"),
-    ("花火", "fireworks"), ("桜", "cherry blossom"), ("紅葉", "autumn leaves"),
+    ("花火", "fireworks"), ("桜", "cherry blossom"),
     ("寺", "temple"), ("神社", "shrine"), ("雪", "snow"), ("山", "mountain"),
-    ("料理", "food"), ("食べ物", "food"), ("ごはん", "food"), ("ラーメン", "ramen"),
+    ("料理", "food"), ("食べ物", "food"), ("ごはん", "food"),
     ("寿司", "sushi"), ("ケーキ", "cake"), ("夕日", "sunset"), ("夕焼け", "sunset"),
     ("街", "street"), ("看板", "sign"), ("電車", "train"), ("駅", "station"),
     ("公園", "park"), ("芝生", "grass"), ("砂", "sand"), ("森", "forest"),
@@ -954,7 +974,10 @@ enum LibraryData {
     let measured = pool.compactMap(\.softness)
     guard !measured.isEmpty else { return .rows(pool.filter { !$0.sharp }, "out of focus") }
     let ranked = pool.filter { $0.softness != nil }.sorted { ($0.softness ?? 0) < ($1.softness ?? 0) }
-    let take = max(1, ranked.count / 3)
+    // Capped: the fixture library's softest photo scores 7 against a next of
+    // 204, and a "softest third" that hands back nine rows buries the one the
+    // question was about. Five is what a person can read at a glance.
+    let take = min(5, max(1, ranked.count / 3))
     return .rows(Array(ranked.prefix(take)), "softest-looking (edge detail, lowest first)")
   }
 

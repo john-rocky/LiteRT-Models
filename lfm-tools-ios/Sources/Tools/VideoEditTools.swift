@@ -151,7 +151,16 @@ final class VideoEditBox: @unchecked Sendable {
     guard let flag = CommandLine.arguments.firstIndex(of: "--video"),
       CommandLine.arguments.indices.contains(flag + 1)
     else { return nil }
-    return URL(fileURLWithPath: CommandLine.arguments[flag + 1])
+    let given = CommandLine.arguments[flag + 1]
+    // A bare name resolves against the app's own file home, so the same flag
+    // works on both machines: on the Mac the path is typeable, on the phone
+    // the container path contains an install UUID that changes with every
+    // reinstall — `--video tokyo-street.mp4` after a `devicectl copy to` is
+    // the whole point.
+    guard given.hasPrefix("/") else {
+      return AppFiles.documents.appendingPathComponent(given)
+    }
+    return URL(fileURLWithPath: given)
   }
 
   /// The newest library video becomes the timeline: one clip, the whole
