@@ -1,0 +1,15 @@
+c_mem2_k252_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k252.tflite] median=56.023ms min=56.023ms max=56.023ms load=14455.4ms runs=1 thermal=NONE->NONE headroom=0.74->0.7533333
+c_mem2_k309_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k309.tflite] median=59.351ms min=59.351ms max=59.351ms load=14679.6ms runs=1 thermal=NONE->NONE headroom=0.7533333->0.7633334
+c_mem2_k350_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k350.tflite] median=59.236ms min=59.236ms max=59.236ms load=15079.8ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.7699999
+c_mem2_k415_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k415.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem2_k452_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k452.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem2_k509_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k509.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem2_k549_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k549.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem2_k252_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k252.tflite] median=59.532ms min=58.870ms max=59.847ms load=129.6ms runs=50 thermal=NONE->NONE headroom=0.7699999->0.7699999
+m_mem2_k309_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k309.tflite] median=59.843ms min=59.305ms max=60.586ms load=132.2ms runs=50 thermal=NONE->NONE headroom=0.7699999->0.7699999
+m_mem2_k350_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k350.tflite] median=56.324ms min=55.449ms max=60.135ms load=129.9ms runs=50 thermal=NONE->NONE headroom=0.7733334->0.7699999
+m_mem2_k415_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k415.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem2_k452_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k452.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem2_k509_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k509.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem2_k549_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem2_k549.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+PHASE10_DONE

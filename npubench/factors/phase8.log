@@ -1,0 +1,13 @@
+c_ps|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_ps.tflite] median=19.377ms min=19.377ms max=19.377ms load=1625.4ms runs=1 thermal=LIGHT->LIGHT headroom=0.85->0.8433333
+c_zs|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_zs.tflite] median=5.959ms min=5.959ms max=5.959ms load=2306.2ms runs=1 thermal=LIGHT->LIGHT headroom=0.83666664->0.83000004
+c_rb|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_rb.tflite] median=2.055ms min=2.055ms max=2.055ms load=799.4ms runs=1 thermal=LIGHT->LIGHT headroom=0.82666665->0.8233334
+c_rbmm|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_rbmm.tflite] median=2.784ms min=2.784ms max=2.784ms load=2859.5ms runs=1 thermal=LIGHT->LIGHT headroom=0.81666666->0.81
+m_ps_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_ps.tflite] median=16.166ms min=15.823ms max=17.916ms load=103.9ms runs=50 thermal=NONE->NONE headroom=0.7533333->0.7533333
+m_zs_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_zs.tflite] median=5.447ms min=5.316ms max=6.609ms load=100.4ms runs=50 thermal=NONE->NONE headroom=0.7566667->0.7533333
+m_rb_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_rb.tflite] median=2.027ms min=1.976ms max=2.290ms load=98.3ms runs=50 thermal=NONE->NONE headroom=0.7533333->0.7533333
+m_rbmm_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_rbmm.tflite] median=2.864ms min=2.822ms max=2.969ms load=100.6ms runs=50 thermal=NONE->NONE headroom=0.7533333->0.75
+m_ps_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_ps.tflite] FAILED: LiteRtException: Failed to compile model
+m_zs_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_zs.tflite] median=9.839ms min=8.072ms max=10.494ms load=320.7ms runs=50 thermal=NONE->NONE headroom=0.7466667->0.7466667
+m_rb_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_rb.tflite] median=4.817ms min=3.452ms max=5.284ms load=392.1ms runs=50 thermal=NONE->NONE headroom=0.7433333->0.7466667
+m_rbmm_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_rbmm.tflite] FAILED: LiteRtException: Failed to compile model
+PHASE8_DONE

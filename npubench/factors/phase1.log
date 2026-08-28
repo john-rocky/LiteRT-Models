@@ -1,0 +1,11 @@
+compile|dinov2_fold|SWEEP NPU [/data/local/tmp/npubench/dinov2_fold.tflite] median=85.816ms min=85.816ms max=85.816ms load=159212.7ms runs=1 thermal=SEVERE->SEVERE headroom=0.98333335->0.96666664
+compile|dinov2_repack|SWEEP NPU [/data/local/tmp/npubench/dinov2_repack.tflite] median=98.459ms min=98.459ms max=98.459ms load=157698.4ms runs=1 thermal=SEVERE->SEVERE headroom=0.96999997->0.9866666
+compile|probe_t512|SWEEP NPU [/data/local/tmp/npubench/probe_t512.tflite] median=4.438ms min=4.438ms max=4.438ms load=3173.1ms runs=1 thermal=SEVERE->SEVERE headroom=0.9866666->0.9866666
+compile|probe_t1024|SWEEP NPU [/data/local/tmp/npubench/probe_t1024.tflite] median=11.913ms min=11.913ms max=11.913ms load=6502.2ms runs=1 thermal=SEVERE->SEVERE headroom=0.9866666->0.98333335
+compile|probe_t1025|SWEEP NPU [/data/local/tmp/npubench/probe_t1025.tflite] median=15.003ms min=15.003ms max=15.003ms load=13785.7ms runs=1 thermal=SEVERE->SEVERE headroom=0.98333335->0.98333335
+compile|probe_t1500|SWEEP NPU [/data/local/tmp/npubench/probe_t1500.tflite] median=42.403ms min=42.403ms max=42.403ms load=63575.2ms runs=1 thermal=SEVERE->SEVERE headroom=0.98333335->0.9800001
+compile|probe_t2048|SWEEP NPU [/data/local/tmp/npubench/probe_t2048.tflite] median=29.078ms min=29.078ms max=29.078ms load=18794.5ms runs=1 thermal=SEVERE->SEVERE headroom=0.9800001->0.98333335
+compile|probe_w16|SWEEP NPU [/data/local/tmp/npubench/probe_w16.tflite] median=11.698ms min=11.698ms max=11.698ms load=6178.4ms runs=1 thermal=SEVERE->SEVERE headroom=0.98333335->0.98333335
+compile|zipf_ctrl|SWEEP NPU [/data/local/tmp/npubench/zipf_ctrl.tflite] median=92.183ms min=92.183ms max=92.183ms load=1728087.3ms runs=1 thermal=SEVERE->SEVERE headroom=0.98333335->0.9266666
+compile|zipf_fold|SWEEP NPU [/data/local/tmp/npubench/zipf_fold.tflite] median=85.403ms min=85.403ms max=85.403ms load=1917791.5ms runs=1 thermal=SEVERE->SEVERE headroom=0.91999996->0.96333337
+PHASE1_DONE

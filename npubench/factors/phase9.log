@@ -1,0 +1,172 @@
+== push ==
+pushed pf1151
+pushed pf1152
+pushed pf1153
+pushed pf1279
+pushed pf1280
+pushed pf1281
+pushed pf1407
+pushed pf1408
+pushed pf1409
+pushed pf1500
+pushed pf1535
+pushed pf1536
+pushed pf1537
+pushed pf1663
+pushed pf1664
+pushed pf1665
+pushed pfrmssafe1536
+pushed pfrmsmax1536
+pushed fx_tanh
+pushed fx_sig
+pushed fx_exp
+pushed fx_abs
+pushed fx_max
+pushed fx_relu
+pushed fx_rsqrt
+pushed fx_sqrt
+pushed fx_pow
+pushed fx_erf
+pushed gr10
+pushed gr30
+pushed gr100
+pushed gr300
+pushed gr1000
+pushed gr3000
+pushed grmono
+pushed gemv_fp32
+pushed gemv_fp16
+pushed gemv_int8
+pushed gemv_int4
+pushed wh_ctrl
+pushed wh_pad1536
+pushed mem_k100
+pushed mem_k140
+pushed mem_k186
+pushed mem_k240
+pushed mem_k310
+pushed mem_k380
+pushed mem_k440
+pushed mem_k530
+pushed mem_full
+== compile pass (npu) ==
+c_pf1151_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1151.tflite] median=68.562ms min=68.562ms max=68.562ms load=135151.1ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.78000003
+c_pf1152_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1152.tflite] median=14.540ms min=14.540ms max=14.540ms load=10592.9ms runs=1 thermal=NONE->NONE headroom=0.78000003->0.77666664
+c_pf1153_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1153.tflite] median=73.325ms min=73.325ms max=73.325ms load=207306.3ms runs=1 thermal=NONE->NONE headroom=0.77666664->0.76666665
+c_pf1279_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1279.tflite] median=69.531ms min=69.531ms max=69.531ms load=378.8ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1280_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1280.tflite] median=16.195ms min=16.195ms max=16.195ms load=255.6ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1281_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1281.tflite] median=89.873ms min=89.873ms max=89.873ms load=764576.7ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.76666665
+c_pf1407_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1407.tflite] median=95.270ms min=95.270ms max=95.270ms load=334474.1ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1408_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1408.tflite] median=23.584ms min=23.584ms max=23.584ms load=26268.9ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1409_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1409.tflite] median=100.613ms min=100.613ms max=100.613ms load=347235.9ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1500_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1500.tflite] median=117.811ms min=117.811ms max=117.811ms load=496752.1ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1535_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1535.tflite] median=120.531ms min=120.531ms max=120.531ms load=511535.6ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1536_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1536.tflite] median=21.932ms min=21.932ms max=21.932ms load=35029.3ms runs=1 thermal=NONE->NONE headroom=0.7699999->0.7633334
+c_pf1537_npu|gate_status=skip|
+c_pf1663_npu|gate_status=skip|
+c_pf1664_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pf1664.tflite] median=28.244ms min=28.244ms max=28.244ms load=37702.9ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_pf1665_npu|gate_status=skip|
+c_pfrmssafe1536_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pfrmssafe1536.tflite] median=23.795ms min=23.795ms max=23.795ms load=34604.8ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.7633334
+c_pfrmsmax1536_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_pfrmsmax1536.tflite] median=25.006ms min=25.006ms max=25.006ms load=30304.5ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.7633334
+c_fx_tanh_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_tanh.tflite] median=53.022ms min=53.022ms max=53.022ms load=4861.9ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.7633334
+c_fx_sig_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_sig.tflite] median=18.536ms min=18.536ms max=18.536ms load=5337.3ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.76
+c_fx_exp_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_exp.tflite] median=21.147ms min=21.147ms max=21.147ms load=8165.3ms runs=1 thermal=NONE->NONE headroom=0.76->0.76
+c_fx_abs_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_abs.tflite] median=26.584ms min=26.584ms max=26.584ms load=4877.5ms runs=1 thermal=NONE->NONE headroom=0.76->0.76
+c_fx_max_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_max.tflite] median=24.703ms min=24.703ms max=24.703ms load=4573.0ms runs=1 thermal=NONE->NONE headroom=0.76->0.76
+c_fx_relu_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_relu.tflite] median=23.692ms min=23.692ms max=23.692ms load=4590.2ms runs=1 thermal=NONE->NONE headroom=0.76->0.7566667
+c_fx_rsqrt_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_rsqrt.tflite] median=31.485ms min=31.485ms max=31.485ms load=5181.7ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.7566667
+c_fx_sqrt_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_sqrt.tflite] median=30.658ms min=30.658ms max=30.658ms load=5240.0ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.7566667
+c_fx_pow_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_pow.tflite] median=21.151ms min=21.151ms max=21.151ms load=7606.0ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.76
+c_fx_erf_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_fx_erf.tflite] median=89.766ms min=89.766ms max=89.766ms load=7212.2ms runs=1 thermal=NONE->NONE headroom=0.76->0.76
+c_gr10_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gr10.tflite] median=0.500ms min=0.500ms max=0.500ms load=230.3ms runs=1 thermal=NONE->NONE headroom=0.76->0.76
+c_gr30_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gr30.tflite] median=0.482ms min=0.482ms max=0.482ms load=256.5ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.7533333
+c_gr100_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gr100.tflite] median=0.497ms min=0.497ms max=0.497ms load=377.3ms runs=1 thermal=NONE->NONE headroom=0.7533333->0.7533333
+c_gr300_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gr300.tflite] median=0.610ms min=0.610ms max=0.610ms load=798.6ms runs=1 thermal=NONE->NONE headroom=0.7533333->0.75
+c_gr1000_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gr1000.tflite] median=1.046ms min=1.046ms max=1.046ms load=2564.0ms runs=1 thermal=NONE->NONE headroom=0.75->0.75
+c_gr3000_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gr3000.tflite] median=1.706ms min=1.706ms max=1.706ms load=12992.3ms runs=1 thermal=NONE->NONE headroom=0.7533333->0.7566667
+c_grmono_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_grmono.tflite] median=2.358ms min=2.358ms max=2.358ms load=1141.1ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.7566667
+c_gemv_fp32_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_fp32.tflite] median=4.282ms min=4.282ms max=4.282ms load=5354.7ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.76
+c_gemv_fp16_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_fp16.tflite] median=4.313ms min=4.313ms max=4.313ms load=3930.7ms runs=1 thermal=NONE->NONE headroom=0.76->0.7566667
+c_gemv_int8_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_int8.tflite] median=4.153ms min=4.153ms max=4.153ms load=11386.8ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.76
+c_gemv_int4_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_int4.tflite] median=4.334ms min=4.334ms max=4.334ms load=11715.4ms runs=1 thermal=NONE->NONE headroom=0.76->0.7633334
+c_wh_ctrl_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_wh_ctrl.tflite] median=37.327ms min=37.327ms max=37.327ms load=24864.7ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.7699999
+c_wh_pad1536_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_wh_pad1536.tflite] median=18.660ms min=18.660ms max=18.660ms load=6665.0ms runs=1 thermal=NONE->NONE headroom=0.7699999->0.76666665
+c_mem_k100_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k100.tflite] median=52.874ms min=52.874ms max=52.874ms load=14576.6ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.7699999
+c_mem_k140_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k140.tflite] median=57.895ms min=57.895ms max=57.895ms load=17186.5ms runs=1 thermal=NONE->NONE headroom=0.7699999->0.7699999
+c_mem_k186_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k186.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem_k240_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k240.tflite] median=55.478ms min=55.478ms max=55.478ms load=17478.0ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+c_mem_k310_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k310.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem_k380_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k380.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem_k440_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k440.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem_k530_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k530.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+c_mem_full_npu|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mem_full.tflite] median=256.987ms min=256.987ms max=256.987ms load=27403.7ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.76666665
+== compile pass (gpu refs) ==
+c_pf1536_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_pf1536.tflite] median=55.786ms min=55.786ms max=55.786ms load=1253.0ms runs=1 thermal=NONE->NONE headroom=0.76666665->0.7633334
+c_pf1500_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_pf1500.tflite] median=46.143ms min=46.143ms max=46.143ms load=1080.6ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.7633334
+c_gemv_fp32_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_gemv_fp32.tflite] median=4.164ms min=4.164ms max=4.164ms load=1332.5ms runs=1 thermal=NONE->NONE headroom=0.7633334->0.76
+c_gemv_int8_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_gemv_int8.tflite] FAILED: LiteRtException: Failed to compile model
+c_gr300_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_gr300.tflite] median=2.642ms min=2.642ms max=2.642ms load=493.6ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.7566667
+c_grmono_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_grmono.tflite] median=5.469ms min=5.469ms max=5.469ms load=238.5ms runs=1 thermal=NONE->NONE headroom=0.7566667->0.7533333
+c_wh_ctrl_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_wh_ctrl.tflite] median=26.995ms min=26.995ms max=26.995ms load=825.8ms runs=1 thermal=NONE->NONE headroom=0.7533333->0.75
+c_wh_pad1536_gpu|gate_status=skip|SWEEP GPU [/data/local/tmp/npubench/probe_wh_pad1536.tflite] median=30.690ms min=30.690ms max=30.690ms load=885.8ms runs=1 thermal=NONE->NONE headroom=0.75->0.75
+== measure pass (npu) ==
+m_pf1151_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1151.tflite] median=55.488ms min=55.111ms max=58.549ms load=327.8ms runs=50 thermal=NONE->NONE headroom=0.7533333->0.7633334
+m_pf1152_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1152.tflite] median=13.711ms min=13.474ms max=14.252ms load=232.5ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_pf1153_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1153.tflite] median=73.263ms min=71.171ms max=76.161ms load=405.8ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.7699999
+m_pf1279_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1279.tflite] median=75.569ms min=72.840ms max=79.268ms load=356.5ms runs=50 thermal=NONE->NONE headroom=0.77666664->0.77666664
+m_pf1280_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1280.tflite] median=16.093ms min=15.894ms max=16.431ms load=236.7ms runs=50 thermal=NONE->NONE headroom=0.78000003->0.77666664
+m_pf1281_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1281.tflite] median=86.712ms min=84.568ms max=89.732ms load=474.6ms runs=50 thermal=NONE->NONE headroom=0.78000003->0.78000003
+m_pf1407_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1407.tflite] median=98.301ms min=93.523ms max=102.020ms load=535.6ms runs=50 thermal=NONE->NONE headroom=0.78333336->0.79
+m_pf1408_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1408.tflite] median=19.309ms min=18.972ms max=21.317ms load=217.6ms runs=50 thermal=NONE->NONE headroom=0.79->0.78666663
+m_pf1409_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1409.tflite] median=102.541ms min=96.923ms max=106.494ms load=562.5ms runs=50 thermal=NONE->NONE headroom=0.79->0.7933333
+m_pf1500_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1500.tflite] median=121.430ms min=112.780ms max=125.308ms load=535.5ms runs=50 thermal=NONE->NONE headroom=0.7933333->0.79666674
+m_pf1535_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1535.tflite] median=116.109ms min=112.089ms max=120.809ms load=577.8ms runs=50 thermal=NONE->NONE headroom=0.8->0.8033333
+m_pf1536_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1536.tflite] median=22.944ms min=20.677ms max=25.538ms load=201.9ms runs=50 thermal=NONE->NONE headroom=0.81->0.8066667
+m_pf1537_npu|gate_status=0|
+m_pf1663_npu|gate_status=0|
+m_pf1664_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pf1664.tflite] median=23.938ms min=23.811ms max=24.520ms load=315.7ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_pf1665_npu|gate_status=0|
+m_pfrmssafe1536_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pfrmssafe1536.tflite] median=22.516ms min=21.640ms max=24.015ms load=297.9ms runs=50 thermal=NONE->NONE headroom=0.7633334->0.7633334
+m_pfrmsmax1536_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_pfrmsmax1536.tflite] median=28.228ms min=26.314ms max=29.525ms load=274.0ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_fx_tanh_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_tanh.tflite] median=53.994ms min=53.331ms max=54.550ms load=159.4ms runs=50 thermal=NONE->NONE headroom=0.7733334->0.7699999
+m_fx_sig_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_sig.tflite] median=18.480ms min=17.770ms max=19.114ms load=159.0ms runs=50 thermal=NONE->NONE headroom=0.7699999->0.76666665
+m_fx_exp_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_exp.tflite] median=20.583ms min=20.064ms max=21.005ms load=168.9ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.7633334
+m_fx_abs_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_abs.tflite] median=26.439ms min=25.412ms max=27.003ms load=158.9ms runs=50 thermal=NONE->NONE headroom=0.7633334->0.76
+m_fx_max_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_max.tflite] median=25.335ms min=24.825ms max=25.958ms load=156.0ms runs=50 thermal=NONE->NONE headroom=0.76->0.7566667
+m_fx_relu_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_relu.tflite] median=23.702ms min=22.926ms max=24.291ms load=157.5ms runs=50 thermal=NONE->NONE headroom=0.7566667->0.7533333
+m_fx_rsqrt_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_rsqrt.tflite] median=31.570ms min=31.077ms max=32.011ms load=156.2ms runs=50 thermal=NONE->NONE headroom=0.7566667->0.7533333
+m_fx_sqrt_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_sqrt.tflite] median=31.551ms min=30.738ms max=31.993ms load=155.8ms runs=50 thermal=NONE->NONE headroom=0.7566667->0.7533333
+m_fx_pow_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_pow.tflite] median=22.261ms min=21.892ms max=22.750ms load=169.0ms runs=50 thermal=NONE->NONE headroom=0.7533333->0.7533333
+m_fx_erf_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_fx_erf.tflite] median=89.828ms min=89.124ms max=90.701ms load=159.2ms runs=50 thermal=NONE->NONE headroom=0.75->0.7533333
+m_gr10_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gr10.tflite] median=0.516ms min=0.479ms max=0.563ms load=102.1ms runs=50 thermal=NONE->NONE headroom=0.75->0.75
+m_gr30_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gr30.tflite] median=0.478ms min=0.452ms max=0.555ms load=100.0ms runs=50 thermal=NONE->NONE headroom=0.7466667->0.7466667
+m_gr100_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gr100.tflite] median=0.539ms min=0.502ms max=0.593ms load=105.1ms runs=50 thermal=NONE->NONE headroom=0.7433333->0.7433333
+m_gr300_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gr300.tflite] median=0.607ms min=0.575ms max=0.675ms load=109.4ms runs=50 thermal=NONE->NONE headroom=0.7433333->0.74
+m_gr1000_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gr1000.tflite] median=1.187ms min=1.003ms max=1.240ms load=169.4ms runs=50 thermal=NONE->NONE headroom=0.7366666->0.7366666
+m_gr3000_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gr3000.tflite] median=1.689ms min=1.625ms max=1.897ms load=568.7ms runs=50 thermal=NONE->NONE headroom=0.7366666->0.7366666
+m_grmono_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_grmono.tflite] median=2.692ms min=2.177ms max=3.156ms load=118.2ms runs=50 thermal=NONE->NONE headroom=0.73333335->0.73333335
+m_gemv_fp32_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_fp32.tflite] median=4.068ms min=4.042ms max=4.301ms load=515.9ms runs=50 thermal=NONE->NONE headroom=0.73333335->0.73333335
+m_gemv_fp16_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_fp16.tflite] median=4.058ms min=4.033ms max=4.305ms load=358.1ms runs=50 thermal=NONE->NONE headroom=0.73333335->0.73333335
+m_gemv_int8_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_int8.tflite] median=4.068ms min=4.043ms max=4.118ms load=340.0ms runs=50 thermal=NONE->NONE headroom=0.73333335->0.73333335
+m_gemv_int4_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_gemv_int4.tflite] median=4.082ms min=4.035ms max=4.250ms load=311.1ms runs=50 thermal=NONE->NONE headroom=0.73333335->0.73333335
+m_wh_ctrl_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_wh_ctrl.tflite] median=35.820ms min=34.559ms max=36.309ms load=172.4ms runs=50 thermal=NONE->NONE headroom=0.73333335->0.7366666
+m_wh_pad1536_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_wh_pad1536.tflite] median=17.921ms min=17.614ms max=18.476ms load=167.5ms runs=50 thermal=NONE->NONE headroom=0.7366666->0.7366666
+m_mem_k100_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k100.tflite] median=49.467ms min=48.944ms max=50.348ms load=142.6ms runs=50 thermal=NONE->NONE headroom=0.74->0.74
+m_mem_k140_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k140.tflite] median=54.680ms min=54.118ms max=54.951ms load=149.7ms runs=50 thermal=NONE->NONE headroom=0.7433333->0.74
+m_mem_k186_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k186.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem_k240_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k240.tflite] median=55.953ms min=55.456ms max=56.790ms load=146.9ms runs=50 thermal=NONE->NONE headroom=0.7433333->0.74
+m_mem_k310_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k310.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem_k380_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k380.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem_k440_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k440.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem_k530_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_k530.tflite] FAILED: LiteRtException: Failed to invoke the compiled model
+m_mem_full_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mem_full.tflite] median=256.093ms min=250.082ms max=260.185ms load=154.0ms runs=50 thermal=NONE->NONE headroom=0.7300001->0.74
+== measure pass (gpu refs) ==
+m_pf1536_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_pf1536.tflite] median=59.351ms min=58.049ms max=63.218ms load=1132.9ms runs=50 thermal=NONE->NONE headroom=0.74->0.7433333
+m_pf1500_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_pf1500.tflite] median=51.189ms min=46.484ms max=53.625ms load=1066.3ms runs=50 thermal=NONE->NONE headroom=0.7533333->0.76
+m_gemv_fp32_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_gemv_fp32.tflite] median=4.584ms min=4.088ms max=4.938ms load=1311.9ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_gemv_int8_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_gemv_int8.tflite] FAILED: LiteRtException: Failed to compile model
+m_gr300_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_gr300.tflite] median=2.628ms min=2.160ms max=2.858ms load=459.0ms runs=50 thermal=NONE->NONE headroom=0.76->0.7566667
+m_grmono_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_grmono.tflite] median=5.700ms min=4.044ms max=8.511ms load=238.1ms runs=50 thermal=NONE->NONE headroom=0.7566667->0.7566667
+m_wh_ctrl_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_wh_ctrl.tflite] median=26.926ms min=26.126ms max=31.395ms load=747.2ms runs=50 thermal=NONE->NONE headroom=0.75->0.75
+m_wh_pad1536_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_wh_pad1536.tflite] median=31.646ms min=30.667ms max=35.510ms load=792.0ms runs=50 thermal=NONE->NONE headroom=0.7566667->0.76
+PHASE9_DONE

@@ -1,0 +1,24 @@
+realesrgan|jit_cold|SWEEP NPU [/data/local/tmp/cards/realesrgan.tflite] median=10.124ms min=10.036ms max=10.154ms load=2906.1ms runs=20 thermal=NONE->NONE headroom=0.58000004->0.58000004|with delegate (DispatchDelegate)
+realesrgan|jit_cached|SWEEP NPU [/data/local/tmp/cards/realesrgan.tflite] median=10.258ms min=10.069ms max=10.885ms load=102.4ms runs=20 thermal=NONE->NONE headroom=0.58666664->0.58666664|with delegate (DispatchDelegate)
+realesrgan|gpu|SWEEP GPU [/data/local/tmp/cards/realesrgan.tflite] median=14.069ms min=13.585ms max=14.200ms load=407.3ms runs=20 thermal=NONE->NONE headroom=0.58666664->0.58666664|
+plantnet|jit_cold|SWEEP NPU [/data/local/tmp/cards/plantnet.tflite] median=0.902ms min=0.883ms max=0.956ms load=585.6ms runs=20 thermal=NONE->NONE headroom=0.59000003->0.59000003|with delegate (DispatchDelegate)
+plantnet|jit_cached|SWEEP NPU [/data/local/tmp/cards/plantnet.tflite] median=0.901ms min=0.889ms max=0.951ms load=110.2ms runs=20 thermal=NONE->NONE headroom=0.59000003->0.59000003|with delegate (DispatchDelegate)
+plantnet|gpu|SWEEP GPU [/data/local/tmp/cards/plantnet.tflite] median=3.494ms min=3.169ms max=3.571ms load=463.8ms runs=20 thermal=NONE->NONE headroom=0.59000003->0.59000003|
+faceparsing|jit_cold|SWEEP NPU [/data/local/tmp/cards/faceparsing.tflite] median=7.892ms min=7.113ms max=13.448ms load=1808.3ms runs=20 thermal=NONE->NONE headroom=0.58666664->0.58666664|with delegate (DispatchDelegate)
+faceparsing|jit_cached|SWEEP NPU [/data/local/tmp/cards/faceparsing.tflite] median=7.881ms min=7.409ms max=9.104ms load=116.0ms runs=20 thermal=NONE->NONE headroom=0.58666664->0.58666664|with delegate (DispatchDelegate)
+faceparsing|gpu|SWEEP GPU [/data/local/tmp/cards/faceparsing.tflite] median=26.021ms min=19.322ms max=31.095ms load=816.2ms runs=20 thermal=NONE->NONE headroom=0.58666664->0.5933333|
+sinet|jit_cold|SWEEP NPU [/data/local/tmp/cards/sinet.tflite] median=3.129ms min=3.037ms max=3.227ms load=7357.9ms runs=20 thermal=NONE->NONE headroom=0.59000003->0.5933333|with delegate (DispatchDelegate)
+sinet|jit_cached|SWEEP NPU [/data/local/tmp/cards/sinet.tflite] median=3.111ms min=3.050ms max=3.180ms load=134.6ms runs=20 thermal=NONE->NONE headroom=0.5933333->0.5933333|with delegate (DispatchDelegate)
+sinet|gpu|SWEEP GPU [/data/local/tmp/cards/sinet.tflite] median=12.528ms min=12.278ms max=13.013ms load=1267.6ms runs=20 thermal=NONE->NONE headroom=0.6033333->0.6033333|
+6drepnet|jit_cold|SWEEP NPU [/data/local/tmp/cards/6drepnet.tflite] median=1.748ms min=1.676ms max=1.804ms load=1287.0ms runs=20 thermal=NONE->NONE headroom=0.6->0.5966667|with delegate (DispatchDelegate)
+6drepnet|jit_cached|SWEEP NPU [/data/local/tmp/cards/6drepnet.tflite] median=1.742ms min=1.707ms max=1.800ms load=257.5ms runs=20 thermal=NONE->NONE headroom=0.5966667->0.5966667|with delegate (DispatchDelegate)
+6drepnet|gpu|SWEEP GPU [/data/local/tmp/cards/6drepnet.tflite] median=8.532ms min=8.177ms max=8.700ms load=636.5ms runs=20 thermal=NONE->NONE headroom=0.6->0.6|
+ormbg|jit_cold|SWEEP NPU [/data/local/tmp/cards/ormbg.tflite] median=24.449ms min=23.758ms max=26.143ms load=11606.4ms runs=20 thermal=NONE->NONE headroom=0.5966667->0.6133334|with delegate (DispatchDelegate)
+ormbg|jit_cached|SWEEP NPU [/data/local/tmp/cards/ormbg.tflite] median=23.946ms min=23.848ms max=24.094ms load=363.4ms runs=20 thermal=NONE->NONE headroom=0.61999995->0.61999995|with delegate (DispatchDelegate)
+ormbg|gpu|SWEEP GPU [/data/local/tmp/cards/ormbg.tflite] median=74.424ms min=73.444ms max=75.936ms load=1177.7ms runs=20 thermal=NONE->NONE headroom=0.61999995->0.62666667|
+silentface|jit_cold|SWEEP NPU [/data/local/tmp/cards/silentface.tflite] median=0.615ms min=0.606ms max=0.674ms load=514.3ms runs=20 thermal=NONE->NONE headroom=0.5833333->0.5833333|with delegate (DispatchDelegate)
+silentface|jit_cached|SWEEP NPU [/data/local/tmp/cards/silentface.tflite] median=0.636ms min=0.608ms max=0.651ms load=98.3ms runs=20 thermal=NONE->NONE headroom=0.5833333->0.5833333|with delegate (DispatchDelegate)
+silentface|gpu|SWEEP GPU [/data/local/tmp/cards/silentface.tflite] median=0.743ms min=0.668ms max=0.836ms load=580.9ms runs=20 thermal=NONE->NONE headroom=0.5833333->0.5833333|
+twinlite|jit_cold|SWEEP NPU [/data/local/tmp/cards/twinlite.tflite] median=13.809ms min=13.646ms max=14.498ms load=17002.6ms runs=20 thermal=NONE->NONE headroom=0.58000004->0.6066667|with delegate (DispatchDelegate)
+twinlite|jit_cached|SWEEP NPU [/data/local/tmp/cards/twinlite.tflite] median=13.721ms min=13.552ms max=14.228ms load=120.8ms runs=20 thermal=NONE->NONE headroom=0.60999995->0.60999995|with delegate (DispatchDelegate)
+twinlite|gpu|SWEEP GPU [/data/local/tmp/cards/twinlite.tflite] median=13.817ms min=13.307ms max=14.298ms load=1400.8ms runs=20 thermal=NONE->NONE headroom=0.60999995->0.60999995|

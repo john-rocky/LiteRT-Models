@@ -1,0 +1,2 @@
+SWEEP NPU [/data/local/tmp/npubench/probe_tanhsig1024.tflite] median=22.244ms min=22.244ms max=22.244ms load=6639.3ms runs=1 thermal=NONE->NONE headroom=0.79->0.79
+SWEEP NPU [/data/local/tmp/npubench/probe_tanhsig1024.tflite] median=22.111ms min=21.467ms max=22.899ms load=120.6ms runs=50 thermal=NONE->NONE headroom=0.79->0.78666663

@@ -1,0 +1,7 @@
+c_tips_ctrl|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/tips_ctrl.tflite] median=336.510ms min=336.510ms max=336.510ms load=240485.5ms runs=1 thermal=NONE->NONE headroom=0.5466667->0.7466667
+c_tips_erf|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/tips_erf.tflite] median=133.086ms min=133.086ms max=133.086ms load=98202.2ms runs=1 thermal=NONE->NONE headroom=0.7466667->0.76666665
+m_tips_ctrl_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/tips_ctrl.tflite] median=326.904ms min=314.551ms max=339.798ms load=583.1ms runs=50 thermal=NONE->NONE headroom=0.7699999->0.81
+m_tips_erf_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/tips_erf.tflite] median=141.963ms min=134.434ms max=151.414ms load=436.1ms runs=50 thermal=NONE->NONE headroom=0.8066667->0.83000004
+m_tips_ctrl_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/tips_ctrl.tflite] median=282.479ms min=265.983ms max=292.661ms load=6239.6ms runs=50 thermal=NONE->LIGHT headroom=0.83000004->0.89000005
+m_tips_erf_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/tips_erf.tflite] median=273.283ms min=263.933ms max=289.242ms load=3862.2ms runs=50 thermal=NONE->LIGHT headroom=0.76->0.8633334
+PHASE7_DONE

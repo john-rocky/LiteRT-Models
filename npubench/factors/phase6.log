@@ -1,0 +1,16 @@
+c_rank4_1024|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_rank4_1024.tflite] median=13.936ms min=13.936ms max=13.936ms load=2662.2ms runs=1 thermal=MODERATE->MODERATE headroom=0.90999997->0.91333336
+c_t1536|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_t1536.tflite] median=18.254ms min=18.254ms max=18.254ms load=6401.7ms runs=1 thermal=MODERATE->MODERATE headroom=0.91999996->0.92333335
+c_mlptanh1024|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mlptanh1024.tflite] median=10.789ms min=10.789ms max=10.789ms load=2296.0ms runs=1 thermal=MODERATE->MODERATE headroom=0.93000007->0.93000007
+c_mlptsig1024|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_mlptsig1024.tflite] median=11.054ms min=11.054ms max=11.054ms load=2402.5ms runs=1 thermal=MODERATE->MODERATE headroom=0.93000007->0.93333334
+c_smaxman1024|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_smaxman1024.tflite] median=26.116ms min=26.116ms max=26.116ms load=14138.3ms runs=1 thermal=MODERATE->MODERATE headroom=0.9366666->0.94
+c_safeln1024|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_safeln1024.tflite] median=13.150ms min=13.150ms max=13.150ms load=4409.8ms runs=1 thermal=MODERATE->MODERATE headroom=0.9433333->0.9433333
+m_rank4_1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_rank4_1024.tflite] median=9.860ms min=9.668ms max=10.078ms load=125.1ms runs=50 thermal=NONE->NONE headroom=0.7633334->0.7633334
+m_t1536_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_t1536.tflite] median=14.292ms min=13.857ms max=14.788ms load=135.9ms runs=50 thermal=NONE->NONE headroom=0.7633334->0.7633334
+m_mlptanh1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mlptanh1024.tflite] median=9.176ms min=9.007ms max=10.574ms load=129.8ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_mlptsig1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_mlptsig1024.tflite] median=8.330ms min=8.251ms max=8.586ms load=131.1ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_smaxman1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_smaxman1024.tflite] median=20.336ms min=19.937ms max=22.028ms load=130.0ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_safeln1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_safeln1024.tflite] median=11.359ms min=11.215ms max=11.797ms load=114.4ms runs=50 thermal=NONE->NONE headroom=0.76666665->0.76666665
+m_rank4_1024_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_rank4_1024.tflite] median=16.546ms min=16.042ms max=20.530ms load=669.9ms runs=50 thermal=NONE->NONE headroom=0.7699999->0.76666665
+m_t1024_npu_r2|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_t1024.tflite] FAILED: LiteRtException: Failed to load model from file
+PHASE6_DONE
+SWEEP NPU [/data/local/tmp/npubench/probe_t1024.tflite] median=9.413ms min=9.115ms max=9.680ms load=123.5ms runs=50 thermal=NONE->NONE headroom=0.7633334->0.7633334

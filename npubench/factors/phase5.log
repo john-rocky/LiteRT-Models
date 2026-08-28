@@ -1,0 +1,10 @@
+c_ab_tanh|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/ab_tanh.tflite] median=96.343ms min=96.343ms max=96.343ms load=131068.0ms runs=1 thermal=MODERATE->MODERATE headroom=0.9033333->0.91333336
+c_ab_sig|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/ab_sig.tflite] median=59.904ms min=59.904ms max=59.904ms load=66575.7ms runs=1 thermal=MODERATE->MODERATE headroom=0.9066667->0.97333336
+c_ab_erf|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/ab_erf.tflite] median=55.268ms min=55.268ms max=55.268ms load=46641.7ms runs=1 thermal=MODERATE->MODERATE headroom=0.97333336->0.9800001
+m_ab_tanh_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/ab_tanh.tflite] median=85.886ms min=84.620ms max=87.071ms load=396.5ms runs=50 thermal=NONE->NONE headroom=0.7633334->0.7699999
+m_ab_sig_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/ab_sig.tflite] median=49.319ms min=48.524ms max=49.873ms load=223.6ms runs=50 thermal=NONE->NONE headroom=0.77666664->0.78000003
+m_ab_erf_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/ab_erf.tflite] median=41.900ms min=41.241ms max=42.670ms load=209.8ms runs=50 thermal=NONE->NONE headroom=0.78333336->0.78000003
+m_ab_tanh_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/ab_tanh.tflite] median=54.232ms min=53.160ms max=59.294ms load=1169.1ms runs=50 thermal=NONE->NONE headroom=0.78666663->0.79
+m_ab_sig_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/ab_sig.tflite] median=54.142ms min=52.069ms max=57.852ms load=1241.2ms runs=50 thermal=NONE->NONE headroom=0.8033333->0.81
+m_ab_erf_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/ab_erf.tflite] median=55.202ms min=53.128ms max=59.507ms load=1592.4ms runs=50 thermal=NONE->LIGHT headroom=0.8233334->0.8333333
+PHASE5_DONE

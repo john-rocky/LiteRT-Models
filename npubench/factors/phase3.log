@@ -1,0 +1,10 @@
+c_tanh1024|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_tanh1024.tflite] median=54.148ms min=54.148ms max=54.148ms load=6113.2ms runs=1 thermal=NONE->NONE headroom=0.78000003->0.77666664
+c_manln1024|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_manln1024.tflite] median=10.341ms min=10.341ms max=10.341ms load=3286.7ms runs=1 thermal=NONE->NONE headroom=0.77666664->0.77666664
+c_dino1025|gate_status=skip|SWEEP NPU [/data/local/tmp/npubench/probe_dino1025.tflite] median=28.933ms min=28.933ms max=28.933ms load=38451.1ms runs=1 thermal=NONE->NONE headroom=0.7733334->0.79
+m_tanh1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_tanh1024.tflite] median=53.810ms min=52.854ms max=54.411ms load=137.2ms runs=50 thermal=NONE->NONE headroom=0.7933333->0.7933333
+m_manln1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_manln1024.tflite] median=11.409ms min=10.761ms max=16.121ms load=138.0ms runs=50 thermal=NONE->NONE headroom=0.7933333->0.7933333
+m_dino1025_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_dino1025.tflite] median=29.531ms min=28.160ms max=32.483ms load=143.3ms runs=50 thermal=NONE->NONE headroom=0.8033333->0.8033333
+m_tanh1024_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_tanh1024.tflite] FAILED: LiteRtException: Failed to compile model
+m_manln1024_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_manln1024.tflite] FAILED: LiteRtException: Failed to compile model
+m_dino1025_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_dino1025.tflite] FAILED: LiteRtException: Failed to compile model
+PHASE3_DONE

@@ -1,0 +1,995 @@
+{
+ "6drepnet": {
+  "n_ops": 36,
+  "n_subgraphs": 1,
+  "hist": {
+   "CONV_2D": 28,
+   "PAD": 5,
+   "TRANSPOSE": 1,
+   "SUM": 1,
+   "FULLY_CONNECTED": 1
+  },
+  "rank_hist": {
+   "2": 2,
+   "4": 34
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 17.615,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "clip_image_encoder": {
+  "n_ops": 691,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 212,
+   "MUL": 91,
+   "ADD": 79,
+   "FULLY_CONNECTED": 73,
+   "MEAN": 52,
+   "TRANSPOSE": 51,
+   "SQUARED_DIFFERENCE": 26,
+   "RSQRT": 26,
+   "SUB": 26,
+   "BATCH_MATMUL": 24,
+   "SOFTMAX": 12,
+   "LOGISTIC": 12,
+   "CONV_2D": 1,
+   "CONCATENATION": 1,
+   "SLICE": 1,
+   "ABS": 1,
+   "SUM": 1,
+   "SQRT": 1,
+   "DIV": 1
+  },
+  "rank_hist": {
+   "1": 158,
+   "2": 77,
+   "3": 333,
+   "4": 123
+  },
+  "bmm_aa": 24,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.092,
+  "fc_gflops": 8.494,
+  "conv_gflops": 0.231,
+  "softmax_n": 12,
+  "softmax_max_axis": 50,
+  "max_seq_rank3": 768,
+  "top_bmm_shapes": [
+   "(12, 50, 64, 50)x12",
+   "(12, 50, 50, 64)x12"
+  ]
+ },
+ "dinov2_s_fp16": {
+  "n_ops": 864,
+  "n_subgraphs": 1,
+  "hist": {
+   "MUL": 259,
+   "RESHAPE": 171,
+   "ADD": 99,
+   "TRANSPOSE": 51,
+   "SUM": 50,
+   "DEQUANTIZE": 49,
+   "FULLY_CONNECTED": 48,
+   "SLICE": 37,
+   "SUB": 25,
+   "RSQRT": 25,
+   "BATCH_MATMUL": 24,
+   "SOFTMAX": 12,
+   "TANH": 12,
+   "CONV_2D": 1,
+   "CONCATENATION": 1
+  },
+  "rank_hist": {
+   "2": 198,
+   "3": 542,
+   "4": 124
+  },
+  "bmm_aa": 24,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 19.365,
+  "fc_gflops": 43.529,
+  "conv_gflops": 0.462,
+  "softmax_n": 12,
+  "softmax_max_axis": 1025,
+  "max_seq_rank3": 1025,
+  "top_bmm_shapes": [
+   "(6, 1025, 64, 1025)x12",
+   "(6, 1025, 1025, 64)x12"
+  ]
+ },
+ "memcond": {
+  "n_ops": 249,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 48,
+   "MUL": 45,
+   "ADD": 33,
+   "SLICE": 24,
+   "FULLY_CONNECTED": 24,
+   "DEQUANTIZE": 20,
+   "MEAN": 14,
+   "CONCATENATION": 10,
+   "SQUARED_DIFFERENCE": 7,
+   "RSQRT": 7,
+   "SUB": 7,
+   "SOFTMAX": 4,
+   "BATCH_MATMUL": 4,
+   "TRANSPOSE": 2
+  },
+  "rank_hist": {
+   "1": 48,
+   "2": 46,
+   "3": 61,
+   "4": 94
+  },
+  "bmm_aa": 4,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 32.481,
+  "fc_gflops": 56.581,
+  "conv_gflops": 0.0,
+  "softmax_n": 4,
+  "softmax_max_axis": 4096,
+  "max_seq_rank3": 4096,
+  "top_bmm_shapes": [
+   "(1, 4096, 4096, 256)x2",
+   "(1, 4096, 3648, 256)x2"
+  ]
+ },
+ "memorize": {
+  "n_ops": 601,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 138,
+   "ADD": 103,
+   "MUL": 86,
+   "MEAN": 52,
+   "FULLY_CONNECTED": 52,
+   "DEQUANTIZE": 38,
+   "SQUARED_DIFFERENCE": 26,
+   "RSQRT": 26,
+   "SUB": 26,
+   "GELU": 14,
+   "BATCH_MATMUL": 8,
+   "TRANSPOSE": 7,
+   "CONV_2D": 6,
+   "SOFTMAX": 6,
+   "PAD": 4,
+   "DEPTHWISE_CONV_2D": 4,
+   "SLICE": 2,
+   "CONCATENATION": 2,
+   "SUM": 1
+  },
+  "rank_hist": {
+   "0": 3,
+   "1": 161,
+   "2": 69,
+   "3": 297,
+   "4": 71
+  },
+  "bmm_aa": 8,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.287,
+  "fc_gflops": 9.32,
+  "conv_gflops": 3.026,
+  "softmax_n": 6,
+  "softmax_max_axis": 4096,
+  "max_seq_rank3": 262144,
+  "top_bmm_shapes": [
+   "(1, 256, 4096, 64)x2",
+   "(1, 256, 256, 64)x2",
+   "(256, 1, 64, 16)x2",
+   "(256, 1, 16, 64)x2"
+  ]
+ },
+ "moge": {
+  "n_ops": 835,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 212,
+   "ADD": 111,
+   "MUL": 80,
+   "CONV_2D": 78,
+   "FULLY_CONNECTED": 75,
+   "TRANSPOSE": 55,
+   "MEAN": 50,
+   "SUB": 26,
+   "SQUARED_DIFFERENCE": 25,
+   "RSQRT": 25,
+   "BATCH_MATMUL": 24,
+   "RESIZE_BILINEAR": 20,
+   "LOGISTIC": 13,
+   "SOFTMAX": 12,
+   "RELU": 12,
+   "SLICE": 8,
+   "CONCATENATION": 3,
+   "EXP": 2,
+   "SUM": 1,
+   "MAXIMUM": 1,
+   "SQRT": 1,
+   "DIV": 1
+  },
+  "rank_hist": {
+   "1": 150,
+   "2": 76,
+   "3": 322,
+   "4": 287
+  },
+  "bmm_aa": 24,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 19.365,
+  "fc_gflops": 43.53,
+  "conv_gflops": 233.311,
+  "softmax_n": 12,
+  "softmax_max_axis": 1025,
+  "max_seq_rank3": 1025,
+  "top_bmm_shapes": [
+   "(6, 1025, 64, 1025)x12",
+   "(6, 1025, 1025, 64)x12"
+  ]
+ },
+ "ormbg": {
+  "n_ops": 246,
+  "n_subgraphs": 1,
+  "hist": {
+   "CONV_2D": 114,
+   "CONCATENATION": 50,
+   "RESIZE_BILINEAR": 34,
+   "MAX_POOL_2D": 33,
+   "ADD": 11,
+   "TRANSPOSE": 1,
+   "PAD": 1,
+   "LOGISTIC": 1,
+   "RESHAPE": 1
+  },
+  "rank_hist": {
+   "4": 246
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 319.203,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "plantnet": {
+  "n_ops": 37,
+  "n_subgraphs": 1,
+  "hist": {
+   "CONV_2D": 20,
+   "ADD": 8,
+   "PAD": 5,
+   "TRANSPOSE": 1,
+   "MAX_POOL_2D": 1,
+   "SUM": 1,
+   "FULLY_CONNECTED": 1
+  },
+  "rank_hist": {
+   "2": 2,
+   "4": 35
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.001,
+  "conv_gflops": 3.627,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "sinet": {
+  "n_ops": 471,
+  "n_subgraphs": 1,
+  "hist": {
+   "SLICE": 172,
+   "CONV_2D": 159,
+   "ADD": 67,
+   "CONCATENATION": 30,
+   "PAD": 15,
+   "RESIZE_BILINEAR": 8,
+   "AVERAGE_POOL_2D": 7,
+   "MUL": 6,
+   "LOGISTIC": 4,
+   "TRANSPOSE": 1,
+   "MAX_POOL_2D": 1,
+   "RESHAPE": 1
+  },
+  "rank_hist": {
+   "4": 471
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 24.337,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "smolvlm_vision": {
+  "n_ops": 626,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 199,
+   "ADD": 76,
+   "FULLY_CONNECTED": 73,
+   "TRANSPOSE": 53,
+   "MUL": 51,
+   "MEAN": 50,
+   "SQUARED_DIFFERENCE": 25,
+   "RSQRT": 25,
+   "SUB": 25,
+   "BATCH_MATMUL": 24,
+   "SOFTMAX": 12,
+   "GELU": 12,
+   "CONV_2D": 1
+  },
+  "rank_hist": {
+   "1": 150,
+   "2": 36,
+   "3": 313,
+   "4": 127
+  },
+  "bmm_aa": 24,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 38.655,
+  "fc_gflops": 174.852,
+  "conv_gflops": 1.208,
+  "softmax_n": 12,
+  "softmax_max_axis": 1024,
+  "max_seq_rank3": 1024,
+  "top_bmm_shapes": [
+   "(12, 1024, 64, 1024)x12",
+   "(12, 1024, 1024, 64)x12"
+  ]
+ },
+ "tipsv2_b14_dpt": {
+  "n_ops": 1434,
+  "n_subgraphs": 1,
+  "hist": {
+   "MUL": 341,
+   "RESHAPE": 187,
+   "DEQUANTIZE": 171,
+   "ADD": 169,
+   "TRANSPOSE": 113,
+   "FULLY_CONNECTED": 100,
+   "CONV_2D": 91,
+   "SLICE": 56,
+   "SUM": 52,
+   "SUB": 25,
+   "RSQRT": 25,
+   "BATCH_MATMUL": 24,
+   "TANH": 24,
+   "RELU": 21,
+   "SOFTMAX": 12,
+   "PAD": 9,
+   "RESIZE_NEAREST_NEIGHBOR": 6,
+   "DIV": 2,
+   "RESIZE_BILINEAR": 2,
+   "CONCATENATION": 1,
+   "ABS": 1,
+   "SQRT": 1,
+   "MAXIMUM": 1
+  },
+  "rank_hist": {
+   "2": 242,
+   "3": 705,
+   "4": 487
+  },
+  "bmm_aa": 24,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 38.806,
+  "fc_gflops": 224.636,
+  "conv_gflops": 647.934,
+  "softmax_n": 12,
+  "softmax_max_axis": 1026,
+  "max_seq_rank3": 1026,
+  "top_bmm_shapes": [
+   "(12, 1026, 64, 1026)x12",
+   "(12, 1026, 1026, 64)x12"
+  ]
+ },
+ "twinlite": {
+  "n_ops": 270,
+  "n_subgraphs": 1,
+  "hist": {
+   "CONV_2D": 58,
+   "MUL": 53,
+   "ADD": 42,
+   "GREATER": 20,
+   "SELECT": 20,
+   "SUB": 14,
+   "SLICE": 12,
+   "TRANSPOSE": 10,
+   "CONCATENATION": 10,
+   "PAD": 9,
+   "RESHAPE": 8,
+   "RESIZE_NEAREST_NEIGHBOR": 5,
+   "AVERAGE_POOL_2D": 2,
+   "BATCH_MATMUL": 2,
+   "SOFTMAX": 2,
+   "FULLY_CONNECTED": 2,
+   "REDUCE_MAX": 1
+  },
+  "rank_hist": {
+   "2": 6,
+   "3": 10,
+   "4": 254
+  },
+  "bmm_aa": 2,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 93.319,
+  "fc_gflops": 0.837,
+  "conv_gflops": 7.662,
+  "softmax_n": 2,
+  "softmax_max_axis": 3600,
+  "max_seq_rank3": 3600,
+  "top_bmm_shapes": [
+   "(1, 3600, 3600, 3600)x1",
+   "(1, 32, 32, 3600)x1"
+  ]
+ },
+ "whisper_encoder": {
+  "n_ops": 255,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 75,
+   "MUL": 35,
+   "ADD": 34,
+   "FULLY_CONNECTED": 24,
+   "TRANSPOSE": 21,
+   "MEAN": 18,
+   "SQUARED_DIFFERENCE": 9,
+   "RSQRT": 9,
+   "SUB": 9,
+   "BATCH_MATMUL": 8,
+   "LOGISTIC": 6,
+   "SOFTMAX": 4,
+   "CONV_2D": 2,
+   "PAD": 1
+  },
+  "rank_hist": {
+   "1": 54,
+   "2": 24,
+   "3": 130,
+   "4": 47
+  },
+  "bmm_aa": 8,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 13.824,
+  "fc_gflops": 21.234,
+  "conv_gflops": 1.88,
+  "softmax_n": 4,
+  "softmax_max_axis": 1500,
+  "max_seq_rank3": 3000,
+  "top_bmm_shapes": [
+   "(6, 1500, 64, 1500)x4",
+   "(6, 1500, 1500, 64)x4"
+  ]
+ },
+ "zipformer_ctc": {
+  "n_ops": 3085,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 519,
+   "ADD": 402,
+   "MUL": 379,
+   "DEQUANTIZE": 312,
+   "FULLY_CONNECTED": 274,
+   "SUB": 223,
+   "SLICE": 214,
+   "TRANSPOSE": 177,
+   "RELU": 84,
+   "ABS": 84,
+   "EXP": 84,
+   "LOG": 84,
+   "BATCH_MATMUL": 80,
+   "DEPTHWISE_CONV_2D": 34,
+   "LOGISTIC": 32,
+   "SUM": 23,
+   "PAD": 17,
+   "RSQRT": 17,
+   "SOFTMAX": 16,
+   "TANH": 16,
+   "CONCATENATION": 10,
+   "CONV_2D": 4
+  },
+  "rank_hist": {
+   "2": 430,
+   "3": 2080,
+   "4": 575
+  },
+  "bmm_aa": 80,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 1.912,
+  "fc_gflops": 25.448,
+  "conv_gflops": 4.568,
+  "softmax_n": 16,
+  "softmax_max_axis": 796,
+  "max_seq_rank3": 796,
+  "top_bmm_shapes": [
+   "(4, 199, 199, 12)x12",
+   "(4, 398, 398, 12)x8",
+   "(8, 100, 100, 12)x8",
+   "(4, 199, 32, 199)x6",
+   "(4, 199, 4, 397)x6"
+  ]
+ },
+ "hsemotion_b0_fp16": {
+  "n_ops": 342,
+  "n_subgraphs": 1,
+  "hist": {
+   "DEQUANTIZE": 82,
+   "CONV_2D": 65,
+   "LOGISTIC": 65,
+   "MUL": 65,
+   "AVERAGE_POOL_2D": 36,
+   "DEPTHWISE_CONV_2D": 16,
+   "ADD": 9,
+   "PAD": 1,
+   "TRANSPOSE": 1,
+   "SUM": 1,
+   "FULLY_CONNECTED": 1
+  },
+  "rank_hist": {
+   "2": 3,
+   "4": 339
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 0.769,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "vrwkv_s_fp16": {
+  "n_ops": 1371,
+  "n_subgraphs": 1,
+  "hist": {
+   "MUL": 258,
+   "SLICE": 192,
+   "RESHAPE": 175,
+   "ADD": 175,
+   "PAD": 96,
+   "TRANSPOSE": 87,
+   "DEQUANTIZE": 86,
+   "FULLY_CONNECTED": 85,
+   "MEAN": 52,
+   "SUB": 39,
+   "SQUARED_DIFFERENCE": 26,
+   "RSQRT": 26,
+   "CONCATENATION": 24,
+   "LOGISTIC": 24,
+   "SOFTMAX": 12,
+   "BATCH_MATMUL": 12,
+   "CONV_2D": 1,
+   "SUM": 1
+  },
+  "rank_hist": {
+   "1": 156,
+   "2": 87,
+   "3": 715,
+   "4": 413
+  },
+  "bmm_aa": 12,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.354,
+  "fc_gflops": 9.018,
+  "conv_gflops": 0.116,
+  "softmax_n": 12,
+  "softmax_max_axis": 196,
+  "max_seq_rank3": 384,
+  "top_bmm_shapes": [
+   "(384, 196, 196, 1)x12"
+  ]
+ },
+ "tddfa_mb1_fp16": {
+  "n_ops": 62,
+  "n_subgraphs": 1,
+  "hist": {
+   "DEQUANTIZE": 28,
+   "CONV_2D": 14,
+   "DEPTHWISE_CONV_2D": 13,
+   "PAD": 4,
+   "TRANSPOSE": 1,
+   "SUM": 1,
+   "FULLY_CONNECTED": 1
+  },
+  "rank_hist": {
+   "2": 3,
+   "4": 59
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 0.355,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "matcha_decoder_fp16": {
+  "n_ops": 1031,
+  "n_subgraphs": 1,
+  "hist": {
+   "MUL": 237,
+   "RESHAPE": 211,
+   "ADD": 138,
+   "TRANSPOSE": 80,
+   "SUM": 76,
+   "DEQUANTIZE": 68,
+   "FULLY_CONNECTED": 45,
+   "SUB": 25,
+   "RSQRT": 25,
+   "CONV_2D": 24,
+   "ABS": 14,
+   "EXP": 14,
+   "LOG": 14,
+   "TANH": 14,
+   "RELU": 13,
+   "BATCH_MATMUL": 12,
+   "SOFTMAX": 6,
+   "SIN": 6,
+   "CONCATENATION": 3,
+   "PAD": 2,
+   "SLICE": 2,
+   "LOGISTIC": 1,
+   "RESIZE_NEAREST_NEIGHBOR": 1
+  },
+  "rank_hist": {
+   "2": 147,
+   "3": 612,
+   "4": 272
+  },
+  "bmm_aa": 12,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.403,
+  "fc_gflops": 2.692,
+  "conv_gflops": 3.076,
+  "softmax_n": 6,
+  "softmax_max_axis": 512,
+  "max_seq_rank3": 515,
+  "top_bmm_shapes": [
+   "(2, 256, 64, 256)x4",
+   "(2, 256, 256, 64)x4",
+   "(2, 512, 64, 512)x2",
+   "(2, 512, 512, 64)x2"
+  ]
+ },
+ "matcha_textenc_fp16": {
+  "n_ops": 773,
+  "n_subgraphs": 1,
+  "hist": {
+   "MUL": 164,
+   "RESHAPE": 142,
+   "TRANSPOSE": 112,
+   "ADD": 108,
+   "SLICE": 48,
+   "DEQUANTIZE": 44,
+   "CONV_2D": 44,
+   "SUM": 34,
+   "CONCATENATION": 24,
+   "SUB": 18,
+   "RSQRT": 17,
+   "BATCH_MATMUL": 12,
+   "SOFTMAX": 6
+  },
+  "rank_hist": {
+   "2": 85,
+   "3": 340,
+   "4": 348
+  },
+  "bmm_aa": 12,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.302,
+  "fc_gflops": 0.0,
+  "conv_gflops": 3.657,
+  "softmax_n": 6,
+  "softmax_max_axis": 256,
+  "max_seq_rank3": 768,
+  "top_bmm_shapes": [
+   "(2, 256, 96, 256)x6",
+   "(2, 256, 256, 96)x6"
+  ]
+ },
+ "w2v2_asr_head_fp16": {
+  "n_ops": 863,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 209,
+   "MUL": 152,
+   "ADD": 126,
+   "DEQUANTIZE": 74,
+   "FULLY_CONNECTED": 73,
+   "TRANSPOSE": 52,
+   "MEAN": 50,
+   "SQUARED_DIFFERENCE": 25,
+   "RSQRT": 25,
+   "SUB": 25,
+   "BATCH_MATMUL": 24,
+   "TANH": 13,
+   "SOFTMAX": 12,
+   "PAD": 1,
+   "CONV_2D": 1,
+   "SLICE": 1
+  },
+  "rank_hist": {
+   "1": 150,
+   "2": 121,
+   "3": 467,
+   "4": 125
+  },
+  "bmm_aa": 24,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 23.534,
+  "fc_gflops": 135.765,
+  "conv_gflops": 7.55,
+  "softmax_n": 12,
+  "softmax_max_axis": 799,
+  "max_seq_rank3": 800,
+  "top_bmm_shapes": [
+   "(12, 799, 64, 799)x12",
+   "(12, 799, 799, 64)x12"
+  ]
+ },
+ "nima_aesthetic_fp16": {
+  "n_ops": 86,
+  "n_subgraphs": 1,
+  "hist": {
+   "DEQUANTIZE": 56,
+   "CONV_2D": 14,
+   "DEPTHWISE_CONV_2D": 13,
+   "MEAN": 1,
+   "FULLY_CONNECTED": 1,
+   "SOFTMAX": 1
+  },
+  "rank_hist": {
+   "1": 28,
+   "2": 4,
+   "4": 54
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 1.135,
+  "softmax_n": 1,
+  "softmax_max_axis": 10,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "ssdlite_mobilenetv3_320_fp16": {
+  "n_ops": 286,
+  "n_subgraphs": 1,
+  "hist": {
+   "DEQUANTIZE": 98,
+   "CONV_2D": 67,
+   "DEPTHWISE_CONV_2D": 31,
+   "MUL": 24,
+   "HARD_SWISH": 20,
+   "TRANSPOSE": 11,
+   "ADD": 10,
+   "RESHAPE": 10,
+   "SUM": 8,
+   "PAD": 7
+  },
+  "rank_hist": {
+   "2": 16,
+   "4": 270
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 1.166,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "zipformer_ctc_small_fp16": {
+  "n_ops": 2342,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 395,
+   "ADD": 306,
+   "MUL": 291,
+   "DEQUANTIZE": 236,
+   "FULLY_CONNECTED": 206,
+   "SUB": 171,
+   "SLICE": 158,
+   "TRANSPOSE": 133,
+   "RELU": 64,
+   "ABS": 64,
+   "EXP": 64,
+   "LOG": 64,
+   "BATCH_MATMUL": 60,
+   "DEPTHWISE_CONV_2D": 26,
+   "LOGISTIC": 24,
+   "SUM": 19,
+   "PAD": 13,
+   "RSQRT": 13,
+   "SOFTMAX": 12,
+   "TANH": 12,
+   "CONCATENATION": 7,
+   "CONV_2D": 4
+  },
+  "rank_hist": {
+   "2": 326,
+   "3": 1565,
+   "4": 451
+  },
+  "bmm_aa": 60,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 1.751,
+  "fc_gflops": 13.884,
+  "conv_gflops": 4.544,
+  "softmax_n": 12,
+  "softmax_max_axis": 796,
+  "max_seq_rank3": 796,
+  "top_bmm_shapes": [
+   "(4, 398, 398, 12)x8",
+   "(4, 199, 199, 12)x8",
+   "(4, 796, 796, 12)x4",
+   "(4, 398, 32, 398)x4",
+   "(4, 398, 4, 795)x4"
+  ]
+ },
+ "zipformer_ctc_large_fp16": {
+  "n_ops": 3637,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 612,
+   "ADD": 474,
+   "MUL": 445,
+   "DEQUANTIZE": 369,
+   "FULLY_CONNECTED": 325,
+   "SUB": 262,
+   "SLICE": 253,
+   "TRANSPOSE": 210,
+   "RELU": 99,
+   "ABS": 99,
+   "EXP": 99,
+   "LOG": 99,
+   "BATCH_MATMUL": 95,
+   "DEPTHWISE_CONV_2D": 40,
+   "LOGISTIC": 38,
+   "SUM": 26,
+   "PAD": 20,
+   "RSQRT": 20,
+   "SOFTMAX": 19,
+   "TANH": 19,
+   "CONCATENATION": 10,
+   "CONV_2D": 4
+  },
+  "rank_hist": {
+   "2": 508,
+   "3": 2461,
+   "4": 668
+  },
+  "bmm_aa": 95,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 2.096,
+  "fc_gflops": 49.03,
+  "conv_gflops": 4.6,
+  "softmax_n": 19,
+  "softmax_max_axis": 796,
+  "max_seq_rank3": 796,
+  "top_bmm_shapes": [
+   "(4, 199, 199, 12)x16",
+   "(8, 100, 100, 12)x10",
+   "(4, 398, 398, 12)x8",
+   "(4, 199, 32, 199)x8",
+   "(4, 199, 4, 397)x8"
+  ]
+ },
+ "real_esrgan_x4v3": {
+  "n_ops": 74,
+  "n_subgraphs": 1,
+  "hist": {
+   "CONV_2D": 34,
+   "PRELU": 33,
+   "RESHAPE": 3,
+   "TRANSPOSE": 2,
+   "RESIZE_NEAREST_NEIGHBOR": 1,
+   "ADD": 1
+  },
+  "rank_hist": {
+   "4": 74
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 39.617,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ },
+ "da3_small_gpu_fp16": {
+  "n_ops": 1460,
+  "n_subgraphs": 1,
+  "hist": {
+   "RESHAPE": 313,
+   "MUL": 226,
+   "ADD": 187,
+   "SLICE": 106,
+   "DEQUANTIZE": 105,
+   "MEAN": 90,
+   "FULLY_CONNECTED": 72,
+   "TRANSPOSE": 67,
+   "CONCATENATION": 54,
+   "RSQRT": 48,
+   "SUB": 48,
+   "SQUARED_DIFFERENCE": 45,
+   "CONV_2D": 33,
+   "BATCH_MATMUL": 24,
+   "SOFTMAX": 12,
+   "GELU": 12,
+   "RELU": 7,
+   "RESIZE_BILINEAR": 5,
+   "PAD": 3,
+   "RESIZE_NEAREST_NEIGHBOR": 2,
+   "EXP": 1
+  },
+  "rank_hist": {
+   "1": 282,
+   "2": 108,
+   "3": 515,
+   "4": 555
+  },
+  "bmm_aa": 24,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 97.93,
+  "fc_gflops": 97.887,
+  "conv_gflops": 42.216,
+  "softmax_n": 12,
+  "softmax_max_axis": 2305,
+  "max_seq_rank3": 13830,
+  "top_bmm_shapes": [
+   "(6, 2305, 64, 2305)x12",
+   "(6, 2305, 2305, 64)x12"
+  ]
+ },
+ "edsr": {
+  "n_ops": 68,
+  "n_subgraphs": 1,
+  "hist": {
+   "CONV_2D": 39,
+   "ADD": 17,
+   "SLICE": 4,
+   "TRANSPOSE": 2,
+   "RESIZE_NEAREST_NEIGHBOR": 2,
+   "MUL": 2,
+   "PAD": 2
+  },
+  "rank_hist": {
+   "4": 68
+  },
+  "bmm_aa": 0,
+  "bmm_wa": 0,
+  "bmm_aa_gflops": 0.0,
+  "fc_gflops": 0.0,
+  "conv_gflops": 108.136,
+  "softmax_n": 0,
+  "softmax_max_axis": 0,
+  "max_seq_rank3": 0,
+  "top_bmm_shapes": []
+ }
+}

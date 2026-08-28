@@ -1,0 +1,26 @@
+d2_ctrl_npu_a|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/dinov2_ctrl.tflite] median=85.906ms min=84.892ms max=87.987ms load=424.3ms runs=50 thermal=NONE->NONE headroom=0.7633334->0.7699999
+d2_fold_npu_a|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/dinov2_fold.tflite] median=83.318ms min=81.124ms max=84.458ms load=379.9ms runs=50 thermal=NONE->NONE headroom=0.7733334->0.78333336
+d2_repack_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/dinov2_repack.tflite] median=86.770ms min=85.477ms max=88.342ms load=378.7ms runs=50 thermal=NONE->NONE headroom=0.79->0.7933333
+d2_ctrl_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/dinov2_ctrl.tflite] median=54.652ms min=52.734ms max=58.491ms load=1188.7ms runs=50 thermal=NONE->NONE headroom=0.8->0.8033333
+d2_fold_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/dinov2_fold.tflite] median=55.287ms min=53.333ms max=58.325ms load=1527.4ms runs=50 thermal=NONE->NONE headroom=0.8133334->0.82666665
+d2_ctrl_npu_b|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/dinov2_ctrl.tflite] median=86.563ms min=82.819ms max=88.350ms load=292.7ms runs=50 thermal=LIGHT->LIGHT headroom=0.84000003->0.85
+d2_fold_npu_b|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/dinov2_fold.tflite] median=89.198ms min=87.003ms max=91.930ms load=392.5ms runs=50 thermal=NONE->NONE headroom=0.78333336->0.79666674
+zf_ctrl_npu_a|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/zipf_ctrl.tflite] median=81.618ms min=81.199ms max=83.447ms load=697.0ms runs=50 thermal=NONE->NONE headroom=0.79666674->0.8066667
+zf_fold_npu_a|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/zipf_fold.tflite] median=84.463ms min=82.568ms max=86.277ms load=830.0ms runs=50 thermal=NONE->NONE headroom=0.8066667->0.8066667
+zf_ctrl_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/zipf_ctrl.tflite] median=36.505ms min=35.166ms max=40.483ms load=3204.8ms runs=50 thermal=NONE->NONE headroom=0.8133334->0.81
+zf_fold_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/zipf_fold.tflite] median=36.690ms min=35.623ms max=40.393ms load=3428.2ms runs=50 thermal=NONE->NONE headroom=0.81->0.8133334
+zf_ctrl_npu_b|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/zipf_ctrl.tflite] median=84.737ms min=84.379ms max=86.239ms load=627.2ms runs=50 thermal=NONE->NONE headroom=0.81666666->0.8233334
+zf_fold_npu_b|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/zipf_fold.tflite] median=84.979ms min=84.480ms max=87.302ms load=645.5ms runs=50 thermal=NONE->NONE headroom=0.8233334->0.8233334
+pr_t512_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_t512.tflite] median=4.097ms min=3.999ms max=4.231ms load=165.9ms runs=50 thermal=NONE->NONE headroom=0.82666665->0.8233334
+pr_t1024_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_t1024.tflite] median=9.359ms min=9.161ms max=11.114ms load=163.8ms runs=50 thermal=NONE->NONE headroom=0.81999993->0.81666666
+pr_t1025_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_t1025.tflite] median=12.287ms min=12.099ms max=12.536ms load=158.9ms runs=50 thermal=NONE->NONE headroom=0.81->0.81
+pr_t1500_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_t1500.tflite] median=36.302ms min=34.621ms max=37.653ms load=172.6ms runs=50 thermal=NONE->NONE headroom=0.8133334->0.81
+pr_t2048_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_t2048.tflite] median=23.629ms min=22.224ms max=24.541ms load=168.8ms runs=50 thermal=NONE->NONE headroom=0.81->0.8066667
+pr_w16_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/probe_w16.tflite] median=9.350ms min=9.188ms max=9.537ms load=180.2ms runs=50 thermal=NONE->NONE headroom=0.81->0.8066667
+pr_t512_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_t512.tflite] FAILED: LiteRtException: Failed to compile model
+pr_t1024_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_t1024.tflite] FAILED: LiteRtException: Failed to compile model
+pr_t1025_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_t1025.tflite] FAILED: LiteRtException: Failed to compile model
+pr_t1500_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_t1500.tflite] FAILED: LiteRtException: Failed to compile model
+pr_t2048_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_t2048.tflite] FAILED: LiteRtException: Failed to compile model
+pr_w16_gpu|gate_status=0|SWEEP GPU [/data/local/tmp/npubench/probe_w16.tflite] FAILED: LiteRtException: Failed to compile model
+PHASE2_DONE

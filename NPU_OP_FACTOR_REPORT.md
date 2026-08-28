@@ -220,16 +220,18 @@ which is exactly what the perf-factor rows in
 
 ## What this does NOT yet explain
 
-- **memorize (0.04×)**: no TANH, friendly-ish shapes, 12.6 GF in 251 ms.
-  Suspicious patterns (batch-256 `[1,64]×[64,16]` matmuls, builtin GELU over
-  `[1,64,64,1024]`) are unbisected. Open.
-- **zipformer's full deficit**: dtype ruled out; TANH present but so are 3085
-  ops at lengths 796/398/199/100. The granularity-vs-length split is unmeasured.
-- **GPU sensitivity to the probe factors**: the probe graphs contain a rank-5
-  tensor at the qkv permute, which ML Drift refuses to compile, so GPU arms
-  exist only for the real-model pairs (where GPU was flat: 54.7↔55.3,
-  36.5↔36.7). GPU indifference to *style* is inferred from the 50-model band
-  plus those pairs, not probe-isolated.
+- **memorize (0.04×)**: partially localized (experiment-13 follow-ups): the
+  stem costs ~50 ms, ~200 ms sits in ops 240–601; finer localization pending
+  round-2 cuts. The stem's own ~50 ms for a [1,2M]-input conv/LN front is
+  itself unexplained.
+- **zipformer's deficit**: dtype ruled out (exp 1), granularity ruled out
+  (exp 11 — 3000 serial ops cost ~1.2 ms). Remaining suspects: awkward
+  lengths 796/398/199/100 (consistent with exp 8's mod-128 rule) and TANH
+  content. A length-padded zipformer rebuild would settle it.
+- **GPU sensitivity to the probe factors**: largely closed by the phase-9
+  rank≤4 probes — GPU arms on the decoder block track compute, not shape
+  (51.2 ms @1500 vs 59.4 @1536), and the whisper pair moves +17% where the
+  NPU moves 2×. GPU indifference to *style* is now probe-isolated too.
 - Bands quoted in GF/ms are comparable **within** a family/architecture scale;
   the probe's absolute 2.2 GF/ms vs MoGe's 5.3 reflects d_model=384 vs bigger
   matrices, not a contradiction.
@@ -248,7 +250,195 @@ which is exactly what the perf-factor rows in
    pad the sequence to a friendly size.
 5. None of these substitutions moves the Adreno GPU measurably — a graph
    tuned for the NPU loses nothing on the GPU (measured on the dinov2 and
-   zipformer pairs).
+   zipformer pairs, and probe-isolated in phase 9).
+6. LLM prefill: pad the prompt to a **multiple of 128** — worth 4–5× at
+   d=1024 scale, and at that scale the awkward lengths ≥~1537 do not even
+   JIT-compile on device (memory blowup). Padding is not just speed, it is
+   compilability.
+7. Never write `torch.erf` in an NPU-bound graph (no ERF builtin; the
+   emitted 96-op approximation is 3.8× — worse than the tanh chain). The
+   builtin GELU op is the only fast exact-GELU spelling.
+8. Weight-only DEQUANTIZE quantization (fp16/int8/int4) buys zero NPU decode
+   latency even in the bandwidth-bound T=1 regime — quantize for file size,
+   not for CompiledModel speed.
+9. SafeRMS with a constant scale is NPU-free; the max-norm (runtime-scale)
+   variant costs ~23%. Guard Mali overflow with the constant-scale form.
+
+## Experiment 8 — LLM prefill: the sequence-length rule at decoder scale (2026-08-28)
+
+Decoder-style probe (RMSNorm + GQA 16q/4kv hd=64 + baked RoPE + causal mask +
+SwiGLU, d=1024, d_ff=2816, L=2, fp32, rank≤4 throughout), one variable = T.
+N=50 medians, thermal NONE, S26 JIT (`probe_batch4.py`, rows in
+`~/Downloads/meeting/npubench-phase9-probes/phase9.log`):
+
+| T | NPU ms | GF/ms | JIT compile |
+|---|---|---|---|
+| 1151 | 55.5 | 1.13 | 135 s |
+| **1152** | **13.7** | **4.58** | 10.6 s |
+| 1153 | 73.3 | 0.86 | 207 s |
+| 1279 | 75.6 | 0.94 | (cache) |
+| **1280** | **16.1** | **4.42** | (cache) |
+| 1281 | 86.7 | 0.82 | 12.7 min |
+| 1407 | 98.3 | 0.81 | 5.6 min |
+| **1408** | **19.3** | **4.13** | 26 s |
+| 1409 | 102.5 | 0.78 | 5.8 min |
+| 1500 | 121.4 | 0.71 | 8.3 min |
+| 1535 | 116.1 | 0.76 | 8.5 min |
+| **1536** | **22.9** | **3.86** | 35 s |
+| 1537 | **compile OOM** | — | killed ~5.5 min |
+| 1663 | **compile OOM** | — | SIGABRT ~7 min |
+| **1664** | **23.9** | **4.08** | 38 s |
+| 1665 | **compile OOM** | — | — |
+
+Three results. (1) **T ≡ 0 (mod 128) is confirmed and the effect is 4–5×**,
+far larger than the encoder probe's +31%: one token past a 128 boundary costs
+4.0–5.3×. "Pad the prompt to a multiple of 128" is now a shippable one-liner
+worth ~5× NPU prefill at this scale. (2) The JIT compiler tracks the same
+rule catastrophically: awkward lengths compile 10–70× slower, and **from
+T≈1537 upward they no longer compile at all** — two distinct memory deaths,
+lmkd low-watermark kill (1537, replicated twice) and Scudo
+`internal map failure (Out of memory)` abort (1663) — while 1536/1664 compile
+in <40 s. At d=1024 the awkward-length penalty ends in on-device-JIT
+infeasibility, not just latency. (3) GPU reference arms are flat
+(pf1500 51.2 ms, pf1536 59.4 ms — tracking compute, not shape), so the same
+block flips accelerator by length choice alone: at T=1500 the GPU wins 2.4×,
+at T=1536 the NPU wins 2.6×.
+
+## Experiment 9 — RMSNorm decomposition flavors (T=1536 arm, one variable)
+
+No RMS_NORM builtin exists in the flatbuffer schema (checked 2.1.6 and
+2.3.0.dev20260823, 210 builtins each) — decomposition choice is the only
+lever. Same probe at T=1536:
+
+| RMSNorm impl | NPU ms | vs naive |
+|---|---|---|
+| naive `x·rsqrt(mean(x²)+ε)` | 22.9 | 1.00 |
+| SafeRMS scale-before-square, s=64 | 22.5 | **0.98 — free** |
+| max-norm SafeRMS (ABS+REDUCE_MAX+DIV, runtime s) | 28.2 | **1.23** |
+
+The Mali-fp16 overflow guard with a *constant* scale costs nothing on the
+NPU; the *runtime max* variant costs 23%. Flip candidate confirmed: the
+qwen3 embedder carries max-norm SafeRMS ×113 (opscan 2026-08-25), so a
+constant-scale rebuild should recover ~20% NPU there.
+
+## Experiment 10 — which op breaks the elementwise-chain fusion
+
+Same gelu-polynomial chain as phase 3, one op X in the tanh slot
+(`probe_batch6.py`; exp/pow arms use a smaller leading constant, sqrt/rsqrt
+arms add 2 ops for a positive domain — noted, both ~noise-scale):
+
+| X in slot | NPU ms |
+|---|---|
+| LOGISTIC | 18.5 |
+| EXP | 20.6 |
+| POW | 22.3 |
+| *(slot empty — RELU fused away)* | 23.7 |
+| MAXIMUM | 25.3 |
+| ABS | 26.4 |
+| SQRT / RSQRT | 31.6 / 31.6 |
+| **TANH** | **54.0** |
+| **torch.erf (96-op rational chain)** | **89.8** |
+
+LOGISTIC/EXP/POW are fusion-safe — *faster than the chain with nothing in
+the slot*, which restates the phase-3 lesson that HTP pattern choice is
+non-monotonic in op content: you cannot model these as baseline+op-cost.
+TANH is the only single builtin that detonates the chain (2.3× the empty
+control). Worse still is writing `torch.erf`: there is no ERF builtin, the
+converter emits a 96-op clamp+rational approximation, and it lands at 3.8× —
+slower than the tanh chain it would replace. Exact GELU on the NPU has
+exactly one fast spelling: the builtin GELU op.
+
+## Experiment 11 — op granularity is not a cost (zipformer axis refuted)
+
+Serial 1×1 Conv+ReLU chains, c=32 on 32×32 (per pair 2.1 MFLOP), N = pair
+count; equal-FLOPs monolithic reference:
+
+| N | NPU ms | µs/op |
+|---|---|---|
+| 10 | 0.52 | 52 |
+| 100 | 0.54 | 5.4 |
+| 1000 | 1.19 | 1.2 |
+| 3000 | 1.69 | 0.6 |
+| mono (one 6.6-GF conv) | 2.69 | — |
+
+A 3000-op serial graph costs ~1.2 ms over the 0.5 ms invoke floor —
+~0.4 µs/op marginal — and **beats the single fat conv of the same FLOPs by
+1.6×**. Op count per se cannot explain zipformer's 0.38–0.42× (3085 ops
+would account for ~1.5 ms of its ~82 ms); its deficit stays with its
+awkward lengths (796/398/199/100) and TANH content. GPU refs: gr300
+2.63 ms vs NPU 0.61 (the NPU is *better* at fine-grained graphs than the
+GPU here).
+
+## Experiment 12 — decode-GEMV weight dtype: null even when bandwidth-bound
+
+8× Linear(4096²)+ReLU at T=1 — 0.27 GF against 537 MB of weights, the
+opposite regime from experiment 1's compute-bound graphs. Same math, four
+storage dtypes (`make_fp16.py` / `make_int8.py`, all host-verified
+executable):
+
+| storage | file | NPU ms |
+|---|---|---|
+| fp32 | 537 MB | 4.07 |
+| fp16+DEQ | 268 MB | 4.06 |
+| int8+DEQ | 134 MB | 4.07 |
+| int4+DEQ | 67 MB | 4.08 |
+
+Flat to 0.6%. The weight-only DEQUANTIZE pattern buys **zero** decode
+latency on this path even where bandwidth is everything — consistent with
+QNN materializing weights to one internal representation at compile
+(inference, not directly observed; the equality across a 8× file-size range
+is the measured fact). If int4 is to speed decode here it must reach a
+quantized kernel, not a DEQUANTIZE graph. Notably int4+DEQ *compiles and
+runs* on the NPU; ML Drift (GPU) refuses the int8/int4 DEQ forms outright
+(`Failed to compile model`), while GPU fp32 runs 4.58 ms — both accelerators
+sit on the same ~DDR floor.
+
+## Experiment 13 — whisper-encoder pad flip: the third real-model flip
+
+Whisper-tiny encoder rebuilt at T=1536 (mel 3072): checkpoint pos table for
+real rows + formula rows for the pad tail, conv1 tail re-zeroing mask, key
+mask −1e4, output sliced back to [1,1500,384] (`build_whisper_pad.py`).
+Equivalence: **bit-exact vs the same-builder T=1500 control on host**
+(max_abs 0.0), and end-to-end transcripts through the ONNX decoder are
+identical on both test clips (`wer_check.py`).
+
+| whisper-tiny encoder | NPU ms | GPU ms |
+|---|---|---|
+| T=1500 control | 35.8 | 26.9 |
+| **T=1536 padded** | **17.9** | 31.6 |
+
+2.00× on the NPU from the pad alone; the encoder flips from losing 0.75× to
+**winning 1.5× vs GPU** (the GPU pays a mild +17% for the extra tokens).
+Prediction from the T-shape probe (~15 ms) landed within 20%. Bundle:
+`whisper_enc_pad1536.tflite` in `~/Downloads/meeting/npubench-phase9-probes/`
+(as `probe_wh_pad1536.tflite`); the app-side change is zero-padding the mel
+to 3072 columns.
+
+## Follow-ups landed with these experiments (2026-08-28)
+
+- **C-0 / issue #1190**: the `GELU(approximate=True)` DINOv2-S build runs
+  **38.5 ms** NPU (N=50, NONE; `npubench/factors/c0_ab_tanhop.log`) — same
+  band as the erf build (41.9), 2.23× vs the shipped chain. The converter
+  fact behind the issue: litert-torch 0.9.3 already fuses four spellings of
+  the tanh-GELU chain to the GELU op; the one that escapes every
+  `MatchGeluApproximate*` variant is Python's natural
+  `0.044715 * x * x * x` (coefficient-first association — no x³ subterm).
+  Matrix: `npubench/factors/gelu_assoc_matrix.{py,log}`. The DINOv2/TIPSv2
+  builders use exactly that spelling — that is why the slow files exist.
+  Comment + pattern PR are owned by the 08-28 handoff session.
+- **Mali re-check (C-9)**: on Pixel 8a + LiteRT 2.2.0 (npubench), the
+  builtin-GELU DINOv2 compiles and runs (198.8 ms GPU) and
+  align_corners=True RESIZE_BILINEAR compiles and runs (25.4 ms) — both
+  Mali-era bans are gone *at this runtime*; per-module pins still need their
+  own check before unifying zoo assets on erf builds.
+- **memorize bisect, rounds 1+2**: working prefix cuts k100/140/240/252/309/
+  350 run 49.5 / 54.7 / 56.0 / 59.5 / 59.8 / 56.3 ms vs full 256.1
+  (`phase9.log`, `phase10.log`) — the first 350 ops cost only ~60 ms, so
+  **~196 ms of the 0.04× disaster sits in ops 350–601**, exactly the
+  batch-256 `[1,64]×[64,16]` matmul + `[1,64,64,1024]` GELU region the
+  static scan flagged. Every cut ending inside 380–549 compiles but fails
+  QNN invoke (all run fine on host CPU), so the region resists prefix
+  truncation — finer localization needs op stubbing instead of cutting.
 
 ## Corrections to earlier statements
 
