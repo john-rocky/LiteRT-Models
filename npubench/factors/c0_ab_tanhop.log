@@ -1,0 +1,13 @@
+# C-0: ab_tanhop.tflite (DINOv2-S rebuilt with F.gelu(approximate='tanh') -> GELU(approximate=True) op)
+# Measured 2026-08-28 ~07:1x JST, BEFORE phase9_chain launch (07:25:34) — no device collision in these rows.
+# S26 = RFGL80R6A6H (SM8850, Hexagon v81), npubench #sweep, LiteRT 2.2.0 JIT, one accelerator per process.
+# Protocol: compile pass (iters=1, no gate) -> thermal-NONE gate -> 50-iter measure. Raw logcat lines:
+
+c0_compile_npu|gate_status=nogate|SWEEP NPU [/data/local/tmp/npubench/ab_tanhop.tflite] median=40.958ms min=40.958ms max=40.958ms load=17066.3ms runs=1 thermal=NONE->NONE headroom=0.56999993->0.6033333
+c0_measure_npu|gate_status=0|SWEEP NPU [/data/local/tmp/npubench/ab_tanhop.tflite] median=38.476ms min=38.266ms max=38.677ms load=170.2ms runs=50 thermal=NONE->NONE headroom=0.6066667->0.60999995
+
+# Anchors (phase5.log, 2026-08-24, same rig/protocol):
+#   dinov2_ab_tanh (shipped math, TANH chain)  85.9 ms
+#   dinov2_ab_sig  (x*sigmoid(1.702x))         49.3 ms
+#   dinov2_ab_erf  (builtin GELU, approx=False) 41.9 ms
+# => GELU(approximate=True) 38.5 ms: same band as erf, 2.23x vs the shipped chain.

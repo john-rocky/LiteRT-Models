@@ -1,0 +1,13 @@
+# gelu_assoc_matrix.py output, 2026-08-28, venv ~/venvs/ltconv040dev
+# (litert-torch 0.9.3, ai-edge-litert 2.1.6). Op histograms of the exported files:
+
+pow         {'FULLY_CONNECTED': 1, 'GELU': 1}
+mull        {'FULLY_CONNECTED': 1, 'GELU': 1}
+mulr        {'FULLY_CONNECTED': 1, 'GELU': 1}
+xhalf       {'FULLY_CONNECTED': 1, 'GELU': 1}
+coefffirst  {'FULLY_CONNECTED': 1, 'RESHAPE': 1, 'MUL': 6, 'ADD': 2, 'TANH': 1}
+
+# Only the coefficient-first left association ((0.044715*x)*x)*x escapes the
+# existing MatchGeluApproximate* patterns and ships a TANH chain.
+# The .tflite files themselves: /private/tmp/claude-501/-Users-majimadaisuke-Downloads-depthanything-android/5f09cb1b-67d5-4376-8bc0-041e035c19bd/scratchpad/gelurepro/v_*.tflite
+# (regenerable from this script, fixed seed).
