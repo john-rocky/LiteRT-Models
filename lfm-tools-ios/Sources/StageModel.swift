@@ -546,6 +546,8 @@ final class StageModel {
   private(set) var stageMixer: AudioBox.Snapshot?
   /// The records packs': the app's list, always on stage.
   private(set) var stageTable: TablePanel?
+  /// The photo-library pack's stage: thumbnails, with the selection lit.
+  private(set) var stagePhotos: PhotoGrid?
 
   private func refreshStagePanel() {
     switch Self.scenarioName {
@@ -553,7 +555,11 @@ final class StageModel {
       stageMixer = AudioBox.shared.snapshot()
       stageImageID += 1
     case "library":
-      stageTable = PhotoLibraryBox.shared.snapshot()
+      // Pictures when there are pictures (the fixture library), the records
+      // table when there are not (the canned world). A photo pack whose stage
+      // shows filenames tells a viewer nothing about what just happened.
+      stagePhotos = PhotoLibraryBox.shared.grid()
+      stageTable = stagePhotos == nil ? PhotoLibraryBox.shared.snapshot() : nil
       stageImageID += 1
     case "store":
       stageTable = StoreBox.shared.snapshot()

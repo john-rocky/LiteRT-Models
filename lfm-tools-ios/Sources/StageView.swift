@@ -54,6 +54,12 @@ struct StageView: View {
             .padding(.top, 10)
             .animation(.easeInOut(duration: 0.3), value: stage.stageImageID)
         }
+        if let grid = stage.stagePhotos {
+          PhotoGridPanel(grid: grid)
+            .padding(.top, 10)
+            .layoutPriority(1)
+            .animation(.easeInOut(duration: 0.35), value: stage.stageImageID)
+        }
         if let table = stage.stageTable {
           RecordsPanel(snapshot: table)
             .padding(.top, 10)
@@ -264,6 +270,52 @@ private struct MixerBoard: View {
             .frame(height: 14)
           }
           .frame(maxWidth: .infinity)
+        }
+      }
+    }
+    .padding(12)
+    .background(Color.white.opacity(0.06), in: .rect(cornerRadius: 14))
+  }
+}
+
+/// The photo-library pack's stage: the camera roll itself, and the sentence's
+/// answer told in light. Every photo stays on screen the whole run — a grid
+/// that reflowed would read as a different screen — and the ones the last
+/// finder returned keep full brightness while the rest fall back. What a
+/// viewer sees is 28 photos becoming 6, which is the only way a retrieval
+/// demo has ever been legible.
+@available(iOS 27.0, *)
+private struct PhotoGridPanel: View {
+  let grid: PhotoGrid
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 7) {
+      HStack {
+        Text(grid.title).font(.system(size: 13, weight: .bold, design: .rounded))
+        Spacer()
+        Text(grid.overview)
+          .font(.system(size: 10, weight: .semibold, design: .rounded))
+          .foregroundStyle(.white.opacity(0.5))
+      }
+      .foregroundStyle(.white)
+      LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 6), spacing: 4) {
+        ForEach(grid.tiles) { tile in
+          ZStack {
+            if let image = tile.image {
+              Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+            } else {
+              Color.white.opacity(0.08)
+            }
+          }
+          .frame(height: 46)
+          .clipShape(.rect(cornerRadius: 6))
+          .overlay(
+            RoundedRectangle(cornerRadius: 6)
+              .strokeBorder(.white.opacity(tile.lit ? 0.9 : 0), lineWidth: 1.5))
+          .opacity(tile.lit ? 1 : 0.18)
+          .saturation(tile.lit ? 1 : 0)
         }
       }
     }

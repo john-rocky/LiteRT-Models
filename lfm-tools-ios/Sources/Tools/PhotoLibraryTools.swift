@@ -32,6 +32,7 @@ import CoreGraphics
 import Foundation
 import FoundationModels
 import ImageIO
+import UIKit
 import Vision
 // Device only: CoreAI.framework is in the iphoneos and macOS SDKs and absent
 // from the Mac Catalyst iOSSupport tree, so every use of it is behind this
@@ -80,6 +81,12 @@ final class PhotoLibraryBox: @unchecked Sendable {
     /// Mac rounds l1–l5b measure exactly what they measured.
     private var clipVectors: [(id: Int, vector: [Float])] = []
   #endif
+
+  /// One thumbnail per indexed photo, for the stage. A photo app whose demo
+  /// shows a table of filenames is not a demo of a photo app: what a person
+  /// watching has to see is the grid dimming down to the photos the sentence
+  /// found. Empty for the canned world, which has no pixels to show.
+  private var thumbs: [Int: UIImage] = [:]
 
   private let lock = NSLock()
   private var photos: [Photo] = LibraryData.photos
@@ -132,6 +139,13 @@ final class PhotoLibraryBox: @unchecked Sendable {
     // "you have no beach photos from last summer").
     let places = Set(rows.map(\.place)).sorted()
     if !places.isEmpty { line += " Places: " + places.joined(separator: ", ") + "." }
+    // The third vocabulary, and the last one to be named — the same lesson as
+    // the places (l2), bought again on the device: "Any photos of a cat?"
+    // opened with find_photos_of_person("cat"), because the state said who the
+    // library has albums and places for and never said who it has *names* for,
+    // so a noun with nowhere else to go went to the tool that takes a name.
+    let people = Set(rows.flatMap(\.people)).sorted()
+    if !people.isEmpty { line += " People: " + people.joined(separator: ", ") + "." }
     line += " Today: \(LibraryData.today) (\(LibraryData.todayWeekday))."
     let live = selected.filter { id in rows.contains { $0.id == id } }
     if live.isEmpty {
@@ -150,6 +164,24 @@ final class PhotoLibraryBox: @unchecked Sendable {
   }
 
   // MARK: The panel
+
+  /// The library as pictures, with the current selection lit. `selected` is
+  /// what the last finder returned; with nothing selected every tile is lit,
+  /// because "these are all your photos" is the honest resting state.
+  func grid() -> PhotoGrid? {
+    let (rows, selected, how, thumbnails) = sync {
+      (photos.filter { !$0.deleted }, selection, selectionHow, thumbs)
+    }
+    guard !thumbnails.isEmpty else { return nil }
+    let live = selected.filter { id in rows.contains { $0.id == id } }
+    return PhotoGrid(
+      title: live.isEmpty ? "All photos" : "\(live.count) — \(how)",
+      overview: "\(rows.count) photos",
+      tiles: rows.map {
+        PhotoGrid.Tile(
+          id: $0.id, image: thumbnails[$0.id], lit: live.isEmpty || live.contains($0.id))
+      })
+  }
 
   func snapshot() -> TablePanel {
     let (rows, selected, how) = sync {
@@ -379,6 +411,7 @@ extension PhotoLibraryBox {
     else { return }
     var rows: [Photo] = []
     var hashes: [(id: Int, bits: UInt64)] = []
+    var thumbnails: [Int: UIImage] = [:]
     var faceCount = 0
     #if canImport(CoreAIKitVision)
       // Same images, same loop, one decode: the rung above the classifier, if
@@ -425,6 +458,7 @@ extension PhotoLibraryBox {
           text: lines.isEmpty ? nil : lines.joined(separator: " "),
           sharp: true, softness: Self.softness(image)))
       hashes.append((id, Self.averageHash(image)))
+      thumbnails[id] = Self.thumbnail(image)
       #if canImport(CoreAIKitVision)
         if let clip, let vector = try? await clip.encode(image: image) {
           vectors.append((id, vector))
@@ -444,6 +478,7 @@ extension PhotoLibraryBox {
     }
     sync {
       photos = rows
+      thumbs = thumbnails
       selection = []
       selectionHow = ""
       pendingDelete = []
@@ -607,6 +642,19 @@ extension PhotoLibraryBox {
     return values.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)
   }
 
+  /// A tile, not a photo: 240 px on the long side is past what a six-column
+  /// grid on a phone can show and small enough that 28 of them cost nothing.
+  static func thumbnail(_ image: CGImage) -> UIImage? {
+    let side = 240.0
+    let scale = min(1, side / Double(max(image.width, image.height)))
+    let size = CGSize(width: Double(image.width) * scale, height: Double(image.height) * scale)
+    let format = UIGraphicsImageRendererFormat.default()
+    format.scale = 1
+    return UIGraphicsImageRenderer(size: size, format: format).image { context in
+      UIImage(cgImage: image).draw(in: CGRect(origin: .zero, size: size))
+    }
+  }
+
   static func averageHash(_ image: CGImage) -> UInt64 {
     let g = grey(image, side: 8)
     guard g.count == 64 else { return 0 }
@@ -615,6 +663,19 @@ extension PhotoLibraryBox {
     for (index, value) in g.enumerated() where value > mean { bits |= (1 << UInt64(index)) }
     return bits
   }
+}
+
+/// What the stage draws for this pack: the library as pictures.
+struct PhotoGrid: Sendable {
+  struct Tile: Sendable, Identifiable {
+    let id: Int
+    let image: UIImage?
+    /// Lit means "this is what the sentence found" — the grid dims the rest.
+    let lit: Bool
+  }
+  let title: String
+  let overview: String
+  let tiles: [Tile]
 }
 
 /// One person's camera roll, frozen: fourteen months, five places, three
