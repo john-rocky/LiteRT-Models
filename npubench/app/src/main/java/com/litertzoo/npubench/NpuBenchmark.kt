@@ -172,6 +172,111 @@ class NpuBenchmark(private val context: Context) {
     }
   }
 
+  /**
+   * Parity + latency for one named signature with a REAL input tensor.
+   *
+   * Reads a raw little-endian float32 file into input buffer 0, times
+   * warmup+iterations runs, then reads every output once more and dumps each to
+   * `outDir/out<i>.bin` (raw LE), so the host can compare bytes against its own
+   * reference. `outKinds[i]` picks the read call per output: "i" = int32, "f" =
+   * float32 — TensorBuffer has no type introspection, and readInt on a float
+   * tensor would not fail, it would lie.
+   */
+  fun parityBench(
+    modelPath: String,
+    accelerator: Accelerator,
+    signature: String,
+    inputFile: String,
+    outDir: File,
+    outKinds: List<String>,
+    warmup: Int = 5,
+    iterations: Int = 20,
+  ): BenchResult {
+    val thermalBefore = thermalStatus()
+    val headroomBefore = thermalHeadroom()
+
+    val envOptions =
+      mapOf(
+        Environment.Option.DispatchLibraryDir to libDir,
+        Environment.Option.CompilerPluginLibraryDir to libDir,
+      )
+    Environment.create(context, envOptions).use { env ->
+      val options = CompiledModel.Options(accelerator)
+      val loadStart = System.nanoTime()
+      val model = CompiledModel.create(modelPath, options, env)
+      val loadMs = (System.nanoTime() - loadStart) / 1e6
+
+      model.use {
+        val inputs =
+          if (signature.isEmpty()) model.createInputBuffers()
+          else model.createInputBuffers(signature)
+        val outputs =
+          if (signature.isEmpty()) model.createOutputBuffers()
+          else model.createOutputBuffers(signature)
+
+        val bytes = File(inputFile).readBytes()
+        val floats = FloatArray(bytes.size / 4)
+        java.nio.ByteBuffer.wrap(bytes)
+          .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+          .asFloatBuffer()
+          .get(floats)
+        inputs[0].writeFloat(floats)
+
+        fun runOnce() {
+          if (signature.isEmpty()) model.run(inputs, outputs)
+          else model.run(inputs, outputs, signature)
+        }
+
+        repeat(warmup) { runOnce() }
+        val samples = DoubleArray(iterations)
+        for (i in 0 until iterations) {
+          val t0 = System.nanoTime()
+          runOnce()
+          // Force completion by reading every output before stopping the clock
+          // (same convention as runInternal: run() only enqueues).
+          outputs.forEachIndexed { j, buf ->
+            if (outKinds.getOrNull(j) == "i") buf.readInt() else buf.readFloat()
+          }
+          samples[i] = (System.nanoTime() - t0) / 1e6
+        }
+        samples.sort()
+
+        outDir.mkdirs()
+        outputs.forEachIndexed { i, buf ->
+          val f = File(outDir, "out$i.bin")
+          val bb: java.nio.ByteBuffer
+          if (outKinds.getOrNull(i) == "i") {
+            val v = buf.readInt()
+            bb = java.nio.ByteBuffer.allocate(v.size * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            v.forEach { bb.putInt(it) }
+          } else {
+            val v = buf.readFloat()
+            bb = java.nio.ByteBuffer.allocate(v.size * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            v.forEach { bb.putFloat(it) }
+          }
+          f.writeBytes(bb.array())
+        }
+
+        val result =
+          BenchResult(
+            accelerator = accelerator.name,
+            asset = "$modelPath#$signature",
+            loadMs = loadMs,
+            medianMs = samples[iterations / 2],
+            minMs = samples.first(),
+            maxMs = samples.last(),
+            runs = iterations,
+            thermalBefore = thermalBefore,
+            thermalAfter = thermalStatus(),
+            headroomBefore = headroomBefore,
+            headroomAfter = run { Thread.sleep(1100); thermalHeadroom() },
+          )
+        Log.i(TAG, "RESULT $result")
+        return result
+      }
+    }
+  }
+
   companion object {
     const val TAG = "NpuBench"
   }

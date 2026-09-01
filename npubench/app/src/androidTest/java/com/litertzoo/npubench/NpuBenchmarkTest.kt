@@ -102,6 +102,45 @@ class NpuBenchmarkTest {
     }
   }
 
+  /**
+   * Parity + latency for one signature with a real input:
+   *
+   *   -e model /data/local/tmp/gsctc/m.tflite -e accel cpu -e sig transcribe_10s
+   *   -e input /data/local/tmp/gsctc/in_10s.raw -e outkinds i,f [-e iters 20]
+   *
+   * Dumps each output to the app's external files dir under <tag>/out<i>.bin and
+   * logs a PARITY line with the bench figures and the dump dir.
+   */
+  @Test
+  fun parity() {
+    val args = InstrumentationRegistry.getArguments()
+    val path = args.getString("model") ?: error("pass -e model <path>")
+    val accel = when (args.getString("accel")?.lowercase()) {
+      "npu" -> Accelerator.NPU
+      "cpu" -> Accelerator.CPU
+      else -> Accelerator.GPU
+    }
+    val sig = args.getString("sig") ?: ""
+    val input = args.getString("input") ?: error("pass -e input <raw f32 file>")
+    val outKinds = (args.getString("outkinds") ?: "f").split(",")
+    val iterations = args.getString("iters")?.toIntOrNull() ?: 20
+    val tag = args.getString("tag") ?: "parity"
+    val outDir = java.io.File(context.getExternalFilesDir(null), tag)
+    try {
+      val r = bench.parityBench(path, accel, sig, input, outDir, outKinds, iterations = iterations)
+      Log.i(
+        TAG,
+        "PARITY ${r.accelerator} [${r.asset}] median=${"%.3f".format(r.medianMs)}ms " +
+          "min=${"%.3f".format(r.minMs)}ms max=${"%.3f".format(r.maxMs)}ms " +
+          "load=${"%.1f".format(r.loadMs)}ms runs=${r.runs} " +
+          "thermal=${r.thermalBefore}->${r.thermalAfter} " +
+          "headroom=${r.headroomBefore}->${r.headroomAfter} outdir=${outDir.absolutePath}",
+      )
+    } catch (e: Throwable) {
+      Log.e(TAG, "PARITY ${accel.name} [$path#$sig] FAILED: ${e::class.java.simpleName}: ${e.message}")
+    }
+  }
+
   @Test
   fun z_reportDevice() {
     Log.i(TAG, "DEVICE ${android.os.Build.MODEL} / SoC ${android.os.Build.SOC_MODEL}")
