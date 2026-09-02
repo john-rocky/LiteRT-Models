@@ -158,6 +158,31 @@ enum BenchToolBox {
       base: SavePhotoTool(), canned: "saved a copy with 2 edits to the photo library"),
   ]
 
+  /// The chains pack, neutralized: two calls out of one sentence, on tools
+  /// that have nothing to do with each other (ToolBox.chains). The demo
+  /// world — CAFE LA, the coffee menu — plus the device readings the chains
+  /// script names. The clock answers in the zone it was asked for, so the
+  /// Tokyo-and-London beat reads two honest answers.
+  static let chains: [any FoundationModels.Tool] = [
+    RecordingTool(base: TorchTool(), canned: "torch on"),
+    RecordingTool(base: BatteryTool(), canned: "82%, not charging"),
+    RecordingTool(base: LocationTool(), canned: "Chuo, Osaka (fix to ±25 m)"),
+    RecordingTool(
+      base: SearchPlacesTool(),
+      canned: "- CAFE LA (140 m)\n- Blue Bottle Coffee (240 m)\n- Doutor (310 m)"),
+    RecordingTool(base: OpenMapsTool(), canned: "opened it in Maps"),
+    RecordingTool(
+      base: CurrentTimeTool(), canned: "14:05 on 2026-09-02",
+      respond: { arguments in
+        "14:05 on 2026-09-02 (\(arguments.timeZone ?? "the device's zone"))"
+      }),
+    RecordingTool(
+      base: ReadPhotoTextTool(), canned: "COFFEE MENU\nLatte ¥520\nAmericano ¥450"),
+    RecordingTool(base: TranslateTool(), canned: "(translated text)"),
+    RecordingTool(base: SoundLevelTool(), canned: "42 dB — quiet"),
+    RecordingTool(base: WriteNoteTool(), canned: "noted"),
+  ]
+
   /// The focus pack, neutralized. One fixed world again: two notifications
   /// pending, one note remembered — so list/read cases have something real-
   /// shaped to answer from and cancel has something to claim it cancelled.
@@ -1403,6 +1428,7 @@ enum BenchToolBox {
     case "demo": return demo
     case "photo": return photo
     case "focus": return focus
+    case "chains": return chains
     case "report": return report
     case "video": return video
     case "moments": return moments

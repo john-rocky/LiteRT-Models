@@ -104,6 +104,26 @@ enum BenchRunner {
       instructionsName = CommandLine.arguments[flag + 1].lowercased()
     }
 
+    // The guided lane's two switches. `--guided prompt|constrained` is the
+    // LiteRT provider's: whether a schema is enforced by the engine
+    // (constrained decoding) or only written into the prompt — the adapter's
+    // `GuidedGeneration`. `--schema-in-prompt yes|no` is Foundation Models'
+    // own `includeSchemaInPrompt`, honored by both providers. Both go on the
+    // run line, so a row's condition survives into the table.
+    var guidedPolicy = "constrained"
+    if let flag = CommandLine.arguments.firstIndex(of: "--guided"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    {
+      guidedPolicy = CommandLine.arguments[flag + 1].lowercased()
+    }
+    var schemaInPrompt = true
+    if let flag = CommandLine.arguments.firstIndex(of: "--schema-in-prompt"),
+      CommandLine.arguments.indices.contains(flag + 1)
+    {
+      schemaInPrompt = !["no", "false", "0"].contains(
+        CommandLine.arguments[flag + 1].lowercased())
+    }
+
     let chosen: Chosen
     if CommandLine.arguments.contains("--model"),
       let flag = CommandLine.arguments.firstIndex(of: "--model"),
@@ -143,7 +163,8 @@ enum BenchRunner {
         liteRTModel = try LiteRTLanguageModel(
           modelPath: url.path, backend: .cpu(),
           visionBackend: url.lastPathComponent.uppercased().contains("-VL-") ? .cpu() : nil,
-          maxTokens: context, toolListStyle: .bare, thinkingTokenBudget: 32)
+          maxTokens: context, toolListStyle: .bare, thinkingTokenBudget: 32,
+          guidedGeneration: guidedPolicy == "prompt" ? .promptOnly : .constrained)
         modelName = url.deletingPathExtension().lastPathComponent
       } catch {
         out.write(["type": "error", "what": "model load: \(error)"])
@@ -162,6 +183,7 @@ enum BenchRunner {
       "type": "run", "model": modelName, "cases": cases.count, "toolset": toolsetName,
       "tools": tools.count, "toolNames": tools.map(\.name).joined(separator: ","),
       "date": dayFormatter.string(from: Date()),
+      "guided": guidedPolicy, "schemaInPrompt": schemaInPrompt,
     ])
 
     var passed = 0
@@ -208,6 +230,20 @@ enum BenchRunner {
         let verdict = await runLoopCase(
           benchCase, session: session, fixture: fixture, out: out,
           model: modelName, toolset: toolsetName, toolCount: tools.count)
+        if verdict == .pass { passed += 1 } else { failed += 1 }
+        if verdict == .hang {
+          out.write(["type": "abort", "why": "engine hang; remaining cases not run"])
+          break
+        }
+        continue
+      }
+      // A guided case asks for a structure instead of a call: the session
+      // fills the case's schema and the fields are scored like arguments.
+      if let spec = benchCase.schema {
+        let verdict = await runGuidedCase(
+          benchCase, spec: spec, session: session, out: out, model: modelName,
+          toolset: toolsetName, toolCount: tools.count,
+          schemaInPrompt: benchCase.schemaInPrompt ?? schemaInPrompt)
         if verdict == .pass { passed += 1 } else { failed += 1 }
         if verdict == .hang {
           out.write(["type": "abort", "why": "engine hang; remaining cases not run"])
@@ -339,6 +375,73 @@ enum BenchRunner {
 
   private enum LoopVerdict { case pass, fail, hang }
 
+  /// The guided lane: one `respond(to:schema:)`, scored on the returned
+  /// object's fields. The provider decides how the schema is met — Apple's
+  /// model natively, the LiteRT adapter by prompt or by constrained
+  /// decoding (`--guided`) — and the row records the condition. A parse
+  /// error is a failed case, not an aborted run: a structure the framework
+  /// could not read is exactly what the lane measures.
+  @MainActor
+  private static func runGuidedCase(
+    _ benchCase: BenchCase, spec: SchemaSpec, session: LanguageModelSession,
+    out: JSONLWriter, model: String, toolset: String, toolCount: Int, schemaInPrompt: Bool
+  ) async -> LoopVerdict {
+    out.write(["type": "start", "case": benchCase.id])
+    let started = Date()
+    var json = ""
+    var errorText: String?
+    do {
+      let schema = try GuidedSchema.make(spec)
+      let input =
+        benchCase.state.map { AppState.compose(state: $0, request: benchCase.input) }
+        ?? benchCase.input
+      json = try await firstToFinish(within: 180) {
+        try await Task.detached(priority: .userInitiated) {
+          try await session.respond(
+            to: input, schema: schema, includeSchemaInPrompt: schemaInPrompt
+          ).content.jsonString
+        }.value
+      }
+    } catch let timeout as DeadlinePassed {
+      out.write([
+        "case": benchCase.id, "lang": benchCase.lang, "model": model,
+        "input": benchCase.input, "guided": true, "schema": spec.name,
+        "error": String(describing: timeout), "pass": false, "fieldsPass": false,
+        "ms": Int(Date().timeIntervalSince(started) * 1000),
+      ])
+      return .hang
+    } catch {
+      errorText = String(describing: error)
+    }
+    let ms = Int(Date().timeIntervalSince(started) * 1000)
+    let object =
+      json.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) }
+      as? [String: Any] ?? [:]
+    var fieldsPass = errorText == nil
+    for (key, matcher) in benchCase.expectedFields ?? [:] where !matcher.matches(object[key]) {
+      fieldsPass = false
+    }
+    // Calls the provider made on the way are recorded, not scored.
+    var called: [String] = []
+    for entry in session.transcript {
+      guard case .toolCalls(let toolCalls) = entry else { continue }
+      called.append(contentsOf: toolCalls.map(\.toolName))
+    }
+    let pass = fieldsPass && errorText == nil
+    var line: [String: Any] = [
+      "case": benchCase.id, "lang": benchCase.lang, "model": model,
+      "toolset": toolset, "tools": toolCount, "input": benchCase.input,
+      "guided": true, "schema": spec.name, "schemaInPrompt": schemaInPrompt,
+      "json": String(json.prefix(400)), "called": called,
+      "fieldsPass": fieldsPass, "pass": pass, "ms": ms,
+      "expected": [String](), "calls": [[String: String]](),
+    ]
+    if let errorText { line["error"] = errorText }
+    out.write(line)
+    print("TOOLBENCH \(benchCase.id) \(pass ? "PASS" : "FAIL") \(ms)ms guided \(json.prefix(80))")
+    return pass ? .pass : .fail
+  }
+
   /// The goal-driven loop: perceive → judge → act → perceive the result →
   /// judge again. Round one is the case's input (usually the silent beat)
   /// with the fixture attached; every later round attaches the photo as the
@@ -469,6 +572,40 @@ enum BenchRunner {
     return pass ? .pass : .fail
   }
 
+}
+
+/// Builds a Foundation Models schema from a case's `schema` block, so a
+/// guided case is data like every other case instead of a type compiled
+/// into the app.
+@available(iOS 27.0, *)
+enum GuidedSchema {
+  static func make(_ spec: SchemaSpec) throws -> GenerationSchema {
+    let properties = spec.fields.map { field in
+      DynamicGenerationSchema.Property(
+        name: field.name, description: field.description, schema: leaf(field),
+        isOptional: field.optional ?? false)
+    }
+    let root = DynamicGenerationSchema(
+      name: spec.name, description: spec.description, properties: properties)
+    return try GenerationSchema(root: root, dependencies: [])
+  }
+
+  private static func leaf(_ field: FieldSpec) -> DynamicGenerationSchema {
+    switch field.type {
+    case "enum": return DynamicGenerationSchema(name: field.name, anyOf: field.values ?? [])
+    case "array": return DynamicGenerationSchema(arrayOf: scalar(field.items ?? "string"))
+    default: return scalar(field.type)
+    }
+  }
+
+  private static func scalar(_ type: String) -> DynamicGenerationSchema {
+    switch type {
+    case "integer": return DynamicGenerationSchema(type: Int.self)
+    case "number": return DynamicGenerationSchema(type: Double.self)
+    case "boolean": return DynamicGenerationSchema(type: Bool.self)
+    default: return DynamicGenerationSchema(type: String.self)
+    }
+  }
 }
 
 /// One JSON object per line, appended as it happens — a died run keeps every

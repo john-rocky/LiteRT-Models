@@ -37,7 +37,40 @@ struct BenchCase: Decodable {
   /// an answer. Separates "cannot see the defect" from "sees it but the
   /// judgment does not steer the op".
   var answerContains: [String]?
+  /// The guided lane: a schema the runner asks the session to fill
+  /// (`respond(to:schema:)`), scored on `expectedFields` — the argument
+  /// matchers, applied to the returned object's top-level fields. `expected`
+  /// stays [] on these cases: the structure is the answer, not a call. Tools
+  /// stay in the room, and any call the provider makes on the way is
+  /// recorded, not scored.
+  var schema: SchemaSpec?
+  var expectedFields: [String: Matcher]?
+  /// Per-case override of the run's `--schema-in-prompt` (Foundation
+  /// Models' `includeSchemaInPrompt`).
+  var schemaInPrompt: Bool?
   var expected: [ExpectedCall]
+}
+
+/// A schema the cases file can describe: an object of named fields. Field
+/// types: string, integer, number, boolean, enum (a list of strings), array
+/// (of one scalar type). Anything richer belongs in a @Generable in the app,
+/// not in JSON — the point is that a pack's guided cases are data a provider
+/// kit can run without recompiling.
+struct SchemaSpec: Decodable {
+  var name: String
+  var description: String?
+  var fields: [FieldSpec]
+}
+
+struct FieldSpec: Decodable {
+  var name: String
+  var type: String
+  var description: String?
+  /// Array element type (string | integer | number | boolean).
+  var items: String?
+  /// Enum values.
+  var values: [String]?
+  var optional: Bool?
 }
 
 /// One op family on the loop's ground-truth axes: a tool, optionally pinned
