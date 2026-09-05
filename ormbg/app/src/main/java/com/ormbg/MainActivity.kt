@@ -29,7 +29,8 @@ class MainActivity : ComponentActivity() {
     // Both flavors read the same published file; only the accelerator differs.
     private val modelFile = "ormbg.tflite"
 
-    private val O = BgRemover.OUT
+    // The demo composites at a reduced resolution so the loop keeps up with the clip.
+    private val O = 256
     private val compPixels = IntArray(O * O)
     private val fgPixels = IntArray(O * O)
     private val compBitmap = Bitmap.createBitmap(O, O, Bitmap.Config.ARGB_8888)
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
     private fun loadModel() {
         backgroundExecutor.execute {
             try {
-                val r = BgRemover(this, modelFile, accelerator)
+                val r = BgRemover.fromAssets(this, modelFile, accelerator)
                 remover = r
                 statusText.post {
                     statusText.text = "ormbg $accLabel   |   loaded ${r.loadMs} ms"
@@ -85,7 +86,9 @@ class MainActivity : ComponentActivity() {
 
     private fun runInference(bmp: Bitmap) {
         val r = remover ?: return
-        val (alpha, ms) = r.matte(bmp)
+        val t0 = System.nanoTime()
+        val alpha = (r.process(bmp) ?: return).downsample(O)
+        val ms = (System.nanoTime() - t0) / 1_000_000
         // downscale the frame to O×O and composite foreground over the replacement background
         android.graphics.Canvas(fgScaled).drawBitmap(
             bmp, android.graphics.Matrix().apply {

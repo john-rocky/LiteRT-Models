@@ -232,6 +232,21 @@ val result = outputBuffers[0].readFloat()
 implementation("com.google.ai.edge.litert:litert:2.1.3")
 ```
 
+## LiteRT or TensorFlow Lite? The names
+
+LiteRT is TensorFlow Lite renamed (2024-09-04). The `.tflite` format and the models did not change; the coordinates did. Verified 2026-09-05:
+
+| Old name | New name | Note |
+|---|---|---|
+| `org.tensorflow:tensorflow-lite` (last 2.17.0) | `com.google.ai.edge.litert:litert` 2.2.0 — Google Maven, not Maven Central | `Interpreter` + `CompiledModel`, minSdk 23; the 1.4.x line is `Interpreter`-only, minSdk 21 |
+| `org.tensorflow:tensorflow-lite-gpu` + `GpuDelegate` | nothing extra on 2.x: `CompiledModel.Options(Accelerator.GPU)` | `litert-gpu` stops at 1.4.2 |
+| `NnApiDelegate` / Qualcomm `qnn-litert-delegate` | `Accelerator.NPU` on `CompiledModel` | NNAPI is deprecated from Android 15 |
+| `pip install tflite-runtime` (last release 2023, wheels to Python 3.11) | `pip install ai-edge-litert` (cp310–cp314) | `ai_edge_litert.interpreter.Interpreter`, `ai_edge_litert.compiled_model.CompiledModel` |
+| `pip install ai-edge-torch` | `pip install litert-torch` (`litert_torch.convert(model, sample_inputs)`) | every model in this zoo was converted with it |
+| MediaPipe LLM Inference API | LiteRT-LM (`com.google.ai.edge.litertlm:litertlm-android` 0.16.1) | MediaPipe LLM Inference is maintenance-only |
+
+Two `CompiledModel` GPU rules: every op in the graph must be GPU-compatible (no CPU fallback), and tensors are rank 4 at most. Full mapping with sources: [docs/LITERT_CONVERSION_GUIDE.md § Three PyTorch → Android routes](docs/LITERT_CONVERSION_GUIDE.md#three-pytorch--android-routes-on-one-model-measured-2026-09-05) <!-- TODO(lane B, articles): replace this in-repo anchor with the published article URL -->
+
 ## Shared components
 
 Utilities that recur across the sample apps live as canonical sources in
@@ -782,13 +797,15 @@ Converted via **litert-torch** from [briaai/RMBG-1.4](https://huggingface.co/bri
 
 ### ormbg (open, Apache-2.0)
 
-[ormbg](https://huggingface.co/schirrmacher/ormbg): a fully **open, Apache-2.0** background-removal model (an ISNet trained for photorealistic subject cut-out) — the permissively-licensed alternative to the non-commercial RMBG-1.4. Pure CNN, fully on CompiledModel GPU, ~10 ms/frame on a Pixel 8a.
+[ormbg](https://huggingface.co/schirrmacher/ormbg): a fully **open, Apache-2.0** background-removal model (an ISNet trained for photorealistic subject cut-out) — the permissively-licensed alternative to the non-commercial RMBG-1.4. Pure CNN, fully on CompiledModel GPU — 246 ms per 1024² frame on a Pixel 8a (2026-09-05, run + readback, thermal status 0; the “~10 ms” quoted here earlier timed only the asynchronous `run()`).
 
 | Download Link | Size | Input | Output | Original Project | License | Sample App |
 | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
 | [ormbg.tflite](https://huggingface.co/litert-community/ormbg-LiteRT) | 176 MB | Float32 [1, 3, 1024, 1024] NCHW (RGB, /255) | Float32 [1, 1, 1024, 1024] alpha | [schirrmacher/ormbg](https://huggingface.co/schirrmacher/ormbg) | [Apache-2.0](https://huggingface.co/schirrmacher/ormbg) | [ormbg/](ormbg/) |
 
 **Preprocessing**: RGB, `x / 255` (no mean/std). **Output**: raw alpha matte — min-max normalize per frame before compositing.
+
+**Add to your app**: [ormbg/INTEGRATION.md](ormbg/INTEGRATION.md) — one Gradle line, one drop-in Kotlin file, the model download with its checksum, and the on-device check with its expected values ([`ormbg/recipe.json`](ormbg/recipe.json) carries the same facts for agents).
 
 ### DIS (IS-Net, general-use)
 
@@ -804,7 +821,7 @@ Converted via **litert-torch** from [briaai/RMBG-1.4](https://huggingface.co/bri
 
 **Sample app**: [dis/](dis/) — live camera → DIS GPU → high-precision cutout.
 
-**Conversion** (`ormbg/scripts/build_ormbg.py`, litert-torch): pure CNN → fully GPU-compatible (**246/246 nodes on the delegate, 1 partition**; device corr 0.999881, ~10 ms) with one defensive patch — `align_corners=True` → `False` on the bilinear upsamples. CPU-exact vs PyTorch (corr 0.9999999999).
+**Conversion** (`ormbg/scripts/build_ormbg.py`, litert-torch): pure CNN → fully GPU-compatible (**246/246 nodes on the delegate, 1 partition**; device corr 0.999881; 246 ms/frame on a Pixel 8a, see [ormbg/INTEGRATION.md](ormbg/INTEGRATION.md)) with one defensive patch — `align_corners=True` → `False` on the bilinear upsamples. CPU-exact vs PyTorch (corr 0.9999999999).
 
 **Output format**: Sigmoid mask (0-1). Apply as alpha channel to original image for transparent background.
 

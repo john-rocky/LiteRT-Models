@@ -138,6 +138,26 @@ automatically. Everything else is opt-in:
 After any fp16-wall patch (`safe_*`), re-verify on device — desktop CPU/GPU parity does
 not exercise the delegate's fp16 accumulation (residency ≠ correctness).
 
+## Three PyTorch → Android routes on one model (measured 2026-09-05)
+
+One model (conv stem + `nn.MultiheadAttention` block + head, 1×3×224×224, random weights shared by every route), three converters, one parity protocol (golden + 8 random inputs, atol 1e-4 / rtol 1e-3, argmax equal, reference = eager PyTorch fp32). Identical results on Python 3.12.13 and 3.14.6 (torch 2.13.0, M4 Max).
+
+| Route | Converter call | Artifact | Worst max abs / rel diff vs PyTorch |
+|---|---|---:|---|
+| litert-torch 0.9.4 → ai-edge-litert 2.2.0 | `litert_torch.convert(model, (x,)).export("model.tflite")` | 1,073,260 B | 6.9e-7 / 7.5e-4 (Interpreter and `CompiledModel` CPU identical) |
+| ExecuTorch 1.4.1, XNNPACK partitioner | `to_edge_transform_and_lower(torch.export.export(model, (x,)), partitioner=[XnnpackPartitioner()]).to_executorch()` | 1,073,320 B | 6.9e-7 / 6.0e-4 |
+| torch.onnx.export (opset 18) → onnxruntime 1.29.0 | `torch.onnx.export(model, (x,), "model.onnx", opset_version=18, dynamo=False)` (MHA fast path disabled first) | 1,065,628 B | 7.5e-7 / 2.9e-4 |
+
+`CompiledModel` GPU (macOS Metal backend of the same runtime) on the litert-torch artifact:
+
+| Graph | Result | vs fp32 PyTorch |
+|---|---|---|
+| unmodified `nn.MultiheadAttention` | refused: `RESHAPE: Tensor dimensions must be less than 5` ×2, `TRANSPOSE: Permutation for transpose is invalid` (the 5-D head split; same rule as the Android GPU delegate) | — |
+| attention re-expressed in 4-D `(B, heads, N, head_dim)`, same weights | fully accelerated, default fp16 | 2.8e-3, argmax 9/9 |
+| same 4-D graph, `GpuOptions(enforce_f32=True)` | fully accelerated | 3.6e-7 |
+
+Android side: `org.pytorch:executorch-android:1.4.0` ships only `XnnpackBackend`; `onnxruntime-android` 1.29.0's NNAPI provider loads on an API 36 emulator but NNAPI is deprecated from Android 15; `com.google.ai.edge.litert:litert:2.2.0` gives GPU/NPU through `CompiledModel.Options`. Write-up with the emulator numbers: pending publication — until then see the naming table in [README § LiteRT or TensorFlow Lite? The names](../README.md#litert-or-tensorflow-lite-the-names) <!-- TODO(lane B, articles): replace this in-repo anchor with the published article URL -->
+
 ## Model-Specific Notes
 
 ### MobileSAM
