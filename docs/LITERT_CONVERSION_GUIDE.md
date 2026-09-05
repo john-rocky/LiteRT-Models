@@ -138,6 +138,14 @@ automatically. Everything else is opt-in:
 After any fp16-wall patch (`safe_*`), re-verify on device — desktop CPU/GPU parity does
 not exercise the delegate's fp16 accumulation (residency ≠ correctness).
 
+### Latency figures: time run() + readback
+
+`CompiledModel.run()` only enqueues the GPU work; the output readback is what waits for it. Time the
+two together (medians, with the thermal status) or the number is the enqueue. Figures in this
+repository dated before 2026-08 may be run()-only: ormbg's "~10 ms/frame on a Pixel 8a" (a 1024²
+ISNet, ~320 GFLOPs) measured 246 ms with the readback on 2026-09-05 (`ormbg/INTEGRATION.md`); DIS
+quotes "~11 ms" for the same shape and has not been re-measured.
+
 ## Three PyTorch → Android routes on one model (measured 2026-09-05)
 
 One model (conv stem + `nn.MultiheadAttention` block + head, 1×3×224×224, random weights shared by every route), three converters, one parity protocol (golden + 8 random inputs, atol 1e-4 / rtol 1e-3, argmax equal, reference = eager PyTorch fp32). Identical results on Python 3.12.13 and 3.14.6 (torch 2.13.0, M4 Max).

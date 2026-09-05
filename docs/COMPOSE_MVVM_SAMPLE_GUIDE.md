@@ -116,6 +116,12 @@ root `build.gradle.kts` from a sibling sample **verbatim**; swap only `namespace
   `git status` shows nothing changed outside your app's dir before committing.
 - **Two apps in one PR.** A PR can carry two Gradle projects (e.g. `pose_estimation/kotlin_cpu_gpu`
   + `pose_estimation/rtmpose/…`). Judge and gate **per app**, not per PR.
+- ⭐ **Alpha masks.** An `ALPHA_8` bitmap drawn with `PorterDuff.Mode.DST_IN` is a silent no-op on
+  current Android (Skia treats an alpha-only image as coverage): alpha stays 255 and the cutout shows
+  the full background while every numeric matte gate passes. Use an `ARGB_8888` mask (alpha = matte)
+  or combine pixels by hand, and assert the composite's alpha in the instrumented test. Worked
+  example: `ormbg/app/src/main/java/com/ormbg/BgRemover.kt` (`Matte.cutout`), found 2026-09-05 by
+  pulling the PNG off the device — the only check that catches it.
 
 ---
 
@@ -166,3 +172,7 @@ References: **matcha** `text_to_speech/MainViewModel.kt` (AudioTrack playback: `
   no hardcoded strings, scope) and a device-verify driver were kept in the session scratchpad; the
   patterns are described here so they can be re-created.
 - Full inventory + per-app device evidence: `~/Downloads/meeting/compose-mvvm-audit.md`.
+- `ktfmt --google-style`: Maven Central publishes no with-dependencies jar for recent versions
+  (0.58 → 404); take the GitHub release asset `ktfmt-<v>-with-dependencies.jar` (0.64 used
+  2026-09-05) and run `java -jar ktfmt.jar --google-style <files>`. Scope it to the files you
+  touched — vendored copies of `common/` must stay byte-identical to the canonical.
