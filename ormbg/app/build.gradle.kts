@@ -14,6 +14,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         ndk {
             abiFilters += setOf("arm64-v8a")
         }
@@ -68,7 +70,8 @@ android {
         }
     }
 
-    aaptOptions {
+    androidResources {
+        // The model is memory-mapped straight out of the APK; it must stay uncompressed.
         noCompress += listOf("tflite")
     }
 }
@@ -86,4 +89,8 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
+
+    // Integration check (app/src/androidTest): ./gradlew :app:connectedGpuDebugAndroidTest
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }

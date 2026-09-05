@@ -8,6 +8,7 @@ is gitignored.
 | file | source | author |
 |---|---|---|
 | `app/src/main/assets/demo_person.mp4` | https://www.pexels.com/video/a-man-talking-while-holding-a-cup-of-coffee-6930967/ | Mikhail Nilov |
+| `app/src/androidTest/assets/person.jpg` (committed, 24 KB) | the frame at t = 3 s of the same clip, scaled to 480×854, JPEG — the fixture for `BgRemoverTest` | Mikhail Nilov |
 
 Fetched via the Pexels API on 2026-08-23. Constraints we stay inside: no selling of
 unaltered copies, no implication that the person depicted endorses anything, neutral

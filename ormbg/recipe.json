@@ -1,0 +1,88 @@
+{
+  "task": "Add background removal (person segmentation) to an existing Android app, on the GPU",
+  "model": {
+    "hf_repo": "litert-community/ormbg-LiteRT",
+    "file": "ormbg.tflite",
+    "sha256": "f6e359cf35c55e7bf216eb3141f6d76828667a5e8e67a929f53e9f7f38fae030",
+    "bytes": 176240148,
+    "license": "apache-2.0",
+    "base_model": "schirrmacher/ormbg",
+    "input": "[1, 3, 1024, 1024] float32 NCHW, RGB, x/255, image stretched to the square (no letterbox)",
+    "output": "[1, 1, 1024, 1024] float32 sigmoid matte; min-max normalized per image, 1 = subject"
+  },
+  "runtime": {
+    "name": "LiteRT CompiledModel",
+    "maven": "com.google.ai.edge.litert:litert",
+    "version": "2.2.0",
+    "accelerator": "gpu"
+  },
+  "convert": {
+    "tool": "litert-torch",
+    "version": "0.9.4",
+    "script": "ormbg/scripts/build_ormbg.py",
+    "patches": [
+      "F.interpolate align_corners=True -> False on the bilinear upsamples (the GPU delegate rejects align_corners=True)"
+    ],
+    "reproduced": "2026-09-05: re-run with litert-torch 0.9.4 and torch 2.13.0 produced a byte-identical file (same sha256)"
+  },
+  "integrate": {
+    "guide": "ormbg/INTEGRATION.md",
+    "files": ["ormbg/app/src/main/java/com/ormbg/BgRemover.kt"],
+    "test_files": [
+      "ormbg/app/src/androidTest/java/com/ormbg/BgRemoverTest.kt",
+      "ormbg/app/src/androidTest/assets/person.jpg"
+    ],
+    "deps": ["implementation(\"com.google.ai.edge.litert:litert:2.2.0\")"],
+    "test_deps": [
+      "androidTestImplementation(\"androidx.test:runner:1.6.2\")",
+      "androidTestImplementation(\"androidx.test.ext:junit:1.2.1\")"
+    ],
+    "gradle": [
+      "androidResources { noCompress += listOf(\"tflite\") }",
+      "testInstrumentationRunner = \"androidx.test.runner.AndroidJUnitRunner\""
+    ],
+    "min_sdk": 26,
+    "abi": "arm64-v8a",
+    "model_delivery": "bundled as app/src/main/assets/ormbg.tflite (gitignored); BgRemover.fromFile(path) for a file staged into filesDir is exercised by the same test"
+  },
+  "verify": {
+    "command": "./gradlew :app:connectedGpuDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.ormbg.BgRemoverTest",
+    "expected": "BUILD SUCCESSFUL, 3 tests passed. logcat: 'Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).' and 'RESULT device=Pixel 8a sdk=36 accel=GPU load_ms=2566 model_ms_median=246 process_ms_median=361 runs=20 raw_min=0.0000 raw_max=1.0000 mean=0.5208 fg_frac=0.5213 center=1.0000 corners=0.0001 thermal=0->0'. Asserted: raw range > 0.5, center > 0.9, corners < 0.1, fg_frac and mean within +-0.02 of the recorded values, cutout alpha transparent at the corner and opaque at the center. Latency and load are logged conditions, not assertions.",
+    "host_parity": "scripts/verify_device_dump.py on the input tensor the test fed the model: device GPU fp16 vs host CPU fp32, raw-output corr 1.000000, max |diff| 0.00905, foreground-mask IoU 0.99997 (2026-09-05)"
+  },
+  "devices": [
+    {
+      "name": "Pixel 8a",
+      "soc": "Tensor G3 (Mali-G715)",
+      "os": "Android 16, build CP1A.260505.005 (SDK 36)",
+      "date": "2026-09-05",
+      "accelerator": "gpu",
+      "runtime_version": "2.2.0",
+      "ms_per_frame": 246,
+      "process_ms_per_frame": 361,
+      "load_ms": 2566,
+      "gpu_nodes": "246/246",
+      "partitions": 1,
+      "thermal_status": "0 -> 0",
+      "conditions": "screen on, USB connected, battery 100 %, nothing else running; medians over 20 calls after warm-up; last of five runs in a row (model median 241-249 ms across the five)",
+      "parity": "raw corr 1.000000, max |diff| 0.00905 vs host CPU fp32 on the identical input",
+      "source": "this recipe's verify command, run on 2026-09-05"
+    }
+  ],
+  "unverified": [
+    "Android emulator: CompiledModel GPU does not run there",
+    "any device other than the Pixel 8a above (other Pixels, Samsung Galaxy / Adreno, MediaTek); the Galaxy S26 rows on the Hugging Face card were taken with a different harness, not with this test",
+    "Android versions other than 16 and LiteRT versions other than 2.2.0",
+    "the npu build flavor of this module (Qualcomm devices only)",
+    "any change to the pre-processing (letterbox, other input sizes)",
+    "the '~10 ms/frame on a Pixel 8a' figure quoted earlier in this repository and on the model card: not reproduced; it timed run() alone, which only enqueues the GPU work"
+  ],
+  "provenance": {
+    "converted_by": "john-rocky",
+    "recipe_origin": "https://github.com/john-rocky/LiteRT-Models/blob/main/ormbg/INTEGRATION.md",
+    "measurement_report": "https://github.com/john-rocky/LiteRT-Models/blob/main/ormbg/INTEGRATION.md#7-verified--unverified",
+    "commit": "john-rocky/LiteRT-Models@0c48ff1",
+    "commit_note": "0c48ff1 (2026-07-07) added the conversion script and the sample app; the device rows above were taken at the commit that adds this file (git log -- ormbg/recipe.json)",
+    "maintainer": "https://github.com/john-rocky/LiteRT-Models/issues"
+  }
+}
