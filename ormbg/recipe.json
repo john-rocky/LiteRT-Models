@@ -81,8 +81,8 @@
     "converted_by": "john-rocky",
     "recipe_origin": "https://github.com/john-rocky/LiteRT-Models/blob/main/ormbg/INTEGRATION.md",
     "measurement_report": "https://github.com/john-rocky/LiteRT-Models/blob/main/ormbg/INTEGRATION.md#7-verified--unverified",
-    "commit": "john-rocky/LiteRT-Models@0c48ff1",
-    "commit_note": "0c48ff1 (2026-07-07) added the conversion script and the sample app; the device rows above were taken at the commit that adds this file (git log -- ormbg/recipe.json)",
+    "commit": "john-rocky/LiteRT-Models@a0f5c01",
+    "commit_note": "a0f5c01 (2026-09-05) is the commit the device rows were taken at (recipe, drop-in and test); 0c48ff1 (2026-07-07) added the conversion script and the sample app",
     "maintainer": "https://github.com/john-rocky/LiteRT-Models/issues"
   }
 }

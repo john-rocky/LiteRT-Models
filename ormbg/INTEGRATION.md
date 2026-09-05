@@ -204,5 +204,5 @@ the last of five runs of the test in a row (model median 241–249 ms across the
 | Conversion patch | one: `F.interpolate(align_corners=True)` → `False` on the bilinear upsamples (the GPU delegate rejects `align_corners=True`) |
 | Recipe origin | this file, [john-rocky/LiteRT-Models `ormbg/`](https://github.com/john-rocky/LiteRT-Models/tree/main/ormbg) |
 | Measurement report | §6–7 above; raw evidence = the `RESULT` and `Replacing …` logcat lines of the 2026-09-05 run on the Pixel 8a and `scripts/verify_device_dump.py` output |
-| Commit | conversion script and sample: `0c48ff1` (2026-07-07); this recipe: the commit that adds this file |
+| Commit | numbers taken at `a0f5c01` (2026-09-05: recipe, drop-in, test); conversion script and sample: `0c48ff1` (2026-07-07) |
 | Maintainer | john-rocky |
