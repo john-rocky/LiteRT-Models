@@ -8,6 +8,8 @@ All models run on-device with **CompiledModel GPU (ML Drift)** — no CPU fallba
 
 Each model includes a standalone Android sample app (Kotlin) with real-time camera inference.
 
+**Will it run on the GPU, the NPU, or in the browser?** Measured compatibility for these and 150+ other converted models lives in [edge-compat](https://john-rocky.github.io/edge-compat/): an op-level delegate matrix, a static pre-flight linter, and per-model cards with device and browser results.
+
 **If you like this repository, please give it a star.**
 
 # Models
