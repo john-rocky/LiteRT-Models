@@ -2,211 +2,123 @@
 
 <img src="https://github.com/user-attachments/assets/3c764bf0-32ac-4b65-814b-a73e1aba1cfc" width="100%">
 
-Converted TFLite Model Zoo for Android with [LiteRT CompiledModel](https://ai.google.dev/edge/litert) GPU acceleration.
+LiteRT is Google's on-device ML runtime for Android and the successor to TensorFlow Lite (renamed 2024-09): PyTorch models are converted with Google's `litert-torch` into `.tflite` files that run every op on the phone's GPU through [`CompiledModel`](https://ai.google.dev/edge/litert) (ML Drift), e.g. DINOv2 ViT-S/14 at 448² runs in 53.6 ms on a Galaxy S26 GPU ([npubench](npubench/), LiteRT 2.2.0, median of 50 runs, 2026-08).
 
-All models run on-device with **CompiledModel GPU (ML Drift)** — no CPU fallback, no MediaPipe, no Qualcomm AI Hub runtime.
-
-Each model includes a standalone Android sample app (Kotlin) with real-time camera inference.
+This repository is the model zoo for that path: **91 converted models** (as of 2026-09-08), each with its download, input/output shapes, preprocessing, the conversion script that produced it, and a standalone Android sample app (Kotlin). No MediaPipe and no vendor SDK: the `.tflite` graphs run on `CompiledModel` GPU with every op delegated (no CPU fallback), and the four 3B chat models run on LiteRT-LM. The GPU-compatibility rewrites these conversions need are catalogued in [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) and packaged in [`litert_gpu_toolkit/`](litert_gpu_toolkit/).
 
 **If you like this repository, please give it a star.**
 
 # Models
 
-- [**Object Detection**](#object-detection)
-  - [YOLO11n](#yolo11n)
-  - [YOLO26n](#yolo26n)
-  - [RF-DETR Nano](#rf-detr-nano)
-  - [RT-DETRv2-S](#rt-detrv2-s)
-  - [D-FINE-S](#d-fine-s)
-  - [SSDLite320 MobileNetV3](#ssdlite320-mobilenetv3)
+| Model | Task | Device | Latency | Download |
+| ----- | ---- | ------ | ------- | -------- |
+| [YOLO11n](#yolo11n) | Object detection | Pixel 8a | 18+ FPS, live camera | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/yolo11n.tflite) |
+| [YOLO26n](#yolo26n) | Object detection |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/yolo26n.tflite) |
+| [RF-DETR Nano](#rf-detr-nano) | Object detection (DETR, live camera) | Pixel 8a | ~110 ms/frame (~9 fps) | [🤗 HF](https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT) |
+| [RT-DETRv2-S](#rt-detrv2-s) | Object detection (DETR, still image) | Pixel 8a | ~615 ms/frame | [🤗 HF](https://huggingface.co/litert-community/RT-DETRv2-S-LiteRT) |
+| [D-FINE-S](#d-fine-s) | Object detection (DETR, still image) |  |  | [🤗 HF](https://huggingface.co/litert-community/D-FINE-S-LiteRT) |
+| [SSDLite320 MobileNetV3](#ssdlite320-mobilenetv3) | Object detection | Pixel 8a | ~30 FPS, live camera | [🤗 HF](https://huggingface.co/mlboydaisuke/ssdlite320-mobilenetv3-litert) |
+| [YOLO + DeepSORT (OSNet)](#yolo--deepsort-osnet) | Multi-object tracking |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v3/osnet_x0_25.tflite) |
+| [MoViNet-A0 (streaming)](#movinet-a0-streaming-kinetics-600) | Video action recognition |  |  | [🤗 HF](https://huggingface.co/litert-community/MoViNet-A0-Stream-LiteRT) |
+| [PIDNet-S](#pidnet-s-real-time-cityscapes) | Semantic segmentation (Cityscapes) | Galaxy S26 | 16.20 ms (NPU 5.48) | [🤗 HF](https://huggingface.co/litert-community/PIDNet-S-Cityscapes-LiteRT) |
+| [YOLO26n-pose](#yolo26n-pose) | Pose estimation |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/yolo26n_pose.tflite) |
+| [RTMPose-s](#rtmpose-s) | Pose estimation (17 keypoints) | Pixel 8a | ~4 ms | [🤗 HF](https://huggingface.co/litert-community/RTMPose-s-LiteRT) |
+| [RTMW-m](#rtmw-m-whole-body-133-keypoints) | Whole-body pose (133 keypoints) | Pixel 8a | ~6 ms | [🤗 HF](https://huggingface.co/litert-community/RTMW-m-WholeBody-LiteRT) |
+| [RTMPose-Hand](#rtmpose-hand-21-keypoints) | Hand pose (21 keypoints) | Pixel 8a | ~4 ms | [🤗 HF](https://huggingface.co/litert-community/RTMPose-Hand-LiteRT) |
+| [RTMPose-Animal](#rtmpose-animal-ap-10k-17-keypoints) | Animal pose (AP-10K) | Pixel 8a | ~5 ms | [🤗 HF](https://huggingface.co/litert-community/RTMPose-Animal-AP10K-LiteRT) |
+| [DewarpNet](#dewarpnet) | Document dewarping | Galaxy S26 | 17.64 ms (NPU 4.99) | [🤗 HF](https://huggingface.co/litert-community/DewarpNet-LiteRT) |
+| [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection) | Lane detection | Pixel 8a | ~20 ms | [🤗 HF](https://huggingface.co/litert-community/Ultra-Fast-Lane-Detection-LiteRT) |
+| [TwinLiteNet](#twinlitenet) | Drivable area + lanes | Pixel 8a | ~44 ms | [🤗 HF](https://huggingface.co/litert-community/TwinLiteNet-LiteRT) |
+| [EDSR (×4)](#edsr-4) | Super-resolution ×4 | Pixel 8a | ~23 ms | [🤗 HF](https://huggingface.co/litert-community/EDSR-x4-LiteRT) |
+| [DehazeFormer-MCT](#dehazeformer-mct) | Image dehazing | Pixel 8a | ~255 ms/frame | [🤗 HF](https://huggingface.co/litert-community/DehazeFormer-MCT-LiteRT) |
+| [Cloth Segmentation (U²-Net)](#cloth-segmentation-u2net) | Clothing segmentation | Pixel 8a | ~88 ms | [🤗 HF](https://huggingface.co/litert-community/Cloth-Segmentation-U2Net-LiteRT) |
+| [U²-Net Portrait](#u2-net-portrait) | Portrait sketch | Pixel 8a | ~12 ms | [🤗 HF](https://huggingface.co/litert-community/U2Net-Portrait-Sketch-LiteRT) |
+| [Silent-Face (MiniFASNetV2)](#silent-face-minifasnetv2) | Face liveness / anti-spoofing | Pixel 8a | ~5 ms | [🤗 HF](https://huggingface.co/litert-community/Silent-Face-Anti-Spoofing-LiteRT) |
+| [6DRepNet](#6drepnet) | Head pose | Galaxy S26 | 8.18 ms (NPU 1.74) | [🤗 HF](https://huggingface.co/litert-community/6DRepNet-HeadPose-LiteRT) |
+| [SINet-V2](#sinet-v2) | Camouflaged object detection | Galaxy S26 | 12.39 ms (NPU 3.08) | [🤗 HF](https://huggingface.co/litert-community/SINet-V2-Camouflage-LiteRT) |
+| [DM-Count](#dm-count) | Crowd counting |  |  | [🤗 HF](https://huggingface.co/litert-community/DM-Count-Crowd-LiteRT) |
+| [YOLACT-ResNet50](#yolact-resnet50) | Instance segmentation | Pixel 8a | ~41 ms | [🤗 HF](https://huggingface.co/litert-community/YOLACT-ResNet50-LiteRT) |
+| [MobileSAM](#mobilesam) | Tap-to-segment (SAM) |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/mobilesam_encoder.tflite) |
+| [SAM 2.1 (Hiera-Tiny)](#sam-21-hiera-tiny) | Tap-to-segment (SAM 2.1) | Pixel 8a | 610 ms encoder / 76 ms decoder | [🤗 HF](https://huggingface.co/mlboydaisuke/SAM2-hiera-tiny-LiteRT) |
+| [EdgeTAM (SAM2)](#edgetam-sam2) | Tap-to-segment (SAM 2, mobile) | Pixel 8a | ~110–220 ms encoder / ~60 ms decoder | [🤗 HF](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT) |
+| [EdgeTAM Video](#edgetam-video-sam2-tracking) | Video object tracking (SAM 2 memory) | Pixel 8a | ~0.45 s/frame | [🤗 HF](https://huggingface.co/mlboydaisuke/EdgeTAM-LiteRT) |
+| [RMBG-1.4 (ISNet)](#rmbg-14-isnet) | Background removal |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/rmbg14.tflite) |
+| [ormbg](#ormbg-open-apache-20) | Background removal (Apache-2.0) | Pixel 8a | 246 ms (1024², run + readback) | [🤗 HF](https://huggingface.co/litert-community/ormbg-LiteRT) |
+| [DIS (IS-Net)](#dis-is-net-general-use) | High-precision cutout | Galaxy S26 | 72.43 ms (NPU 24.21) | [🤗 HF](https://huggingface.co/litert-community/DIS-ISNet-LiteRT) |
+| [MODNet](#modnet-trimap-free) | Portrait matting | Pixel 8a | ~79 ms/frame | [🤗 HF](https://huggingface.co/litert-community/MODNet-LiteRT) |
+| [LaMa-Dilated](#lama-dilated) | Inpainting |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/lama_dilated.tflite) |
+| [MI-GAN](#mi-gan-mobile-inpainting--object-removal) | Inpainting / object removal | Pixel 8a | ~6 ms (512²) | [🤗 HF](https://huggingface.co/litert-community/MI-GAN-512-Places2-LiteRT) |
+| [CLIP ViT-B/32](#clip-vit-b32) | Zero-shot classification |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/clip_image_encoder.tflite) |
+| [Places365 ResNet18](#places365-resnet18-scene-recognition) | Scene recognition | Pixel 8a | ~2 ms | [🤗 HF](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT) |
+| [DINOv2 ViT-S/14](#dinov2-vit-s14) | Dense features (PCA visualization) | Galaxy S26 | 53.58 ms (NPU 86.00) | [🤗 HF](https://huggingface.co/litert-community/DINOv2-ViT-S14-LiteRT) |
+| [DSINE](#dsine) | Surface normal estimation |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/dsine.tflite) |
+| [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc) | Speech recognition | Pixel 8a | ~0.4 s per 16 s window | [🤗 HF](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT) |
+| [Whisper-tiny](#whisper-tiny) | Speech recognition |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/whisper_encoder.tflite) |
+| [wav2vec2-CTC](#wav2vec2-ctc-fully-gpu-single-pass) | Speech recognition (CTC, single pass) | Pixel 8a | ~22 ms per 10 s clip | [🤗 HF](https://huggingface.co/litert-community/wav2vec2-base-960h-CTC-LiteRT) |
+| [Kokoro-82M](#kokoro-82m) | Text-to-speech (EN / JA) | Pixel 8a (CPU) | RTF 0.60 | [🤗 HF](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_fp16.onnx) |
+| [Matcha-TTS](#matcha-tts) | Text-to-speech (FFT-free) | Pixel 8a | RTF ~0.8 | [🤗 HF](https://huggingface.co/litert-community/Matcha-TTS) |
+| [Dia2-1B](#dia2-1b-dialogue) | Dialogue text-to-speech | Pixel 8a (CPU) | ~190 s per 4 s utterance | [scripts](dia2/) |
+| [VibeVoice-Realtime-0.5B](#vibevoice-realtime-05b) | Streaming text-to-speech |  |  | [scripts](vibevoice/) |
+| [KittenTTS nano 0.8](#kittentts-nano-08-dynamic-length) | Text-to-speech (dynamic length) |  |  | [scripts](kittentts/) |
+| [Inflect-Nano-v2](#inflect-nano-v2-dynamic-length-exact-streaming) | Text-to-speech (exact streaming) | Mac | 25–32 ms first chunk | [scripts](inflect/) |
+| [SmolVLM-256M](#smolvlm-256m) | Vision-language model |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_vision.tflite) |
+| [RWKV-7 World 0.1B](#rwkv-7-world-01b) | Text generation (RNN LM, whole forward on GPU) | Pixel 8a | ~18 ms/token | [🤗 HF](https://huggingface.co/litert-community/RWKV-7-World-0.1B-LiteRT) |
+| [Whisper + SmolLM2 + Kokoro](#whisper--smollm2--kokoro-pipeline) | Voice assistant pipeline | Pixel 8a | ~5 s per turn, end-to-end | [module](voiceassistant/) |
+| [DAC 16kHz](#dac-16khz) | Neural audio codec | Pixel 8a | RTF ≈ 0.82 | [🤗 HF](https://huggingface.co/mlboydaisuke/DAC-16kHz-LiteRT) |
+| [Mimi (Kyutai)](#mimi-kyutai-2024) | Neural audio codec (streaming) | Pixel 8a | RTF ≈ 0.35 | [🤗 HF](https://huggingface.co/litert-community/Mimi) |
+| [wav2vec2 Keyword Spotting](#wav2vec2-keyword-spotting) | Keyword spotting | Pixel 8a | ~19 ms per 1 s clip | [🤗 HF](https://huggingface.co/litert-community/wav2vec2-keyword-spotting) |
+| [PANNs CNN14](#panns-cnn14-audio-tagging) | Audio tagging (AudioSet) | Pixel 8a | ~0.22 s per 10 s clip | [🤗 HF](https://huggingface.co/litert-community) |
+| [CREPE](#crepe) | Pitch detection | Pixel 8a | ~75 ms/frame | [🤗 HF](https://huggingface.co/litert-community) |
+| [TIGER-DnR](#tiger-dnr-dialog--effects--music) | Audio source separation | Pixel 8a | ~4.5 s per 12.06 s chunk per stem | [🤗 HF](https://huggingface.co/litert-community) |
+| [pyannote 3.1 stack](#pyannote-31-stack-segmentation--wespeaker) | Speaker diarization | Pixel 8a | ~1.2 ms per embedding window | [🤗 HF](https://huggingface.co/litert-community) |
+| [CMGAN](#cmgan-noise-suppression) | Speech enhancement | Pixel 8a | ~20 ms per 2 s chunk | [🤗 HF](https://huggingface.co/litert-community) |
+| [Basic Pitch](#basic-pitch-audio-to-midi) | Music transcription (audio → MIDI) | Pixel 8a | ~4.4 ms per 2 s window | [🤗 HF](https://huggingface.co/litert-community) |
+| [XFeat](#xfeat-local-features) | Image matching (local features) | Pixel 8a | ~0.4 ms per 640×480 image | [🤗 HF](https://huggingface.co/litert-community) |
+| [CLIPSeg](#clipseg) | Text-prompted segmentation | Pixel 8a | ~8.7 ms text + ~8.2 ms vision | [🤗 HF](https://huggingface.co/litert-community) |
+| [RAM++](#ram-recognize-anything-plus) | Image tagging (open vocabulary) | Pixel 8a | ~2 s per photo | [🤗 HF](https://huggingface.co/litert-community) |
+| [NIMA](#nima-neural-image-assessment) | Image quality assessment | Pixel 8a | ~173 ms | [🤗 HF](https://huggingface.co/litert-community) |
+| [Vision-RWKV (VRWKV-S)](#vision-rwkv-vrwkv-s) | Image classification | Pixel 8a | ~28 ms | [🤗 HF](https://huggingface.co/litert-community/Vision-RWKV-S-LiteRT) |
+| [PlantNet-300K](#plantnet-300k-1081-plant-species) | Fine-grained classification (plants) | Galaxy S26 | 3.34 ms (NPU 0.89) | [🤗 HF](https://huggingface.co/litert-community/PlantNet-300K-ResNet18-LiteRT) |
+| [3DDFA_V2](#3ddfa_v2-3d-face-alignment) | 3D face alignment |  |  | [🤗 HF](https://huggingface.co/litert-community) |
+| [BiSeNet](#bisenet-face-parsing) | Face parsing | Galaxy S26 | 25.05 ms (NPU 7.01) | [🤗 HF](https://huggingface.co/litert-community/BiSeNet-Face-Parsing-LiteRT) |
+| [HSEmotion](#hsemotion-facial-emotion-recognition) | Facial emotion recognition | Pixel 8a | ~2 ms | [🤗 HF](https://huggingface.co/litert-community/HSEmotion-B0-LiteRT) |
+| [PP-OCRv5](#pp-ocrv5) | OCR | Pixel 8a | ~9 ms detector + ~9 ms recognizer | [🤗 HF](https://huggingface.co/litert-community/PP-OCRv5-LiteRT) |
+| [Real-ESRGAN x4v3](#real-esrgan-x4v3) | Super-resolution ×4 | Galaxy S26 | 12.30 ms (NPU 3.29) | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/real_esrgan_x4v3.tflite) |
+| [GFPGAN v1.4](#gfpgan-v14-blind-face-restoration) | Blind face restoration |  |  | [🤗 HF](https://huggingface.co/litert-community/GFPGAN-v1.4-LiteRT) |
+| [MoGe-2 ViT-S](#moge-2-vit-s) | Monocular geometry (points, normals, depth) | Pixel 8a | ~522 ms | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v3/moge.tflite) |
+| [Depth Anything 3 Small](#depth-anything-3-vit-s-small) | Monocular depth | Pixel 8a | ~1.8 s/image | [🤗 HF](https://huggingface.co/mlboydaisuke/Depth-Anything-3-Small-LiteRT) |
+| [Metric3D v2 ViT-S](#metric3d-v2-vit-s) | Metric depth | Pixel 8a | ~44 ms | [🤗 HF](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT) |
+| [TIPSv2-B/14 DPT](#tipsv2-b14-dpt-depth-normals-segmentation) | Depth + normals + segmentation | Pixel 8a | ~0.9 s/image | [🤗 HF](https://huggingface.co/litert-community/TIPSv2-B14-DPT-LiteRT) |
+| [YuNet](#yunet) | Face detection | Pixel 8a | ~4 ms (640²) | [🤗 HF](https://huggingface.co/litert-community/YuNet-Face-LiteRT) |
+| [RTMPose-Face](#rtmpose-face-wflw-98-point-face-alignment) | Face alignment (98 keypoints) | Pixel 8a | ~4 ms | [🤗 HF](https://huggingface.co/litert-community/RTMPose-Face-WFLW-LiteRT) |
+| [L2CS-Net](#l2cs-net) | Gaze estimation | Pixel 8a | ~3 ms | [🤗 HF](https://huggingface.co/litert-community/L2CS-Gaze360-LiteRT) |
+| [UniSal](#unisal) | Saliency prediction | Pixel 8a | ~3 ms (256²) | [🤗 HF](https://huggingface.co/litert-community/UniSal-Saliency-LiteRT) |
+| [M-LSD-tiny](#m-lsd-tiny) | Line detection | Pixel 8a | ~2 ms | [🤗 HF](https://huggingface.co/litert-community/M-LSD-tiny-LiteRT) |
+| [Fast Neural Style](#fast-neural-style-4-styles) | Style transfer (4 styles) | Pixel 8a | ~9 ms (256²) | [🤗 HF](https://huggingface.co/litert-community/Fast-Neural-Style-LiteRT) |
+| [CPGA-Net](#cpga-net) | Low-light enhancement | Pixel 8a | ~2 ms (256²) | [🤗 HF](https://huggingface.co/litert-community/CPGA-Net-LowLight-LiteRT) |
+| [NAFNet](#nafnet-deblur) | Deblur / denoise | Pixel 8a | ~42 ms (256²) | [🤗 HF](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT) |
+| [Qwen3-Embedding-0.6B](#qwen3-embedding-06b) | Text embedding (RAG) | Pixel 8a | ~390 ms per embedding | [🤗 HF](https://huggingface.co/litert-community/Qwen3-Embedding-0.6B-LiteRT) |
+| [Qwen3-Reranker-0.6B](#qwen3-reranker-06b) | Text reranking (RAG) |  |  | [🤗 HF](https://huggingface.co/litert-community/Qwen3-Reranker-0.6B-LiteRT) |
+| [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
+| [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
+| [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
+| [SmolLM3-3B](#smollm3-3b) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~22.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/SmolLM3-3B-LiteRT) |
 
-- [**Multi-Object Tracking**](#multi-object-tracking)
-  - [YOLO + DeepSORT (OSNet)](#yolo--deepsort-osnet)
+Latency is the figure each model's section below records, on the device named; blank means this repository records no measurement. **Galaxy S26** rows (Snapdragon 8 Elite Gen 5) come from [npubench](npubench/): LiteRT 2.2.0 `CompiledModel` GPU, median of 50 runs after warm-up, `run()` plus output readback, thermal status NONE, 2026-08; the value in parentheses is the same phone's Hexagon NPU. 50 models were measured that way — see [Snapdragon NPU](#snapdragon-npu-hexagon). **Pixel 8a** (Tensor G3, Mali GPU, fp16) figures marked `~` come from each model's conversion notes; per [docs § Latency figures](docs/LITERT_CONVERSION_GUIDE.md#latency-figures-time-run--readback), figures recorded before 2026-08 may time only the asynchronous `run()` call (ormbg's earlier "~10 ms" re-measured at 246 ms with the readback). Camera FPS, RTF, tok/s and per-turn figures are end-to-end app measurements. The Model column links to the full entry: I/O shapes, preprocessing, license, conversion script and sample app.
 
-- [**Video Action Recognition**](#video-action-recognition)
-  - [MoViNet-A0 (streaming, Kinetics-600)](#movinet-a0-streaming-kinetics-600)
+# Run a model in 5 lines
 
-- [**Semantic Segmentation**](#semantic-segmentation)
-  - [PIDNet-S (real-time, Cityscapes)](#pidnet-s-real-time-cityscapes)
+Gradle: `implementation("com.google.ai.edge.litert:litert:2.1.3")` (Google Maven). Put the `.tflite` in `app/src/main/assets/`, then:
 
-- [**Pose Estimation**](#pose-estimation)
-  - [YOLO26n-pose](#yolo26n-pose)
-  - [RTMPose-s](#rtmpose-s)
-  - [RTMW-m (whole-body, 133 keypoints)](#rtmw-m-whole-body-133-keypoints)
-  - [RTMPose-Hand (21 keypoints)](#rtmpose-hand-21-keypoints)
-  - [RTMPose-Animal (AP-10K, 17 keypoints)](#rtmpose-animal-ap-10k-17-keypoints)
+```kotlin
+val model = CompiledModel.create(context.assets, "model.tflite", CompiledModel.Options(Accelerator.GPU), null)
+val inputs = model.createInputBuffers()
+inputs[0].writeFloat(floatArray)     // preprocessed as the model's entry says (layout, mean/std)
+val outputs = model.run(inputs)
+val result = outputs[0].readFloat()  // readFloat() waits for the GPU: time run() + readFloat() together
+```
 
-- [**Document Dewarping**](#document-dewarping)
-  - [DewarpNet](#dewarpnet)
-
-- [**Lane Detection**](#lane-detection)
-  - [Ultra-Fast-Lane-Detection](#ultra-fast-lane-detection)
-  - [TwinLiteNet (drivable area + lanes)](#twinlitenet)
-
-- [**Super-Resolution**](#super-resolution)
-  - [EDSR (×4)](#edsr-4)
-
-- [**Image Dehazing**](#image-dehazing)
-  - [DehazeFormer-MCT](#dehazeformer-mct)
-
-- [**Clothing Segmentation**](#clothing-segmentation)
-  - [Cloth Segmentation (U²-Net)](#cloth-segmentation-u2net)
-
-- [**Portrait Sketch**](#portrait-sketch)
-  - [U²-Net Portrait](#u2-net-portrait)
-
-- [**Face Liveness / Anti-Spoofing**](#face-liveness--anti-spoofing)
-  - [Silent-Face (MiniFASNetV2)](#silent-face-minifasnetv2)
-
-- [**Head Pose Estimation**](#head-pose-estimation)
-  - [6DRepNet](#6drepnet)
-
-- [**Camouflaged Object Detection**](#camouflaged-object-detection)
-  - [SINet-V2](#sinet-v2)
-
-- [**Crowd Counting**](#crowd-counting)
-  - [DM-Count](#dm-count)
-
-- [**Instance Segmentation**](#instance-segmentation)
-  - [YOLACT-ResNet50](#yolact-resnet50)
-
-- [**Segmentation**](#segmentation)
-  - [MobileSAM](#mobilesam)
-  - [SAM 2.1 (Hiera-Tiny)](#sam-21-hiera-tiny)
-  - [EdgeTAM (SAM2)](#edgetam-sam2)
-  - [EdgeTAM Video (SAM2 tracking)](#edgetam-video-sam2-tracking)
-
-- [**Background Removal**](#background-removal)
-  - [RMBG-1.4 (ISNet)](#rmbg-14-isnet)
-  - [ormbg (open, Apache-2.0)](#ormbg-open-apache-20)
-  - [DIS (high-precision cutout)](#dis-is-net-general-use)
-
-- [**Portrait Matting**](#portrait-matting)
-  - [MODNet (trimap-free)](#modnet-trimap-free)
-
-- [**Inpainting**](#inpainting)
-  - [LaMa-Dilated](#lama-dilated)
-  - [MI-GAN (mobile inpainting / object removal)](#mi-gan-mobile-inpainting--object-removal)
-
-- [**Zero-Shot Classification**](#zero-shot-classification)
-  - [CLIP ViT-B/32](#clip-vit-b32)
-  - [Places365 ResNet18 (scene recognition)](#places365-resnet18-scene-recognition)
-
-- [**Dense Feature Visualization**](#dense-feature-visualization)
-  - [DINOv2 ViT-S/14](#dinov2-vit-s14)
-
-- [**Surface Normal Estimation**](#surface-normal-estimation)
-  - [DSINE](#dsine)
-
-- [**Speech Recognition**](#speech-recognition)
-  - [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc)
-  - [Whisper-tiny](#whisper-tiny)
-  - [wav2vec2-CTC (fully-GPU, single-pass)](#wav2vec2-ctc-fully-gpu-single-pass)
-
-- [**Text-to-Speech**](#text-to-speech)
-  - [Kokoro-82M](#kokoro-82m)
-  - [Matcha-TTS](#matcha-tts)
-  - [Dia2-1B (dialogue)](#dia2-1b-dialogue)
-  - [VibeVoice-Realtime-0.5B](#vibevoice-realtime-05b)
-
-- [**Vision-Language Model**](#vision-language-model)
-  - [SmolVLM-256M](#smolvlm-256m)
-
-- [**Text Generation**](#text-generation)
-  - [RWKV-7 World 0.1B](#rwkv-7-world-01b)
-
-- [**Voice Assistant**](#voice-assistant)
-  - [Whisper + SmolLM2 + Kokoro pipeline](#whisper--smollm2--kokoro-pipeline)
-
-- [**Audio Codec**](#audio-codec)
-  - [DAC 16kHz](#dac-16khz)
-  - [Mimi (Kyutai 2024)](#mimi-kyutai-2024)
-
-- [**Audio Classification**](#audio-classification)
-  - [wav2vec2 Keyword Spotting](#wav2vec2-keyword-spotting)
-  - [PANNs CNN14 Audio Tagging](#panns-cnn14-audio-tagging)
-
-- [**Pitch Detection**](#pitch-detection)
-  - [CREPE](#crepe)
-
-- [**Audio Source Separation**](#audio-source-separation)
-  - [TIGER-DnR (Dialog / Effects / Music)](#tiger-dnr-dialog--effects--music)
-
-- [**Speaker Diarization**](#speaker-diarization)
-  - [pyannote 3.1 stack (segmentation + WeSpeaker)](#pyannote-31-stack-segmentation--wespeaker)
-
-- [**Speech Enhancement**](#speech-enhancement)
-  - [CMGAN (noise suppression)](#cmgan-noise-suppression)
-
-- [**Music Transcription**](#music-transcription)
-  - [Basic Pitch (audio-to-MIDI)](#basic-pitch-audio-to-midi)
-
-- [**Image Matching**](#image-matching)
-  - [XFeat (local features)](#xfeat-local-features)
-
-- [**Text-Prompted Segmentation**](#text-prompted-segmentation)
-  - [CLIPSeg](#clipseg)
-
-- [**Image tagging**](#image-tagging)
-  - [RAM++ (Recognize Anything Plus)](#ram-recognize-anything-plus)
-
-- [**Image quality**](#image-quality)
-  - [NIMA (Neural Image Assessment)](#nima-neural-image-assessment)
-
-- [**Image Classification**](#image-classification)
-  - [Vision-RWKV (VRWKV-S)](#vision-rwkv-vrwkv-s)
-
-- [**Fine-Grained Classification**](#fine-grained-classification)
-  - [PlantNet-300K (1081 plant species)](#plantnet-300k-1081-plant-species)
-
-- [**Face**](#face)
-  - [3DDFA_V2 (3D face alignment)](#3ddfa_v2-3d-face-alignment)
-  - [BiSeNet (face parsing)](#bisenet-face-parsing)
-  - [HSEmotion (facial emotion recognition)](#hsemotion-facial-emotion-recognition)
-
-- [**OCR**](#ocr)
-  - [PP-OCRv5](#pp-ocrv5)
-
-- [**Super Resolution**](#super-resolution)
-  - [Real-ESRGAN x4v3](#real-esrgan-x4v3)
-
-- [**Monocular Geometry Estimation**](#monocular-geometry-estimation)
-  - [MoGe-2 ViT-S](#moge-2-vit-s)
-  - [Depth Anything 3 ViT-S (Small)](#depth-anything-3-vit-s-small)
-  - [Metric3D v2 ViT-S](#metric3d-v2-vit-s)
-  - [TIPSv2-B/14 DPT (depth, normals, segmentation)](#tipsv2-b14-dpt-depth-normals-segmentation)
-
-- [**Text Embedding (RAG)**](#text-embedding-rag)
-  - [Qwen3-Embedding-0.6B](#qwen3-embedding-06b)
-  - [Qwen3-Reranker-0.6B](#qwen3-reranker-06b)
-
-- [**Text Generation (LLM)**](#text-generation-llm)
-  - [Falcon3-3B-Instruct](#falcon3-3b-instruct)
-  - [Llama-3.2-3B-Instruct](#llama-32-3b-instruct)
-  - [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512)
-  - [SmolLM3-3B](#smollm3-3b)
-
-- [**Face Detection**](#face-detection)
-  - [YuNet](#yunet)
-  - [RTMPose-Face (WFLW, 98-point face alignment)](#rtmpose-face-wflw-98-point-face-alignment)
-
-- [**Gaze Estimation**](#gaze-estimation)
-  - [L2CS-Net](#l2cs-net)
-
-- [**Saliency Prediction**](#saliency-prediction)
-  - [UniSal](#unisal)
-
-- [**Line Detection**](#line-detection)
-  - [M-LSD-tiny](#m-lsd-tiny)
-
-- [**Style Transfer**](#style-transfer)
-  - [Fast Neural Style (4 styles)](#fast-neural-style-4-styles)
-
-- [**Low-Light Enhancement**](#low-light-enhancement)
-  - [CPGA-Net](#cpga-net)
-
-- [**Image Restoration**](#image-restoration)
-  - [NAFNet (deblur)](#nafnet-deblur)
+Models over ~150 MB load from a file path instead of the APK: `CompiledModel.create(path, options, null)` — see [How to use](#how-to-use) and each module's `install_to_device.sh`.
 
 # How to use
 
