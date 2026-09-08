@@ -144,7 +144,10 @@ not exercise the delegate's fp16 accumulation (residency ≠ correctness).
 two together (medians, with the thermal status) or the number is the enqueue. Figures in this
 repository dated before 2026-08 may be run()-only: ormbg's "~10 ms/frame on a Pixel 8a" (a 1024²
 ISNet, ~320 GFLOPs) measured 246 ms with the readback on 2026-09-05 (`ormbg/INTEGRATION.md`); DIS
-quotes "~11 ms" for the same shape and has not been re-measured.
+quotes "~11 ms" for the same shape and has not been re-measured. DINOv2 ViT-S/14 has the same
+signature: "~8 ms" in its Pixel 8a conversion note against 53.58 ms on a Galaxy S26 GPU with the
+readback (`npubench`, 2026-08) — the S26 GPU is not 6× slower than a Pixel 8a, so the note is the
+enqueue. Not re-measured (2026-09-08).
 
 ## Three PyTorch → Android routes on one model (measured 2026-09-05)
 
