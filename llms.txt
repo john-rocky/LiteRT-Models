@@ -1,0 +1,43 @@
+# LiteRT-Models
+
+> 91 models (as of 2026-09-08) converted to `.tflite` for Google's LiteRT runtime on Android: download, input and output shapes, preprocessing, the conversion script, and a standalone Kotlin sample app per model. Every model runs every op on the phone GPU through `CompiledModel`; no MediaPipe. Independent, not affiliated with Google.
+
+```kotlin
+val options = CompiledModel.Options(Accelerator.GPU)
+val model = CompiledModel.create(context.assets, "model.tflite", options, null)
+val inputBuffers = model.createInputBuffers()
+inputBuffers[0].writeFloat(floatArray)
+val result = model.run(inputBuffers)[0].readFloat()
+```
+
+Dependency: `com.google.ai.edge.litert:litert` from Google Maven; the version each sample pins and the old-name → new-name mapping are in the README.
+
+## Start here
+
+- [README](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/README.md): the model table (task, device, latency, download), "How to use", the TensorFlow Lite → LiteRT name mapping, then one section per model with shapes, preprocessing, output format and its sample app.
+- [AGENTS.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/AGENTS.md): for coding agents. Task → API → file, and the GPU rules that fail on a real device.
+- [ormbg/INTEGRATION.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/ormbg/INTEGRATION.md): add background removal to an existing Android app on the GPU; one dependency, one Kotlin file, one model; Pixel 8a numbers dated 2026-09-05. Machine-readable: [ormbg/recipe.json](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/ormbg/recipe.json).
+- [common/README.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/common/README.md): the canonical Kotlin helpers every sample vendors: `CompiledModelRunner`, `ImageTensor`, `RealtimeCameraPipeline`, `AudioCapture`, `MathOps`.
+
+## Converting
+
+- [docs/LITERT_CONVERSION_GUIDE.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/LITERT_CONVERSION_GUIDE.md): which converter for which architecture (litert-torch for ViT and attention, onnx2tf for pure CNNs), the ops the GPU rejects, and the rewrites that fix them.
+- [litert_gpu_toolkit/](https://github.com/john-rocky/LiteRT-Models/tree/main/litert_gpu_toolkit): `convert_for_gpu(model, dummy_input, output_path)` applies those patches; `checker.py` reports GPU-incompatible ops before you reach a device.
+- Each model directory's `scripts/` holds the conversion that produced its `.tflite`.
+
+## Sample apps
+
+- Each model directory is an independent Gradle project (`cd <model>/ && ./gradlew :app:installDebug`); the README section for the model names it.
+- [docs/COMPOSE_MVVM_SAMPLE_GUIDE.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/COMPOSE_MVVM_SAMPLE_GUIDE.md): the Compose + MVVM shape for a litert-samples pull request, distilled from 32 samples.
+
+## Models
+
+- [litert-community on Hugging Face](https://huggingface.co/litert-community) and the [GitHub Releases](https://github.com/john-rocky/LiteRT-Models/releases): the `.tflite` files the table links to.
+
+## Related
+
+- [hf-to-litertlm](https://github.com/john-rocky/hf-to-litertlm): LLMs and VLMs as `.litertlm` bundles for LiteRT-LM.
+- [hfmodels-android](https://github.com/john-rocky/hfmodels-android): run those bundles in an Android app from a Hugging Face id.
+- [edge-compat](https://john-rocky.github.io/edge-compat/): which `.tflite` op runs on which delegate, measured per LiteRT version.
+- [on-device-recipes](https://john-rocky.github.io/on-device-recipes/): device-verified recipes across runtimes.
+- [LiteRT](https://github.com/google-ai-edge/LiteRT), [litert-torch](https://github.com/google-ai-edge/litert-torch): the upstream runtime and converter.

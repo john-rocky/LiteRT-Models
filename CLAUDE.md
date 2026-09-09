@@ -1,3 +1,7 @@
+@AGENTS.md
+
+The import above is the task router for any coding agent using this repository; the notes below are for working on the repository itself.
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
