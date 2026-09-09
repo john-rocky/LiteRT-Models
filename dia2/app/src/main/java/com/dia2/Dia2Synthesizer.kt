@@ -33,8 +33,11 @@ import kotlin.math.sin
  *    and must be undelayed before Mimi decoding.
  *  * **Both text streams carry real word tokens**, not just new-word/pad markers.
  *
- * All graphs run on CPU: these language models collapse in fp16 on ARM, and the Mali ML Drift
- * delegate rejects their FULLY_CONNECTED shapes.
+ * All graphs run on CPU as fp32, because these language models collapse in fp16 on ARM. The GPU is
+ * not the obstacle: with a rank-4 fused-QKV rewrite and a pre-expanded attention mask the depformer
+ * delegates all 237 nodes and yields bit-identical audio. It is simply no faster: 21.1 ms per
+ * stage on the GPU against 19.7 ms on the CPU, because a 3-layer single-token step graph cannot
+ * amortise the dispatch and the readback synchronisation. The README has the measured breakdown.
  */
 class Dia2Synthesizer(context: Context) : Closeable {
 
