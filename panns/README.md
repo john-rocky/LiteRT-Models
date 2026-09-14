@@ -10,7 +10,7 @@ waveform[320000] --[Kotlin log-mel]--> logmel[1,1,1001,64] --[GPU CNN14]--> prob
 
 PANNs builds its spectrogram with **torchlibrosa**, whose STFT is a *DFT-as-Conv1d* — so there is **no FFT op** and the entire raw-audio→tags graph is almost GPU-clean. The only GPU blocker is the STFT centering **reflect-pad** (one `GATHER_ND`), removable by switching `pad_mode='reflect'→'constant'` (zero-pad), which is corr 1.0 (only the first/last frame differ).
 
-**But** the converted spectral front-end is unusable: litert-torch lowers the giant 1024-tap DFT-conv incorrectly (fp32 tflite corr ≈ 0.19), and the power spectrum `|STFT|²` reaches ~1e6, which **overflows fp16 on Mali → NaN**. So the spectral front-end is computed on the CPU in Kotlin (the Whisper/Kokoro pattern), matched to torchlibrosa exactly, and only the CNN body rides the GPU. The CNN body (`bn0` + 6 conv blocks + pooling + 2 FC + sigmoid) is a pure CNN and converts at **corr 1.000000 in both fp32 and fp16**.
+**But** the converted spectral front-end is unusable: litert-torch merges the STFT's cos and sin conv weights into one ([litert-torch #1061](https://github.com/google-ai-edge/litert-torch/issues/1061), two non-contiguous constants of one shape alias each other; fp32 spectrogram corr 0.7–0.8 against PyTorch), and the power spectrum `|STFT|²` reaches ~1e6, which **overflows fp16 on Mali → NaN**. So the spectral front-end is computed on the CPU in Kotlin (the Whisper/Kokoro pattern), matched to torchlibrosa exactly, and only the CNN body rides the GPU. The CNN body (`bn0` + 6 conv blocks + pooling + 2 FC + sigmoid) is a pure CNN and converts at **corr 1.000000 in both fp32 and fp16**.
 
 ## Model
 
