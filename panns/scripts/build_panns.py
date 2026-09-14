@@ -7,9 +7,10 @@ Deployment = host-side log-mel + a single GPU graph for the CNN body:
 
 Why the log-mel is host-side and not in the graph: PANNs builds the spectrogram with torchlibrosa's
 STFT (a DFT-as-Conv1d, so there is NO FFT op and the full raw-audio graph IS op-clean — only the
-center reflect-pad emits a single GATHER_ND, removable with pad_mode='constant'). BUT the converted
-spectral front-end is numerically wrong (fp32 corr 0.19) and the power spectrum |STFT|^2 (~1e6)
-overflows fp16 on Mali -> NaN. The CNN body alone (logmel -> tags) converts at corr 1.000000 in both
+center reflect-pad emits a single GATHER_ND, removable with pad_mode='constant'). BUT litert-torch
+merges the STFT's cos and sin conv weights into one (litert-torch #1061: two non-contiguous constants
+of one shape alias each other; fp32 spectrogram corr 0.7-0.8 vs torch) and the power spectrum
+|STFT|^2 (~1e6) overflows fp16 on Mali -> NaN. The CNN body alone (logmel -> tags) converts at corr 1.000000 in both
 fp32 and fp16, so we keep it on the GPU and compute the log-mel on the CPU (Whisper/Kokoro pattern),
 matched to torchlibrosa exactly (validated here in numpy at corr 1.0).
 
