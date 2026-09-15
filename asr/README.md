@@ -37,7 +37,8 @@ Result: banned ops NONE, all tensors ≤4D, **no FFT**, tflite-vs-torch corr 1.0
 ## Build & run
 
 ```bash
-python scripts/build_w2v2_ctc.py all     # W2V_SEC=10 -> w2v2_ctc_fp16.tflite
+python scripts/build_w2v2_ctc.py all     # W2V_SEC=10 -> w2v2_ctc_fp16.tflite (single graph)
+python scripts/build_w2v2_asr.py         # W2V2_SEC=16 -> w2v2_asr_frontend_fp16 + w2v2_asr_head_fp16 (2 graphs)
 ./gradlew :app:installDebug
 ./scripts/install_to_device.sh <dir-with-w2v2_ctc_fp16.tflite>   # large model -> filesDir
 ```
@@ -45,5 +46,12 @@ python scripts/build_w2v2_ctc.py all     # W2V_SEC=10 -> w2v2_ctc_fp16.tflite
 The first launch fails with "Model not found" until the model is pushed. **Hold to Talk** (mic) or **Transcribe
 sample clip**. Input: mono 16 kHz, zero-mean/unit-variance, padded/truncated to 10 s.
 
-Model: `litert-community/wav2vec2-base-960h-CTC-LiteRT` (Hugging Face). Upstream:
-[facebook/wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) (Apache-2.0).
+Published model: [litert-community/wav2vec2-base-960h-LiteRT](https://huggingface.co/litert-community/wav2vec2-base-960h-LiteRT)
+— the 2-graph 16 s build from `scripts/build_w2v2_asr.py` (frontend 9 MB + head 180 MB fp16). At the 16 s window
+the fused single graph no longer compiles on the Pixel 8a (the Mali whole-graph shader-compile ceiling, the same
+one the KWS ship hit), while the 10 s single graph above still does — the ceiling moves with sequence length. Upstream: [facebook/wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) (Apache-2.0).
+
+Other `Wav2Vec2ForCTC` checkpoints: `W2V2_MODEL_ID=<hf-id-or-dir> python scripts/build_w2v2_asr.py` — the
+re-authoring is architecture-level (vocab, layer count, `feat_extract_norm` and `do_stable_layer_norm` flow
+from the checkpoint's config). Base-size (12-layer) checkpoints are device-verified; large (24-layer) ones
+have not been run on a phone yet — expect to split the head further if it hits the compile ceiling.
