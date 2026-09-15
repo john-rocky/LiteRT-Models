@@ -31,9 +31,12 @@ import kotlin.math.sqrt
  *              EOS classifier(host) stops generation
  *        --host: accumulate latents-->  acoustic_decoder(CPU) -> 24 kHz waveform
  *
- * Placement is dictated by the Pixel 8a Mali ML Drift delegate: the two Qwen2 LMs are rejected on
- * GPU (unsupported FULLY_CONNECTED weights shape) and fp16 collapses their 20-layer stack on ARM
- * XNNPACK, so they run as fp32 graphs on CPU; the σ-VAE decoder compiles on GPU but ML Drift
+ * Placement is dictated by the Pixel 8a Mali ML Drift delegate *at the LiteRT version this sample
+ * pins* (2.1.3): the two Qwen2 LMs are rejected on GPU with "unsupported FULLY_CONNECTED weights
+ * shape", which LiteRT 2.1.5 fixes — on 2.1.5 both LMs delegate every node and match the CPU
+ * reference to corr >= 0.9998. Until this sample moves to that version they run as fp32 graphs on
+ * CPU, which fp16 independently requires anyway (fp16 collapses their 20-layer stack on ARM
+ * XNNPACK). The σ-VAE decoder compiles on GPU but ML Drift
  * miscomputes it (a graph-assembly buffer bug — every op is bit-exact in isolation, but the
  * assembled ConvNeXt block is wrong), so it too runs as an fp32 graph on CPU. Only the tiny
  * diffusion head runs on GPU (fp32 precision).
@@ -101,10 +104,11 @@ class VibeVoiceSynthesizer(private val context: Context) : Closeable {
         return CompiledModel.create(f.absolutePath, opts, null)
     }
 
-    // The two Qwen2 LMs run on CPU: the Mali ML Drift delegate rejects a FULLY_CONNECTED weights
-    // shape in the KV-cache step graph ("Unsupported weights shape"), and fp16 collapses their
-    // 20-layer stack on ARM XNNPACK. The σ-VAE decoder also runs on CPU because ML Drift
-    // miscomputes it. Only the small diffusion head stays on the GPU (at fp32 precision).
+    // The two Qwen2 LMs run on CPU because LiteRT 2.1.3's Mali delegate rejects a FULLY_CONNECTED
+    // weights shape in the KV-cache step graph ("Unsupported weights shape"); 2.1.5 fixes that, and
+    // fp16 collapses their 20-layer stack on ARM XNNPACK, so they ship as fp32. The σ-VAE decoder
+    // runs on CPU because ML Drift miscomputes it on every version tried. Only the small diffusion
+    // head stays on the GPU (at fp32 precision).
     private val baseLm = load(BASE_LM, Accelerator.CPU)
     private val ttsLm = load(TTS_LM, Accelerator.CPU)
     private val head = load(HEAD, Accelerator.GPU, gpuFp32 = true)
