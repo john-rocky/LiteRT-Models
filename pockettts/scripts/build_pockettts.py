@@ -35,7 +35,8 @@ Numerics: the only non-exact rewrite is erf-GELU -> fitted tanh-polynomial
 (|gelu err| <= 7.1e-5, measured below); everything else is bit-exact.
 
 Run:  PYTHONPATH=<pocket-tts clone> python build_pockettts.py [stage]
-      stage in {flowlm, head, dectx, deconly, assets, pipeline, all}
+      stage in {flowlm, head, fused, dectx, deconly, assets, pipeline, all}
+      PT_OUT=<dir> redirects the output (default: scripts/out/)
 """
 import math
 import os

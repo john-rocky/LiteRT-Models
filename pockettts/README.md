@@ -118,6 +118,15 @@ PYTHONPATH=/path/to/pocket-tts python scripts/build_pockettts.py all
 ./gradlew :app:installDebug
 ```
 
+Environment this was built in, re-run 2026-09-18: Python 3.10, torch 2.12.1, litert-torch 0.9.3,
+ai-edge-litert 2.1.6, ai-edge-quantizer 0.8.0, plus pocket-tts' own requirements (sentencepiece,
+safetensors, huggingface_hub, scipy); pocket-tts clone at `001cf6e`. `all` takes about 3 minutes
+on an M4 Max: it downloads the ungated `kyutai/pocket-tts-without-voice-cloning` weights, writes
+every file the HF repo carries into `scripts/out/` (the re-run was byte-identical to the published
+files — sha256 of all 20 LFS files matched), and prints the tflite-vs-eager numbers of the
+Validation table below. Stages run individually (`flowlm`, `head`, `fused`, `dectx`, `deconly`,
+`assets`, `pipeline`); `PT_OUT=<dir>` redirects the output.
+
 First launch before the push fails with "Missing pt_..." by design; run the app once,
 push, relaunch. Everything (fp16 graphs + assets + 6 voices ≈ 225 MB) loads from the
 app's external files dir.
