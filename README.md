@@ -59,6 +59,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Matcha-TTS](#matcha-tts) | Text-to-speech (FFT-free) | Pixel 8a | RTF ~0.8 | [🤗 HF](https://huggingface.co/litert-community/Matcha-TTS) |
 | [Dia2-1B](#dia2-1b-dialogue) | Dialogue text-to-speech | Pixel 8a (CPU) | ~190 s per 4 s utterance | [scripts](dia2/) |
 | [VibeVoice-Realtime-0.5B](#vibevoice-realtime-05b) | Streaming text-to-speech |  |  | [scripts](vibevoice/) |
+| [Pocket TTS (Kyutai)](#pocket-tts-kyutai) | Text-to-speech (flow-matching LM, GPU) | Pixel 8a | RTF ~1.0 | [🤗 HF](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) |
 | [KittenTTS nano 0.8](#kittentts-nano-08-dynamic-length) | Text-to-speech (dynamic length) |  |  | [scripts](kittentts/) |
 | [Inflect-Nano-v2](#inflect-nano-v2-dynamic-length-exact-streaming) | Text-to-speech (exact streaming) | Mac | 25–32 ms first chunk | [scripts](inflect/) |
 | [SmolVLM-256M](#smolvlm-256m) | Vision-language model |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_vision.tflite) |
@@ -990,6 +991,23 @@ VibeVoice-Realtime-0.5B (Microsoft): a **streaming, autoregressive next-token-di
 **Sample app**: [vibevoice/](vibevoice/) — type text, synthesize on-device, AudioTrack PCM_FLOAT playback. The voice is a bundled preset (`en-Emma_woman`); the realtime checkpoint is decoder-only, so voices are exported offline (not cloned on-device).
 
 **Original project**: [microsoft/VibeVoice-Realtime-0.5B](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) | [MIT](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
+
+### Pocket TTS (Kyutai)
+
+Pocket TTS (Kyutai, ~100M): a **flow-matching LM over continuous 32-dim Mimi latents** — per 12.5 Hz frame a 6-layer/1024-wide transformer conditions an AdaLN MLP flow head that turns one Gaussian draw into the next latent (LSD, **1 step** — no diffusion loop), and a 20M quantizer-free tiny Mimi (×16 ConvTranspose upsample + 2-layer transformer + SEANet) decodes to 24 kHz. **FFT-free**: the 100M language model, the flow head and the SEANet vocoder all run on the GPU — with LiteRT 2.1.6 every graph delegates every node (`LITERT_CL`) on both a Snapdragon SM8850 (Adreno, **4.3–5.0× real-time** — 8.2 s of speech in 1.63 s, decode included, all-GPU placement) and a Pixel 8a (Mali-G715, **~1.0× real-time**; the gap is per-step KV-upload + dispatch overhead, not arithmetic — hence the app runs the step and flow head **fused into one graph with a single output tensor**, one invocation and one readback per frame). The one exception: the tiny 2-layer **Mimi decoder transformer ships on CPU** — its Mali GPU output is audibly degraded (voicing HNR 0.9 dB vs 2.8 dB on CPU = the fp32 reference; GPU FP32 precision does not fix it — the same decoder-transformer behavior the mimi/ module documents), and it is 7 small calls per utterance (~2% of runtime). The KV cache is host-side packed 4D (the VibeVoice/dia2 pattern); the voice is a precomputed prompt KV state (6 CC-BY/CC0 voices bundled; Whisper-transcribing the on-device WAVs reproduces the input text on both devices).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Fused frame (flow-LM step + head) | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 169 MB fp16 | emb [1,1,1024] + cos,sin [1,1,1,64] + mask [1,16,1,513] + pk,pv [1,96,512,64] + noise [1,32] | [1,12321] = eos ∣ latent ∣ k ∣ v | CompiledModel GPU |
+| Mimi dec transformer | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 17 MB fp16 | lat [1,65,32] (slot 0 = previous frame) | feat [1,512,1024] | CompiledModel CPU |
+| Mimi SEANet decoder | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 11 MB fp16 | feat [1,512,4096] | wav [1,1,491520] @ 24 kHz | CompiledModel GPU |
+| Split step + flow head (reference) | [Pocket-TTS-LiteRT](https://huggingface.co/mlboydaisuke/Pocket-TTS-LiteRT) | 151 + 18 MB fp16 | as fused, cond [1,1024] exposed | cond + eos + k,v; latent | CompiledModel GPU |
+
+**Conversion** (litert-torch): interleaved RoPE **de-interleaved by baking a row permutation into the QKV projection** (bit-exact — q·k is permutation-invariant), host cos/sin per step; packed KV with tail-concat + additive mask; erf-GELU → **fitted odd tanh-polynomial** (max err 7.1e-5, ~15× closer than tanh-GELU, which measurably shifted latents); the two LSD time embeddings (s=0, t=1) are constants folded into the flow head's cond bias; Mimi decoded in **64-frame blocks overlapping 32** because the 2-layer sliding-window (250) attention stacks to a 498-position receptive field — a single-window overlap is subtly wrong; the ×16 upsample gets the previous latent frame as an explicit input slot (neutral latent `−mean/std` = "no frame"); SEANet one-shot over a causal 256-frame window (dia2 pattern). Full-pipeline tflite-vs-eager audio corr 0.997 with identical EOS timing; per-graph corr 1.000000. See [pockettts/README.md](pockettts/README.md).
+
+**Sample app**: [pockettts/](pockettts/) — voice picker (alba, marius, javert, charles, mary, eve), text → speech, AudioTrack playback, WAV export. Voice cloning needs the Mimi encoder, which only ships in Kyutai's gated repo (zeroed in the ungated weights) — preset voices only.
+
+**Original project**: [kyutai-labs/pocket-tts](https://github.com/kyutai-labs/pocket-tts) | weights [CC-BY-4.0](https://huggingface.co/kyutai/pocket-tts), code MIT
 
 
 ### KittenTTS nano 0.8 (dynamic length)
