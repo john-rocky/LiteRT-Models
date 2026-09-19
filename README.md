@@ -2015,6 +2015,29 @@ upstreamed as [litert-samples #197](https://github.com/google-ai-edge/litert-sam
 
 **Original project**: [Qwen/Qwen3-Reranker-0.6B](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B) (Apache-2.0)
 
+### GLiNER2.5 Small (schema-based entity extraction)
+
+[fastino/gliner2.5-small-v1](https://huggingface.co/fastino/gliner2.5-small-v1) (74M, Apache-2.0, DeBERTa-v3-xsmall
+**BoundaryExtractor**) converted to LiteRT as a **dense prefix + host sparse decoder**: the graph runs the encoder,
+the boundary encoder/query head and every per-token projection, and stops at the first data-dependent op (top-k /
+`unique`); the host does the word-embedding lookup before it and the upstream candidate pooling / pair scoring /
+span decoding after it (16 tensors, 466 KB, `gliner2` functions). One packed rank-4 output, attention at rank 4,
+DeBERTa log-bucket relative positions and the 128-word boundary window baked as constants (needed beyond N=128).
+
+**On-device (Galaxy S26, SM8850, LiteRT 2.2.0 — verified):** fully on the GPU delegate (one partition) with
+`GpuOptions(precision = FP32)` (default precision → NaN); **span micro-F1 1.000 vs the official fp32 gliner2
+implementation on 70 inputs** at every window; GPU median 12.5 / 27.5 / 121 ms (windows 128 / 256 / 512, fp16
+weights). Dynamic-range int8 does not compile on ML Drift (catalog D13); fp16 weight storage is the compact variant.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| GLiNER2.5 Small s128 / s256 / s512 | [HF: litert-community/GLiNER2.5-Small-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Small-LiteRT) | 54 / 64 / 84 MB fp16-weight (98 / 108 / 128 MB fp32) + 197 MB embed table | inputs_embeds [1,N,384] + mask + routing → packed [1,1,1,1108·T+4574] (17 logical outputs) → host sparse decode → spans | GPU |
+
+**Sample app**: not yet — the host decoder is shipped in Python (`host_assets/runtime/`); a Kotlin port is the next step.
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-19 GLiNER2.5 section).
+
+**Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0)
+
 # Text Generation (LLM)
 
 > **Conversion recipes** (official `litert-torch` `export_hf`, no fork — blockwise int4 + OCTAV, `externalize_embedder`, simple chat templates): [`text-generation/`](text-generation/).

@@ -957,3 +957,16 @@ the anchor → per-class NMS. The tflite output order is `(cls, box)` per level;
 IoU 0.99**. FP16 recipe = `ai_edge_quantizer` `AlgorithmName.FLOAT_CASTING` +
 `ComputePrecision.FLOAT` (the inline `op_config` dict throws `KeyError: compute_precision`).
 
+## 2026-09-19 追記 — GLiNER2.5 Small (DeBERTa-v3-xsmall boundary extractor) on S26 GPU
+
+Shipped as `litert-community/GLiNER2.5-Small-LiteRT` (windows 128/256/512, fp32 + fp16-weight files, host contract). Run dir with every gate JSON: `~/code/codex-conversions/2026-09-19/gliner25-small/` (supervised Codex run, 8 rounds).
+
+**Graph cut.** Export the dense prefix only (DeBERTa encoder → routing → boundary encoder → boundary query head → per-token/per-query projections) and stop at the first data-dependent op (top-k / `unique` / `nonzero` in the upstream proposer). The host keeps the upstream sparse pool/scorer/decoder (16 tensors, 466 KB) and the word-embedding lookup (`inputs_embeds` input). Emit ONE packed rank-4 leaf `[1,1,1,1108*T+4574]` holding the 17 logical outputs (no `[1,N,C]` fan-out).
+
+**ML Drift 2.2.0 compile rejections seen on the first export** (S26, CompiledModel GPU): `BROADCAST_TO`, int64 `CAST` / `LESS_EQUAL` / `ONE_HOT` / `RESHAPE` / `SUM`, `SELECT_V2`, `MAXIMUM`; a `BATCH_MATMUL` whose constant is the LEFT operand is also rejected (put constants on the right). Rewrites that compile 1024–1121 ops in one partition: boolean masks as float arithmetic, routing as matmul with host one-hot rows, prefix sums as a constant upper-triangular matmul, attention kept at rank 4.
+
+**DeBERTa-v2 relative attention beyond a 128 window** needs the exact upstream logarithmic bucket lookup (`position_buckets=256`) and the boundary head's 128-word local-window mask baked as constants; a linear-bucket / full-window simplification is exact only at N ≤ 128 (bit-identical parity there, wrong at 256/512).
+
+**Precision.** Default GPU precision → NaN from the encoder output (`text_states`) onward; `GpuOptions(precision = FP32)` → exact spans (F1 1.000 on 70 inputs, confidence drift ≤ 3e-6 fp32 / ≤ 2.7e-3 fp16-weights). Same class as PP-OCRv6 above.
+
+**Weight storage.** Dynamic-range int8 (ai-edge-quantizer 0.8.0 `dynamic_wi8_afp32`) compiles nowhere on S26 2.2.0 GPU: full recipe and FULLY_CONNECTED-only recipe both fail with `Unable to parse bc coord for BATCH axis` (catalog D13), while an empty-recipe control compiles — the int8 FC constants themselves are the trigger, even with rank-4 inputs. `FLOAT_CASTING` float16 on the 96 FC weights (+ DEQUANTIZE) compiles fully, F1 unchanged, 54–84 MB vs 98–128 MB. CPU int8 F1 was 0.993–0.995 (evidence only).
