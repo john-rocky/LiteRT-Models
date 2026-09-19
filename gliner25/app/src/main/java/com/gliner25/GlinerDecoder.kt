@@ -3,6 +3,9 @@ package com.gliner25
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
 import kotlin.math.exp
 import kotlin.math.ln1p
 import kotlin.math.sqrt
@@ -24,6 +27,7 @@ import org.json.JSONObject
 class GlinerDecoder(
   private val hostAssets: File,
   configJson: String = File(hostAssets, "config.json").readText(),
+  private val profileEnabled: Boolean = false,
 ) {
   /**
    * A `BoundaryExtractor._decode_entities` result: fixed label, original text, half-open Unicode
@@ -79,9 +83,46 @@ class GlinerDecoder(
     }
   }
 
+  private val stageNanos = LongArray(PROFILE_STAGES.size)
+
+  /** Diagnostic stage durations for the last decode; empty unless explicitly enabled by a test. */
+  fun profileMilliseconds(): Map<String, Double> =
+    if (profileEnabled) {
+      PROFILE_STAGES.indices.associate { PROFILE_STAGES[it] to stageNanos[it] / 1_000_000.0 }
+    } else {
+      emptyMap()
+    }
+
+  private fun tick(): Long =
+    if (profileEnabled) {
+      System.nanoTime()
+    } else {
+      0L
+    }
+
+  private fun record(stage: Int, start: Long) {
+    if (profileEnabled) {
+      stageNanos[stage] += System.nanoTime() - start
+    }
+  }
+
+  private inline fun <T> measured(stage: Int, block: () -> T): T {
+    val start = tick()
+    val result = block()
+    record(stage, start)
+    return result
+  }
+
   private data class Tensor(val shape: IntArray, val values: FloatArray)
 
-  private data class RankedPair(val key: Int, val priority: Float, val valid: Boolean)
+  private data class Projection(
+    val inputSize: Int,
+    val outputSize: Int,
+    val weight: FloatArray,
+    val bias: FloatArray,
+  )
+
+  private data class Normalization(val weight: FloatArray, val bias: FloatArray)
 
   private data class Scored(val score: Float, val start: Int, val end: Int, val index: Int)
 
@@ -93,6 +134,17 @@ class GlinerDecoder(
       JSONObject(File(hostAssets, "graph_contract_s$sequence.json").readText())
     }
   private val scorerPrefix = "boundary_head.shared_pool_scorer."
+  private val lengthProjection = projection("length_projection")
+  private val priorProjection = projection("prior_projection")
+  private val contentProjection = projection("content_projection")
+  private val filmProjection = projection("film_output.0")
+  private val filmOutput = projection("film_output.3")
+  private val contentNorm = normalization("content_pooler.layer_norm")
+  private val candidateNorm = normalization("candidate_norm")
+  private val layouts =
+    contracts.values.associate { contract ->
+      contract.getJSONObject("physical_output").getJSONArray("shape").getInt(3) to layout(contract)
+    }
   private val poolBoundaryTopK: Int
   private val poolSize: Int
   private val minPoolPerQuery: Int
@@ -147,11 +199,18 @@ class GlinerDecoder(
    * values are rejected before they can influence top-k ordering or confidence.
    */
   fun unpack(values: FloatArray): Packed {
-    val contract =
-      contracts.values.singleOrNull {
-        it.getJSONObject("physical_output").getJSONArray("shape").getInt(3) == values.size
-      } ?: error("No published graph contract for ${values.size} floats")
-    require(values.all { it.isFinite() }) { "Packed graph output contains NaN or infinity" }
+    val slices =
+      layouts[values.size] ?: error("No published graph contract for ${values.size} floats")
+    // Primitive comparisons also reject NaN; avoid two library calls for every packed element.
+    for (value in values) {
+      require(value >= -Float.MAX_VALUE && value <= Float.MAX_VALUE) {
+        "Packed graph output contains NaN or infinity"
+      }
+    }
+    return Packed(values, slices)
+  }
+
+  private fun layout(contract: JSONObject): Map<String, Slice> {
     val outputs = contract.getJSONArray("logical_outputs")
     val slices = linkedMapOf<String, Slice>()
     var next = 0
@@ -166,8 +225,11 @@ class GlinerDecoder(
       require(slices.put(slice.name, slice) == null)
       next += slice.elements
     }
-    require(slices.size == 17 && next == values.size)
-    return Packed(values, slices)
+    require(
+      slices.size == 17 &&
+        next == contract.getJSONObject("physical_output").getJSONArray("shape").getInt(3)
+    )
+    return java.util.Collections.unmodifiableMap(slices)
   }
 
   /**
@@ -194,12 +256,17 @@ class GlinerDecoder(
     threshold: Float = 0.5f,
   ): List<Span> {
     require(threshold.isFinite() && threshold in 0f..1f)
-    val outputs = unpack(packed)
+    if (profileEnabled) {
+      stageNanos.fill(0L)
+    }
+    val outputs = measured(0) { unpack(packed) }
     val trace = trace(outputs, words.size)
     val result = ArrayList<Span>()
     for (query in LABELS.indices) {
+      val thresholdStart = tick()
       // Upstream abstains strictly above 0.5, after float32 sigmoid.
       if (sigmoid(outputs["null_logits", query]) > 0.5f) {
+        record(8, thresholdStart)
         continue
       }
       val scored = ArrayList<Scored>()
@@ -209,7 +276,10 @@ class GlinerDecoder(
           scored += Scored(probability, candidate.start, candidate.end, index)
         }
       }
-      for (candidate in resolveFlat(scored)) {
+      val selected = resolveFlat(scored)
+      record(8, thresholdStart)
+      val offsetStart = tick()
+      for (candidate in selected) {
         if (candidate.start < 0 || candidate.start >= candidate.end || candidate.end > words.size) {
           continue
         }
@@ -221,6 +291,7 @@ class GlinerDecoder(
           result += Span(LABELS[query], surface, start, end, candidate.score)
         }
       }
+      record(9, offsetStart)
     }
     return result
   }
@@ -237,70 +308,132 @@ class GlinerDecoder(
     require(wordCount in 0 until boundaryCount)
     val pool = buildPool(outputs, wordCount, boundaryCount)
     val logits = Array(pool.size) { FloatArray(LABELS.size) }
+    val values = outputs.values
+    val contentOffset = outputs.slice("content_prefix").offset
+    val startOffset = outputs.slice("score_start").offset
+    val endOffset = outputs.slice("score_end").offset
+    val queryOffset = outputs.slice("score_query").offset
+    val filmOffset = outputs.slice("film").offset
+    val startLogits = outputs.slice("start_logits").offset
+    val endLogits = outputs.slice("end_logits").offset
+    val insideOffset = outputs.slice("inside_prefix").offset
+    val insideMean = outputs.slice("inside_prefix_mean").offset
+    val features = FloatArray(pool.size * 128)
+    val hidden = FloatArray(pool.size * LABELS.size * 64)
     val scale = sqrt(128f)
-    pool.forEachIndexed { index, candidate ->
-      val start = candidate.start
-      val end = candidate.end
-      val length = (end - start).coerceAtLeast(1).toFloat()
-      val lengthFeatures =
-        floatArrayOf(ln1p(length), length / wordCount.coerceAtLeast(1), 1f / sqrt(length))
-      val lengthRep = linear("length_projection", lengthFeatures)
-      val priorRep = linear("prior_projection", floatArrayOf(candidate.compatibility))
-      val content =
-        FloatArray(64) { channel ->
-          (outputs["content_prefix", end * 64 + channel] -
-            outputs["content_prefix", start * 64 + channel]) / length
-        }
-      val contentRep = linear("content_projection", layerNorm("content_pooler.layer_norm", content))
-      val feature =
-        FloatArray(128) { channel ->
-          var value =
-            outputs["score_start", start * 128 + channel] +
-              outputs["score_end", end * 128 + channel]
-          value += lengthRep[channel]
-          value += priorRep[channel]
-          value + contentRep[channel]
-        }
-      val normalized = layerNorm("candidate_norm", feature)
-      for (query in LABELS.indices) {
-        var score =
-          dot(normalized, outputs.values, outputs.slice("score_query").offset + query * 128) / scale
-        val conditioned =
-          FloatArray(128) { channel ->
-            normalized[channel] * (1f + outputs["film", query * 256 + channel]) +
-              outputs["film", query * 256 + 128 + channel]
+
+    // Candidates are independent. Each worker keeps the original scalar reduction order, while
+    // reusing its scratch arrays instead of allocating a projection result for every query.
+    measured(3) {
+      parallel(pool.size) { first, limit ->
+        val lengthFeatures = FloatArray(3)
+        val prior = FloatArray(1)
+        val lengthRep = FloatArray(128)
+        val priorRep = FloatArray(128)
+        val content = FloatArray(64)
+        val contentRep = FloatArray(128)
+        for (index in first until limit) {
+          val candidate = pool[index]
+          val start = candidate.start
+          val end = candidate.end
+          val length = (end - start).coerceAtLeast(1).toFloat()
+          lengthFeatures[0] = ln1p(length)
+          lengthFeatures[1] = length / wordCount.coerceAtLeast(1)
+          lengthFeatures[2] = 1f / sqrt(length)
+          prior[0] = candidate.compatibility
+          linearInto(lengthProjection, lengthFeatures, 0, lengthRep, 0)
+          linearInto(priorProjection, prior, 0, priorRep, 0)
+          for (channel in 0 until 64) {
+            content[channel] =
+              (values[contentOffset + end * 64 + channel] -
+                values[contentOffset + start * 64 + channel]) / length
           }
-        val hidden = linear("film_output.0", conditioned)
-        for (channel in hidden.indices) {
-          hidden[channel] = gelu(hidden[channel])
+          normalizeInPlace(contentNorm, content, 0, 64)
+          linearInto(contentProjection, content, 0, contentRep, 0)
+          for (channel in 0 until 128) {
+            var value =
+              values[startOffset + start * 128 + channel] + values[endOffset + end * 128 + channel]
+            value += lengthRep[channel]
+            value += priorRep[channel]
+            features[index * 128 + channel] = value + contentRep[channel]
+          }
+          normalizeInPlace(candidateNorm, features, index * 128, 128)
         }
-        score += linear("film_output.3", hidden)[0]
-        score += outputs["start_logits", query * boundaryCount + start]
-        score += outputs["end_logits", query * boundaryCount + end]
-        var interval =
-          outputs["inside_prefix", query * boundaryCount + end] -
-            outputs["inside_prefix", query * boundaryCount + start]
-        interval += outputs["inside_prefix_mean", query] * (end - start).toFloat()
-        score += interval / sqrt(length)
-        require(score.isFinite()) { "Sparse decoder produced a nonfinite logit" }
-        logits[index][query] = score
+      }
+    }
+    measured(4) {
+      parallel(pool.size * LABELS.size) { first, limit ->
+        val conditioned = FloatArray(128)
+        for (row in first until limit) {
+          val candidate = row / LABELS.size
+          val query = row % LABELS.size
+          for (channel in 0 until 128) {
+            conditioned[channel] =
+              features[candidate * 128 + channel] *
+                (1f + values[filmOffset + query * 256 + channel]) +
+                values[filmOffset + query * 256 + 128 + channel]
+          }
+          linearInto(filmProjection, conditioned, 0, hidden, row * 64)
+        }
+      }
+    }
+    // Keep the exact existing erf series and its stopping criterion. Only independent elements
+    // execute concurrently; no approximation, float16 conversion or cross-worker reduction occurs.
+    measured(5) {
+      parallel(hidden.size) { first, limit ->
+        for (index in first until limit) {
+          hidden[index] = gelu(hidden[index])
+        }
+      }
+    }
+    measured(7) {
+      parallel(pool.size) { first, limit ->
+        for (index in first until limit) {
+          val candidate = pool[index]
+          val start = candidate.start
+          val end = candidate.end
+          val length = (end - start).coerceAtLeast(1).toFloat()
+          for (query in LABELS.indices) {
+            var score = dot(features, index * 128, values, queryOffset + query * 128, 128) / scale
+            score +=
+              dot(hidden, (index * LABELS.size + query) * 64, filmOutput.weight, 0, 64) +
+                filmOutput.bias[0]
+            score += values[startLogits + query * boundaryCount + start]
+            score += values[endLogits + query * boundaryCount + end]
+            var interval =
+              values[insideOffset + query * boundaryCount + end] -
+                values[insideOffset + query * boundaryCount + start]
+            interval += values[insideMean + query] * (end - start).toFloat()
+            score += interval / sqrt(length)
+            require(score.isFinite()) { "Sparse decoder produced a nonfinite logit" }
+            logits[index][query] = score
+          }
+        }
       }
     }
     return Trace(pool, logits)
   }
 
   private fun buildPool(outputs: Packed, wordCount: Int, n: Int): List<PoolCandidate> {
+    val poolStartTime = tick()
+    val values = outputs.values
+    val startLogits = outputs.slice("start_logits").offset
+    val endLogits = outputs.slice("end_logits").offset
     val unionStart = FloatArray(n) { MASK_LOGIT }
     val unionEnd = FloatArray(n) { MASK_LOGIT }
     for (boundary in 0..wordCount) {
-      unionStart[boundary] = LABELS.indices.maxOf { outputs["start_logits", it * n + boundary] }
-      unionEnd[boundary] = LABELS.indices.maxOf { outputs["end_logits", it * n + boundary] }
+      var start = values[startLogits + boundary]
+      var end = values[endLogits + boundary]
+      for (query in 1 until LABELS.size) {
+        start = maxOf(start, values[startLogits + query * n + boundary])
+        end = maxOf(end, values[endLogits + query * n + boundary])
+      }
+      unionStart[boundary] = start
+      unionEnd[boundary] = end
     }
-    // torch.sort(descending=True, stable=True): equal scores retain boundary index order.
-    val starts =
-      (0 until n).sortedWith(compareByDescending<Int> { unionStart[it] }).take(poolBoundaryTopK)
-    val ends =
-      (0 until n).sortedWith(compareByDescending<Int> { unionEnd[it] }).take(poolBoundaryTopK)
+    // Stable descending order retains boundary indices on ties, including the masked tail.
+    val starts = stableByScore(IntArray(n) { it }, unionStart).copyOf(minOf(n, poolBoundaryTopK))
+    val ends = stableByScore(IntArray(n) { it }, unionEnd).copyOf(minOf(n, poolBoundaryTopK))
     val count = starts.size * ends.size
     val pairStarts = IntArray(count)
     val pairEnds = IntArray(count)
@@ -331,97 +464,221 @@ class GlinerDecoder(
         pairEnds[i] = end
         valid[i] = sValid && eValid && end > start
         compatibility[i] =
-          dot(outputs.values, poolStart + start * 128, outputs.values, poolEnd + end * 128, 128) /
-            scale
+          dot(values, poolStart + start * 128, values, poolEnd + end * 128, 128) / scale
         globalScores[i] = (compatibility[i] + unionStart[start]) + unionEnd[end]
       }
     }
+    record(1, poolStartTime)
+    val proposerStart = tick()
     val quota = minPoolPerQuery.coerceAtMost(count)
-    val all = ArrayList<RankedPair>(LABELS.size * quota + count)
+    val total = LABELS.size * quota + count
+    val keys = IntArray(total)
+    val priorities = FloatArray(total)
+    val keep = BooleanArray(total)
+    var next = 0
+    val perQuery = FloatArray(count)
     for (query in LABELS.indices) {
-      val perQuery =
-        FloatArray(count) { i ->
+      for (i in 0 until count) {
+        perQuery[i] =
           if (valid[i]) {
-            (outputs["start_logits", query * n + pairStarts[i]] +
-              outputs["end_logits", query * n + pairEnds[i]]) + compatibility[i]
+            (values[startLogits + query * n + pairStarts[i]] +
+              values[endLogits + query * n + pairEnds[i]]) + compatibility[i]
           } else {
             MASK_LOGIT
           }
-        }
-      val ranked = (0 until count).sortedWith(compareByDescending<Int> { perQuery[it] }).take(quota)
-      ranked.forEachIndexed { rank, i ->
-        all +=
-          RankedPair(pairStarts[i] * n + pairEnds[i], -MASK_LOGIT * 0.5f + (quota - rank), valid[i])
+      }
+      val ranked = stableByScore(IntArray(count) { it }, perQuery)
+      for (rank in 0 until quota) {
+        val i = ranked[rank]
+        keys[next] = pairStarts[i] * n + pairEnds[i]
+        priorities[next] = -MASK_LOGIT * 0.5f + (quota - rank)
+        keep[next] = valid[i]
+        next++
       }
     }
     for (i in 0 until count) {
-      all += RankedPair(pairStarts[i] * n + pairEnds[i], globalScores[i], valid[i])
+      keys[next] = pairStarts[i] * n + pairEnds[i]
+      priorities[next] = globalScores[i]
+      keep[next] = valid[i]
+      next++
     }
-    // _deduplicate_pool: stable priority sort, stable key sort, first occurrence,
-    // then stable priority sort again. The last score ties therefore sort by key.
-    val byScore =
-      all
-        .map {
-          if (it.valid) {
-            it
-          } else {
-            RankedPair(n * n, MASK_LOGIT, false)
-          }
-        }
-        .sortedWith(compareByDescending<RankedPair> { it.priority })
-    val byKey = byScore.sortedBy { it.key }
-    val unique = ArrayList<RankedPair>(byKey.size)
+    for (i in 0 until total) {
+      if (!keep[i]) {
+        keys[i] = n * n
+        priorities[i] = MASK_LOGIT
+      }
+    }
+    // Preserve all three upstream stable sorts and invalid rows. Dropping invalid rows before
+    // taking poolSize would change masked-score ties, even though ordinary fixtures rarely hit one.
+    val byScore = stableByScore(IntArray(total) { it }, priorities)
+    val byKey = stableByKey(byScore, keys)
     var previousKey = -1
-    for (row in byKey) {
-      val keep = row.valid && row.key != previousKey
-      unique +=
-        if (keep) {
-          row
-        } else {
-          RankedPair(row.key, MASK_LOGIT, false)
-        }
-      previousKey = row.key
+    for (i in byKey) {
+      val unique = keep[i] && keys[i] != previousKey
+      if (!unique) {
+        priorities[i] = MASK_LOGIT
+        keep[i] = false
+      }
+      previousKey = keys[i]
     }
-    return unique
-      .sortedWith(compareByDescending<RankedPair> { it.priority })
-      .take(poolSize)
-      .filter { it.valid }
-      .map { row ->
-        val start = row.key / n
-        val end = row.key % n
-        PoolCandidate(
-          start,
-          end,
-          dot(outputs.values, poolStart + start * 128, outputs.values, poolEnd + end * 128, 128) /
-            scale,
+    val selected = stableByScore(byKey, priorities)
+    val result = ArrayList<PoolCandidate>(poolSize)
+    for (rank in 0 until minOf(poolSize, total)) {
+      val i = selected[rank]
+      if (keep[i]) {
+        val start = keys[i] / n
+        val end = keys[i] % n
+        result.add(
+          PoolCandidate(
+            start,
+            end,
+            dot(values, poolStart + start * 128, values, poolEnd + end * 128, 128) / scale,
+          )
         )
       }
+    }
+    record(6, proposerStart)
+    return result
   }
 
-  private fun linear(name: String, input: FloatArray): FloatArray {
+  private fun stableByScore(indices: IntArray, scores: FloatArray): IntArray {
+    var source = indices.copyOf()
+    var target = IntArray(source.size)
+    var width = 1
+    while (width < source.size) {
+      var first = 0
+      while (first < source.size) {
+        val middle = minOf(first + width, source.size)
+        val limit = minOf(first + 2 * width, source.size)
+        var left = first
+        var right = middle
+        var out = first
+        while (left < middle && right < limit) {
+          // Float.compare preserves the original comparator's signed-zero and infinity order.
+          if (java.lang.Float.compare(scores[source[left]], scores[source[right]]) >= 0) {
+            target[out++] = source[left++]
+          } else {
+            target[out++] = source[right++]
+          }
+        }
+        while (left < middle) {
+          target[out++] = source[left++]
+        }
+        while (right < limit) {
+          target[out++] = source[right++]
+        }
+        first = limit
+      }
+      val swap = source
+      source = target
+      target = swap
+      width *= 2
+    }
+    return source
+  }
+
+  private fun stableByKey(indices: IntArray, keys: IntArray): IntArray {
+    var source = indices.copyOf()
+    var target = IntArray(source.size)
+    var width = 1
+    while (width < source.size) {
+      var first = 0
+      while (first < source.size) {
+        val middle = minOf(first + width, source.size)
+        val limit = minOf(first + 2 * width, source.size)
+        var left = first
+        var right = middle
+        var out = first
+        while (left < middle && right < limit) {
+          if (keys[source[left]] <= keys[source[right]]) {
+            target[out++] = source[left++]
+          } else {
+            target[out++] = source[right++]
+          }
+        }
+        while (left < middle) {
+          target[out++] = source[left++]
+        }
+        while (right < limit) {
+          target[out++] = source[right++]
+        }
+        first = limit
+      }
+      val swap = source
+      source = target
+      target = swap
+      width *= 2
+    }
+    return source
+  }
+
+  private fun projection(name: String): Projection {
     val weight = parameters.getValue("$scorerPrefix$name.weight")
-    val bias = parameters.getValue("$scorerPrefix$name.bias").values
-    require(weight.shape[1] == input.size)
-    return FloatArray(weight.shape[0]) { row ->
-      dot(input, weight.values, row * input.size) + bias[row]
+    return Projection(
+      weight.shape[1],
+      weight.shape[0],
+      weight.values,
+      parameters.getValue("$scorerPrefix$name.bias").values,
+    )
+  }
+
+  private fun normalization(name: String) =
+    Normalization(
+      parameters.getValue("$scorerPrefix$name.weight").values,
+      parameters.getValue("$scorerPrefix$name.bias").values,
+    )
+
+  private fun linearInto(
+    projection: Projection,
+    input: FloatArray,
+    inputOffset: Int,
+    output: FloatArray,
+    outputOffset: Int,
+  ) {
+    val width = projection.inputSize
+    val weight = projection.weight
+    val bias = projection.bias
+    for (row in 0 until projection.outputSize) {
+      output[outputOffset + row] = dot(input, inputOffset, weight, row * width, width) + bias[row]
     }
   }
 
-  private fun layerNorm(name: String, input: FloatArray): FloatArray {
-    val weight = parameters.getValue("$scorerPrefix$name.weight").values
-    val bias = parameters.getValue("$scorerPrefix$name.bias").values
+  private fun normalizeInPlace(norm: Normalization, input: FloatArray, offset: Int, size: Int) {
+    val weight = norm.weight
+    val bias = norm.bias
     var sum = 0f
-    for (value in input) {
-      sum += value
+    for (i in 0 until size) {
+      sum += input[offset + i]
     }
-    val mean = sum / input.size
+    val mean = sum / size
     var variance = 0f
-    for (value in input) {
-      val delta = value - mean
+    for (i in 0 until size) {
+      val delta = input[offset + i] - mean
       variance += delta * delta
     }
-    val inverseStd = 1f / sqrt(variance / input.size + 1e-5f)
-    return FloatArray(input.size) { (input[it] - mean) * inverseStd * weight[it] + bias[it] }
+    val inverseStd = 1f / sqrt(variance / size + 1e-5f)
+    for (i in 0 until size) {
+      input[offset + i] = (input[offset + i] - mean) * inverseStd * weight[i] + bias[i]
+    }
+  }
+
+  private fun parallel(size: Int, block: (Int, Int) -> Unit) {
+    if (size < 32) {
+      block(0, size)
+      return
+    }
+    val futures =
+      (1 until 4).map { worker ->
+        scorerWorkers.submit(Callable { block(size * worker / 4, size * (worker + 1) / 4) })
+      }
+    block(0, size / 4)
+    for (future in futures) {
+      try {
+        future.get()
+      } catch (failure: ExecutionException) {
+        throw failure.cause ?: failure
+      }
+    }
   }
 
   private fun resolveFlat(candidates: List<Scored>): List<Scored> {
@@ -477,6 +734,27 @@ class GlinerDecoder(
   }
 
   companion object {
+    // One bounded process-wide pool: three workers plus the calling thread. Shared lifetime
+    // avoids creating threads per input or per ViewModel; completed tasks retain no model data.
+    private val scorerWorkers by lazy {
+      Executors.newFixedThreadPool(3) { task ->
+        Thread(task, "Gliner-Sparse").apply { isDaemon = true }
+      }
+    }
+    // The shared-pool checkpoint does not execute its retained candidate-encoder weights.
+    private val PROFILE_STAGES =
+      listOf(
+        "unpack",
+        "candidate_pool_build",
+        "candidate_encoder_256_384",
+        "pool_content",
+        "film_linear",
+        "film_gelu",
+        "proposer_topk_merge_unique",
+        "pair_scoring",
+        "threshold_overlap",
+        "offsets",
+      )
     val LABELS = listOf("person", "organization", "location", "product", "date")
     private const val MASK_LOGIT = -10000f
 
@@ -565,16 +843,22 @@ class GlinerDecoder(
           1.0
         }
       }
-      val square = x * x
+      val negativeSquare = -(x * x)
       var powerOverFactorial = x
       var sum = x
-      for (n in 1..100) {
-        powerOverFactorial *= -square / n
-        val term = powerOverFactorial / (2 * n + 1)
+      var n = 1.0
+      var denominator = 3.0
+      while (n <= 100.0) {
+        powerOverFactorial *= negativeSquare / n
+        val term = powerOverFactorial / denominator
         sum += term
-        if (kotlin.math.abs(term) < 1e-17) {
+        // These two comparisons are exactly abs(term) < epsilon, without a library call.
+        if (term > -1e-17 && term < 1e-17) {
           break
         }
+        // Integers through 201 are exact doubles, so the original denominators are unchanged.
+        n += 1.0
+        denominator += 2.0
       }
       val result = sum * 1.1283791670955126
       return if (value < 0) {

@@ -22,7 +22,7 @@ val prepareDebugKeystore by tasks.registering(Exec::class) {
 }
 
 tasks.configureEach {
-    if (name == "validateSigningDebug") dependsOn(prepareDebugKeystore)
+    if (name == "validateSigningDebug" || name == "validateSigningBenchmark") dependsOn(prepareDebugKeystore)
 }
 
 android {
@@ -43,14 +43,26 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField("boolean", "PROFILE_ALLOWED", "true")
             signingConfig = signingConfigs.getByName("debug").apply {
                 storeFile = debugKeystore
             }
         }
         release {
             isMinifyEnabled = false
+            buildConfigField("boolean", "PROFILE_ALLOWED", "false")
+        }
+        create("benchmark") {
+            initWith(getByName("release"))
+            isDebuggable = false
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+            buildConfigField("boolean", "PROFILE_ALLOWED", "true")
         }
     }
+
+    sourceSets.getByName("benchmark").assets.srcDir("src/debug/assets")
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -58,6 +70,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests.all {

@@ -20,15 +20,22 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private val modelScope = CoroutineScope(SupervisorJob() + modelDispatcher)
   private var extractor: GlinerExtractor? = null
   private var started = false
+  private var profileDecoder = false
   @Volatile private var cleared = false
   private val mutableUiState = MutableStateFlow(UiState(context.getString(R.string.example_text)))
   val uiState: StateFlow<UiState> = mutableUiState.asStateFlow()
 
-  fun start(gate: Boolean, requestedAccelerator: String?, fixtureSet: String? = null) {
+  fun start(
+    gate: Boolean,
+    requestedAccelerator: String?,
+    fixtureSet: String? = null,
+    profile: Boolean = false,
+  ) {
     if (started || cleared) {
       return
     }
     started = true
+    profileDecoder = gate && profile && BuildConfig.PROFILE_ALLOWED
     if (gate) {
       mutableUiState.update {
         it.copy(gateMode = true, busy = true, statusMessage = R.string.status_gate_running)
@@ -38,7 +45,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
           val reports =
             when (fixtureSet) {
               null -> GlinerGateRunner(context, ::helper).run(requestedAccelerator)
-              "f1" -> GlinerF1GateRunner(context, ::helper).run(requestedAccelerator)
+              "f1" ->
+                GlinerF1GateRunner(context, ::helper, profileDecoder).run(requestedAccelerator)
               else -> error("Unknown gate set: $fixtureSet")
             }
           mutableUiState.update { state ->
@@ -160,7 +168,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   private fun helper(): GlinerExtractor =
-    extractor ?: GlinerExtractor(context).also { extractor = it }
+    extractor ?: GlinerExtractor(context, profileDecoder).also { extractor = it }
 
   private fun showFailure(failure: Throwable) {
     mutableUiState.update {

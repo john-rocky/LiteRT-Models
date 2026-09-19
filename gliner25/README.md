@@ -1,8 +1,7 @@
 # GLiNER2.5 Small — Android entity extraction
 
 Enter English text to find people, organizations, locations, products and dates on your phone.
-The Compose app highlights entities, lists confidence and Unicode character offsets, and reports
-separate tokenization/embedding, graph and decoding times. Choose GPU or CPU and tap **Extract**.
+Choose GPU or CPU and tap **Extract** for highlighted spans, confidence, Unicode offsets and timings.
 For the prefilled sentence, “Maya Chen from Orvane Robotics demonstrated the Veltrix 9 in Lisbon
 on March 12, 2025.”, the five entities are Maya Chen, Orvane Robotics, Veltrix 9, Lisbon and
 March 12, 2025.
@@ -10,9 +9,8 @@ March 12, 2025.
 ## Model and requirements
 
 - Model: [litert-community/GLiNER2.5-Small-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Small-LiteRT),
-  revision `8c4759df4feb91497e7f49212abf056d79789cac`.
+  model/host assets from revision `fc3a084765b555f82b9fc4652a60d049e75ac8c5`.
 - Upstream: [fastino/gliner2.5-small-v1](https://huggingface.co/fastino/gliner2.5-small-v1), Apache-2.0.
-  Retained dependency notices are in `licenses/`.
 - Android: arm64-v8a, Android 8.0 / API 26 or newer; compile/target SDK 35.
 - Runtime: LiteRT **2.2.0** `CompiledModel`; Material 1 Compose with MVVM.
 
@@ -42,8 +40,6 @@ files before contacting the device, pushes through `/data/local/tmp/gliner25/`, 
 `run-as com.gliner25` into private `files/`, removes temporary files, and lists the installed files.
 It uses plain `adb`, including its optional `ANDROID_SERIAL` selection. Install the debug APK first;
 `run-as` requires a debuggable package. Model files are external and are not needed to build the APK.
-The Gradle project creates its own local debug signing key. Missing assets appear as inline errors
-naming the first missing file and `scripts/install_to_device.sh`.
 
 ## External files
 
@@ -63,7 +59,6 @@ The app loads graphs by path and memory-maps the embedding table. The installer 
 | `host_assets/graph_contract_s512.json` | 3,814 | 17 packed output slices |
 
 The 3,152-byte checkpoint configuration is bundled as `app/src/main/assets/gliner_config.json`.
-The phone does not need Python or `tokenizer_config.json`.
 
 ## Architecture and limits
 
@@ -80,6 +75,9 @@ The host ports follow gliner2 2.0.0 and the published
 One LiteRT Environment is shared per process. s128 loads at startup; s256/s512 compile on first use
 and remain resident. Each window/backend receives an untimed warm-up. Graph timing includes the
 first input-buffer write through output readback because `run()` is asynchronous.
+Sparse scoring uses flat buffers and three persistent workers plus the calling thread. Each dot
+product and erf series retains its reduction order; primitive stable sorts preserve duplicate
+and tie handling. There is no JNI, float16 host arithmetic or additional runtime dependency.
 
 English and the five fixed labels are supported: person, organization, location, product, date.
 The smallest fitting N/T window is chosen from 128/48, 256/192, 512/384. Both schema-plus-text encoded
@@ -88,7 +86,7 @@ without truncation. Offsets are half-open Unicode code-point indices, not UTF-16
 threshold is 0.5. Overlapping highlights prefer higher confidence. Arbitrary schemas, multilingual
 quality, batching and NPU execution are outside the validated configuration.
 
-## Reproduce parity
+## Reproduce parity and profiling
 
 The debug APK bundles reference spans and captured tokenizer positions. Stop this app before
 starting a new check so previous Activity extras are cleared:
@@ -96,47 +94,59 @@ starting a new check so previous Activity extras are cleared:
 ```bash
 adb shell am force-stop com.gliner25
 adb shell am start -W -n com.gliner25/.MainActivity --ez gate true
-# Extended set: append --es set f1; single backend: append --es accel GPU or --es accel CPU.
+# Extended set: append --es set f1; one backend: append --es accel GPU or --es accel CPU.
 adb exec-out run-as com.gliner25 cat files/gate/gate_GPU.json > gate_GPU.json
 ```
 
-The default checks ten texts, GPU FP32 then CPU, with one warm-up and five timed runs per text.
-`--es set f1` checks 70 texts, one warm-up and three timed runs, plus element-wise token IDs and
-text/query positions. Reports land in private `files/gate/gate_GPU.json` / `gate_CPU.json`, or
-`gate_f1_GPU.json` / `gate_f1_CPU.json`; completion lines use log tag `GLINER_GATE`.
-Span sets must match the reference, confidence differences must be at most `5e-3`, and outputs
-must be finite. A normal launch without extras displays the interactive screen.
+The default checks ten texts, one warm-up + five timed runs. `--es set f1` checks 70 texts,
+one warm-up + three timed runs, plus exact token IDs and text/query positions. Reports land in
+private `files/gate/gate_GPU.json` / `gate_CPU.json`, or `gate_f1_GPU.json` / `gate_f1_CPU.json`.
+Completion lines use `GLINER_GATE`. Span sets must match, confidence differences must be <= `5e-3`,
+and every packed output must be finite. A normal launch without extras opens the interactive UI.
 
-`./gradlew :app:testDebugUnitTest` skips the six external-data JVM tests unless
-`-Pgliner.fixtures=/path/to/data` (or `-Dgliner.fixtures=...`) is supplied. Downloaded `host_assets/`
-and separate parity fixtures belong under that directory. Packed references are **not distributed**;
-[scripts/TEST_DATA.md](scripts/TEST_DATA.md) explains their layout and regeneration with the published
-Python runtime. Test reports are written only under `app/build/`. With complete reference data,
-six tests pass: 80 fixture files / 70 unique texts / 225 file-window checks and 195/195 decoder pairs.
-Maximum confidence differences are `4.172325134277344e-7` against Python on identical packed data
-and `0.002693772315979004` against the official fp32 reference.
+For decoder stages, add `--ez profile true` to the F1 command: this selects five timed runs and
+records stage medians in JSON and `GLINER_GATE`. Profiling is otherwise off. To compare ART modes,
+`./gradlew :app:assembleBenchmark` builds a non-debuggable, non-minified APK signed with the local
+debug key. Install `app/build/outputs/apk/benchmark/app-benchmark.apk` with `adb install -r` over
+this sample, then run the same profiling command. Read stage lines with `adb logcat -d -s GLINER_GATE:I`.
+Restore the debug APK to export the full private JSON with `run-as`; model files stay installed.
+
+The six JVM tests skip unless `-Pgliner.fixtures=/path/to/data` (or `-Dgliner.fixtures=...`) is set.
+[scripts/TEST_DATA.md](scripts/TEST_DATA.md) describes downloaded host assets and regenerated packed
+references, which are not distributed. Reports stay under `app/build/`. With fixtures: six pass,
+80 files / 70 unique texts / 225 input checks, 195/195 decoder pairs. Maximum confidence difference
+is `4.172325134277344e-7` versus Python on identical packed data, `0.002693772315979004` versus fp32.
 
 ## Verified on
 
-**Samsung Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, debug build**, 2026-09-19.
-GPU uses explicit **FP32 precision**; CPU uses four threads. Start: **100% battery, 32.0 °C**, USB
-connected, warm device after earlier validation. GPU then CPU ran in one process; **70 inputs,
-one warm-up + three timed runs per input**. The validation texts use invented person names.
-Medians below include all timed runs per window; compilation and input inspection are excluded.
+**Samsung Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0**, 2026-09-20. Explicit **GPU FP32**;
+CPU graph uses four threads. Debug session started at **99% battery / 33.5 °C**, USB connected,
+warm after earlier validation; GPU then CPU in one process. **70 inputs, one warm-up + five timed
+runs each**, diagnostic timing enabled. Medians include all timed runs per window; compilation and
+input inspection are excluded. Graph timing covers first input write through output readback.
 
-| Backend | Window N / T | Inputs | Timed runs | Tokenize + embed (ms) | Graph to readback (ms) | Decode (ms) |
-|---|---|---:|---:|---:|---:|---:|
-| GPU FP32 | 128 / 48 | 60 | 180 | 1.53 | 12.01 | 58.49 |
-| GPU FP32 | 256 / 192 | 5 | 15 | 4.74 | 29.55 | 78.37 |
-| GPU FP32 | 512 / 384 | 5 | 15 | 9.71 | 94.13 | 82.09 |
-| CPU | 128 / 48 | 60 | 180 | 1.93 | 23.46 | 84.43 |
-| CPU | 256 / 192 | 5 | 15 | 4.72 | 50.55 | 83.49 |
-| CPU | 512 / 384 | 5 | 15 | 10.31 | 111.92 | 89.07 |
+| Backend | Window N / T | Inputs / runs | Tokenize + embed (ms) | Graph (ms) | Decode (ms) |
+|---|---|---|---:|---:|---:|
+| GPU FP32 | 128 / 48 | 60 / 300 | 3.526 | 11.895 | 9.518 |
+| GPU FP32 | 256 / 192 | 5 / 25 | 8.826 | 26.837 | 13.497 |
+| GPU FP32 | 512 / 384 | 5 / 25 | 19.083 | 92.171 | 12.778 |
+| CPU | 128 / 48 | 60 / 300 | 1.666 | 14.898 | 6.022 |
+| CPU | 256 / 192 | 5 / 25 | 5.356 | 42.315 | 8.050 |
+| CPU | 512 / 384 | 5 / 25 | 11.533 | 128.694 | 8.849 |
 
-Both backends pass **70/70 exact tokenizer inputs**, **70/70 span sets / 400 spans**, and all
-280 warm-up/timed finite-output checks. Maximum confidence differences are
-**0.00269240140914917 (GPU)** and **0.002690911293029785 (CPU)**. All three windows compiled,
-including lazy s256/s512. GPU delegation is 1120/1120 nodes at s128 and 1121/1121 at s256/s512,
-each in one LITERT_CL partition. Temperature after both backends was 35.1 °C; battery stayed 100%.
-The launch screen shows the invented-name example and Ready status, with all five label chips.
-NPU execution has not been tested.
+Both backends pass **70/70 inputs and span sets / 400 spans**, all **420** warm-up/timed outputs
+finite. Maximum confidence differences: **0.00269240140914917 GPU**, **0.002690911293029785 CPU**.
+All windows compile; GPU delegation is 1120/1120 nodes at s128 and 1121/1121 at s256/s512, each
+in one LITERT_CL partition. The debug session ended at 33.8 °C; battery was 99%.
+
+Decode before → after the host optimization, same 70 texts and one warm-up + five timed runs:
+
+| Build / session start before → after | s128 (ms) | s256 (ms) | s512 (ms) |
+|---|---:|---:|---:|
+| Debug, 31.6 → 33.5 °C | 58.258 → 9.518 | 68.842 → 13.497 | 71.447 → 12.778 |
+| Non-debuggable, no minification, 33.5 → 33.8 °C | 15.611 → 10.070 | 19.110 → 12.306 | 19.384 → 12.845 |
+
+The non-debuggable variant removed about 72–73% of baseline decode time in this sequential
+comparison. After optimization, the debug build meets the 12 ms s128 / 20 ms s512 decode targets.
+Non-debuggable profiling ended at 36.1 °C / 99% battery. These are host-decode timings, not total
+application latency; CPU scheduling and temperature affect the other phases too.

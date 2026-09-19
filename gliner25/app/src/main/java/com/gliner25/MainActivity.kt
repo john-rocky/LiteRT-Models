@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
       intent.getBooleanExtra("gate", false),
       intent.getStringExtra("accel"),
       intent.getStringExtra("set"),
+      intent.getBooleanExtra("profile", false),
     )
     setContent {
       val state by viewModel.uiState.collectAsStateWithLifecycle()

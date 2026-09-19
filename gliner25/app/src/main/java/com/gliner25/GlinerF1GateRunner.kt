@@ -13,9 +13,13 @@ import org.json.JSONObject
 internal class GlinerF1GateRunner(
   private val context: Context,
   private val extractor: () -> GlinerExtractor,
+  private val profile: Boolean = false,
 ) {
   fun run(requestedAccelerator: String?): List<GlinerGateRunner.Summary> {
-    check(context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+    check(
+      context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 ||
+        (BuildConfig.BUILD_TYPE == "benchmark" && profile)
+    ) {
       "Gate fixtures are available only in the debug APK."
     }
     val backends =
@@ -36,6 +40,14 @@ internal class GlinerF1GateRunner(
     backend: GlinerExtractor.Backend,
     fixtures: JSONArray,
   ): GlinerGateRunner.Summary {
+    val timedRuns =
+      if (profile) {
+        5
+      } else {
+        3
+      }
+    val stageTimings =
+      GlinerInputs.WINDOWS.associate { it.sequenceLength to mutableListOf<Map<String, Double>>() }
     val destination = File(context.filesDir, "gate/gate_f1_${backend.name}.json")
     destination.parentFile?.mkdirs()
     val rows = JSONArray()
@@ -78,7 +90,9 @@ internal class GlinerF1GateRunner(
         .put("build_fingerprint", Build.FINGERPRINT)
         .put("fixture_count", fixtures.length())
         .put("warmup_runs_per_fixture", 1)
-        .put("timed_runs_per_fixture", 3)
+        .put("timed_runs_per_fixture", timedRuns)
+        .put("debuggable", context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
+        .put("decoder_profile", profile)
         .put(
           "cpu_threads",
           if (backend == GlinerExtractor.Backend.CPU) {
@@ -157,9 +171,10 @@ internal class GlinerF1GateRunner(
           currentWindow
             .put("compile_status", "PASS")
             .put("completed_warmup_runs", currentWindow.getInt("completed_warmup_runs") + 1)
-          val runs = (0 until 3).map { helper.extract(text, backend) }
+          val runs = (0 until timedRuns).map { helper.extract(text, backend) }
           completedRuns += runs.size
           timings.getValue(window).addAll(runs.map { it.timing })
+          stageTimings.getValue(window).addAll(runs.map { it.decoderStagesMs })
           currentWindow.put("completed_timed_runs", timings.getValue(window).size)
           val comparisons = runs.map {
             GlinerGateFixtures.compareSpans(it.spans, fixture.getJSONArray("spans"))
@@ -205,6 +220,7 @@ internal class GlinerF1GateRunner(
                     .put("tokenize_embed_ms", result.timing.tokenizeEmbedMs)
                     .put("graph_ms", result.timing.graphMs)
                     .put("decode_ms", result.timing.decodeMs)
+                    .put("decoder_stages_ms", JSONObject(result.decoderStagesMs))
                     .put("write_ms", result.timing.writeMs)
                     .put("enqueue_ms", result.timing.enqueueMs)
                     .put("readback_ms", result.timing.readbackMs)
@@ -230,9 +246,28 @@ internal class GlinerF1GateRunner(
     }
     timings.forEach { (window, values) ->
       windows.getJSONObject("s$window").put("ms", medianTimes(values))
+      if (profile) {
+        val samples = stageTimings.getValue(window)
+        val stages = JSONObject()
+        samples.firstOrNull()?.keys?.forEach { key ->
+          stages.put(key, median(samples.map { it.getValue(key) }))
+        }
+        windows.getJSONObject("s$window").put("decoder_stages_ms", stages)
+        Log.i(
+          "GLINER_GATE",
+          JSONObject()
+            .put("profile_window", window)
+            .put("accelerator", backend.name)
+            .put("debuggable", header.getBoolean("debuggable"))
+            .put("ms", medianTimes(values))
+            .put("decoder_stages_ms", stages)
+            .toString(),
+        )
+      }
     }
     val compiled = loaded == setOf(128, 256, 512)
-    val passed = passedFixtures == 70 && completedRuns == 210 && compiled && failureText == null
+    val passed =
+      passedFixtures == 70 && completedRuns == 70 * timedRuns && compiled && failureText == null
     header
       .put(
         "status",

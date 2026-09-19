@@ -25,7 +25,7 @@ import java.util.concurrent.Executors
  * The three graph-contract JSON files are read from filesDir. The small, unchanged checkpoint
  * config is bundled as `gliner_config.json`. Result offsets count Unicode code points.
  */
-class GlinerExtractor(context: Context) : Closeable {
+class GlinerExtractor(context: Context, private val profileDecoder: Boolean = false) : Closeable {
   /** Explicit LiteRT execution policy; GPU always requests FP32 to avoid nonfinite graph output. */
   enum class Backend(val accelerator: Accelerator, val precision: String) {
     /** Mandatory FP32 GPU computation; model storage can still use float16 weights. */
@@ -61,6 +61,7 @@ class GlinerExtractor(context: Context) : Closeable {
     val encodedTokens: Int,
     val textWords: Int,
     val timing: Timing,
+    val decoderStagesMs: Map<String, Double> = emptyMap(),
   )
 
   private data class Key(val window: Int, val backend: Backend)
@@ -96,7 +97,7 @@ class GlinerExtractor(context: Context) : Closeable {
     }
     inputBuilder = GlinerInputs(GlinerTokenizer(requireFile("tokenizer.json")))
     val config = context.assets.open("gliner_config.json").bufferedReader().use { it.readText() }
-    decoder = GlinerDecoder(filesDir, config)
+    decoder = GlinerDecoder(filesDir, config, profileDecoder)
     embeddingTable = GlinerInputs.EmbeddingTable(embeddings)
   }
 
@@ -174,6 +175,7 @@ class GlinerExtractor(context: Context) : Closeable {
         graphTimes[1],
         graphTimes[2],
       ),
+      decoder.profileMilliseconds(),
     )
   }
 
