@@ -1,0 +1,362 @@
+{
+  "source": "fixtures/oracle_fp32.json",
+  "source_sha256": "f7df7720545a4a426190716499f4857973c9d6713ba1756e39084b4337e98091",
+  "labels": [
+    "person",
+    "organization",
+    "location",
+    "product",
+    "date"
+  ],
+  "threshold": 0.5,
+  "fixtures": [
+    {
+      "index": 0,
+      "text":
+        "Maya Chen from Orvane Robotics demonstrated the Veltrix 9 in Lisbon on March 12, 2025.",
+      "spans": [
+        {
+          "label": "date",
+          "text": "March 12, 2025",
+          "confidence": 0.9988082647323608,
+          "start": 71,
+          "end": 85
+        },
+        {
+          "label": "location",
+          "text": "Lisbon",
+          "confidence": 0.9989184141159058,
+          "start": 61,
+          "end": 67
+        },
+        {
+          "label": "organization",
+          "text": "Orvane Robotics",
+          "confidence": 0.9907146692276001,
+          "start": 15,
+          "end": 30
+        },
+        {
+          "label": "person",
+          "text": "Maya Chen",
+          "confidence": 0.999478280544281,
+          "start": 0,
+          "end": 9
+        },
+        {
+          "label": "product",
+          "text": "Veltrix 9",
+          "confidence": 0.9984024167060852,
+          "start": 48,
+          "end": 57
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "text": "Sanjay Velan visited Microsoft offices in London on June 18, 2024.",
+      "spans": [
+        {
+          "label": "date",
+          "text": "June 18, 2024",
+          "confidence": 0.9986157417297363,
+          "start": 52,
+          "end": 65
+        },
+        {
+          "label": "location",
+          "text": "London",
+          "confidence": 0.9987241625785828,
+          "start": 42,
+          "end": 48
+        },
+        {
+          "label": "organization",
+          "text": "Microsoft",
+          "confidence": 0.9965343475341797,
+          "start": 21,
+          "end": 30
+        },
+        {
+          "label": "person",
+          "text": "Sanjay Velan",
+          "confidence": 0.9989616870880127,
+          "start": 0,
+          "end": 12
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "text": "Tessa Veldrin performed for thousands of fans at Wembley Stadium in London.",
+      "spans": [
+        {
+          "label": "location",
+          "text": "London",
+          "confidence": 0.9474540948867798,
+          "start": 68,
+          "end": 74
+        },
+        {
+          "label": "organization",
+          "text": "Wembley Stadium",
+          "confidence": 0.8278817534446716,
+          "start": 49,
+          "end": 64
+        },
+        {
+          "label": "person",
+          "text": "Tessa Veldrin",
+          "confidence": 0.994570791721344,
+          "start": 0,
+          "end": 13
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "text": "Maria bought a Nintendo Switch from Walmart in Chicago last Friday.",
+      "spans": [
+        {
+          "label": "date",
+          "text": "last Friday",
+          "confidence": 0.9605070948600769,
+          "start": 55,
+          "end": 66
+        },
+        {
+          "label": "location",
+          "text": "Chicago",
+          "confidence": 0.9895210266113281,
+          "start": 47,
+          "end": 54
+        },
+        {
+          "label": "organization",
+          "text": "Walmart",
+          "confidence": 0.995676577091217,
+          "start": 36,
+          "end": 43
+        },
+        {
+          "label": "person",
+          "text": "Maria",
+          "confidence": 0.9979931116104126,
+          "start": 0,
+          "end": 5
+        },
+        {
+          "label": "product",
+          "text": "Nintendo Switch",
+          "confidence": 0.998683750629425,
+          "start": 15,
+          "end": 30
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "text": "James and Olivia joined Google's research team in New York on March 4, 2025.",
+      "spans": [
+        {
+          "label": "date",
+          "text": "March 4, 2025",
+          "confidence": 0.9982008934020996,
+          "start": 62,
+          "end": 75
+        },
+        {
+          "label": "location",
+          "text": "New York",
+          "confidence": 0.9991856217384338,
+          "start": 50,
+          "end": 58
+        },
+        {
+          "label": "organization",
+          "text": "Google",
+          "confidence": 0.9657503366470337,
+          "start": 24,
+          "end": 30
+        },
+        {
+          "label": "person",
+          "text": "James",
+          "confidence": 0.9982706308364868,
+          "start": 0,
+          "end": 5
+        },
+        {
+          "label": "person",
+          "text": "Olivia",
+          "confidence": 0.9984831213951111,
+          "start": 10,
+          "end": 16
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "text": "Amazon delivered my Samsung Galaxy S24 to our apartment in Boston yesterday.",
+      "spans": [
+        {
+          "label": "date",
+          "text": "yesterday",
+          "confidence": 0.9796716570854187,
+          "start": 66,
+          "end": 75
+        },
+        {
+          "label": "location",
+          "text": "Boston",
+          "confidence": 0.9747787714004517,
+          "start": 59,
+          "end": 65
+        },
+        {
+          "label": "organization",
+          "text": "Amazon",
+          "confidence": 0.9959540367126465,
+          "start": 0,
+          "end": 6
+        },
+        {
+          "label": "product",
+          "text": "Samsung Galaxy S24",
+          "confidence": 0.9971224665641785,
+          "start": 20,
+          "end": 38
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "text": "On July 20, 2024, Emma met Daniel outside the Louvre in Paris.",
+      "spans": [
+        {
+          "label": "date",
+          "text": "July 20, 2024",
+          "confidence": 0.994772732257843,
+          "start": 3,
+          "end": 16
+        },
+        {
+          "label": "location",
+          "text": "Paris",
+          "confidence": 0.9905105233192444,
+          "start": 56,
+          "end": 61
+        },
+        {
+          "label": "organization",
+          "text": "Louvre",
+          "confidence": 0.9653916954994202,
+          "start": 46,
+          "end": 52
+        },
+        {
+          "label": "person",
+          "text": "Emma",
+          "confidence": 0.9950339794158936,
+          "start": 18,
+          "end": 22
+        },
+        {
+          "label": "person",
+          "text": "Daniel",
+          "confidence": 0.9838904738426208,
+          "start": 27,
+          "end": 33
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "text": "The school asked Sarah Johnson to organize a trip to San Francisco.",
+      "spans": [
+        {
+          "label": "location",
+          "text": "San Francisco",
+          "confidence": 0.9971439242362976,
+          "start": 53,
+          "end": 66
+        },
+        {
+          "label": "organization",
+          "text": "school",
+          "confidence": 0.9626259207725525,
+          "start": 4,
+          "end": 10
+        },
+        {
+          "label": "person",
+          "text": "Sarah Johnson",
+          "confidence": 0.9993367791175842,
+          "start": 17,
+          "end": 30
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "text": "Darin Meller works for Adobe and uses Photoshop at his home in Seattle.",
+      "spans": [
+        {
+          "label": "location",
+          "text": "Seattle",
+          "confidence": 0.9985141158103943,
+          "start": 63,
+          "end": 70
+        },
+        {
+          "label": "organization",
+          "text": "Adobe",
+          "confidence": 0.9988879561424255,
+          "start": 23,
+          "end": 28
+        },
+        {
+          "label": "person",
+          "text": "Darin Meller",
+          "confidence": 0.9997411370277405,
+          "start": 0,
+          "end": 12
+        },
+        {
+          "label": "product",
+          "text": "Photoshop",
+          "confidence": 0.997347354888916,
+          "start": 38,
+          "end": 47
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "text": "Lisa booked tickets with British Airways for her flight to New York.",
+      "spans": [
+        {
+          "label": "location",
+          "text": "New York",
+          "confidence": 0.9956156015396118,
+          "start": 59,
+          "end": 67
+        },
+        {
+          "label": "organization",
+          "text": "British Airways",
+          "confidence": 0.9957571625709534,
+          "start": 25,
+          "end": 40
+        },
+        {
+          "label": "person",
+          "text": "Lisa",
+          "confidence": 0.9983962178230286,
+          "start": 0,
+          "end": 4
+        }
+      ]
+    }
+  ]
+}

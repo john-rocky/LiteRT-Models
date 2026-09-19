@@ -1,0 +1,14 @@
+GLiNER2.5 Small Android host sample
+
+The sparse decoder is a Kotlin port of the gliner2 2.0.0 shared-pool NER path
+from Fastino AI's GLiNER2 project, licensed under Apache License 2.0.
+Changes include Kotlin float32 tensor operations, safetensors loading,
+graph-contract validation and Java/Python Unicode-offset adaptation.
+
+The tokenizer follows the published DeBERTa-v3 tokenizer JSON contract.
+The original model and host assets are downloaded unchanged from
+litert-community/GLiNER2.5-Small-LiteRT at revision
+8c4759df4feb91497e7f49212abf056d79789cac.
+
+Gradle wrapper files retain their upstream Apache License 2.0 headers.
+Retained model/runtime/encoder licenses are under licenses/.

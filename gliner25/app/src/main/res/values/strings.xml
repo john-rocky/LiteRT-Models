@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">GLiNER2.5 Small</string>
+  <string name="status_loading">Loading model…</string>
+  <string name="status_gpu_ready">Ready · GPU FP32</string>
+  <string name="status_cpu_ready">Ready · CPU</string>
+  <string name="status_extracting">Extracting entities…</string>
+  <string name="status_error">Model unavailable</string>
+  <string name="status_gate_running">Running debug fixture gate…</string>
+  <string name="status_gate_passed">Debug fixture gate passed</string>
+  <string name="status_gate_failed">Debug fixture gate failed</string>
+  <string name="gate_description">
+    Gate results are saved in the app’s private gate directory.
+  </string>
+  <string name="error_message">%1$s</string>
+  <string name="accelerator_title">Run on</string>
+  <string name="accelerator_gpu">GPU</string>
+  <string name="accelerator_cpu">CPU</string>
+  <string name="input_label">Text to analyze</string>
+  <string name="example_text">
+    Maya Chen from Orvane Robotics demonstrated the Veltrix 9 in Lisbon on March 12, 2025.
+  </string>
+  <string name="label_person">person</string>
+  <string name="label_organization">organization</string>
+  <string name="label_location">location</string>
+  <string name="label_product">product</string>
+  <string name="label_date">date</string>
+  <string name="extract">Extract</string>
+  <string name="entities_title">Entities</string>
+  <string name="no_entities">No entities found.</string>
+  <string name="entity_row">%1$s · %2$s · %3$.4f · [%4$d,%5$d)</string>
+  <string name="result_window">s%1$d · %2$d encoded tokens · %3$d text words · %4$s</string>
+  <string name="result_timing">
+    Tokenize + embed: %1$.2f ms · Graph: %2$.2f ms · Decode: %3$.2f ms
+  </string>
+</resources>
