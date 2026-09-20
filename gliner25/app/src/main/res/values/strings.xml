@@ -2,6 +2,7 @@
 <resources>
   <string name="app_name">GLiNER2.5 Small</string>
   <string name="status_loading">Loading model…</string>
+  <string name="status_warming_up">Warming up…</string>
   <string name="status_gpu_ready">Ready · GPU FP32</string>
   <string name="status_cpu_ready">Ready · CPU</string>
   <string name="status_extracting">Extracting entities…</string>

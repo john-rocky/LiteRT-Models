@@ -19,6 +19,7 @@ class MainActivity : ComponentActivity() {
       intent.getStringExtra("accel"),
       intent.getStringExtra("set"),
       intent.getBooleanExtra("profile", false),
+      BuildConfig.DEBUG && intent.getBooleanExtra("firsttap", false),
     )
     setContent {
       val state by viewModel.uiState.collectAsStateWithLifecycle()

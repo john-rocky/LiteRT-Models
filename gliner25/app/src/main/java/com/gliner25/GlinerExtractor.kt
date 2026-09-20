@@ -102,8 +102,8 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
   }
 
   /**
-   * Compiles s128 at startup; its untimed warm-up uses the first actual input. Larger windows
-   * remain lazy to avoid paying compilation and memory costs before the host contract needs them.
+   * Compiles s128 before interactive startup warm-up or fixture validation. Larger windows remain
+   * lazy to avoid paying compilation and memory costs before the host contract needs them.
    */
   fun initialize(backend: Backend = Backend.GPU) = ProcessRuntime.call {
     checkOpen()
@@ -135,6 +135,18 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
     val packed = runGraph(graph, inputs).first
     decoder.decode(packed, prepared)
     graph.warmed = true
+  }
+
+  /**
+   * Repeats the full `HostRuntime.prepare/decode` path before interactive readiness. Call after
+   * [initialize], on the confined model dispatcher, using the bundled English worked sentence. Each
+   * pass tokenizes, reads embedding rows, runs the FP32 graph and exercises persistent decoder
+   * workers; its results are discarded. Returns total warm-up wall time, excluding compilation.
+   */
+  fun warmUpForInteraction(text: String, backend: Backend): Double {
+    val start = System.nanoTime()
+    repeat(STARTUP_WARMUP_ITERATIONS) { warmUp(text, backend) }
+    return ms(System.nanoTime() - start)
   }
 
   /**
@@ -258,6 +270,11 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
 
   companion object {
     const val LITERT_VERSION = "2.2.0"
+    /**
+     * Bounded startup work to move repeated host compilation and worker creation before readiness.
+     * Cold-JVM probes reach the decoder plateau after twelve calls; Android is verified separately.
+     */
+    const val STARTUP_WARMUP_ITERATIONS = 12
     private const val SIGNATURE = "serving_default"
     val REQUIRED_FILES =
       listOf(

@@ -75,6 +75,9 @@ The host ports follow gliner2 2.0.0 and the published
 One LiteRT Environment is shared per process. s128 loads at startup; s256/s512 compile on first use
 and remain resident. Each window/backend receives an untimed warm-up. Graph timing includes the
 first input-buffer write through output readback because `run()` is asynchronous.
+Before Ready, the app shows Warming up while repeating the bundled sentence through tokenization,
+embedding lookup, the graph and sparse decoding on its model worker; displayed extraction timings
+still measure the actual request, and lazy windows retain their untimed graph-and-decode pass.
 Sparse scoring uses flat buffers and three persistent workers plus the calling thread. Each dot
 product and erf series retains its reduction order; primitive stable sorts preserve duplicate
 and tie handling. There is no JNI, float16 host arithmetic or additional runtime dependency.
@@ -118,6 +121,8 @@ references, which are not distributed. Reports stay under `app/build/`. With fix
 is `4.172325134277344e-7` versus Python on identical packed data, `0.002693772315979004` versus fp32.
 
 ## Verified on
+
+First request after startup (2026-09-20, S26 SM-S942Q, LiteRT 2.2.0, GPU FP32, debug, screen on/unlocked, three cold app processes at 96% / 34.5 °C, s128 / 39 tokens / 12 startup passes): median tokenize+embed / graph-to-readback / decode **5.49 / 14.21 / 12.49 ms**; warm-up **0.507–0.586 s** (excludes compilation); **2/3** requests met both ≤6 ms tokenize+embed and ≤15 ms decode (one decode was 17.65 ms); a separate screen-off trial met 0/3.
 
 **Samsung Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0**, 2026-09-20. Explicit **GPU FP32**;
 CPU graph uses four threads. Debug session started at **99% battery / 33.5 °C**, USB connected,

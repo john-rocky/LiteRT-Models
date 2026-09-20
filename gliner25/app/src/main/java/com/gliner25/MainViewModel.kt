@@ -21,6 +21,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private var extractor: GlinerExtractor? = null
   private var started = false
   private var profileDecoder = false
+  private var firstTapWarmUpMs: Double? = null
   @Volatile private var cleared = false
   private val mutableUiState = MutableStateFlow(UiState(context.getString(R.string.example_text)))
   val uiState: StateFlow<UiState> = mutableUiState.asStateFlow()
@@ -30,6 +31,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
     requestedAccelerator: String?,
     fixtureSet: String? = null,
     profile: Boolean = false,
+    firstTap: Boolean = false,
   ) {
     if (started || cleared) {
       return
@@ -72,7 +74,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
         }
       }
     } else {
-      loadAccelerator(GlinerExtractor.Backend.GPU)
+      loadAccelerator(GlinerExtractor.Backend.GPU, firstTap && BuildConfig.DEBUG)
     }
   }
 
@@ -94,7 +96,10 @@ class MainViewModel(private val context: Context) : ViewModel() {
     loadAccelerator(backend)
   }
 
-  private fun loadAccelerator(backend: GlinerExtractor.Backend) {
+  private fun loadAccelerator(
+    backend: GlinerExtractor.Backend,
+    recordFirstTap: Boolean = false,
+  ) {
     mutableUiState.update {
       it.copy(
         accelerator = backend,
@@ -106,11 +111,27 @@ class MainViewModel(private val context: Context) : ViewModel() {
     }
     modelScope.launch {
       try {
+        if (recordFirstTap) {
+          GlinerFirstTapReport.begin(context)
+        }
         helper().initialize(backend)
+        mutableUiState.update { it.copy(statusMessage = R.string.status_warming_up) }
+        val warmUpMs =
+          helper().warmUpForInteraction(context.getString(R.string.example_text), backend)
         mutableUiState.update { it.copy(busy = false, statusMessage = readyStatus(backend)) }
+        if (recordFirstTap) {
+          firstTapWarmUpMs = warmUpMs
+          extract()
+        }
       } catch (failure: Exception) {
+        if (recordFirstTap) {
+          GlinerFirstTapReport.failure(context, null, failure)
+        }
         showFailure(failure)
       } catch (failure: LinkageError) {
+        if (recordFirstTap) {
+          GlinerFirstTapReport.failure(context, null, failure)
+        }
         showFailure(failure)
       }
     }
@@ -121,6 +142,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
     if (state.busy || state.gateMode || cleared || state.inputText.isBlank()) {
       return
     }
+    val startupWarmUpMs = firstTapWarmUpMs
+    firstTapWarmUpMs = null
     mutableUiState.update {
       it.copy(busy = true, errorMessage = null, statusMessage = R.string.status_extracting)
     }
@@ -159,9 +182,18 @@ class MainViewModel(private val context: Context) : ViewModel() {
         mutableUiState.update {
           it.copy(busy = false, result = result, statusMessage = readyStatus(output.backend))
         }
+        if (startupWarmUpMs != null) {
+          GlinerFirstTapReport.complete(context, startupWarmUpMs, output)
+        }
       } catch (failure: Exception) {
+        if (startupWarmUpMs != null) {
+          GlinerFirstTapReport.failure(context, startupWarmUpMs, failure)
+        }
         showFailure(failure)
       } catch (failure: LinkageError) {
+        if (startupWarmUpMs != null) {
+          GlinerFirstTapReport.failure(context, startupWarmUpMs, failure)
+        }
         showFailure(failure)
       }
     }
