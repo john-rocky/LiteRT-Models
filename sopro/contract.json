@@ -1,0 +1,3398 @@
+{
+  "format_version": 1,
+  "model": "samuel-vitorino/sopro-v2-turbo",
+  "license": "Apache-2.0",
+  "batch_size": 1,
+  "validation_scope": {
+    "runtime": "ai-edge-litert 2.2.0 CompiledModel CPU",
+    "device": "Apple M4 Max; macOS 27.0",
+    "cpu_threads": 4,
+    "timing_condition": "contended",
+    "device_gpu_npu_verification": "NOT_RUN",
+    "measured_embedding_assets": "host_assets/sopro_ar_tables_fp32.npz",
+    "raw_fp16_embedding_storage_quality": "NOT_RUN",
+    "raw_fp16_embedding_warning": "The raw float16 tables are a storage option. Existing quality measurements used the original float32 NPZ tables; casting raw float16 tables back to float32 does not restore those values."
+  },
+  "reference": {
+    "duration_seconds": 10.0,
+    "waveform_24khz_shape": [
+      1,
+      240000
+    ],
+    "waveform_16khz_shape": [
+      1,
+      160000
+    ],
+    "upstream_guidance_seconds": [
+      5,
+      20
+    ],
+    "tested_preparation": "Load, mono, resample to 24 kHz, normalize_reference on the full clip, take its first 240000 samples. Inputs were at least ten seconds.",
+    "host_short_input_policy": "A host may zero-pad to 240000 samples; short-input padding is not tested here. Upstream prepare_reference does not define this deterministic bucket.",
+    "short_reference_padding_validation": "NOT_RUN",
+    "crop_on_pause": "bypassed to exclude random room tone",
+    "speaker_mel_shape": [
+      1,
+      80,
+      1001
+    ],
+    "speaker_frame_layer_norm_width": 80,
+    "semantic_mel_shape": [
+      1,
+      80,
+      1002
+    ],
+    "semantic_frontend_append_zeros": 400,
+    "semantic_encoder_positions": 500,
+    "semantic_reference_tokens": 235,
+    "normalized_reference_mel_shape": [
+      1,
+      100,
+      938
+    ]
+  },
+  "autoregressive": {
+    "text_vocabulary": 8192,
+    "semantic_vocabulary_without_special": 4375,
+    "semantic_embedding_rows": 4377,
+    "bos_id": 4375,
+    "eos_id": 4376,
+    "embedding_width": 512,
+    "style_input_tokens": 160,
+    "style_prefix_tokens": 8,
+    "prompt_tokens": 120,
+    "prefix_order": [
+      "style_prefix",
+      "text_embeddings",
+      "prompt_embeddings",
+      "BOS"
+    ],
+    "prefix_capacity": 256,
+    "max_text_tokens_with_full_prompt": 127,
+    "source_max_text_len_metadata": 2048,
+    "text_limit_note": "The upstream metadata cap of 2048 is not the static graph limit. Reject or explicitly segment text when the complete prefix exceeds 256 positions.",
+    "layers": 12,
+    "heads_per_layer": 8,
+    "head_width": 64,
+    "cache_capacity": 1024,
+    "cache_shape_each": [
+      1,
+      96,
+      1024,
+      64
+    ],
+    "cache_bytes_each": 25165824,
+    "cache_pair_bytes": 50331648,
+    "prefill_returned_cache_shape_each": [
+      1,
+      96,
+      256,
+      64
+    ],
+    "step_returned_cache_shape_each": [
+      1,
+      96,
+      1,
+      64
+    ],
+    "cache_update": "Step attention replaces slot p with the current key/value before attention. Host writes returned new_k/new_v to position p in its packed caches.",
+    "step_bias_precondition": "Valid slots are contiguous from zero through p inclusive; all later slots are invalid. Runtime bias is zero for valid keys and -10000 for invalid keys.",
+    "position_constraint": "prefix_valid_length + generated_token_count <= 1024",
+    "rope": "Host rotate_half cos/sin tables; step shapes [1,1,1,64]",
+    "generated_samples_per_token": 1024,
+    "source_max_seconds": 30.0,
+    "source_max_generated_tokens_at_30s": 704,
+    "sampling": {
+      "temperature": 0.8,
+      "top_k": 25,
+      "top_p": 0.9,
+      "rng": "NumPy generator; one uniform draw and inverse CDF per sampled token",
+      "bos": "always masked",
+      "eos": "masked until the source minimum step count of ten",
+      "terminal_rule": "Stop on EOS or count limit; do not run AR step after the final sampled token."
+    }
+  },
+  "acoustic": {
+    "mel_bands": 100,
+    "frames_per_generated_token": 4,
+    "valid_token_count": "235 + generated_token_count",
+    "valid_frame_count": "938 + 4 * generated_token_count",
+    "frame_to_token": "min(floor(frame_index * actual_token_count / actual_frame_count), actual_token_count - 1)",
+    "padding": "Zero tokens and frames outside their actual lengths. token_mask zeros padded embeddings; key_bias is -10000 at padded keys. Ignore padded queries.",
+    "buckets": [
+      {
+        "name": "t2048",
+        "token_capacity": 512,
+        "frame_capacity": 2048,
+        "max_generated_tokens_from_acoustic_limits": 277,
+        "generated_token_grid_seconds": 11.818666666666667
+      },
+      {
+        "name": "t4096",
+        "token_capacity": 1024,
+        "frame_capacity": 4096,
+        "max_generated_tokens_from_acoustic_limits": 789,
+        "generated_token_grid_seconds": 33.664
+      }
+    ],
+    "bucket_limit_note": "Acoustic capacities are independent of the 1024-position AR cache and the source 30-second generation limit; all limits must hold.",
+    "flow_steps": 2,
+    "sway": -1.0,
+    "sigma_min": 1e-06,
+    "time_grid_float32": [
+      0.0,
+      0.2928932309150696,
+      1.0
+    ],
+    "host_solver": "Use float32 x0. Evaluate velocity at t0, update x by (t1-t0) * velocity, then re-mask the reference prompt with (1 - (1 - sigma_min) * t1) * x0 + t1 * cond_mel. After the final step replace the prompt region with cond_mel exactly."
+  },
+  "vocoder": {
+    "sample_rate_hz": 24000,
+    "mel_bands": 100,
+    "feature_width": 1026,
+    "feature_layout": [
+      "log_magnitude_513",
+      "phase_513"
+    ],
+    "reference_context_frames": 32,
+    "reference_context_samples_to_remove": 8192,
+    "offline": {
+      "frame_capacity": 1024,
+      "maximum_total_mel_span_seconds": 10.922666666666666,
+      "max_generated_tokens_with_32_context_frames": 248,
+      "maximum_generated_token_grid_seconds": 10.581333333333333,
+      "padding": "Mask the residual after embed LayerNorm and after every ConvNeXt block."
+    },
+    "streaming": {
+      "input_chunk_frames": 64,
+      "start_output_frames": 37,
+      "step_output_frames": 64,
+      "flush_output_frames": 27,
+      "states": [
+        {
+          "name": "embed",
+          "shape": [
+            1,
+            100,
+            6
+          ],
+          "dtype": "float32",
+          "bytes": 2400
+        },
+        {
+          "name": "conv",
+          "shape": [
+            8,
+            1,
+            512,
+            6
+          ],
+          "dtype": "float32",
+          "bytes": 98304
+        },
+        {
+          "name": "pending",
+          "shape": [
+            8,
+            1,
+            512,
+            3
+          ],
+          "dtype": "float32",
+          "bytes": 49152
+        }
+      ],
+      "tail_replay_real_frames": 128,
+      "minimum_supported_real_mel_frames": 128,
+      "upper_frame_cap": null,
+      "short_input_note": "The fixed-64 host tail replay requires at least 128 real mel frames. It does not support every short output; ten generated tokens plus context is only 72 frames. Use an explicitly supported offline path for shorter inputs."
+    },
+    "istft": {
+      "n_fft": 1024,
+      "hop_length": 256,
+      "window": "periodic Hann",
+      "magnitude": "exp(min(log_magnitude, log(100)))",
+      "spectrum": "magnitude * (cos(phase) + i * sin(phase))",
+      "algorithm": "irfft, multiply Hann, overlap-add, divide window-square envelope, crop 512 samples at both ends",
+      "crop_each_side_samples": 512
+    }
+  },
+  "host_steps": [
+    "reference normalization and 24-to-16 kHz resampling",
+    "speaker log-mel and per-frame LayerNorm",
+    "Whisper log-mel",
+    "acoustic log-mel and normalization",
+    "text tokenization with language tag",
+    "embedding lookup, RoPE, attention bias and packed KV writes",
+    "top-k/top-p sampling",
+    "actual-length frame-to-token indices",
+    "two-step Euler solve with prompt re-masking",
+    "log-magnitude exponentiation/clamp, phase synthesis and iSTFT",
+    "output_gain, trim_lead, trim_trail, soft_limit and fade_edges"
+  ],
+  "host_fft_precision_note": "The acoustic float32 mirror uses np.fft.rfft(windowed, norm=\"forward\") * np.float32(1024). The default NumPy 2.5.3 rfft dispatch can select a float64 loop for this call shape and alter downstream flow conditioning.",
+  "signature_order_note": "Buffer order below is the emitted SignatureDef order, not subgraph tensor order. Use signature names to disambiguate equally shaped inputs.",
+  "weight_precision_note": "Plain wfp16 casts eligible constants to float16 with float compute; it has no vocoder output-head exception. Native int8 is provided only for merged AR.",
+  "source": {
+    "huggingface_revision": "f747f9edfb7b0233a3b7105af3a75603a7213d26",
+    "github_revision": "7bfcf9a0539d274f6593959a21da948f506ceee1",
+    "sopro_package_version": "2.2.0"
+  },
+  "host_assets": "host_assets/host_assets.json",
+  "models": [
+    {
+      "path": "fp32/sopro_speaker_encoder_fp32.tflite",
+      "bytes": 12613536,
+      "sha256": "f7e5f8302821fa9917c50656f64e81007201fa9ebc0a973f29f65eb7890e6d57",
+      "graph": "speaker_encoder",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "speaker_mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                80,
+                1001
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 320320
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "id_emb",
+              "tensor_index": 1137,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                192
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 768
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "style_emb",
+              "tensor_index": 1164,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                128
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 512
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "style_ctrl",
+              "tensor_index": 1168,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                1,
+                8
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 32
+            },
+            {
+              "buffer_index": 3,
+              "name": "output_3",
+              "semantic_name": "cond_vec",
+              "tensor_index": 1173,
+              "tensor_name": "serving_default_output_3_output",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_semantic_encoder_fp32.tflite",
+      "bytes": 80479220,
+      "sha256": "c1d67fc72b953a6805690910f59d5fe68f2e47a15013ec27b6f979c1869f1ef9",
+      "graph": "semantic_encoder",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "semantic_mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                80,
+                1002
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 320640
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "semantic_tokens",
+              "tensor_index": 511,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                235
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 940
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_style_prefix_fp32.tflite",
+      "bytes": 3191224,
+      "sha256": "78e5c8aed42c5ec23da2224fd2ed3bb3368b6a49b8b1b450118759829c075ec5",
+      "graph": "style_prefix",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "style_embeddings",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                160,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 327680
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "prefix_vectors",
+              "tensor_index": 57,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                8,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 16384
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_ar_prefill_fp32.tflite",
+      "bytes": 210678772,
+      "sha256": "a5fbff1f345cfa17795fd33ddf488773d3cfc117d059e4fbe4b8d15ea342a84a",
+      "graph": "ar_prefill",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "prefix_embeddings",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 524288
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "attention_bias",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 262144
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "last_index",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 4
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1116,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "k",
+              "tensor_index": 1117,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "v",
+              "tensor_index": 1118,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_ar_step_fp32.tflite",
+      "bytes": 210563980,
+      "sha256": "b508e7512a55cb0d2105e7fc6927cddee500affd9121eba4dc9db6c59e8ea36c",
+      "graph": "ar_step",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "token_embedding",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "cos",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "sin",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "attention_bias",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "pk",
+              "tensor_index": 4,
+              "tensor_name": "serving_default_args_4",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "pv",
+              "tensor_index": 5,
+              "tensor_name": "serving_default_args_5",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1152,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "new_k",
+              "tensor_index": 1153,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "new_v",
+              "tensor_index": 1154,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_acoustic_condition_fp32.tflite",
+      "bytes": 101598868,
+      "sha256": "f60849c565fc056a76badcc640d2f8c564b44c23ca09fad73ccd5b80fd146e6b",
+      "graph": "acoustic_condition",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "semantic_tokens",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "token_mask",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "frame_to_token",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                2048
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 8192
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "mu",
+              "tensor_index": 103,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_acoustic_velocity_fp32.tflite",
+      "bytes": 127775972,
+      "sha256": "c9d7821502613595828fc7699d92e43a47c542d9f885dbdbd4592bbf67f57a5a",
+      "graph": "acoustic_velocity",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "x",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "t",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "mu",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "cond_vec",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "cond_mel",
+              "tensor_index": 4,
+              "tensor_name": "serving_default_args_4",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "cond_mask",
+              "tensor_index": 5,
+              "tensor_name": "serving_default_args_5",
+              "shape": [
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 8192
+            },
+            {
+              "buffer_index": 6,
+              "name": "args_6",
+              "semantic_name": "key_bias",
+              "tensor_index": 6,
+              "tensor_name": "serving_default_args_6",
+              "shape": [
+                1,
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 8192
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "velocity",
+              "tensor_index": 912,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_vocoder_fp32.tflite",
+      "bytes": 54145312,
+      "sha256": "52fd19478ba13a6ffaae324d67c33ad7c3bbfd5eb28fd20a51d2fd93fba6dfc7",
+      "graph": "vocoder",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 409600
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "frame_mask",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 320,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                1024,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4202496
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_ar_merged_fp32.tflite",
+      "bytes": 223457648,
+      "sha256": "4cf522669f55f0bc93087e473c6c03df116f0086c922903b8f5688db52cb35ae",
+      "graph": "ar_merged",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "prefill",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "prefix_embeddings",
+              "tensor_index": 0,
+              "tensor_name": "prefill_args_0",
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 524288
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "attention_bias",
+              "tensor_index": 1,
+              "tensor_name": "prefill_args_1",
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 262144
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "last_index",
+              "tensor_index": 2,
+              "tensor_name": "prefill_args_2",
+              "shape": [
+                1
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 4
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1116,
+              "tensor_name": "prefill_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "k",
+              "tensor_index": 1117,
+              "tensor_name": "prefill_output_1_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "v",
+              "tensor_index": 1118,
+              "tensor_name": "prefill_output_2_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            }
+          ]
+        },
+        {
+          "name": "step",
+          "subgraph_index": 1,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "token_embedding",
+              "tensor_index": 0,
+              "tensor_name": "step_args_0",
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "cos",
+              "tensor_index": 1,
+              "tensor_name": "step_args_1",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "sin",
+              "tensor_index": 2,
+              "tensor_name": "step_args_2",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "attention_bias",
+              "tensor_index": 3,
+              "tensor_name": "step_args_3",
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "pk",
+              "tensor_index": 4,
+              "tensor_name": "step_args_4",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "pv",
+              "tensor_index": 5,
+              "tensor_name": "step_args_5",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1152,
+              "tensor_name": "step_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "new_k",
+              "tensor_index": 1153,
+              "tensor_name": "step_output_1_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "new_v",
+              "tensor_index": 1154,
+              "tensor_name": "step_output_2_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_vocoder_stream_start_fp32.tflite",
+      "bytes": 54181584,
+      "sha256": "3a64a0e437caac9ee9637d1d73115ccfe8cff5a24f1665b4ab181a4483737da1",
+      "graph": "vocoder_stream_start",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25600
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 536,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                37,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 151848
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "embed",
+              "tensor_index": 162,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "conv",
+              "tensor_index": 538,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 3,
+              "name": "output_3",
+              "semantic_name": "pending",
+              "tensor_index": 540,
+              "tensor_name": "serving_default_output_3_output",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_vocoder_stream_step_fp32.tflite",
+      "bytes": 54178996,
+      "sha256": "51701381131b45fe9afff4cbbff8ef881c2e0254b7333cbcb34d216cc1931282",
+      "graph": "vocoder_stream_step",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25600
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "embed",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "conv",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "pending",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 566,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                64,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 262656
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "embed",
+              "tensor_index": 184,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "conv",
+              "tensor_index": 568,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 3,
+              "name": "output_3",
+              "semantic_name": "pending",
+              "tensor_index": 570,
+              "tensor_name": "serving_default_output_3_output",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_vocoder_stream_flush_fp32.tflite",
+      "bytes": 54177908,
+      "sha256": "10271f9c9f2a83872b9fd88760faa59f68dffe13634596d39fef2de9532e3c02",
+      "graph": "vocoder_stream_flush",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "embed",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "conv",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "pending",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 558,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                27,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 110808
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_acoustic_condition_t4096_fp32.tflite",
+      "bytes": 101598868,
+      "sha256": "414975cffdb3c9d9a3ac2596d4e6132087710a87ce6b750c0fe021d3e06d7e07",
+      "graph": "acoustic_condition_t4096",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "semantic_tokens",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                1024
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "token_mask",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "frame_to_token",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                4096
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 16384
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "mu",
+              "tensor_index": 103,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "fp32/sopro_acoustic_velocity_t4096_fp32.tflite",
+      "bytes": 128824548,
+      "sha256": "7901c9f4af3537275e345a0fa6bd33be34cfac622ba8f7b827485edc30490749",
+      "graph": "acoustic_velocity_t4096",
+      "weight_storage": "fp32",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "x",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "t",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "mu",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "cond_vec",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "cond_mel",
+              "tensor_index": 4,
+              "tensor_name": "serving_default_args_4",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "cond_mask",
+              "tensor_index": 5,
+              "tensor_name": "serving_default_args_5",
+              "shape": [
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 16384
+            },
+            {
+              "buffer_index": 6,
+              "name": "args_6",
+              "semantic_name": "key_bias",
+              "tensor_index": 6,
+              "tensor_name": "serving_default_args_6",
+              "shape": [
+                1,
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 16384
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "velocity",
+              "tensor_index": 912,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_speaker_encoder_wfp16.tflite",
+      "bytes": 6516144,
+      "sha256": "39f46f2b66bc6c3f73b48f69faf7e480efc72d3a20a5a0cca8b4ee325ecabd0e",
+      "graph": "speaker_encoder",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "speaker_mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                80,
+                1001
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 320320
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "id_emb",
+              "tensor_index": 1137,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                192
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 768
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "style_emb",
+              "tensor_index": 1164,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                128
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 512
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "style_ctrl",
+              "tensor_index": 1168,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                1,
+                8
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 32
+            },
+            {
+              "buffer_index": 3,
+              "name": "output_3",
+              "semantic_name": "cond_vec",
+              "tensor_index": 1173,
+              "tensor_name": "serving_default_output_3_output",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_semantic_encoder_wfp16.tflite",
+      "bytes": 40895552,
+      "sha256": "a68d0d8fc5ee867716e7d556f3e0561ae618c0810f186d1c5bb2d55a7742af9b",
+      "graph": "semantic_encoder",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "semantic_mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                80,
+                1002
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 320640
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "semantic_tokens",
+              "tensor_index": 511,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                235
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 940
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_style_prefix_wfp16.tflite",
+      "bytes": 1618800,
+      "sha256": "ab56621a5c9bf880656ad517c4219b3db4d1da3f75f9a9ae929d7dbe9a1ae8c9",
+      "graph": "style_prefix",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "style_embeddings",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                160,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 327680
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "prefix_vectors",
+              "tensor_index": 57,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                8,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 16384
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_ar_prefill_wfp16.tflite",
+      "bytes": 105544496,
+      "sha256": "560814c267ab096b04c8982031a55057c5128207edb524794fcd175cce520114",
+      "graph": "ar_prefill",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "prefix_embeddings",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 524288
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "attention_bias",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 262144
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "last_index",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 4
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1116,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "k",
+              "tensor_index": 1117,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "v",
+              "tensor_index": 1118,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_ar_step_wfp16.tflite",
+      "bytes": 105426896,
+      "sha256": "934e951d2237ff2ff4621108724d712a8199c127c0ae93d87886784c87426fb1",
+      "graph": "ar_step",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "token_embedding",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "cos",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "sin",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "attention_bias",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "pk",
+              "tensor_index": 4,
+              "tensor_name": "serving_default_args_4",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "pv",
+              "tensor_index": 5,
+              "tensor_name": "serving_default_args_5",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1152,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "new_k",
+              "tensor_index": 1153,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "new_v",
+              "tensor_index": 1154,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_acoustic_condition_wfp16.tflite",
+      "bytes": 50822224,
+      "sha256": "9fa5e75f006bb3c8f291f0bf2393e20bff22baea6a70b7443eb4ee1a61d92bdd",
+      "graph": "acoustic_condition",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "semantic_tokens",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "token_mask",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "frame_to_token",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                2048
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 8192
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "mu",
+              "tensor_index": 103,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_acoustic_velocity_wfp16.tflite",
+      "bytes": 64623568,
+      "sha256": "1dfc3d21128e1cae50ccab4147a3126157bfaf5d753d4934063b35e13f76ae79",
+      "graph": "acoustic_velocity",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "x",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "t",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "mu",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "cond_vec",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "cond_mel",
+              "tensor_index": 4,
+              "tensor_name": "serving_default_args_4",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "cond_mask",
+              "tensor_index": 5,
+              "tensor_name": "serving_default_args_5",
+              "shape": [
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 8192
+            },
+            {
+              "buffer_index": 6,
+              "name": "args_6",
+              "semantic_name": "key_bias",
+              "tensor_index": 6,
+              "tensor_name": "serving_default_args_6",
+              "shape": [
+                1,
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 8192
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "velocity",
+              "tensor_index": 912,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 819200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_vocoder_wfp16.tflite",
+      "bytes": 27158496,
+      "sha256": "ef807881576945d7f2415990ffbf0f6a22626a8b2ecf3cd826e4707d0bbf2ee4",
+      "graph": "vocoder",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 409600
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "frame_mask",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 320,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                1024,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4202496
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_ar_merged_wfp16.tflite",
+      "bytes": 112038416,
+      "sha256": "c5401ec8a55c6c51c4fb07979d469320d8886ab7a1bbbc14a1ed410597b85137",
+      "graph": "ar_merged",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "prefill",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "prefix_embeddings",
+              "tensor_index": 0,
+              "tensor_name": "prefill_args_0",
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 524288
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "attention_bias",
+              "tensor_index": 1,
+              "tensor_name": "prefill_args_1",
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 262144
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "last_index",
+              "tensor_index": 2,
+              "tensor_name": "prefill_args_2",
+              "shape": [
+                1
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 4
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1116,
+              "tensor_name": "prefill_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "k",
+              "tensor_index": 1117,
+              "tensor_name": "prefill_output_1_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "v",
+              "tensor_index": 1118,
+              "tensor_name": "prefill_output_2_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            }
+          ]
+        },
+        {
+          "name": "step",
+          "subgraph_index": 1,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "token_embedding",
+              "tensor_index": 0,
+              "tensor_name": "step_args_0",
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "cos",
+              "tensor_index": 1,
+              "tensor_name": "step_args_1",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "sin",
+              "tensor_index": 2,
+              "tensor_name": "step_args_2",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "attention_bias",
+              "tensor_index": 3,
+              "tensor_name": "step_args_3",
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "pk",
+              "tensor_index": 4,
+              "tensor_name": "step_args_4",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "pv",
+              "tensor_index": 5,
+              "tensor_name": "step_args_5",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1152,
+              "tensor_name": "step_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "new_k",
+              "tensor_index": 1153,
+              "tensor_name": "step_output_1_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "new_v",
+              "tensor_index": 1154,
+              "tensor_name": "step_output_2_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_vocoder_stream_start_wfp16.tflite",
+      "bytes": 27250512,
+      "sha256": "5da076e8414f62db2bf99357495be848c87fe5921608b32ff38e39e59811d65f",
+      "graph": "vocoder_stream_start",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25600
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 536,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                37,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 151848
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "embed",
+              "tensor_index": 162,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "conv",
+              "tensor_index": 538,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 3,
+              "name": "output_3",
+              "semantic_name": "pending",
+              "tensor_index": 540,
+              "tensor_name": "serving_default_output_3_output",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_vocoder_stream_step_wfp16.tflite",
+      "bytes": 27247488,
+      "sha256": "8657d179710ffba7d0a5dec3227226c93c8b7868bc51cd34ae19d8eb9ecf634a",
+      "graph": "vocoder_stream_step",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "mel",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25600
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "embed",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "conv",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "pending",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 566,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                64,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 262656
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "embed",
+              "tensor_index": 184,
+              "tensor_name": "serving_default_output_1_output",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "conv",
+              "tensor_index": 568,
+              "tensor_name": "serving_default_output_2_output",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 3,
+              "name": "output_3",
+              "semantic_name": "pending",
+              "tensor_index": 570,
+              "tensor_name": "serving_default_output_3_output",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_vocoder_stream_flush_wfp16.tflite",
+      "bytes": 27246640,
+      "sha256": "adb45a266fc98e69d3731cd2ebf8db47ff692feaf1fda35b4cc53a18e4e9e4d3",
+      "graph": "vocoder_stream_flush",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "embed",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2400
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "conv",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                8,
+                1,
+                512,
+                6
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 98304
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "pending",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                8,
+                1,
+                512,
+                3
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 49152
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "istft_features",
+              "tensor_index": 558,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                27,
+                1026
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 110808
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_acoustic_condition_t4096_wfp16.tflite",
+      "bytes": 50822224,
+      "sha256": "23c8c7ce01a1488911b86ffce5133f55029a53b47a2a55c6f6bd8c11a6be947b",
+      "graph": "acoustic_condition_t4096",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "semantic_tokens",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                1024
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "token_mask",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "frame_to_token",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                4096
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 16384
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "mu",
+              "tensor_index": 103,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wfp16/sopro_acoustic_velocity_t4096_wfp16.tflite",
+      "bytes": 65672144,
+      "sha256": "35db79991879a313d3fbffcf8b5e05394c8ad3122e564fe8937f39a45928e07e",
+      "graph": "acoustic_velocity_t4096",
+      "weight_storage": "wfp16",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "x",
+              "tensor_index": 0,
+              "tensor_name": "serving_default_args_0",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "t",
+              "tensor_index": 1,
+              "tensor_name": "serving_default_args_1",
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "mu",
+              "tensor_index": 2,
+              "tensor_name": "serving_default_args_2",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "cond_vec",
+              "tensor_index": 3,
+              "tensor_name": "serving_default_args_3",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "cond_mel",
+              "tensor_index": 4,
+              "tensor_name": "serving_default_args_4",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "cond_mask",
+              "tensor_index": 5,
+              "tensor_name": "serving_default_args_5",
+              "shape": [
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 16384
+            },
+            {
+              "buffer_index": 6,
+              "name": "args_6",
+              "semantic_name": "key_bias",
+              "tensor_index": 6,
+              "tensor_name": "serving_default_args_6",
+              "shape": [
+                1,
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 16384
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "velocity",
+              "tensor_index": 912,
+              "tensor_name": "serving_default_output_0_output",
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 1638400
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "int8/sopro_ar_merged_i8native.tflite",
+      "bytes": 55217000,
+      "sha256": "4c9a54699f2e1b0ca6e777970b440bf5666e8399ea1342dce7d2dea6c5ad86fb",
+      "graph": "ar_merged",
+      "weight_storage": "i8native",
+      "compute_contract": "float32 public floating inputs and outputs",
+      "max_tensor_rank": 4,
+      "custom_operator_count": 0,
+      "signatures": [
+        {
+          "name": "prefill",
+          "subgraph_index": 0,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "prefix_embeddings",
+              "tensor_index": 0,
+              "tensor_name": "prefill_args_0",
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 524288
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "attention_bias",
+              "tensor_index": 1,
+              "tensor_name": "prefill_args_1",
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 262144
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "last_index",
+              "tensor_index": 2,
+              "tensor_name": "prefill_args_2",
+              "shape": [
+                1
+              ],
+              "dtype": "int32",
+              "buffer_bytes": 4
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1164,
+              "tensor_name": "prefill_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "k",
+              "tensor_index": 1165,
+              "tensor_name": "prefill_output_1_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "v",
+              "tensor_index": 1166,
+              "tensor_name": "prefill_output_2_output",
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 6291456
+            }
+          ]
+        },
+        {
+          "name": "step",
+          "subgraph_index": 1,
+          "inputs": [
+            {
+              "buffer_index": 0,
+              "name": "args_0",
+              "semantic_name": "token_embedding",
+              "tensor_index": 0,
+              "tensor_name": "step_args_0",
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 2048
+            },
+            {
+              "buffer_index": 1,
+              "name": "args_1",
+              "semantic_name": "cos",
+              "tensor_index": 1,
+              "tensor_name": "step_args_1",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 2,
+              "name": "args_2",
+              "semantic_name": "sin",
+              "tensor_index": 2,
+              "tensor_name": "step_args_2",
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 256
+            },
+            {
+              "buffer_index": 3,
+              "name": "args_3",
+              "semantic_name": "attention_bias",
+              "tensor_index": 3,
+              "tensor_name": "step_args_3",
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 4096
+            },
+            {
+              "buffer_index": 4,
+              "name": "args_4",
+              "semantic_name": "pk",
+              "tensor_index": 4,
+              "tensor_name": "step_args_4",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            },
+            {
+              "buffer_index": 5,
+              "name": "args_5",
+              "semantic_name": "pv",
+              "tensor_index": 5,
+              "tensor_name": "step_args_5",
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 25165824
+            }
+          ],
+          "outputs": [
+            {
+              "buffer_index": 0,
+              "name": "output_0",
+              "semantic_name": "logits",
+              "tensor_index": 1176,
+              "tensor_name": "step_output_0_output",
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 17508
+            },
+            {
+              "buffer_index": 1,
+              "name": "output_1",
+              "semantic_name": "new_k",
+              "tensor_index": 1177,
+              "tensor_name": "step_output_1_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            },
+            {
+              "buffer_index": 2,
+              "name": "output_2",
+              "semantic_name": "new_v",
+              "tensor_index": 1178,
+              "tensor_name": "step_output_2_output",
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_bytes": 24576
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

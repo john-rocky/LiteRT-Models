@@ -972,3 +972,58 @@ Shipped as `litert-community/GLiNER2.5-Small-LiteRT` (windows 128/256/512, fp32 
 **Weight storage.** Dynamic-range int8 (ai-edge-quantizer 0.8.0 `dynamic_wi8_afp32`) compiles nowhere on S26 2.2.0 GPU: full recipe and FULLY_CONNECTED-only recipe both fail with `Unable to parse bc coord for BATCH axis` (catalog D13), while an empty-recipe control compiles — the int8 FC constants themselves are the trigger, even with rank-4 inputs. `FLOAT_CASTING` float16 on the 96 FC weights (+ DEQUANTIZE) compiles fully, F1 unchanged, 54–84 MB vs 98–128 MB. CPU int8 F1 was 0.993–0.995 (evidence only).
 
 **Android host port (Kotlin, `gliner25/`).** The tokenizer / input construction / sparse decoder were ported to pure Kotlin and checked two ways: JVM unit tests against captured Python inputs and the Python host decoder (195/195 window-input pairs, max confidence diff 4.2e-7), then an in-app gate on the S26 that also compares the ON-DEVICE tokenizer output with the captured Python inputs (70/70 on GPU FP32 and CPU). The second check is not optional: `Pattern.compile(..., Pattern.UNICODE_CHARACTER_CLASS)` passes every JVM test and throws `IllegalArgumentException: UNICODE_CHARACTER_CLASS flag not supported` at tokenizer init on Android — desktop-JVM parity does not prove Android parity for regex-based splitters; spell the Unicode classes out explicitly and use no flags. The upstream default word splitter is `WhitespaceTokenSplitter` (`DEFAULT_WORD_SPLITTER = "whitespace"`), not the `CharLevelSplitter` regex. Cost split on the S26 at s128 (debug build): graph to readback ~12 ms, Kotlin sparse decode ~10 ms after optimization (first port: ~47–58 ms). Two facts from that pass: ~70% of the first port's decode time came from the app being debuggable (non-debuggable build 15.6 ms vs 58 ms, same code) — time host code in a non-debuggable variant before optimizing it; the rest went with flat primitive buffers, cached tensor views, primitive stable sorts and a small persistent worker pool, with reduction order and top-k/tie semantics untouched (confidences bit-identical on device). A fast steady state is not what the user sees: the first request after launch still ran cold (decode 56.6 ms, tokenize+embed 21.6 ms vs ~7 ms / ~3 ms hot) because only the graph was warmed. Repeating the full pipeline 12 times before the UI reports Ready (0.5–0.6 s at startup) brought the first request to 25–38 ms total; measure it screen-on — with the screen off the S26 power-saves and the same first request is 1.5–2x slower. Evidence: `~/code/codex-conversions/2026-09-19/gliner25-android/` (supervised Codex run, 8 rounds).
+
+### Sopro v2 turbo (zero-shot voice-cloning TTS) — domain gates for reduced precision, exact right-padding of causal conv stacks, the fp32-FFT host trap
+
+Converter: litert-torch (0.9.4, torch 2.11, ai-edge-litert 2.2.0). Sopro v2 turbo (121M core + 36M) is a
+three-stage TTS: semantic AR LM (12 × 512, FSQ tokens) → flow-matching DiT (8 layers, 2 Euler steps) →
+Vocos vocoder (causal ConvNeXt → log-mag/phase → iSTFT). The author's own ONNX split already keeps every
+spectral step (three mel front-ends, iSTFT), the RoPE tables, masks, the token→frame gather index, sampling
+and post-processing on the host; the LiteRT port keeps the same split, so all 8 offline graphs + the 3
+streaming-vocoder graphs converted **on the first attempt with no re-authoring of any op** (exact GELU kept,
+alias probe 0 after cloning every parameter contiguous — litert-torch #1061). Static contracts: reference
+exactly 10 s (speaker mel [1,80,1001], Whisper mel [1,80,1002] → 235 tokens, reference mel 938 frames);
+AR prefill P_MAX 256 + step CAP 1024 with the packed KV on the host (dia2 / Pocket TTS pattern; a 2-signature
+merged file shares the weights: 223 MB vs 421); acoustic buckets (T,N) = (2048,512) and (4096,1024) selected
+by the actual length; vocoder offline bucket 1024 frames or streaming 64-frame chunks (start 64→37, step
+64→64, flush →27, exact vs offline: max err 3.9e-4). Mac CPU gates only so far (device run pending):
+fp32 teacher-forced waveform corr ≥ 0.99999 (24 utterances + 4 long), AR replay 2920/2920, semantic tokens
+235/235; the free-running LiteRT pipeline with the same NumPy sampler and seed reproduces the PyTorch token
+sequences 24/24.
+
+**Findings worth the catalog (all Mac M4 Max CPU, fp32 I/O):**
+
+1. **Judge reduced-precision TTS graphs in the domain of their output — acoustic graphs in mel space, the
+   vocoder in waveform space.** With plain wfp16 (FLOAT_CASTING) weights in the flow-matching DiT, one
+   utterance dropped to raw-waveform corr 0.977 against the fp32 chain while its log-mel corr stayed 0.9999,
+   HNR moved 0.011 dB and WER / speaker cosine did not move: the 2-step ODE turns fp16 weight perturbations
+   into phase differences, not spectral ones. Conversely an absolute tensor rule on the vocoder's phase output
+   (absmax ≈ 125) is meaningless — a 0.6 rad error at a near-silent bin leaves the waveform at corr 0.99994.
+   Keeping the vocoder's final FC in fp32 did NOT reduce that phase error (0.5998 → 0.5989): the error is the
+   phase channel's scale, not the head weights. Gate set that worked: encoders/AR = tensor rule
+   `max|diff| ≤ max(1e-2, 2e-3·absmax) ∧ corr ≥ 0.999` + token/greedy replay with near-tie documentation;
+   acoustic = solved-mel corr ≥ 0.99; vocoder = single-swap waveform corr ≥ 0.99; chain = log-mel corr ≥ 0.99
+   + free-running WER / speaker cosine + HNR and 4–12 kHz band-energy within 1.0 / 1.5 dB of the fp32 chain.
+   The quality gates alone (WER, speaker cosine) are blind to phase: int8 vocoder variants with ≈ 15 phase
+   wraps of tensor error passed both — the waveform gate is what rejected them.
+2. **Exact zero right-padding for a causal conv stack with lookahead** (Vocos: 8 ConvNeXt blocks, lookahead 3
+   each + 3 at the embed conv = 27 frames): multiply the residual stream by the runtime frame mask after the
+   embed **LayerNorm** and after every block. Masking only the convolution is insufficient — the LayerNorm
+   bias populates padded frames and leaks into the next block's lookahead window. fp64 padded-vs-unpadded
+   difference 1.2e-13; the fp32 remainder (8.8e-5 on absmax 125) is summation-order roundoff.
+3. **Host mel mirrors must use an fp32 FFT.** NumPy's default `np.fft.rfft` dispatches to the fp64 pocketfft
+   loop; against torch's fp32 STFT the power spectrum differs by ~1e-7, which the log amplifies to 1e-2 in
+   quiet high bands (normalized-mel error 3.8e-3, end-to-end waveform max error 6.3e-3 on one utterance).
+   `np.fft.rfft(x, norm="forward") * np.float32(n_fft)` selects the fp32 path bit-exactly (error 4e-7). A
+   Kotlin FFT needs its own fp32 parity check; matching the math is not matching the rounding.
+4. **Toolchain walls (recorded, not worked around):** litert-torch 0.9.4 native PT2E per-channel int8 on a
+   rank-3 Conv1d weight (512×100×7) fails legalization — `'stablehlo.uniform_dequantize' op operand #0 must be
+   ranked tensor of per-tensor integer quantized or per-axis integer quantized values, but got
+   'tensor<512x100x7xi8>'` — so no native-int8 vocoder (post-hoc DRQ works, but fails the waveform gate
+   anyway); and macOS ai-edge-litert 2.2.0 GPU-only `CompiledModel` (Metal accelerator registered) SIGSEGVs
+   after `Flatbuffer model initialized` even on a trivial Linear+ReLU graph, so there are no Mac GPU numbers.
+   The int8 that ships is the AR only (native PT2E per-channel dynamic, 55 MB vs 223 MB fp32, greedy replay
+   2834/2920, free-running WER 1.31 %, speaker cosine 0.925).
+
+Scripts: `sopro/scripts/` (portable copy of the HF repo's `conversion/`), contract in `sopro/contract.json`;
+full REPRODUCE and card on [litert-community/sopro-v2-turbo](https://huggingface.co/litert-community/sopro-v2-turbo).
