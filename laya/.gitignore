@@ -1,0 +1,12 @@
+.gradle/
+.kotlin/
+.local/
+build/
+app/build/
+local.properties
+.gradle-user-home/
+.cache/
+model-files/
+test-data/
+validation-data/
+__pycache__/

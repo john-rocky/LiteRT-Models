@@ -101,6 +101,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [NAFNet](#nafnet-deblur) | Deblur / denoise | Pixel 8a | ~42 ms (256²) | [🤗 HF](https://huggingface.co/litert-community/NAFNet-GoPro-width32-LiteRT) |
 | [Qwen3-Embedding-0.6B](#qwen3-embedding-06b) | Text embedding (RAG) | Pixel 8a | ~390 ms per embedding | [🤗 HF](https://huggingface.co/litert-community/Qwen3-Embedding-0.6B-LiteRT) |
 | [Qwen3-Reranker-0.6B](#qwen3-reranker-06b) | Text reranking (RAG) |  |  | [🤗 HF](https://huggingface.co/litert-community/Qwen3-Reranker-0.6B-LiteRT) |
+| [Laya Multilingual](#laya-multilingual-typed-text-decisions) | Text classification / triage with request-time questions (EN / JA) | Galaxy S26 | 51 ms per question (GPU) | [🤗 HF](https://huggingface.co/litert-community/Laya-Multilingual-LiteRT) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
@@ -2051,6 +2052,21 @@ weights). Dynamic-range int8 does not compile on ML Drift (catalog D13); fp16 we
 Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-19 GLiNER2.5 section).
 
 **Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0)
+
+### Laya Multilingual (typed text decisions)
+
+[convaiinnovations/laya](https://huggingface.co/convaiinnovations/laya) multilingual checkpoint (322M, Apache-2.0, **mmBERT-base** encoder + a typed decision head): give it a text or JSON state plus questions defined at request time — pick one of N options, score on an ordinal scale, or a yes/no probability — and every option is scored at its own `<mask>` marker in one forward pass per question. Converted as **one question row per call**: the graph runs the encoder, the two head layers and the option scorer at every position; the host builds the prompt, does the token-embedding lookup from a memory-mapped float16 table, reads the logits at the marker positions and applies a per-bucket temperature. A 1 MB second graph holds the act head.
+
+**On-device (Galaxy S26, LiteRT 2.2.0 — verified):** fully on the GPU delegate (1779/1779 ops, one partition) with `GpuOptions(precision = FP32)`; on 201 English/Japanese question rows the answers match the official fp32 `laya` 0.3.4 implementation (same argmax on 81/81 choice and score questions, max probability difference 0.0014 with fp16 weights); **GPU median 51 ms per question at 256 tokens** (CPU 163 ms), 60 ms end to end in the sample app. A graph that keeps the token table inside does not compile on ML Drift (EMBEDDING_LOOKUP is rejected); fp16 FULLY_CONNECTED weights with DEQUANTIZE compile fully.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| Laya Multilingual s256 / s512 | [HF: litert-community/Laya-Multilingual-LiteRT](https://huggingface.co/litert-community/Laya-Multilingual-LiteRT) | 251 / 252 MB fp16-weight (501 / 502 MB fp32) + 393 MB fp16 token table + 0.8 MB act head | inputs_embeds [1,N,768] + attention_mask [1,N] + qtype_onehot [1,3] → token_logits [1,N] + pooled_cls [1,768] → host marker gather + softmax; act head [1,768]+[1,4] → [1,2] | GPU (s256 verified; s512 desktop CPU only) |
+
+**Sample app**: [laya/](laya/) — pure-Kotlin host (Gemma-style BPE tokenizer with Metaspace and byte fallback, the upstream prompt builder, memory-mapped embedding lookup, decoder and calibration) in a Compose app: pick Email triage / Support intent / Moderation, edit the Japanese or English text, and read per-question answers with probabilities. The on-device tokenizer output matched the Python reference on 201/201 rows. The HF repo also carries a standalone Python host (`laya_host.py`, no torch), the host contract, temperatures fitted per question type and option count on licensed EN/JA data, and the same module under `android/`.
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-22 Laya section).
+
+**Original project**: [NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) (Apache-2.0)
 
 # Text Generation (LLM)
 
