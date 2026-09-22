@@ -1,0 +1,26 @@
+Sopro v2 turbo Android sample
+
+The model and synthesis contract follow Sopro by Samuel Vitorino, distributed
+under Apache License 2.0.
+https://github.com/samuel-vitorino/sopro
+https://huggingface.co/samuel-vitorino/sopro-v2-turbo
+Source model revision: f747f9edfb7b0233a3b7105af3a75603a7213d26
+LiteRT package revision: b1d2073b8111950ebf35614f4fd70b01ddaac3fb
+
+This application ports host DSP, SentencePiece tokenization, sampling, packed
+attention-cache management, acoustic integration and waveform reconstruction
+to Kotlin. Conversion changes retain the model formulas while using static
+shapes, explicit host inputs, digit-logit outputs and equivalent tensor layouts.
+
+SentencePiece behavior is implemented against the Apache-2.0 reference library.
+https://github.com/google/sentencepiece/tree/v0.2.2
+The Python reference package is a development tool, not an Android dependency.
+
+The default demo reference is voice-donations/0a67.wav from kyutai/tts-voices,
+revision 323332d33f997de8394f24a193e1a76df720e01a, licensed CC0 1.0.
+https://huggingface.co/kyutai/tts-voices/tree/323332d33f997de8394f24a193e1a76df720e01a/voice-donations
+The sample fetches this asset separately; source staging does not include audio.
+
+LiteRT 2.2.0, AndroidX, Compose Material 1 and Kotlin retain their respective
+Apache-2.0 notices and licenses. Gradle wrapper files retain their original
+license headers. Component license texts and source links are in licenses/.

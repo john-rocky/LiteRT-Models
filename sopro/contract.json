@@ -8,7 +8,7 @@
     "device": "Apple M4 Max; macOS 27.0",
     "cpu_threads": 4,
     "timing_condition": "contended",
-    "device_gpu_npu_verification": "NOT_RUN",
+    "device_gpu_npu_verification": "Galaxy S26 (Adreno) GPU measured for the Android placement (see README, Android); Pixel 8a NOT_RUN; NPU NOT_RUN",
     "measured_embedding_assets": "host_assets/sopro_ar_tables_fp32.npz",
     "raw_fp16_embedding_storage_quality": "NOT_RUN",
     "raw_fp16_embedding_warning": "The raw float16 tables are a storage option. Existing quality measurements used the original float32 NPZ tables; casting raw float16 tables back to float32 does not restore those values."
@@ -135,7 +135,7 @@
         "generated_token_grid_seconds": 33.664
       }
     ],
-    "bucket_limit_note": "Acoustic capacities are independent of the 1024-position AR cache and the source 30-second generation limit; all limits must hold.",
+    "bucket_limit_note": "Acoustic capacities are independent of the 1024-position AR cache and the source 30-second generation limit; all limits apply.",
     "flow_steps": 2,
     "sway": -1.0,
     "sigma_min": 1e-06,
@@ -324,7 +324,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_semantic_encoder_fp32.tflite",
@@ -371,7 +372,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_semantic_encoder_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_style_prefix_fp32.tflite",
@@ -419,7 +422,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "fp32/sopro_style_prefix_r9_fp32.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_ar_prefill_fp32.tflite",
@@ -523,7 +528,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_ar_step_fp32.tflite",
@@ -675,7 +681,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_acoustic_condition_fp32.tflite",
@@ -748,7 +755,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_condition_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_acoustic_velocity_fp32.tflite",
@@ -878,7 +887,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_velocity_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_vocoder_fp32.tflite",
@@ -940,7 +951,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_ar_merged_fp32.tflite",
@@ -1184,7 +1196,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "int8/sopro_ar_merged_r6_int8.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_vocoder_stream_start_fp32.tflite",
@@ -1276,7 +1290,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_vocoder_stream_step_fp32.tflite",
@@ -1412,7 +1427,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_vocoder_stream_flush_fp32.tflite",
@@ -1490,7 +1506,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_acoustic_condition_t4096_fp32.tflite",
@@ -1563,7 +1580,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_condition_t4096_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "fp32/sopro_acoustic_velocity_t4096_fp32.tflite",
@@ -1693,7 +1712,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_velocity_t4096_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_speaker_encoder_wfp16.tflite",
@@ -1779,7 +1800,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": true
     },
     {
       "path": "wfp16/sopro_semantic_encoder_wfp16.tflite",
@@ -1826,7 +1848,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_semantic_encoder_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_style_prefix_wfp16.tflite",
@@ -1874,7 +1898,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "fp32/sopro_style_prefix_r9_fp32.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_ar_prefill_wfp16.tflite",
@@ -1978,7 +2004,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_ar_step_wfp16.tflite",
@@ -2130,7 +2157,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_acoustic_condition_wfp16.tflite",
@@ -2203,7 +2231,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_condition_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_acoustic_velocity_wfp16.tflite",
@@ -2333,7 +2363,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_velocity_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_vocoder_wfp16.tflite",
@@ -2395,7 +2427,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_ar_merged_wfp16.tflite",
@@ -2639,7 +2672,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "int8/sopro_ar_merged_r6_int8.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_vocoder_stream_start_wfp16.tflite",
@@ -2731,7 +2766,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": true
     },
     {
       "path": "wfp16/sopro_vocoder_stream_step_wfp16.tflite",
@@ -2867,7 +2903,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": true
     },
     {
       "path": "wfp16/sopro_vocoder_stream_flush_wfp16.tflite",
@@ -2945,7 +2982,8 @@
             }
           ]
         }
-      ]
+      ],
+      "active_android_contract_variant": true
     },
     {
       "path": "wfp16/sopro_acoustic_condition_t4096_wfp16.tflite",
@@ -3018,7 +3056,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_condition_t4096_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "wfp16/sopro_acoustic_velocity_t4096_wfp16.tflite",
@@ -3148,7 +3188,9 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "wfp16/sopro_acoustic_velocity_t4096_r6_wfp16.tflite",
+      "active_android_contract_variant": false
     },
     {
       "path": "int8/sopro_ar_merged_i8native.tflite",
@@ -3392,7 +3434,3371 @@
             }
           ]
         }
-      ]
+      ],
+      "superseded_on_device_by": "int8/sopro_ar_merged_r6_int8.tflite",
+      "active_android_contract_variant": false
+    },
+    {
+      "graph": "acoustic_velocity",
+      "storage": "fp32",
+      "precision": "fp32",
+      "path": "fp32/sopro_acoustic_velocity_r6_fp32.tflite",
+      "sha256": "bbd1ca24238167d7bbfb75b9c5c01113ee408d3135ef36962a57982263d84740",
+      "bytes": 127810560,
+      "host_contract": "unchanged",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 819200,
+              "semantic_name": "x"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 4,
+              "semantic_name": "t"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 819200,
+              "semantic_name": "mu"
+            },
+            {
+              "name": "args_3",
+              "tensor_index": 3,
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 3,
+              "buffer_bytes": 2048,
+              "semantic_name": "cond_vec"
+            },
+            {
+              "name": "args_4",
+              "tensor_index": 4,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 4,
+              "buffer_bytes": 819200,
+              "semantic_name": "cond_mel"
+            },
+            {
+              "name": "args_5",
+              "tensor_index": 5,
+              "shape": [
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 5,
+              "buffer_bytes": 8192,
+              "semantic_name": "cond_mask"
+            },
+            {
+              "name": "args_6",
+              "tensor_index": 6,
+              "shape": [
+                1,
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 6,
+              "buffer_bytes": 8192,
+              "semantic_name": "key_bias"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 916,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 819200,
+              "semantic_name": "velocity"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "x",
+            "t",
+            "mu",
+            "cond_vec",
+            "cond_mel",
+            "cond_mask",
+            "key_bias"
+          ],
+          "output_names": [
+            "velocity"
+          ],
+          "io_change": "none",
+          "rewrite": "One-term rank4 matmul with constant ones replaces speaker BROADCAST_TO and preserves concatenate/projection order; attention uses rank4 BMM."
+        }
+      },
+      "replaces": {
+        "path": "fp32/sopro_acoustic_velocity_fp32.tflite",
+        "sha256": "c9d7821502613595828fc7699d92e43a47c542d9f885dbdbd4592bbf67f57a5a",
+        "bytes": 127775972
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_velocity_r6.py",
+          "sha256": "131b99dbd2af6da5954773221a7b065e8103d413fce7b94ed64720b466a1467c",
+          "bytes": 1564
+        },
+        "export_audit": {
+          "path": "results/round6/acoustic_velocity_fp32_export.json",
+          "sha256": "53476a44a36c4a403c9c785886344e490b3cfd2801b7ae2e1158ec17b85dde37",
+          "bytes": 17567
+        },
+        "parity_audit": {
+          "path": "results/round6/acoustic_velocity_cpu_parity.json",
+          "sha256": "43d51d9d836270f896b29319231a4fdd5bb0a4ad7d977a07ba1e8985eaf7f5bd",
+          "bytes": 27426
+        },
+        "opcheck": {
+          "path": "results/round6/acoustic_velocity_fp32_opcheck.json",
+          "sha256": "22113d3cc880d9ccb7db72ab384f48f2d468f0ee5e88e4d1f28112db66795fbd",
+          "bytes": 502170
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 132,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/acoustic_velocity_fp32_export.json",
+          "field": "rank4_layout_canonicalization"
+        }
+      },
+      "op_histogram": {
+        "ABS": 1,
+        "MUL": 133,
+        "SUM": 1,
+        "SQRT": 1,
+        "RESHAPE": 182,
+        "MAXIMUM": 1,
+        "DIV": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 3,
+        "CAST": 1,
+        "FULLY_CONNECTED": 62,
+        "SIN": 1,
+        "COS": 1,
+        "CONCATENATION": 18,
+        "LOGISTIC": 2,
+        "TRANSPOSE": 51,
+        "ADD": 112,
+        "PAD": 2,
+        "CONV_2D": 2,
+        "EXP": 2,
+        "LOG": 2,
+        "SELECT": 2,
+        "TANH": 2,
+        "SLICE": 82,
+        "MEAN": 34,
+        "SQUARED_DIFFERENCE": 17,
+        "RSQRT": 17,
+        "SUB": 17,
+        "BATCH_MATMUL": 16,
+        "SOFTMAX": 8,
+        "GELU": 8
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 929,
+        "INT32": 81,
+        "BOOL": 3
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL",
+        "CAST",
+        "COS",
+        "EXP",
+        "GREATER",
+        "LOG",
+        "REDUCE_MAX",
+        "SELECT",
+        "SIN"
+      ],
+      "android_path": "r6/fp32/sopro_acoustic_velocity_fp32.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "wfp16/sopro_acoustic_velocity_r6_wfp16.tflite"
+    },
+    {
+      "graph": "acoustic_velocity",
+      "storage": "wfp16",
+      "precision": "wfp16",
+      "path": "wfp16/sopro_acoustic_velocity_r6_wfp16.tflite",
+      "sha256": "8b78862126487e49fffefbfa1aed5b28c4f9eb45384f224023706514352f6a7b",
+      "bytes": 64655616,
+      "host_contract": "unchanged",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 819200,
+              "semantic_name": "x"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 4,
+              "semantic_name": "t"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 819200,
+              "semantic_name": "mu"
+            },
+            {
+              "name": "args_3",
+              "tensor_index": 3,
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 3,
+              "buffer_bytes": 2048,
+              "semantic_name": "cond_vec"
+            },
+            {
+              "name": "args_4",
+              "tensor_index": 4,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 4,
+              "buffer_bytes": 819200,
+              "semantic_name": "cond_mel"
+            },
+            {
+              "name": "args_5",
+              "tensor_index": 5,
+              "shape": [
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 5,
+              "buffer_bytes": 8192,
+              "semantic_name": "cond_mask"
+            },
+            {
+              "name": "args_6",
+              "tensor_index": 6,
+              "shape": [
+                1,
+                1,
+                1,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 6,
+              "buffer_bytes": 8192,
+              "semantic_name": "key_bias"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 916,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 819200,
+              "semantic_name": "velocity"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "x",
+            "t",
+            "mu",
+            "cond_vec",
+            "cond_mel",
+            "cond_mask",
+            "key_bias"
+          ],
+          "output_names": [
+            "velocity"
+          ],
+          "io_change": "none",
+          "rewrite": "One-term rank4 matmul with constant ones replaces speaker BROADCAST_TO and preserves concatenate/projection order; attention uses rank4 BMM."
+        }
+      },
+      "replaces": {
+        "path": "wfp16/sopro_acoustic_velocity_wfp16.tflite",
+        "sha256": "1dfc3d21128e1cae50ccab4147a3126157bfaf5d753d4934063b35e13f76ae79",
+        "bytes": 64623568
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_velocity_r6.py",
+          "sha256": "131b99dbd2af6da5954773221a7b065e8103d413fce7b94ed64720b466a1467c",
+          "bytes": 1564
+        },
+        "export_audit": {
+          "path": "results/round6/acoustic_velocity_wfp16_export.json",
+          "sha256": "715863e26ce676486984e20a82c5e55a6cf849d09341085f5e23f224332ee5ee",
+          "bytes": 17991
+        },
+        "parity_audit": {
+          "path": "results/round6/acoustic_velocity_cpu_parity.json",
+          "sha256": "43d51d9d836270f896b29319231a4fdd5bb0a4ad7d977a07ba1e8985eaf7f5bd",
+          "bytes": 27426
+        },
+        "opcheck": {
+          "path": "results/round6/acoustic_velocity_wfp16_opcheck.json",
+          "sha256": "3edb3f1f2068e39ef9b51f4902cb8f79c247855b01735f96ab23329f4eba91bf",
+          "bytes": 535494
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 132,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/acoustic_velocity_wfp16_export.json",
+          "field": "rank4_layout_canonicalization"
+        }
+      },
+      "op_histogram": {
+        "ABS": 1,
+        "MUL": 133,
+        "SUM": 1,
+        "SQRT": 1,
+        "RESHAPE": 182,
+        "MAXIMUM": 1,
+        "DIV": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 3,
+        "CAST": 1,
+        "DEQUANTIZE": 64,
+        "FULLY_CONNECTED": 62,
+        "SIN": 1,
+        "COS": 1,
+        "CONCATENATION": 18,
+        "LOGISTIC": 2,
+        "TRANSPOSE": 51,
+        "ADD": 112,
+        "PAD": 2,
+        "CONV_2D": 2,
+        "EXP": 2,
+        "LOG": 2,
+        "SELECT": 2,
+        "TANH": 2,
+        "SLICE": 82,
+        "MEAN": 34,
+        "SQUARED_DIFFERENCE": 17,
+        "RSQRT": 17,
+        "SUB": 17,
+        "BATCH_MATMUL": 16,
+        "SOFTMAX": 8,
+        "GELU": 8
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 929,
+        "INT32": 81,
+        "FLOAT16": 64,
+        "BOOL": 3
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL",
+        "CAST",
+        "COS",
+        "EXP",
+        "GREATER",
+        "LOG",
+        "REDUCE_MAX",
+        "SELECT",
+        "SIN"
+      ],
+      "android_path": "r6/wfp16/sopro_acoustic_velocity_wfp16.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": true
+    },
+    {
+      "graph": "acoustic_velocity_t4096",
+      "storage": "fp32",
+      "precision": "fp32",
+      "path": "fp32/sopro_acoustic_velocity_t4096_r6_fp32.tflite",
+      "sha256": "f47c3fbf103e2d3f2d250362f71b46ccbbe9baccb5a4ad5e773155942793088d",
+      "bytes": 128867328,
+      "host_contract": "unchanged",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 1638400,
+              "semantic_name": "x"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 4,
+              "semantic_name": "t"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 1638400,
+              "semantic_name": "mu"
+            },
+            {
+              "name": "args_3",
+              "tensor_index": 3,
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 3,
+              "buffer_bytes": 2048,
+              "semantic_name": "cond_vec"
+            },
+            {
+              "name": "args_4",
+              "tensor_index": 4,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 4,
+              "buffer_bytes": 1638400,
+              "semantic_name": "cond_mel"
+            },
+            {
+              "name": "args_5",
+              "tensor_index": 5,
+              "shape": [
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 5,
+              "buffer_bytes": 16384,
+              "semantic_name": "cond_mask"
+            },
+            {
+              "name": "args_6",
+              "tensor_index": 6,
+              "shape": [
+                1,
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 6,
+              "buffer_bytes": 16384,
+              "semantic_name": "key_bias"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 916,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 1638400,
+              "semantic_name": "velocity"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "x",
+            "t",
+            "mu",
+            "cond_vec",
+            "cond_mel",
+            "cond_mask",
+            "key_bias"
+          ],
+          "output_names": [
+            "velocity"
+          ],
+          "io_change": "none",
+          "rewrite": "One-term rank4 matmul with constant ones replaces speaker BROADCAST_TO and preserves concatenate/projection order; attention uses rank4 BMM."
+        }
+      },
+      "replaces": {
+        "path": "fp32/sopro_acoustic_velocity_t4096_fp32.tflite",
+        "sha256": "7901c9f4af3537275e345a0fa6bd33be34cfac622ba8f7b827485edc30490749",
+        "bytes": 128824548
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_velocity_r6.py",
+          "sha256": "131b99dbd2af6da5954773221a7b065e8103d413fce7b94ed64720b466a1467c",
+          "bytes": 1564
+        },
+        "export_audit": {
+          "path": "results/round6/acoustic_velocity_t4096_fp32_export.json",
+          "sha256": "054087fc6c90387690fb06028bdb5efd392bc06587b3ab66d89eee138fa0d8e2",
+          "bytes": 17578
+        },
+        "parity_audit": {
+          "path": "results/round6/acoustic_velocity_t4096_cpu_parity.json",
+          "sha256": "f9e8e8e994038ca5e95c7a12b26d4064c9f5f205dd95d6cc3d820580800d5074",
+          "bytes": 4893
+        },
+        "opcheck": {
+          "path": "results/round6/acoustic_velocity_t4096_fp32_opcheck.json",
+          "sha256": "0466eed514afe745655d81acbe2e46a1549fb73c1f94a386667c649194884ed2",
+          "bytes": 502170
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 132,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/acoustic_velocity_t4096_fp32_export.json",
+          "field": "rank4_layout_canonicalization"
+        }
+      },
+      "op_histogram": {
+        "ABS": 1,
+        "MUL": 133,
+        "SUM": 1,
+        "SQRT": 1,
+        "RESHAPE": 182,
+        "MAXIMUM": 1,
+        "DIV": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 3,
+        "CAST": 1,
+        "FULLY_CONNECTED": 62,
+        "SIN": 1,
+        "COS": 1,
+        "CONCATENATION": 18,
+        "LOGISTIC": 2,
+        "TRANSPOSE": 51,
+        "ADD": 112,
+        "PAD": 2,
+        "CONV_2D": 2,
+        "EXP": 2,
+        "LOG": 2,
+        "SELECT": 2,
+        "TANH": 2,
+        "SLICE": 82,
+        "MEAN": 34,
+        "SQUARED_DIFFERENCE": 17,
+        "RSQRT": 17,
+        "SUB": 17,
+        "BATCH_MATMUL": 16,
+        "SOFTMAX": 8,
+        "GELU": 8
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 929,
+        "INT32": 81,
+        "BOOL": 3
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL",
+        "CAST",
+        "COS",
+        "EXP",
+        "GREATER",
+        "LOG",
+        "REDUCE_MAX",
+        "SELECT",
+        "SIN"
+      ],
+      "android_path": "r6/fp32/sopro_acoustic_velocity_t4096_fp32.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "wfp16/sopro_acoustic_velocity_t4096_r6_wfp16.tflite"
+    },
+    {
+      "graph": "acoustic_velocity_t4096",
+      "storage": "wfp16",
+      "precision": "wfp16",
+      "path": "wfp16/sopro_acoustic_velocity_t4096_r6_wfp16.tflite",
+      "sha256": "51aa464fbca8240b906621ba334d8891835d12c51ccc95a76b4ec6a2775e54c6",
+      "bytes": 65712384,
+      "host_contract": "unchanged",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 1638400,
+              "semantic_name": "x"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 4,
+              "semantic_name": "t"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 1638400,
+              "semantic_name": "mu"
+            },
+            {
+              "name": "args_3",
+              "tensor_index": 3,
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 3,
+              "buffer_bytes": 2048,
+              "semantic_name": "cond_vec"
+            },
+            {
+              "name": "args_4",
+              "tensor_index": 4,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 4,
+              "buffer_bytes": 1638400,
+              "semantic_name": "cond_mel"
+            },
+            {
+              "name": "args_5",
+              "tensor_index": 5,
+              "shape": [
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 5,
+              "buffer_bytes": 16384,
+              "semantic_name": "cond_mask"
+            },
+            {
+              "name": "args_6",
+              "tensor_index": 6,
+              "shape": [
+                1,
+                1,
+                1,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 6,
+              "buffer_bytes": 16384,
+              "semantic_name": "key_bias"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 916,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 1638400,
+              "semantic_name": "velocity"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "x",
+            "t",
+            "mu",
+            "cond_vec",
+            "cond_mel",
+            "cond_mask",
+            "key_bias"
+          ],
+          "output_names": [
+            "velocity"
+          ],
+          "io_change": "none",
+          "rewrite": "One-term rank4 matmul with constant ones replaces speaker BROADCAST_TO and preserves concatenate/projection order; attention uses rank4 BMM."
+        }
+      },
+      "replaces": {
+        "path": "wfp16/sopro_acoustic_velocity_t4096_wfp16.tflite",
+        "sha256": "35db79991879a313d3fbffcf8b5e05394c8ad3122e564fe8937f39a45928e07e",
+        "bytes": 65672144
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_velocity_r6.py",
+          "sha256": "131b99dbd2af6da5954773221a7b065e8103d413fce7b94ed64720b466a1467c",
+          "bytes": 1564
+        },
+        "export_audit": {
+          "path": "results/round6/acoustic_velocity_t4096_wfp16_export.json",
+          "sha256": "8881c07464597eca873b60bafcdb63e283c67a03c21faa225778063355a47da2",
+          "bytes": 18001
+        },
+        "parity_audit": {
+          "path": "results/round6/acoustic_velocity_t4096_cpu_parity.json",
+          "sha256": "f9e8e8e994038ca5e95c7a12b26d4064c9f5f205dd95d6cc3d820580800d5074",
+          "bytes": 4893
+        },
+        "opcheck": {
+          "path": "results/round6/acoustic_velocity_t4096_wfp16_opcheck.json",
+          "sha256": "6fab8090a36e75e2974a86d1ca5e74c058728f596a74caaf074faea5c182bbfc",
+          "bytes": 535494
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 132,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/acoustic_velocity_t4096_wfp16_export.json",
+          "field": "rank4_layout_canonicalization"
+        }
+      },
+      "op_histogram": {
+        "ABS": 1,
+        "MUL": 133,
+        "SUM": 1,
+        "SQRT": 1,
+        "RESHAPE": 182,
+        "MAXIMUM": 1,
+        "DIV": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 3,
+        "CAST": 1,
+        "DEQUANTIZE": 64,
+        "FULLY_CONNECTED": 62,
+        "SIN": 1,
+        "COS": 1,
+        "CONCATENATION": 18,
+        "LOGISTIC": 2,
+        "TRANSPOSE": 51,
+        "ADD": 112,
+        "PAD": 2,
+        "CONV_2D": 2,
+        "EXP": 2,
+        "LOG": 2,
+        "SELECT": 2,
+        "TANH": 2,
+        "SLICE": 82,
+        "MEAN": 34,
+        "SQUARED_DIFFERENCE": 17,
+        "RSQRT": 17,
+        "SUB": 17,
+        "BATCH_MATMUL": 16,
+        "SOFTMAX": 8,
+        "GELU": 8
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 929,
+        "INT32": 81,
+        "FLOAT16": 64,
+        "BOOL": 3
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL",
+        "CAST",
+        "COS",
+        "EXP",
+        "GREATER",
+        "LOG",
+        "REDUCE_MAX",
+        "SELECT",
+        "SIN"
+      ],
+      "android_path": "r6/wfp16/sopro_acoustic_velocity_t4096_wfp16.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": true
+    },
+    {
+      "graph": "ar_merged",
+      "storage": "fp32",
+      "precision": "fp32",
+      "path": "fp32/sopro_ar_merged_r6_fp32.tflite",
+      "sha256": "1cf7373f5c7a05659c00738a5883aabea1cfb4e9c4c67e1b3c83f0eff1a13f39",
+      "bytes": 223489200,
+      "host_contract": "ar_last_onehot",
+      "signatures": [
+        {
+          "name": "prefill",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 524288,
+              "semantic_name": "prefix_embeddings"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 262144,
+              "semantic_name": "attention_bias"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 1024,
+              "semantic_name": "last_onehot"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 1096,
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17508,
+              "semantic_name": "logits"
+            },
+            {
+              "name": "output_1",
+              "tensor_index": 1097,
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 6291456,
+              "semantic_name": "k"
+            },
+            {
+              "name": "output_2",
+              "tensor_index": 1098,
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 6291456,
+              "semantic_name": "v"
+            }
+          ]
+        },
+        {
+          "name": "step",
+          "subgraph": 1,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 2048,
+              "semantic_name": "token_embedding"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 256,
+              "semantic_name": "cos"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 256,
+              "semantic_name": "sin"
+            },
+            {
+              "name": "args_3",
+              "tensor_index": 3,
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_index": 3,
+              "buffer_bytes": 4096,
+              "semantic_name": "attention_bias"
+            },
+            {
+              "name": "args_4",
+              "tensor_index": 4,
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 4,
+              "buffer_bytes": 25165824,
+              "semantic_name": "pk"
+            },
+            {
+              "name": "args_5",
+              "tensor_index": 5,
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 5,
+              "buffer_bytes": 25165824,
+              "semantic_name": "pv"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 1152,
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17508,
+              "semantic_name": "logits"
+            },
+            {
+              "name": "output_1",
+              "tensor_index": 1153,
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 24576,
+              "semantic_name": "new_k"
+            },
+            {
+              "name": "output_2",
+              "tensor_index": 1154,
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 24576,
+              "semantic_name": "new_v"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "prefill": {
+          "input_names": [
+            "prefix_embeddings",
+            "attention_bias",
+            "last_onehot"
+          ],
+          "output_names": [
+            "logits",
+            "k",
+            "v"
+          ],
+          "onehot_rule": "last_onehot[0, valid_prefix_length-1]=1; all other entries0; valid_prefix_length in1..256",
+          "last_onehot_bytes": 1024,
+          "previous_last_index_bytes": 4,
+          "extra_host_input_bytes": 1020
+        },
+        "step": {
+          "input_names": [
+            "token_embedding",
+            "cos",
+            "sin",
+            "attention_bias",
+            "pk",
+            "pv"
+          ],
+          "output_names": [
+            "logits",
+            "new_k",
+            "new_v"
+          ],
+          "io_change": "none",
+          "operator_histogram": "unchanged",
+          "rank_metadata": "Existing reshape shapes promote singleton batch dimension; no step operators added."
+        }
+      },
+      "replaces": {
+        "path": "fp32/sopro_ar_merged_fp32.tflite",
+        "sha256": "4cf522669f55f0bc93087e473c6c03df116f0086c922903b8f5688db52cb35ae",
+        "bytes": 223457648
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/ar_graphs.py",
+          "sha256": "ab23a34559b82af3ee4f65ec4263e0cedb951d074b3603f7ef490e506b767152",
+          "bytes": 4345
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/ar_graphs.py",
+          "sha256": "459fdcea4861576a19db16ca1587cbe17a5b7214ccbe588b53e1dad0b4d0700f",
+          "bytes": 4528
+        },
+        "export_audit": {
+          "path": "results/round6/ar_merged_fp32_export.json",
+          "sha256": "8a0a8af1ba6f2ec763e7922412bf0356595fcb59eeb4c8dd98c3295d844bc3de",
+          "bytes": 35093
+        },
+        "parity_audit": {
+          "path": "results/round6/ar_merged_fp32_parity.json",
+          "sha256": "224bbb820024bb1b44d93678aee4bff75a1dabc011c92566fa1590f85b5125b9",
+          "bytes": 5390410
+        },
+        "opcheck": {
+          "path": "results/round6/ar_merged_fp32_opcheck.json",
+          "sha256": "d2c4597fa3baced0e5523b4f18b681de6fa54534c5bbb0edf8d1cdbda3d556bb",
+          "bytes": 2296585
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 320,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/ar_merged_fp32_export.json",
+          "field": "rank4_promotion"
+        }
+      },
+      "op_histogram": {
+        "MUL": 669,
+        "SUM": 98,
+        "ADD": 243,
+        "RESHAPE": 353,
+        "RSQRT": 98,
+        "FULLY_CONNECTED": 170,
+        "TRANSPOSE": 72,
+        "SLICE": 121,
+        "CONCATENATION": 53,
+        "BATCH_MATMUL": 49,
+        "SOFTMAX": 24,
+        "LOGISTIC": 24,
+        "SUB": 2
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 2285,
+        "INT32": 167
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL"
+      ],
+      "android_path": "r6/fp32/sopro_ar_merged_fp32.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "int8/sopro_ar_merged_r6_int8.tflite"
+    },
+    {
+      "graph": "ar_merged",
+      "storage": "wfp16",
+      "precision": "wfp16",
+      "path": "wfp16/sopro_ar_merged_r6_wfp16.tflite",
+      "sha256": "7d66f29a5b64111ba5914abcfbdbcaff9c910f4ccbac1e8835e8da58ca4a7c75",
+      "bytes": 112061680,
+      "host_contract": "ar_last_onehot",
+      "signatures": [
+        {
+          "name": "prefill",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 524288,
+              "semantic_name": "prefix_embeddings"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 262144,
+              "semantic_name": "attention_bias"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 1024,
+              "semantic_name": "last_onehot"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 1096,
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17508,
+              "semantic_name": "logits"
+            },
+            {
+              "name": "output_1",
+              "tensor_index": 1097,
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 6291456,
+              "semantic_name": "k"
+            },
+            {
+              "name": "output_2",
+              "tensor_index": 1098,
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 6291456,
+              "semantic_name": "v"
+            }
+          ]
+        },
+        {
+          "name": "step",
+          "subgraph": 1,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 2048,
+              "semantic_name": "token_embedding"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 256,
+              "semantic_name": "cos"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 256,
+              "semantic_name": "sin"
+            },
+            {
+              "name": "args_3",
+              "tensor_index": 3,
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_index": 3,
+              "buffer_bytes": 4096,
+              "semantic_name": "attention_bias"
+            },
+            {
+              "name": "args_4",
+              "tensor_index": 4,
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 4,
+              "buffer_bytes": 25165824,
+              "semantic_name": "pk"
+            },
+            {
+              "name": "args_5",
+              "tensor_index": 5,
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 5,
+              "buffer_bytes": 25165824,
+              "semantic_name": "pv"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 1152,
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17508,
+              "semantic_name": "logits"
+            },
+            {
+              "name": "output_1",
+              "tensor_index": 1153,
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 24576,
+              "semantic_name": "new_k"
+            },
+            {
+              "name": "output_2",
+              "tensor_index": 1154,
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 24576,
+              "semantic_name": "new_v"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "prefill": {
+          "input_names": [
+            "prefix_embeddings",
+            "attention_bias",
+            "last_onehot"
+          ],
+          "output_names": [
+            "logits",
+            "k",
+            "v"
+          ],
+          "onehot_rule": "last_onehot[0, valid_prefix_length-1]=1; all other entries0; valid_prefix_length in1..256",
+          "last_onehot_bytes": 1024,
+          "previous_last_index_bytes": 4,
+          "extra_host_input_bytes": 1020
+        },
+        "step": {
+          "input_names": [
+            "token_embedding",
+            "cos",
+            "sin",
+            "attention_bias",
+            "pk",
+            "pv"
+          ],
+          "output_names": [
+            "logits",
+            "new_k",
+            "new_v"
+          ],
+          "io_change": "none",
+          "operator_histogram": "unchanged",
+          "rank_metadata": "Existing reshape shapes promote singleton batch dimension; no step operators added."
+        }
+      },
+      "replaces": {
+        "path": "wfp16/sopro_ar_merged_wfp16.tflite",
+        "sha256": "c5401ec8a55c6c51c4fb07979d469320d8886ab7a1bbbc14a1ed410597b85137",
+        "bytes": 112038416
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/ar_graphs.py",
+          "sha256": "ab23a34559b82af3ee4f65ec4263e0cedb951d074b3603f7ef490e506b767152",
+          "bytes": 4345
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/ar_graphs.py",
+          "sha256": "459fdcea4861576a19db16ca1587cbe17a5b7214ccbe588b53e1dad0b4d0700f",
+          "bytes": 4528
+        },
+        "export_audit": {
+          "path": "results/round6/ar_merged_wfp16_export.json",
+          "sha256": "ff4221d03b27fecd5c150d6a3f07491f73de31bcc8d72d38272d868bbf20fa09",
+          "bytes": 1720
+        },
+        "parity_audit": {
+          "path": "results/round6/ar_merged_wfp16_parity.json",
+          "sha256": "a4235f7ec2c5cc7732c0923b9241d7b5e3751fe2ce05bac3cdf4a1af1eb2ef09",
+          "bytes": 5390014
+        },
+        "opcheck": {
+          "path": "results/round6/ar_merged_wfp16_opcheck.json",
+          "sha256": "ffe77baecd69d32ef4e3c38da36a85d09376eb767219bed83ab1492347cf962e",
+          "bytes": 2452299
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "inherited_from": "ar_merged_fp32_export.json",
+          "method": "Post-hoc FLOAT_CASTING of audited fp32 constants"
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/ar_merged_wfp16_export.json",
+          "field": "rank4_promotion"
+        }
+      },
+      "op_histogram": {
+        "MUL": 669,
+        "SUM": 98,
+        "ADD": 243,
+        "RESHAPE": 353,
+        "RSQRT": 98,
+        "DEQUANTIZE": 170,
+        "FULLY_CONNECTED": 170,
+        "TRANSPOSE": 72,
+        "SLICE": 121,
+        "CONCATENATION": 53,
+        "BATCH_MATMUL": 49,
+        "SOFTMAX": 24,
+        "LOGISTIC": 24,
+        "SUB": 2
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 2285,
+        "FLOAT16": 170,
+        "INT32": 167
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL"
+      ],
+      "android_path": "r6/wfp16/sopro_ar_merged_wfp16.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "int8/sopro_ar_merged_r6_int8.tflite"
+    },
+    {
+      "graph": "ar_merged",
+      "storage": "int8",
+      "precision": "i8native",
+      "path": "int8/sopro_ar_merged_r6_int8.tflite",
+      "sha256": "3d80c19472006c6e6602977629f6419c33903fd12a12924c65407b03cf941f2e",
+      "bytes": 55249192,
+      "host_contract": "ar_last_onehot",
+      "signatures": [
+        {
+          "name": "prefill",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                256,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 524288,
+              "semantic_name": "prefix_embeddings"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                256,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 262144,
+              "semantic_name": "attention_bias"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                256
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 1024,
+              "semantic_name": "last_onehot"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 1144,
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17508,
+              "semantic_name": "logits"
+            },
+            {
+              "name": "output_1",
+              "tensor_index": 1145,
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 6291456,
+              "semantic_name": "k"
+            },
+            {
+              "name": "output_2",
+              "tensor_index": 1146,
+              "shape": [
+                1,
+                96,
+                256,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 6291456,
+              "semantic_name": "v"
+            }
+          ]
+        },
+        {
+          "name": "step",
+          "subgraph": 1,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 2048,
+              "semantic_name": "token_embedding"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 256,
+              "semantic_name": "cos"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                1,
+                1,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 256,
+              "semantic_name": "sin"
+            },
+            {
+              "name": "args_3",
+              "tensor_index": 3,
+              "shape": [
+                1,
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_index": 3,
+              "buffer_bytes": 4096,
+              "semantic_name": "attention_bias"
+            },
+            {
+              "name": "args_4",
+              "tensor_index": 4,
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 4,
+              "buffer_bytes": 25165824,
+              "semantic_name": "pk"
+            },
+            {
+              "name": "args_5",
+              "tensor_index": 5,
+              "shape": [
+                1,
+                96,
+                1024,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 5,
+              "buffer_bytes": 25165824,
+              "semantic_name": "pv"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 1176,
+              "shape": [
+                1,
+                4377
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17508,
+              "semantic_name": "logits"
+            },
+            {
+              "name": "output_1",
+              "tensor_index": 1177,
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 24576,
+              "semantic_name": "new_k"
+            },
+            {
+              "name": "output_2",
+              "tensor_index": 1178,
+              "shape": [
+                1,
+                96,
+                1,
+                64
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 24576,
+              "semantic_name": "new_v"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "prefill": {
+          "input_names": [
+            "prefix_embeddings",
+            "attention_bias",
+            "last_onehot"
+          ],
+          "output_names": [
+            "logits",
+            "k",
+            "v"
+          ],
+          "onehot_rule": "last_onehot[0, valid_prefix_length-1]=1; all other entries0; valid_prefix_length in1..256",
+          "last_onehot_bytes": 1024,
+          "previous_last_index_bytes": 4,
+          "extra_host_input_bytes": 1020
+        },
+        "step": {
+          "input_names": [
+            "token_embedding",
+            "cos",
+            "sin",
+            "attention_bias",
+            "pk",
+            "pv"
+          ],
+          "output_names": [
+            "logits",
+            "new_k",
+            "new_v"
+          ],
+          "io_change": "none",
+          "operator_histogram": "unchanged",
+          "rank_metadata": "Existing reshape shapes promote singleton batch dimension; no step operators added."
+        }
+      },
+      "replaces": {
+        "path": "int8/sopro_ar_merged_i8native.tflite",
+        "sha256": "4c9a54699f2e1b0ca6e777970b440bf5666e8399ea1342dce7d2dea6c5ad86fb",
+        "bytes": 55217000
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/ar_graphs.py",
+          "sha256": "ab23a34559b82af3ee4f65ec4263e0cedb951d074b3603f7ef490e506b767152",
+          "bytes": 4345
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/ar_graphs.py",
+          "sha256": "459fdcea4861576a19db16ca1587cbe17a5b7214ccbe588b53e1dad0b4d0700f",
+          "bytes": 4528
+        },
+        "export_audit": {
+          "path": "results/round6/ar_merged_i8native_export.json",
+          "sha256": "d1b4b64d27beaf1c064502ddef767f185416f97393845b4455e0455c82c5f558",
+          "bytes": 35194
+        },
+        "parity_audit": {
+          "path": "results/round6/ar_merged_i8native_parity.json",
+          "sha256": "3ba3ecbf96b94c1ad83497c442e406dec7a828d43377e9b30fda15294c148091",
+          "bytes": 5390456
+        },
+        "opcheck": {
+          "path": "results/round6/ar_merged_i8native_opcheck.json",
+          "sha256": "4ffaf6031d0f6c4a64a434ef4f3f9b50c8d765715ab279ec0a4731e85903ef4c",
+          "bytes": 2342860
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 759,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/ar_merged_i8native_export.json",
+          "field": "rank4_promotion"
+        }
+      },
+      "op_histogram": {
+        "MUL": 705,
+        "SUM": 98,
+        "ADD": 243,
+        "RESHAPE": 353,
+        "RSQRT": 98,
+        "FULLY_CONNECTED": 170,
+        "TRANSPOSE": 72,
+        "SLICE": 121,
+        "CONCATENATION": 53,
+        "BATCH_MATMUL": 49,
+        "SOFTMAX": 24,
+        "LOGISTIC": 24,
+        "SUB": 2
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 2187,
+        "INT32": 167,
+        "INT8": 170
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL"
+      ],
+      "android_path": "r6/int8/sopro_ar_merged_i8native.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": true
+    },
+    {
+      "graph": "acoustic_condition",
+      "storage": "fp32",
+      "precision": "fp32",
+      "path": "fp32/sopro_acoustic_condition_r6_fp32.tflite",
+      "sha256": "60568d9fcd9f0dba6722a442a75c6e24dce4aeb1cdd3b6cd30784c38e52838fa",
+      "bytes": 101596592,
+      "host_contract": "acoustic_onehot",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                512,
+                4375
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 8960000,
+              "semantic_name": "semantic_onehot"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 2048,
+              "semantic_name": "token_mask"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                2048,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 4194304,
+              "semantic_name": "frame_onehot"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 80,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 819200,
+              "semantic_name": "mu"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "variant": "single graph with exact float onehot lookup at both gather sites",
+          "source_input_names": [
+            "semantic_tokens",
+            "token_mask",
+            "frame_to_token"
+          ],
+          "input_names": [
+            "semantic_onehot",
+            "token_mask",
+            "frame_onehot"
+          ],
+          "input_shapes": [
+            [
+              1,
+              512,
+              4375
+            ],
+            [
+              1,
+              1,
+              512
+            ],
+            [
+              2048,
+              512
+            ]
+          ],
+          "input_dtypes": [
+            "FLOAT32",
+            "FLOAT32",
+            "FLOAT32"
+          ],
+          "output_names": [
+            "mu"
+          ],
+          "output_shape": [
+            1,
+            100,
+            2048
+          ],
+          "onehot_rule": "Exactly one 1.0 per row, all other elements 0.0; tokens including padded zero rows use their integer token id; frame index is the unchanged frame_to_token host formula.",
+          "choice": "One graph preserves one invocation and unchanged weight count; host-gather split requires two invocations and still leaves rejected EMBEDDING_LOOKUP unless separately rewritten.",
+          "token_onehot_bytes": 8960000,
+          "frame_onehot_bytes": 4194304,
+          "additional_reject": "EMBEDDING_LOOKUP: EMBEDDING_LOOKUP: Empty quantization params.",
+          "embedding_source_weight_shape": [
+            4375,
+            1280
+          ],
+          "onehot_total_bytes": 13154304
+        }
+      },
+      "replaces": {
+        "path": "fp32/sopro_acoustic_condition_fp32.tflite",
+        "sha256": "f60849c565fc056a76badcc640d2f8c564b44c23ca09fad73ccd5b80fd146e6b",
+        "bytes": 101598868
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_condition_r6.py",
+          "sha256": "7908e098aa15d40f248ea69744f0c7d2e05a6f09cb0496c245b310f17846ad53",
+          "bytes": 1636
+        },
+        "export_audit": {
+          "path": "results/r6/acoustic_condition.json",
+          "sha256": "75d4e59bf7a51d5f447a1a2c5722bc274297a6f9fef19fabc965ecca25b3dff3",
+          "bytes": 182156
+        },
+        "parity_audit": {
+          "path": "results/r6/acoustic_condition.json",
+          "sha256": "75d4e59bf7a51d5f447a1a2c5722bc274297a6f9fef19fabc965ecca25b3dff3",
+          "bytes": 182156
+        },
+        "opcheck": {
+          "path": "results/r6/acoustic_condition_fp32_opcheck.json",
+          "sha256": "cf25c04286cafe613265829840961724dc73f7b7119265a4b59819baaac021bc",
+          "bytes": 73442
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 13,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/r6/acoustic_condition.json",
+          "field": "none; rank4 source lowered cleanly"
+        }
+      },
+      "op_histogram": {
+        "FULLY_CONNECTED": 2,
+        "TRANSPOSE": 13,
+        "MUL": 4,
+        "PAD": 3,
+        "RESHAPE": 13,
+        "CONV_2D": 6,
+        "LEAKY_RELU": 1,
+        "ADD": 2,
+        "LOGISTIC": 2,
+        "ABS": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 1,
+        "CAST": 1
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 66,
+        "INT32": 14,
+        "BOOL": 1
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "CAST",
+        "GREATER",
+        "LEAKY_RELU",
+        "REDUCE_MAX"
+      ],
+      "android_path": "r6/fp32/sopro_acoustic_condition_fp32.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "wfp16/sopro_acoustic_condition_r6_wfp16.tflite"
+    },
+    {
+      "graph": "acoustic_condition",
+      "storage": "wfp16",
+      "precision": "wfp16",
+      "path": "wfp16/sopro_acoustic_condition_r6_wfp16.tflite",
+      "sha256": "ad5ef423f523dc903e5909b2310bd82311f4a972b82c4a0c145d255999eb7d0e",
+      "bytes": 50820160,
+      "host_contract": "acoustic_onehot",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                512,
+                4375
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 8960000,
+              "semantic_name": "semantic_onehot"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 2048,
+              "semantic_name": "token_mask"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                2048,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 4194304,
+              "semantic_name": "frame_onehot"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 80,
+              "shape": [
+                1,
+                100,
+                2048
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 819200,
+              "semantic_name": "mu"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "variant": "single graph with exact float onehot lookup at both gather sites",
+          "source_input_names": [
+            "semantic_tokens",
+            "token_mask",
+            "frame_to_token"
+          ],
+          "input_names": [
+            "semantic_onehot",
+            "token_mask",
+            "frame_onehot"
+          ],
+          "input_shapes": [
+            [
+              1,
+              512,
+              4375
+            ],
+            [
+              1,
+              1,
+              512
+            ],
+            [
+              2048,
+              512
+            ]
+          ],
+          "input_dtypes": [
+            "FLOAT32",
+            "FLOAT32",
+            "FLOAT32"
+          ],
+          "output_names": [
+            "mu"
+          ],
+          "output_shape": [
+            1,
+            100,
+            2048
+          ],
+          "onehot_rule": "Exactly one 1.0 per row, all other elements 0.0; tokens including padded zero rows use their integer token id; frame index is the unchanged frame_to_token host formula.",
+          "choice": "One graph preserves one invocation and unchanged weight count; host-gather split requires two invocations and still leaves rejected EMBEDDING_LOOKUP unless separately rewritten.",
+          "token_onehot_bytes": 8960000,
+          "frame_onehot_bytes": 4194304,
+          "additional_reject": "EMBEDDING_LOOKUP: EMBEDDING_LOOKUP: Empty quantization params.",
+          "embedding_source_weight_shape": [
+            4375,
+            1280
+          ],
+          "onehot_total_bytes": 13154304
+        }
+      },
+      "replaces": {
+        "path": "wfp16/sopro_acoustic_condition_wfp16.tflite",
+        "sha256": "9fa5e75f006bb3c8f291f0bf2393e20bff22baea6a70b7443eb4ee1a61d92bdd",
+        "bytes": 50822224
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_condition_r6.py",
+          "sha256": "7908e098aa15d40f248ea69744f0c7d2e05a6f09cb0496c245b310f17846ad53",
+          "bytes": 1636
+        },
+        "export_audit": {
+          "path": "results/r6/acoustic_condition.json",
+          "sha256": "75d4e59bf7a51d5f447a1a2c5722bc274297a6f9fef19fabc965ecca25b3dff3",
+          "bytes": 182156
+        },
+        "parity_audit": {
+          "path": "results/r6/acoustic_condition.json",
+          "sha256": "75d4e59bf7a51d5f447a1a2c5722bc274297a6f9fef19fabc965ecca25b3dff3",
+          "bytes": 182156
+        },
+        "opcheck": {
+          "path": "results/r6/acoustic_condition_wfp16_opcheck.json",
+          "sha256": "66bec32265b8f5e71c448095c9dc0ed18f5bcb9040a391defc6c39f3e8d3a8ca",
+          "bytes": 80947
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 13,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/r6/acoustic_condition.json",
+          "field": "none; rank4 source lowered cleanly"
+        }
+      },
+      "op_histogram": {
+        "DEQUANTIZE": 7,
+        "FULLY_CONNECTED": 2,
+        "TRANSPOSE": 13,
+        "MUL": 4,
+        "PAD": 3,
+        "RESHAPE": 13,
+        "CONV_2D": 6,
+        "LEAKY_RELU": 1,
+        "ADD": 2,
+        "LOGISTIC": 2,
+        "ABS": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 1,
+        "CAST": 1
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 66,
+        "INT32": 14,
+        "FLOAT16": 7,
+        "BOOL": 1
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "CAST",
+        "GREATER",
+        "LEAKY_RELU",
+        "REDUCE_MAX"
+      ],
+      "android_path": "r6/wfp16/sopro_acoustic_condition_wfp16.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": true
+    },
+    {
+      "graph": "acoustic_condition_t4096",
+      "storage": "fp32",
+      "precision": "fp32",
+      "path": "fp32/sopro_acoustic_condition_t4096_r6_fp32.tflite",
+      "sha256": "9dbb9ec867fe6eeb1855ab7687fb97ea351cf3e9b7aef753a6a1fbcabd6d262f",
+      "bytes": 101596592,
+      "host_contract": "acoustic_onehot",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                1024,
+                4375
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17920000,
+              "semantic_name": "semantic_onehot"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 4096,
+              "semantic_name": "token_mask"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                4096,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 16777216,
+              "semantic_name": "frame_onehot"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 80,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 1638400,
+              "semantic_name": "mu"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "variant": "single graph with exact float onehot lookup at both gather sites",
+          "source_input_names": [
+            "semantic_tokens",
+            "token_mask",
+            "frame_to_token"
+          ],
+          "input_names": [
+            "semantic_onehot",
+            "token_mask",
+            "frame_onehot"
+          ],
+          "input_shapes": [
+            [
+              1,
+              1024,
+              4375
+            ],
+            [
+              1,
+              1,
+              1024
+            ],
+            [
+              4096,
+              1024
+            ]
+          ],
+          "input_dtypes": [
+            "FLOAT32",
+            "FLOAT32",
+            "FLOAT32"
+          ],
+          "output_names": [
+            "mu"
+          ],
+          "output_shape": [
+            1,
+            100,
+            4096
+          ],
+          "onehot_rule": "Exactly one 1.0 per row, all other elements 0.0; tokens including padded zero rows use their integer token id; frame index is the unchanged frame_to_token host formula.",
+          "choice": "One graph preserves one invocation and unchanged weight count; host-gather split requires two invocations and still leaves rejected EMBEDDING_LOOKUP unless separately rewritten.",
+          "token_onehot_bytes": 17920000,
+          "frame_onehot_bytes": 16777216,
+          "additional_reject": "EMBEDDING_LOOKUP: EMBEDDING_LOOKUP: Empty quantization params.",
+          "embedding_source_weight_shape": [
+            4375,
+            1280
+          ],
+          "onehot_total_bytes": 34697216
+        }
+      },
+      "replaces": {
+        "path": "fp32/sopro_acoustic_condition_t4096_fp32.tflite",
+        "sha256": "414975cffdb3c9d9a3ac2596d4e6132087710a87ce6b750c0fe021d3e06d7e07",
+        "bytes": 101598868
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_condition_r6.py",
+          "sha256": "7908e098aa15d40f248ea69744f0c7d2e05a6f09cb0496c245b310f17846ad53",
+          "bytes": 1636
+        },
+        "export_audit": {
+          "path": "results/r6/acoustic_condition_t4096.json",
+          "sha256": "29178d9a19b6e6f8b1670ffb107eac08dd662c5d1273731d8c22609bbd36005d",
+          "bytes": 173163
+        },
+        "parity_audit": {
+          "path": "results/r6/acoustic_condition_t4096.json",
+          "sha256": "29178d9a19b6e6f8b1670ffb107eac08dd662c5d1273731d8c22609bbd36005d",
+          "bytes": 173163
+        },
+        "opcheck": {
+          "path": "results/r6/acoustic_condition_t4096_fp32_opcheck.json",
+          "sha256": "1193076a7743e2e4bb418c3946c97f147020b05722025de4be7a60672b21dc7a",
+          "bytes": 73516
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 13,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/r6/acoustic_condition_t4096.json",
+          "field": "none; rank4 source lowered cleanly"
+        }
+      },
+      "op_histogram": {
+        "FULLY_CONNECTED": 2,
+        "TRANSPOSE": 13,
+        "MUL": 4,
+        "PAD": 3,
+        "RESHAPE": 13,
+        "CONV_2D": 6,
+        "LEAKY_RELU": 1,
+        "ADD": 2,
+        "LOGISTIC": 2,
+        "ABS": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 1,
+        "CAST": 1
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 66,
+        "INT32": 14,
+        "BOOL": 1
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "CAST",
+        "GREATER",
+        "LEAKY_RELU",
+        "REDUCE_MAX"
+      ],
+      "android_path": "r6/fp32/sopro_acoustic_condition_t4096_fp32.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "wfp16/sopro_acoustic_condition_t4096_r6_wfp16.tflite"
+    },
+    {
+      "graph": "acoustic_condition_t4096",
+      "storage": "wfp16",
+      "precision": "wfp16",
+      "path": "wfp16/sopro_acoustic_condition_t4096_r6_wfp16.tflite",
+      "sha256": "23e6866a3f1c0f016999e21f288481e31574ee0da1ce3cf2336ffb0c87550add",
+      "bytes": 50820160,
+      "host_contract": "acoustic_onehot",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                1024,
+                4375
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 17920000,
+              "semantic_name": "semantic_onehot"
+            },
+            {
+              "name": "args_1",
+              "tensor_index": 1,
+              "shape": [
+                1,
+                1,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_index": 1,
+              "buffer_bytes": 4096,
+              "semantic_name": "token_mask"
+            },
+            {
+              "name": "args_2",
+              "tensor_index": 2,
+              "shape": [
+                4096,
+                1024
+              ],
+              "dtype": "float32",
+              "buffer_index": 2,
+              "buffer_bytes": 16777216,
+              "semantic_name": "frame_onehot"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 80,
+              "shape": [
+                1,
+                100,
+                4096
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 1638400,
+              "semantic_name": "mu"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "variant": "single graph with exact float onehot lookup at both gather sites",
+          "source_input_names": [
+            "semantic_tokens",
+            "token_mask",
+            "frame_to_token"
+          ],
+          "input_names": [
+            "semantic_onehot",
+            "token_mask",
+            "frame_onehot"
+          ],
+          "input_shapes": [
+            [
+              1,
+              1024,
+              4375
+            ],
+            [
+              1,
+              1,
+              1024
+            ],
+            [
+              4096,
+              1024
+            ]
+          ],
+          "input_dtypes": [
+            "FLOAT32",
+            "FLOAT32",
+            "FLOAT32"
+          ],
+          "output_names": [
+            "mu"
+          ],
+          "output_shape": [
+            1,
+            100,
+            4096
+          ],
+          "onehot_rule": "Exactly one 1.0 per row, all other elements 0.0; tokens including padded zero rows use their integer token id; frame index is the unchanged frame_to_token host formula.",
+          "choice": "One graph preserves one invocation and unchanged weight count; host-gather split requires two invocations and still leaves rejected EMBEDDING_LOOKUP unless separately rewritten.",
+          "token_onehot_bytes": 17920000,
+          "frame_onehot_bytes": 16777216,
+          "additional_reject": "EMBEDDING_LOOKUP: EMBEDDING_LOOKUP: Empty quantization params.",
+          "embedding_source_weight_shape": [
+            4375,
+            1280
+          ],
+          "onehot_total_bytes": 34697216
+        }
+      },
+      "replaces": {
+        "path": "wfp16/sopro_acoustic_condition_t4096_wfp16.tflite",
+        "sha256": "23c8c7ce01a1488911b86ffce5133f55029a53b47a2a55c6f6bd8c11a6be947b",
+        "bytes": 50822224
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/acoustic_graphs.py",
+          "sha256": "bda1b4426b23c2770d76e0af84b9f81f8411a1a97c94217c6287ba2c4ad3c86a",
+          "bytes": 3856
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/acoustic_condition_r6.py",
+          "sha256": "7908e098aa15d40f248ea69744f0c7d2e05a6f09cb0496c245b310f17846ad53",
+          "bytes": 1636
+        },
+        "export_audit": {
+          "path": "results/r6/acoustic_condition_t4096.json",
+          "sha256": "29178d9a19b6e6f8b1670ffb107eac08dd662c5d1273731d8c22609bbd36005d",
+          "bytes": 173163
+        },
+        "parity_audit": {
+          "path": "results/r6/acoustic_condition_t4096.json",
+          "sha256": "29178d9a19b6e6f8b1670ffb107eac08dd662c5d1273731d8c22609bbd36005d",
+          "bytes": 173163
+        },
+        "opcheck": {
+          "path": "results/r6/acoustic_condition_t4096_wfp16_opcheck.json",
+          "sha256": "6c35d4fcd4c07099c895a3cf639ebc7715ca7e72a59f3fd123765ea0942c1c98",
+          "bytes": 81021
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 13,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/r6/acoustic_condition_t4096.json",
+          "field": "none; rank4 source lowered cleanly"
+        }
+      },
+      "op_histogram": {
+        "DEQUANTIZE": 7,
+        "FULLY_CONNECTED": 2,
+        "TRANSPOSE": 13,
+        "MUL": 4,
+        "PAD": 3,
+        "RESHAPE": 13,
+        "CONV_2D": 6,
+        "LEAKY_RELU": 1,
+        "ADD": 2,
+        "LOGISTIC": 2,
+        "ABS": 1,
+        "REDUCE_MAX": 1,
+        "GREATER": 1,
+        "CAST": 1
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 66,
+        "INT32": 14,
+        "FLOAT16": 7,
+        "BOOL": 1
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "CAST",
+        "GREATER",
+        "LEAKY_RELU",
+        "REDUCE_MAX"
+      ],
+      "android_path": "r6/wfp16/sopro_acoustic_condition_t4096_wfp16.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": true
+    },
+    {
+      "graph": "semantic_encoder",
+      "storage": "fp32",
+      "precision": "fp32",
+      "path": "fp32/sopro_semantic_encoder_r6_fp32.tflite",
+      "sha256": "16230b386eb1b10c3a749997a4aad492e1472c0e6a101aa98e3a2bf63243c957",
+      "bytes": 81424792,
+      "host_contract": "semantic_digit_logits",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                80,
+                1002
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 320640,
+              "semantic_name": "semantic_mel"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 472,
+              "shape": [
+                1,
+                235,
+                27
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 25380,
+              "semantic_name": "digit_logits"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "semantic_mel"
+          ],
+          "input_shapes": [
+            [
+              1,
+              80,
+              1002
+            ]
+          ],
+          "input_dtypes": [
+            "FLOAT32"
+          ],
+          "output_names": [
+            "digit_logits"
+          ],
+          "output_shape": [
+            1,
+            235,
+            27
+          ],
+          "output_dtype": "FLOAT32",
+          "host_levels": [
+            7,
+            5,
+            5,
+            5,
+            5
+          ],
+          "host_bases": [
+            1,
+            7,
+            35,
+            175,
+            875
+          ],
+          "host_argmax": "Stable first maximum within each contiguous digit slice; strict > update; integer weighted sum.",
+          "removed_graph_work": [
+            "5 ARG_MAX",
+            "all INT64 and token-index arithmetic",
+            "2 fixed interpolation GATHER_ND replaced by exact constant onehot FC"
+          ],
+          "unchanged_interpolation": "Gathered left/right values remain separately multiplied by (1-weight)/weight then added, with the original fp32 weights."
+        }
+      },
+      "replaces": {
+        "path": "fp32/sopro_semantic_encoder_fp32.tflite",
+        "sha256": "c1d67fc72b953a6805690910f59d5fe68f2e47a15013ec27b6f979c1869f1ef9",
+        "bytes": 80479220
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/semantic_graph.py",
+          "sha256": "c585e0f05ed1b1468b06387a9e85f1d07114a5e3e0a7c8e976d43e73d21d462c",
+          "bytes": 3012
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/semantic_logits_r6.py",
+          "sha256": "d6a45c8f36cf6447eefe4b957e2953fd0145f0e0357b7edffd9f023aa58ed712",
+          "bytes": 1897
+        },
+        "export_audit": {
+          "path": "results/r6/semantic_encoder.json",
+          "sha256": "6a6c2c51a56f64bbacdcf6ac9355ddf076d7aef62d3dae8ac1693ca1fd822f1d",
+          "bytes": 1426713
+        },
+        "parity_audit": {
+          "path": "results/r6/semantic_encoder.json",
+          "sha256": "6a6c2c51a56f64bbacdcf6ac9355ddf076d7aef62d3dae8ac1693ca1fd822f1d",
+          "bytes": 1426713
+        },
+        "opcheck": {
+          "path": "results/r6/semantic_encoder_fp32_opcheck.json",
+          "sha256": "50e66b55e94237bca1d8e8b8a76c2e3170fcdd5bad4037137ce665848b33d059",
+          "bytes": 621791
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 105,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/r6/semantic_encoder.json",
+          "field": "rank4_normalization"
+        }
+      },
+      "op_histogram": {
+        "RESHAPE": 142,
+        "TRANSPOSE": 31,
+        "CONV_2D": 2,
+        "GELU": 8,
+        "PAD": 1,
+        "ADD": 49,
+        "SLICE": 1,
+        "MEAN": 28,
+        "SQUARED_DIFFERENCE": 14,
+        "RSQRT": 14,
+        "MUL": 35,
+        "SUB": 14,
+        "FULLY_CONNECTED": 39,
+        "BATCH_MATMUL": 12,
+        "SOFTMAX": 6
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 488,
+        "INT32": 57
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL"
+      ],
+      "android_path": "r6/fp32/sopro_semantic_encoder_fp32.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "wfp16/sopro_semantic_encoder_r6_wfp16.tflite"
+    },
+    {
+      "graph": "semantic_encoder",
+      "storage": "wfp16",
+      "precision": "wfp16",
+      "path": "wfp16/sopro_semantic_encoder_r6_wfp16.tflite",
+      "sha256": "0b1af43d356f225b3707746364b23187b18fcdb59318c0369a5596482d431484",
+      "bytes": 41371840,
+      "host_contract": "semantic_digit_logits",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                80,
+                1002
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 320640,
+              "semantic_name": "semantic_mel"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 472,
+              "shape": [
+                1,
+                235,
+                27
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 25380,
+              "semantic_name": "digit_logits"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "semantic_mel"
+          ],
+          "input_shapes": [
+            [
+              1,
+              80,
+              1002
+            ]
+          ],
+          "input_dtypes": [
+            "FLOAT32"
+          ],
+          "output_names": [
+            "digit_logits"
+          ],
+          "output_shape": [
+            1,
+            235,
+            27
+          ],
+          "output_dtype": "FLOAT32",
+          "host_levels": [
+            7,
+            5,
+            5,
+            5,
+            5
+          ],
+          "host_bases": [
+            1,
+            7,
+            35,
+            175,
+            875
+          ],
+          "host_argmax": "Stable first maximum within each contiguous digit slice; strict > update; integer weighted sum.",
+          "removed_graph_work": [
+            "5 ARG_MAX",
+            "all INT64 and token-index arithmetic",
+            "2 fixed interpolation GATHER_ND replaced by exact constant onehot FC"
+          ],
+          "unchanged_interpolation": "Gathered left/right values remain separately multiplied by (1-weight)/weight then added, with the original fp32 weights."
+        }
+      },
+      "replaces": {
+        "path": "wfp16/sopro_semantic_encoder_wfp16.tflite",
+        "sha256": "a68d0d8fc5ee867716e7d556f3e0561ae618c0810f186d1c5bb2d55a7742af9b",
+        "bytes": 40895552
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/semantic_graph.py",
+          "sha256": "c585e0f05ed1b1468b06387a9e85f1d07114a5e3e0a7c8e976d43e73d21d462c",
+          "bytes": 3012
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/semantic_logits_r6.py",
+          "sha256": "d6a45c8f36cf6447eefe4b957e2953fd0145f0e0357b7edffd9f023aa58ed712",
+          "bytes": 1897
+        },
+        "export_audit": {
+          "path": "results/r6/semantic_encoder.json",
+          "sha256": "6a6c2c51a56f64bbacdcf6ac9355ddf076d7aef62d3dae8ac1693ca1fd822f1d",
+          "bytes": 1426713
+        },
+        "parity_audit": {
+          "path": "results/r6/semantic_encoder.json",
+          "sha256": "6a6c2c51a56f64bbacdcf6ac9355ddf076d7aef62d3dae8ac1693ca1fd822f1d",
+          "bytes": 1426713
+        },
+        "opcheck": {
+          "path": "results/r6/semantic_encoder_wfp16_opcheck.json",
+          "sha256": "13d4a42bc7d13369d716a5d058470160aa5dc0852696d4fe326fd4be0dfc3db2",
+          "bytes": 684005
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 105,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/r6/semantic_encoder.json",
+          "field": "rank4_normalization"
+        }
+      },
+      "op_histogram": {
+        "RESHAPE": 142,
+        "TRANSPOSE": 31,
+        "DEQUANTIZE": 41,
+        "CONV_2D": 2,
+        "GELU": 8,
+        "PAD": 1,
+        "ADD": 49,
+        "SLICE": 1,
+        "MEAN": 28,
+        "SQUARED_DIFFERENCE": 14,
+        "RSQRT": 14,
+        "MUL": 35,
+        "SUB": 14,
+        "FULLY_CONNECTED": 39,
+        "BATCH_MATMUL": 12,
+        "SOFTMAX": 6
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 488,
+        "FLOAT16": 41,
+        "INT32": 57
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL"
+      ],
+      "android_path": "r6/wfp16/sopro_semantic_encoder_wfp16.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": true
+    },
+    {
+      "graph": "style_prefix",
+      "storage": "fp32",
+      "precision": "fp32",
+      "path": "fp32/sopro_style_prefix_r6_fp32.tflite",
+      "sha256": "63ca99524d37134460af37f769a9bfb9896446841069cb013c9219a6897deb35",
+      "bytes": 3193560,
+      "host_contract": "unchanged",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                160,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 327680,
+              "semantic_name": "style_embeddings"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 57,
+              "shape": [
+                1,
+                8,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 16384,
+              "semantic_name": "prefix_vectors"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "style_embeddings"
+          ],
+          "output_names": [
+            "prefix_vectors"
+          ],
+          "io_change": "none",
+          "rewrite": "Attention uses rank4 BMM with singleton leading batch dimension."
+        }
+      },
+      "replaces": {
+        "path": "fp32/sopro_style_prefix_fp32.tflite",
+        "sha256": "78e5c8aed42c5ec23da2224fd2ed3bb3368b6a49b8b1b450118759829c075ec5",
+        "bytes": 3191224
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/ar_graphs.py",
+          "sha256": "ab23a34559b82af3ee4f65ec4263e0cedb951d074b3603f7ef490e506b767152",
+          "bytes": 4345
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/style_prefix_r6.py",
+          "sha256": "8731410ea26472984689ef1b1aafa83b61da4691c0d66e072d30a0c185c65a42",
+          "bytes": 1173
+        },
+        "export_audit": {
+          "path": "results/round6/style_prefix_fp32_export.json",
+          "sha256": "b1466499bb14a05336023e183fc5e5103f0cd86322486e80077e96921cf8a05a",
+          "bytes": 3360
+        },
+        "parity_audit": {
+          "path": "results/round6/style_prefix_cpu_parity.json",
+          "sha256": "a256012abb0fbfbec6ffd8e9b2bd3708d6a613ea2a177056e39251722a3d2a23",
+          "bytes": 12264
+        },
+        "opcheck": {
+          "path": "results/round6/style_prefix_fp32_opcheck.json",
+          "sha256": "96e048e5ce047df519d0222c2e74f44bd389b0202c64e6909f0b773a6d233096",
+          "bytes": 52451
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 7,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/style_prefix_fp32_export.json",
+          "field": "rank4_layout_canonicalization"
+        }
+      },
+      "op_histogram": {
+        "MUL": 9,
+        "SUM": 2,
+        "ADD": 3,
+        "RESHAPE": 16,
+        "RSQRT": 2,
+        "FULLY_CONNECTED": 3,
+        "TRANSPOSE": 3,
+        "BATCH_MATMUL": 2,
+        "SOFTMAX": 1
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 52,
+        "INT32": 18
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL"
+      ],
+      "android_path": "r6/fp32/sopro_style_prefix_fp32.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "fp32/sopro_style_prefix_r9_fp32.tflite"
+    },
+    {
+      "graph": "style_prefix",
+      "storage": "wfp16",
+      "precision": "wfp16",
+      "path": "wfp16/sopro_style_prefix_r6_wfp16.tflite",
+      "sha256": "95791de76282b699122aa575f78d155878b1be333430223377d36404d4e45285",
+      "bytes": 1621024,
+      "host_contract": "unchanged",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "subgraph": 0,
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                160,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 327680,
+              "semantic_name": "style_embeddings"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 57,
+              "shape": [
+                1,
+                8,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 16384,
+              "semantic_name": "prefix_vectors"
+            }
+          ]
+        }
+      ],
+      "host_delta": {
+        "serving_default": {
+          "input_names": [
+            "style_embeddings"
+          ],
+          "output_names": [
+            "prefix_vectors"
+          ],
+          "io_change": "none",
+          "rewrite": "Attention uses rank4 BMM with singleton leading batch dimension."
+        }
+      },
+      "replaces": {
+        "path": "wfp16/sopro_style_prefix_wfp16.tflite",
+        "sha256": "ab56621a5c9bf880656ad517c4219b3db4d1da3f75f9a9ae929d7dbe9a1ae8c9",
+        "bytes": 1618800
+      },
+      "provenance": {
+        "original_source": {
+          "path": "conversion/ar_graphs.py",
+          "sha256": "ab23a34559b82af3ee4f65ec4263e0cedb951d074b3603f7ef490e506b767152",
+          "bytes": 4345
+        },
+        "rewrite_source": {
+          "path": "conversion_r6/style_prefix_r6.py",
+          "sha256": "8731410ea26472984689ef1b1aafa83b61da4691c0d66e072d30a0c185c65a42",
+          "bytes": 1173
+        },
+        "export_audit": {
+          "path": "results/round6/style_prefix_wfp16_export.json",
+          "sha256": "2b052b9ead328013ee8b495efbcba746daadf6736d0032a72da4aeabb9cfa2ad",
+          "bytes": 3827
+        },
+        "parity_audit": {
+          "path": "results/round6/style_prefix_cpu_parity.json",
+          "sha256": "a256012abb0fbfbec6ffd8e9b2bd3708d6a613ea2a177056e39251722a3d2a23",
+          "bytes": 12264
+        },
+        "opcheck": {
+          "path": "results/round6/style_prefix_wfp16_opcheck.json",
+          "sha256": "a88e72c1d989f78a829e2a8617f96c6c1daebd2176a72e097853489ca64f2caf",
+          "bytes": 55596
+        },
+        "alias_probe": {
+          "aliased_constants": 0,
+          "constants_lowered": 7,
+          "collisions": []
+        },
+        "rank4_promotion": {
+          "audit": "results/round6/style_prefix_wfp16_export.json",
+          "field": "rank4_layout_canonicalization"
+        }
+      },
+      "op_histogram": {
+        "MUL": 9,
+        "SUM": 2,
+        "ADD": 3,
+        "RESHAPE": 16,
+        "RSQRT": 2,
+        "DEQUANTIZE": 3,
+        "FULLY_CONNECTED": 3,
+        "TRANSPOSE": 3,
+        "BATCH_MATMUL": 2,
+        "SOFTMAX": 1
+      },
+      "tensor_dtype_histogram": {
+        "FLOAT32": 52,
+        "FLOAT16": 3,
+        "INT32": 18
+      },
+      "forbidden_opscan": "PASS",
+      "ops_outside_known_compiled_speaker_vocoder_set": [
+        "BATCH_MATMUL"
+      ],
+      "android_path": "r6/wfp16/sopro_style_prefix_wfp16.tflite",
+      "generation": "r6",
+      "active_android_contract_variant": false,
+      "artifact_role": "retained parity/re-export variant; not installed by the shipped runtime manifest",
+      "superseded_on_device_by": "fp32/sopro_style_prefix_r9_fp32.tflite"
+    },
+    {
+      "graph": "style_prefix",
+      "storage": "fp32",
+      "path": "fp32/sopro_style_prefix_r9_fp32.tflite",
+      "sha256": "5dbe43a551015ab2a03451a015918dfeaa550e9456f0d277a7646db92769eaf5",
+      "bytes": 3193116,
+      "host_contract": "unchanged",
+      "signatures": [
+        {
+          "name": "serving_default",
+          "inputs": [
+            {
+              "name": "args_0",
+              "tensor_index": 0,
+              "shape": [
+                1,
+                160,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 327680,
+              "semantic_name": "style_embeddings"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "output_0",
+              "tensor_index": 57,
+              "shape": [
+                1,
+                8,
+                512
+              ],
+              "dtype": "float32",
+              "buffer_index": 0,
+              "buffer_bytes": 16384,
+              "semantic_name": "prefix_vectors"
+            }
+          ]
+        }
+      ],
+      "constant_reshape_paths": [],
+      "ship_candidate": true,
+      "android_path": "r9/fp32/sopro_style_prefix_fp32.tflite",
+      "generation": "r9",
+      "active_android_contract_variant": true
     }
-  ]
+  ],
+  "base_revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+  "retained_original_model_count": 29,
+  "added_model_count": 16,
+  "android_contract_deltas": [
+    "contract_r6.json",
+    "contract_r9.json"
+  ],
+  "android_runtime_manifest": "android/scripts/assets.json",
+  "android_runtime_model_count": 11,
+  "pixel_8a": "pending",
+  "android_note": "Files with the _r6 / _r9 suffix are the Android variants; active_android_contract_variant marks which file the app loads for each graph."
 }

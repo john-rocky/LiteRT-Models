@@ -1,0 +1,5 @@
+{
+  "format_version": 1,
+  "description": "Optional debug inputs use a separate manifest and are never bundled with this source module. Each row contains file, bytes and sha256.",
+  "assets": []
+}

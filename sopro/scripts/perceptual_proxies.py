@@ -31,7 +31,7 @@ def highband_db(wav,sr=24000):
 def paired_proxies(reference,actual):
     assert np.shape(reference)==np.shape(actual)
     a,b=hnr_frames(reference),hnr_frames(actual);voiced=a>0
-    assert voiced.any(),'No voiced baseline frames; supervisor policy required'
+    assert voiced.any(),'No voiced baseline frames; explicit policy required'
     ra,rb=float(a[voiced].mean()),float(b[voiced].mean())
     ha,hb=highband_db(reference),highband_db(actual)
     return {'hnr':{'reference_mean_db':ra,'actual_mean_db':rb,'difference_db':rb-ra,'voiced_frames':int(voiced.sum()),'all_frames':a.size,'limit_db':1.0,'pass':bool(abs(rb-ra)<=1.0)},

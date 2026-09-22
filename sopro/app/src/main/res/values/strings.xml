@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Sopro</string>
+  <string name="text_label">Text to speak</string>
+  <string name="lang_en">EN</string><string name="lang_pt">PT</string><string name="lang_fr">FR</string><string name="lang_de">DE</string>
+  <string name="example_en">The morning light fell across the garden while a small bird sang beside the open window.</string>
+  <string name="example_pt">A luz da manhã entrou pela janela e iluminou as flores que estavam sobre a mesa da cozinha.</string>
+  <string name="example_fr">Après la pluie, nous avons suivi le petit chemin qui descend vers le lac au milieu des arbres.</string>
+  <string name="example_de">Nach dem Regen gingen wir den schmalen Weg entlang und hörten den Wind in den hohen Bäumen.</string>
+  <string name="voice_default">Voice: bundled demo reference</string>
+  <string name="voice_attribution">Voice donation 0a67 · CC0 · Kyutai Unmute Voice Donation Project</string>
+  <string name="pick_audio">Pick an audio file</string>
+  <string name="cpu">CPU</string><string name="gpu">GPU</string>
+  <string name="synthesize">Synthesize</string><string name="play">Play</string><string name="save">Save WAV</string>
+  <string name="status_ready">Ready</string>
+  <string name="status_missing">Model not found: %1$s — run scripts/install_to_device.sh.</string>
+  <string name="status_unavailable">Models are not ready</string>
+  <string name="status_ready_ms" translatable="false">Ready in %1$.0f ms</string>
+  <string name="status_synthesizing">Generating speech…</string>
+  <string name="status_decoding" translatable="false">Decoded %1$.2f seconds</string>
+  <string name="status_complete" translatable="false">Generated %1$.2f seconds from %2$d speech tokens</string>
+  <string name="status_failed">Synthesis failed</string>
+  <string name="status_gate">Running fixture gate…</string>
+  <string name="gate_result">Gate %1$s: %2$s</string>
+  <string name="reference_heading">Reference voice</string>
+  <string name="voice_permission_notice">Use a voice you are allowed to clone. Do not impersonate people.</string>
+  <string name="demo_voice">Demo</string>
+  <string name="record_audio">Record 10 s</string>
+  <string name="voice_file">Selected audio file</string>
+  <string name="voice_recorded">Recorded reference</string>
+  <string name="reference_length" translatable="false">Reference: %1$.2f s · first 10 s used after normalization</string>
+  <string name="reference_padding_notice">This reference is shorter than 10 seconds. It will be zero-padded after normalization; quality with this padding has not been tested.</string>
+  <string name="language_heading">Language</string>
+  <string name="stop">Stop</string>
+  <string name="play_again">Play again</string>
+  <string name="share">Share</string>
+  <string name="share_title">Share synthesized audio</string>
+  <string name="saved_locally">WAV and synthesis details saved in the app’s outputs folder.</string>
+  <string name="status_loading_reference">Decoding reference audio…</string>
+  <string name="status_reference_loaded" translatable="false">Reference ready: %1$.2f seconds</string>
+  <string name="status_recording" translatable="false">Recording: %1$.1f / 10 seconds</string>
+  <string name="microphone_permission_denied">Microphone permission is required to record a reference.</string>
+  <string name="status_draining">Synthesis complete; finishing playback…</string>
+  <string name="status_stopping">Stopping after the current operation…</string>
+  <string name="status_stopped">Stopped</string>
+  <string name="status_playing">Playing saved WAV…</string>
+  <string name="status_exported">WAV saved to the selected location.</string>
+  <string name="error_save_destination">Could not open the selected save location.</string>
+  <string name="stat_ttfa" translatable="false">First audio: %1$.1f ms</string>
+  <string name="stat_onset" translatable="false">First audio plus leading cut: %1$.1f ms</string>
+  <string name="stat_wall" translatable="false">Synthesis wall time: %1$.1f ms</string>
+  <string name="stat_rtf" translatable="false">Real-time factor: %1$.3f</string>
+  <string name="stat_placement">Placement: %1$s</string>
+  <string name="stat_seed" translatable="false">Seed: %1$d</string>
+  <string name="debug_placement">Debug: graph placement</string>
+  <string name="placement_heading">Processing</string>
+  <string name="placement_automatic">Automatic</string>
+  <string name="placement_all_cpu">All CPU</string>
+  <string name="placement_gpu_ar">GPU speech-token generation</string>
+  <string name="placement_hybrid_description">Galaxy S26 hybrid: GPU reference encoders and acoustic model; CPU speech tokens, style and waveform decoding.</string>
+  <string name="placement_cpu_fallback">This device uses CPU processing until a GPU configuration has been verified.</string>
+  <string name="placement_cpu_description">All stages run on the CPU.</string>
+  <string name="placement_gpu_ar_description">Uses the GPU for speech tokens as well as reference encoders and the acoustic model. This option can be slower because each token transfers the attention cache.</string>
+  <string name="placement_custom_description">Using the graph configuration supplied at launch.</string>
+  <string name="placement_details">Requested accelerator for each graph. GPU FP32 uses full-precision GPU arithmetic.</string>
+  <string name="gpu_fp32">GPU FP32</string>
+  <string name="style_storage_heading">Style model storage candidate</string>
+  <string name="style_fp32">FP32 (default)</string>
+  <string name="style_wfp16">FP16 weights</string>
+  <string name="graph_speaker">Speaker encoder</string>
+  <string name="graph_semantic">Semantic encoder</string>
+  <string name="graph_style">Style prefix</string>
+  <string name="graph_ar">Speech tokens</string>
+  <string name="graph_condition">Acoustic condition</string>
+  <string name="graph_condition_long">Acoustic condition (long)</string>
+  <string name="graph_velocity">Acoustic velocity</string>
+  <string name="graph_velocity_long">Acoustic velocity (long)</string>
+  <string name="graph_vocoder_start">Waveform start</string>
+  <string name="graph_vocoder_step">Waveform step</string>
+  <string name="graph_vocoder_flush">Waveform flush</string>
+  <string name="stat_ready_ms" translatable="false">Model setup: %1$.0f ms · no synthesis warm-up</string>
+  <string name="status_loading_models">Loading models…</string>
+</resources>

@@ -1,0 +1,47 @@
+{
+  "status": "PASS",
+  "model_revision": "f747f9edfb7b0233a3b7105af3a75603a7213d26",
+  "package_revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+  "method": "Source conversion cloned parameters and buffers contiguous before export; metadata-only promotion preserves every original buffer byte.",
+  "graphs": [
+    {
+      "graph": "vocoder_stream_start",
+      "sha256": "3a64a0e437caac9ee9637d1d73115ccfe8cff5a24f1665b4ab181a4483737da1",
+      "bytes": 54181584,
+      "constants_cloned_contiguous": true,
+      "noncontiguous_before_clone": [],
+      "alias_probe": {
+        "constants_lowered": 80,
+        "distinct_keys": 80,
+        "aliased_constants": 0,
+        "collisions": []
+      }
+    },
+    {
+      "graph": "vocoder_stream_step",
+      "sha256": "51701381131b45fe9afff4cbbff8ef881c2e0254b7333cbcb34d216cc1931282",
+      "bytes": 54178996,
+      "constants_cloned_contiguous": true,
+      "noncontiguous_before_clone": [],
+      "alias_probe": {
+        "constants_lowered": 80,
+        "distinct_keys": 80,
+        "aliased_constants": 0,
+        "collisions": []
+      }
+    },
+    {
+      "graph": "vocoder_stream_flush",
+      "sha256": "10271f9c9f2a83872b9fd88760faa59f68dffe13634596d39fef2de9532e3c02",
+      "bytes": 54177908,
+      "constants_cloned_contiguous": true,
+      "noncontiguous_before_clone": [],
+      "alias_probe": {
+        "constants_lowered": 80,
+        "distinct_keys": 80,
+        "aliased_constants": 0,
+        "collisions": []
+      }
+    }
+  ]
+}

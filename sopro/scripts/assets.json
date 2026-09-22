@@ -1,0 +1,191 @@
+{
+  "format_version": 1,
+  "package": "com.sopro",
+  "download_connections": 4,
+  "publication_note": "A null revision marks files staged for publication; use matching local assets or --revision after publication.",
+  "assets": [
+    {
+      "file": "contract.json",
+      "bytes": 98047,
+      "sha256": "e4ea40c95fd2d3bbc937377e5f3734b89771b3c55fe4f778821a4d77a8442a6f",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "contract.json",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    },
+    {
+      "file": "contract_r6.json",
+      "bytes": 93961,
+      "sha256": "6fbc6bb3e96ba84d8a0e0ebb11668e15062cf9c76d56dde13f5ac12665bd4820",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "contract_r6.json",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "contract_r9.json",
+      "bytes": 2383,
+      "sha256": "ac8d892dac48d546ebe36220fee693e176bef78437bb32f91b33ed486321abbe",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "contract_r9.json",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "host_assets/ar_tables_fp32.bin",
+      "bytes": 25741312,
+      "sha256": "9c6c89d2af9efffbf3c0a486acbd1f708c610b5cd0d67ab338abce0841f3b88a",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "host_assets/ar_tables_fp32.bin",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "host_assets/ar_tables_fp32.json",
+      "bytes": 801,
+      "sha256": "9b42a5f8923891627a6c36b151ebc0c9153221939f01a5c46bf1a57282f8349f",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "host_assets/ar_tables_fp32.json",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "host_assets/demo_voice.wav",
+      "bytes": 480044,
+      "sha256": "4bd75d0ef0ad3f4e82ac075eab2a132651d2463f83bec210edeeccaf69294886",
+      "repository": "kyutai/tts-voices",
+      "hf_path": "voice-donations/0a67.wav",
+      "revision": "323332d33f997de8394f24a193e1a76df720e01a",
+      "group": "runtime",
+      "bundled_asset": "demo_voice.wav"
+    },
+    {
+      "file": "host_assets/dsp_constants_fp32.bin",
+      "bytes": 446224,
+      "sha256": "d52b5b6dacba6ba21a6e0d44578575211f13d0711bbebeb5c06e0c6656ede574",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "host_assets/dsp_constants_fp32.bin",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    },
+    {
+      "file": "host_assets/host_assets.json",
+      "bytes": 6665,
+      "sha256": "68e37b921b8a91d578ef157092427a4bd691354e543f82c40dee91efae3ac16e",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "host_assets/host_assets.json",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    },
+    {
+      "file": "host_assets/tokenizer.model",
+      "bytes": 370821,
+      "sha256": "2d76e7a4e8dbd0a4d2137c13200ac9710ad3fd93fad20a61f71102ab7bae754d",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "host_assets/tokenizer.model",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    },
+    {
+      "file": "r6/int8/sopro_ar_merged_i8native.tflite",
+      "bytes": 55249192,
+      "sha256": "3d80c19472006c6e6602977629f6419c33903fd12a12924c65407b03cf941f2e",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "int8/sopro_ar_merged_r6_int8.tflite",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "r6/wfp16/sopro_acoustic_condition_t4096_wfp16.tflite",
+      "bytes": 50820160,
+      "sha256": "23e6866a3f1c0f016999e21f288481e31574ee0da1ce3cf2336ffb0c87550add",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_acoustic_condition_t4096_r6_wfp16.tflite",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "r6/wfp16/sopro_acoustic_condition_wfp16.tflite",
+      "bytes": 50820160,
+      "sha256": "ad5ef423f523dc903e5909b2310bd82311f4a972b82c4a0c145d255999eb7d0e",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_acoustic_condition_r6_wfp16.tflite",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "r6/wfp16/sopro_acoustic_velocity_t4096_wfp16.tflite",
+      "bytes": 65712384,
+      "sha256": "51aa464fbca8240b906621ba334d8891835d12c51ccc95a76b4ec6a2775e54c6",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_acoustic_velocity_t4096_r6_wfp16.tflite",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "r6/wfp16/sopro_acoustic_velocity_wfp16.tflite",
+      "bytes": 64655616,
+      "sha256": "8b78862126487e49fffefbfa1aed5b28c4f9eb45384f224023706514352f6a7b",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_acoustic_velocity_r6_wfp16.tflite",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "r6/wfp16/sopro_semantic_encoder_wfp16.tflite",
+      "bytes": 41371840,
+      "sha256": "0b1af43d356f225b3707746364b23187b18fcdb59318c0369a5596482d431484",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_semantic_encoder_r6_wfp16.tflite",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "r9/fp32/sopro_style_prefix_fp32.tflite",
+      "bytes": 3193116,
+      "sha256": "5dbe43a551015ab2a03451a015918dfeaa550e9456f0d277a7646db92769eaf5",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "fp32/sopro_style_prefix_r9_fp32.tflite",
+      "revision": null,
+      "group": "runtime"
+    },
+    {
+      "file": "wfp16/sopro_speaker_encoder_wfp16.tflite",
+      "bytes": 6516144,
+      "sha256": "39f46f2b66bc6c3f73b48f69faf7e480efc72d3a20a5a0cca8b4ee325ecabd0e",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_speaker_encoder_wfp16.tflite",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    },
+    {
+      "file": "wfp16/sopro_vocoder_stream_flush_wfp16.tflite",
+      "bytes": 27246640,
+      "sha256": "adb45a266fc98e69d3731cd2ebf8db47ff692feaf1fda35b4cc53a18e4e9e4d3",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_vocoder_stream_flush_wfp16.tflite",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    },
+    {
+      "file": "wfp16/sopro_vocoder_stream_start_wfp16.tflite",
+      "bytes": 27250512,
+      "sha256": "5da076e8414f62db2bf99357495be848c87fe5921608b32ff38e39e59811d65f",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_vocoder_stream_start_wfp16.tflite",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    },
+    {
+      "file": "wfp16/sopro_vocoder_stream_step_wfp16.tflite",
+      "bytes": 27247488,
+      "sha256": "8657d179710ffba7d0a5dec3227226c93c8b7868bc51cd34ae19d8eb9ecf634a",
+      "repository": "litert-community/sopro-v2-turbo",
+      "hf_path": "wfp16/sopro_vocoder_stream_step_wfp16.tflite",
+      "revision": "b1d2073b8111950ebf35614f4fd70b01ddaac3fb",
+      "group": "runtime"
+    }
+  ],
+  "selection": "Exactly the Galaxy S26 shipped runtime set; all-CPU uses the same files. Pixel 8a: pending.",
+  "optional_gate_fixtures": "Separate --fixtures-manifest and --fixture-dir; no private data in this manifest."
+}

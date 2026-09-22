@@ -30,10 +30,10 @@ class Signature:
 
 
 class Timed:
-    def __init__(self,model,name,owner):self.model,self.name,self.owner=model,name,owner
+    def __init__(self,model,name,pipeline):self.model,self.name,self.pipeline=model,name,pipeline
     def call_ordered(self,*arrays):
         start=time.perf_counter();out=self.model.call_ordered(*arrays)
-        self.owner.timings.setdefault(self.name,[]).append((time.perf_counter()-start)*1000)
+        self.pipeline.timings.setdefault(self.name,[]).append((time.perf_counter()-start)*1000)
         return out
     def call_named(self,arrays):
         out=self.call_ordered(*(arrays[f'args_{i}'] for i in range(len(arrays))))

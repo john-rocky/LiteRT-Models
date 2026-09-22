@@ -55,7 +55,7 @@ def compare(reference, actual):
             'norm_ratio': float(np.linalg.norm(y)/np.linalg.norm(x)) if np.linalg.norm(x) else None}
 
 def float_gate(metrics, corr_min=0.9999):
-    """Supervisor-approved scale-aware rule; supply only valid elements."""
+    """Scale-aware rule; supply only valid elements."""
     if not metrics.get('finite', False):
         return False
     limit = max(1e-3, 1e-4 * metrics['reference_absmax'])

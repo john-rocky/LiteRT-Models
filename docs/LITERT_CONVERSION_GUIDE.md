@@ -1016,17 +1016,32 @@ sequences 24/24.
    quiet high bands (normalized-mel error 3.8e-3, end-to-end waveform max error 6.3e-3 on one utterance).
    `np.fft.rfft(x, norm="forward") * np.float32(n_fft)` selects the fp32 path bit-exactly (error 4e-7). A
    Kotlin FFT needs its own fp32 parity check; matching the math is not matching the rounding.
-4. **Toolchain walls (recorded, not worked around):** litert-torch 0.9.4 native PT2E per-channel int8 on a
-   rank-3 Conv1d weight (512×100×7) fails legalization — `'stablehlo.uniform_dequantize' op operand #0 must be
-   ranked tensor of per-tensor integer quantized or per-axis integer quantized values, but got
-   'tensor<512x100x7xi8>'` — so no native-int8 vocoder (post-hoc DRQ works, but fails the waveform gate
-   anyway); and macOS ai-edge-litert 2.2.0 GPU-only `CompiledModel` (Metal accelerator registered) SIGSEGVs
-   after `Flatbuffer model initialized` even on a trivial Linear+ReLU graph, so there are no Mac GPU numbers.
-   The int8 that ships is the AR only (native PT2E per-channel dynamic, 55 MB vs 223 MB fp32, greedy replay
-   2834/2920, free-running WER 1.31 %, speaker cosine 0.925).
+4. **Toolchain facts (corrected 2026-09-23):** the first run read a `fold_quantize=True` failure as a rank-3 Conv1d wall.
+   A 24-case matrix (Conv1d / Conv2d / Linear × small and real shapes × static / dynamic × fold True / False) shows
+   the documented path — `convert_pt2e(..., fold_quantize=False)` — converts every module with per-channel int8
+   weights (12/12), and `fold_quantize=True` (torchao's default) fails every module of every rank with
+   `'stablehlo.uniform_dequantize' op operand #0 must be ranked tensor of per-tensor integer quantized or per-axis
+   integer quantized values` (12/12). The int8 vocoder is absent because it failed the waveform gate, not
+   because of the converter. On macOS the ai-edge-litert 2.2.0 wheel's GPU-only `CompiledModel` (Metal accelerator
+   registered) SIGSEGVs after `Flatbuffer model initialized` on a trivial Linear+ReLU graph in GPU-only, GPU|CPU and
+   `enforce_f32` form; the 2.1.6 wheel runs the same file and script on Metal (same Python 3.12.13), so there are no
+   Mac GPU numbers from 2.2.0. The int8 that ships is the AR only (native PT2E per-channel dynamic, 55 MB vs 223 MB
+   fp32, greedy replay 2834/2920, free-running WER 1.31 %, speaker cosine 0.925).
 
 Scripts: `sopro/scripts/` (portable copy of the HF repo's `conversion/`), contract in `sopro/contract.json`;
 full REPRODUCE and card on [litert-community/sopro-v2-turbo](https://huggingface.co/litert-community/sopro-v2-turbo).
+
+**Android (Galaxy S26, LiteRT 2.2.0, 2026-09-23).** GPU rules learned on Adreno: the speaker and semantic encoders need
+`GpuOptions(precision = FP32)` (default precision → non-finite speaker output, 93–100/235 semantic token flips); the acoustic DiT
+(condition + velocity) passes the mel-domain gates at default precision (velocity 177 ms on GPU vs 718 ms on CPU); the AR step is
+numerically exact on GPU FP32 (2,920/2,920) but bus-bound — 22 ms/step vs 9.5 ms on CPU because the 50 MB packed KV is re-uploaded
+every step — so the AR stays on CPU (int8); the Vocos ConvNeXt vocoder miscomputes on the GPU in both precisions (raw corr ≈ 0, HNR
+Δ 5.7 dB; offline and streaming graphs; a rank-4 promotion of every rank-3 tensor did not change it); the style prefix is rejected
+(`BATCH_MATMUL: non-constant tensor`). Exact rewrites that made the rest GPU-resident: one-hot float selections instead of
+GATHER_ND (AR last row, acoustic token/frame gathers), no `BROADCAST_TO` in the DiT, FSQ argmax moved to the host (ARG_MAX/CAST on
+INT64 are rejected), shape metadata promoted to rank 4 for the AR step's 24 rank-3 BMMs. Shipped hybrid: TTFA 2.07 s, RTF 0.41,
+first tap 1.8–2.9 s after a 3.5 s Ready (GPU compiles); all-CPU 3.34 s / 0.64. Device transfer rule: an app cannot copy into
+/data/local/tmp under SELinux — pull with `adb exec-out run-as <pkg> tar -cf - files/<dir>`.
 
 ## 2026-09-22 追記 — Laya Multilingual (mmBERT-base typed-decision scorer) on S26 GPU
 
