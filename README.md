@@ -73,6 +73,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [CREPE](#crepe) | Pitch detection | Pixel 8a | ~75 ms/frame | [🤗 HF](https://huggingface.co/litert-community) |
 | [TIGER-DnR](#tiger-dnr-dialog--effects--music) | Audio source separation | Pixel 8a | ~4.5 s per 12.06 s chunk per stem | [🤗 HF](https://huggingface.co/litert-community) |
 | [pyannote 3.1 stack](#pyannote-31-stack-segmentation--wespeaker) | Speaker diarization | Pixel 8a | ~1.2 ms per embedding window | [🤗 HF](https://huggingface.co/litert-community) |
+| [Nemotron-3-Diarization](#nemotron-3-diarization-streaming-sortformer-8-speakers) | Speaker diarization (streaming, up to 8 speakers) | Galaxy S26 | 171 ms per 0.72 s step (RTF 0.24, FP32) | [🤗 HF](https://huggingface.co/litert-community/Nemotron-3-Diarization-LiteRT) |
 | [CMGAN](#cmgan-noise-suppression) | Speech enhancement | Pixel 8a | ~20 ms per 2 s chunk | [🤗 HF](https://huggingface.co/litert-community) |
 | [Basic Pitch](#basic-pitch-audio-to-midi) | Music transcription (audio → MIDI) | Pixel 8a | ~4.4 ms per 2 s window | [🤗 HF](https://huggingface.co/litert-community) |
 | [XFeat](#xfeat-local-features) | Image matching (local features) | Pixel 8a | ~0.4 ms per 640×480 image | [🤗 HF](https://huggingface.co/litert-community) |
@@ -1310,6 +1311,45 @@ per-speaker timeline, talk-time summary, per-speaker playback.
 [segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT) |
 [WeSpeaker](https://github.com/wenet-e2e/wespeaker) weights
 [pyannote/wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM) (CC-BY-4.0)
+
+### Nemotron-3-Diarization (streaming Sortformer, 8 speakers)
+
+NVIDIA's Nemotron-3-Diarization (100M, up to 8 speakers, OpenMDW-1.1): **streaming "who spoke when"**, one decision
+per 10 ms frame, the first after 1.04 s of audio and then one step per 0.72 s. The 31-layer encoder and the output
+head run **fully on the LiteRT CompiledModel GPU** on a Galaxy S26 (2,915 / 2,915 nodes on LITERT_CL, 1 partition);
+the speaker cache and FIFO (the streaming state) are Kotlin host code. With graph B at GPU precision FP32 the device
+closed loop matches transformers on the 97.6 s example clip: 100 % speaker-activity agreement, 37 / 37 segments
+identical, every cache compression identical; 170.7 ms per step at audio-rate input (RTF 0.238). The whole-file
+offline graph does the same clip in 1.0 s.
+
+Converted via **litert-torch** from a plain-PyTorch re-authoring (checkpoint loaded unchanged): fixed-T packing of
+`[speaker cache | FIFO | chunk + look-ahead]` with an additive attention bias and an in-graph row mask before the head
+convolution, rotary tables as inputs, native GELU, rank-4 attention. Key fix: the LayerNorm inputs reach |x| ≈ 956,
+so a plain LayerNorm overflows fp16 and returns wrong values without NaN (max |Δlogit| 38.2); all 64 LayerNorms use
+SafeLayerNorm v2 **with eps divided by S²** (the unscaled eps shifted the FP32 logits by 3.0e-3).
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Frontend (graph A) | [nemotron3_diar_frontend.tflite](https://huggingface.co/litert-community/Nemotron-3-Diarization-LiteRT) | 2.1 MB | mel [1, 104, 128] | chunk_embeds [1, 13, 512] | CompiledModel GPU, FP32 |
+| Encoder, streaming (graph B) | [nemotron3_diar_encoder_low_latency_fp16.tflite](https://huggingface.co/litert-community/Nemotron-3-Diarization-LiteRT) | 198.7 MB | packed_embeds [1, 541, 512] + attn_bias [1, 1, 1, 541] + rope_cos / rope_sin [1, 1, 541, 64] | logits [1, 4328, 8] | CompiledModel GPU |
+| Encoder, offline (graph B) | [nemotron3_diar_encoder_offline_fp16.tflite](https://huggingface.co/litert-community/Nemotron-3-Diarization-LiteRT) | 198.7 MB | the same, T = 684 | logits [1, 5472, 8] | CompiledModel GPU |
+
+**GPU precision (graph B)**: FP32 170.7 ms per step, identical to the reference; FP16 (the GPU default) 115.1 ms,
+but its small per-step differences change which frames the speaker cache keeps (37 → 40 segments, 21 flips); FP16
+with FP32 accumulation 140.3 ms (2 flips). Graph A always runs FP32 (its rows stay in the cache).
+
+**Preprocessing**: 16 kHz mono → log-mel in Kotlin (pre-emphasis 0.97, 400-sample Hann in a 512-point FFT, hop 160,
+128 slaney mel bins, log(x + 2⁻²⁴), no normalization). The FFT is a port of pocketfft's real FFT so that quiet bins
+round like torch.stft (a radix-2 FP32 FFT was 2.7e-4 off in the log domain).
+
+**Post-processing**: sigmoid → mean of 8 rows per 80 ms frame → speaker cache / FIFO update with compression
+(score, boost, top-k, silence slots), ported from transformers' `Nemotron3DiarizationSpeakerCache`; sigmoid > 0.5 per
+speaker per 10 ms frame gives the timeline.
+
+**Sample app**: [nemotron3diar/](nemotron3diar/) — Record or Pick clip → per-speaker timeline growing every 0.72 s,
+graph B precision switch, per-step ms and RTF.
+
+**Original project**: [nvidia/Nemotron-3-Diarization](https://huggingface.co/nvidia/Nemotron-3-Diarization) | [OpenMDW-1.1](https://openmdw.ai/license/1-1/)
 
 # Speech Enhancement
 

@@ -624,8 +624,12 @@ def safe_layernorm_v2(x, weight, bias, eps):           # x: [..., C]
     mu   = xs.mean(-1, keepdim=True)
     d    = xs - mu
     var  = (d * d).mean(-1, keepdim=True)              # down-scaled variance — NEVER ·S²
-    return d * torch.rsqrt(var + eps) * weight + bias  # exact; fp16-safe at any magnitude
+    return d * torch.rsqrt(var + eps / (S * S)) * weight + bias  # eps / S² = eps in x's units; fp16-safe
 ```
+
+Divide eps by S²: `var` is the variance of x/S, so a plain `+ eps` is eps·S² in the original units. On
+Nemotron-3-Diarization (S ≈ 120) that moved the FP32 logits by 3.0e-3; `eps / (S * S)` keeps FP32 equal to
+`nn.LayerNorm` (7.1e-5 after export). The Parakeet model itself was not re-measured with the corrected form.
 
 Every intermediate stays `O(1)…O(amax)`, so it is overflow-free for any input magnitude — **use v2 in place of
 the `var = mean(d²)·S²` form going forward.** After this, all encoder taps N=1..17 → device corr 1.0 and the
@@ -644,6 +648,77 @@ in two processes, each ending `os._exit(0)`. Host log-mel matches NeMo's preproc
 Scripts: `parakeet/scripts/` (`build_parakeet_ship.py`, `build_parakeet_tap.py` = the per-layer tap/ablation
 harness that nailed the SafeLayerNorm v2 fix). Model:
 [`litert-community/Parakeet-tdt-ctc-110m-LiteRT`](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT).
+
+### Nemotron-3-Diarization (Streaming Sortformer, 8 speakers) — SafeLayerNorm v2 eps fix, fixed-T cache packing, fp16 vs FP32 on Adreno
+
+`nvidia/Nemotron-3-Diarization` (100M, OpenMDW-1.1): a 31-layer RoPE transformer encoder (hidden 512, 8 heads) over
+80 ms frames, a sub-pixel Conv1d head back to 10 ms, and a streaming state (Arrival-Order Speaker Cache + FIFO) that
+decides which past frames the encoder sees next. Split: graph A = 8-frame stacking + projection (2 ops), graph B =
+encoder + head at a fixed T (2,915 ops, fully LITERT_CL, 1 partition on the S26), host = log-mel + sigmoid / pooling
++ the cache (Python and Kotlin ports of transformers' `Nemotron3DiarizationSpeakerCache`). With graph B at GPU
+precision FP32 the S26 closed loop equals transformers on the 97.6 s example clip (0 flips in 78,072 cells, 37 / 37
+segments, 4 / 4 cache compressions identical).
+
+**SafeLayerNorm v2 needs eps / S².** The LayerNorm inputs reach |x| ≈ 956 (final norm; 804 in layer 30), so the
+plain `(x − μ)²` (~9·10⁵) overflows fp16: on the S26 at default precision the plain-LN graph ran with no NaN and no
+error but returned garbage (max |Δlogit| 38.2, logit correlation down to 0.0006, 87.8 % agreement). The v2 form
+fixes the overflow, but as written in the Parakeet section it adds eps in the down-scaled domain, which is eps·S²
+in the original units (S = amax/8 ≈ 120 here). That shifted the FP32 logits by 3.0e-3 vs transformers (a 1e-3 gate
+failed); dividing eps by S² restores FP32 equality (7.1e-5 after export):
+
+    d * torch.rsqrt(var + eps / (s * s)) * weight + bias      # var = down-scaled variance, never · s²
+
+Open risk (not tested): eps / S² and even eps = 1e-5 are below fp16's normal range (6.1e-5). The S26 (Adreno)
+showed no non-finite value, but a GPU that flushes fp16 subnormals would compute rsqrt(0) on an all-zero padding row
+(S = 1, var = 0) → 0 · ∞ = NaN, and the padding keys' NaN values would reach real rows through attention
+(0 · NaN). Check on Mali before claiming it there.
+
+**The converter folds LayerNorm γ into the next Linear — only for the stock LayerNorm.** The checkpoint is 100 %
+bfloat16 values (99.9945 % exact in fp16, the rest within 3.0e-8). With `nn.LayerNorm` the export folded
+`layer_norm2.weight` into `fc1` (file weight = W·diag(γ₂) bit-exact), which is no longer bf16-exact, so the fp16
+file lost accuracy (max |Δlogit| 8.3e-3, 3 flips). The SafeLayerNorm graph is not folded and its fp16 file equals
+the fp32 file within 1e-7 per weight. Check a fp16 file against its fp32 export per constant, not only end to end.
+
+**Fixed-T cache packing.** Every step packs `[cache ≤ 264 | FIFO ≤ 264 | chunk 9 + look-ahead 4]` = L ≤ 541 rows and
+zero rows to T = 541 (offline: 264 + 40 + 380 = 684). Three details made the fixed graph equal the variable-length
+reference:
+1. `attn_bias [1,1,1,T]` added to the scores: 0 valid key, −3e4 pad key. Positions restart at 0 every chunk, so the
+   RoPE tables are the same every step; they are graph inputs (no large baked constant), written once per compile.
+2. A row mask before the head's k = 3 convolution, derived in-graph from the same bias: `y *= relu(attn_bias + 1)`.
+   The reference convolves exactly L rows; without the mask the last real row's logits moved by up to 13.2.
+3. Offline only: the pass masks the key of the frame after the last full hop but still runs it through the head.
+   A three-level bias (0 / −16384 masked key / −32768 pad) with `relu(y) − relu(y − 1)`, `y = bias·2⁻¹⁴ + 2`, keeps
+   the mask exact in fp16 and avoids RELU_0_TO_1; feeding that row as padding moved the logits by 11.4.
+
+**fp16 vs FP32 on Adreno: judge a stateful model on the closed loop.** `CompiledModel.GpuOptions(precision = …)`:
+graph B FP32 136 ms, FP16_WITH_FP32_ACCUM 106 ms, default (fp16) 80 ms per step. One step fed with the reference's
+inputs looks fine at fp16 (max |Δp| 0.035, 1 flip in 155,072 cells, the chunk's output rows 100 %), but in the
+closed loop those differences change the discrete cache selections (4 / 4 compressions keep 3–17 different frames of
+264), later steps see different context, and the segments change (37 → 40, 21 flips). FP16 + FP32 accumulation: 2
+flips, 2 compressions one frame off. Graph A (whose rows live in the cache for minutes) at default precision was 0.38
+off (|x| ≤ 141), at FP32 2.0e-4, for 0.2 ms: run it FP32 regardless of graph B.
+
+**Host log-mel parity needs torch's FFT rounding.** Quiet mel bins (energy near the 2⁻²⁴ log guard) differ by FFT
+rounding: an fp32 radix-2 FFT was 2.7e-4 (log domain) from the processor, even a float64 FFT 1.8e-4. Porting
+pocketfft's real FFT (factors [2, 4, 4, 4, 4], radf4 × 4 then radf2, twiddle products `c·e + d·f` with one rounding
+= FMA) matched `torch.fft.rfft` on all 65,792 values; numpy's fp32 path (`rfft(norm="forward") * 512`) is 1.9e-6.
+
+**Cache selections break exact ties by summation order.** A numpy port summing the 8 per-speaker log terms in its
+own order produced one 1-ulp tie at a boost boundary (97.6 s clip, second compression) and kept a different frame
+for 32 steps (outputs still identical). Summing as torch's CPU kernel does ((s, s+4) pairs, left to right), with
+sigmoid = 1 / (1 + exp(−x)) and sequential 8-row means, made the Python and Kotlin hosts pick exactly the reference's
+frames on both test clips.
+
+**Measure streaming at audio rate.** Back to back (as fast as the steps run) the S26 GPU reached ~104 °C (kgsl
+`temp`) after about 8 s with the screen on, `thermal_pwrlevel` went 0 → 7 … 10 (clock cap 1300 → 500 MHz) and graph
+B slowed 135 → 288 ms (first / last 10 steps, RTF 0.316); with the screen off and locked the same load only
+reached level 1 (1200 MHz)
+after ~19 s. Pushed at audio rate, graph B stayed at 136 ms for the whole clip. `gpuclk` is not readable by the shell
+user; `clock_mhz`, `max_clock_mhz`, `temp`, `thermal_pwrlevel` and `gpu_clock_stats` are.
+
+Scripts: `nemotron3diar/scripts/` (`nemotron3diar_model.py`, `build_nemotron3diar.py`, `nemotron3_diar_litert.py`
+= the host as a Python reference, the `gate_*.py` checks). Model:
+[`litert-community/Nemotron-3-Diarization-LiteRT`](https://huggingface.co/litert-community/Nemotron-3-Diarization-LiteRT).
 
 ### Metric3D v2 (DINOv2 ViT-S + RAFT-DPT) — fully-GPU metric depth, and three device-only gotchas
 
