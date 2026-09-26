@@ -1,0 +1,722 @@
+{
+ "tokenizer": "cache/hf/hub/models--fastino--GLiNER2.5-Decide/snapshots/7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6/tokenizer.json",
+ "tokenizer_sha256": "3ad87d9ffe669147063e70850927dd2da90249e2acc5c8527f1eb65df467bcc8",
+ "runtime": "gliner2 2.0.0 SchemaTransformer tokenizer (after add_special_tokens), tokenize + convert_tokens_to_ids",
+ "unk_added_token": {
+  "id": 3,
+  "content": "[UNK]",
+  "single_word": false,
+  "lstrip": false,
+  "rstrip": false,
+  "normalized": true,
+  "special": true
+ },
+ "probes": [
+  {
+   "text": "a [UNK] b",
+   "tokens": [
+    "▁a",
+    "▁",
+    "[UNK]",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    507,
+    3,
+    2165
+   ]
+  },
+  {
+   "text": "x  [UNK]",
+   "tokens": [
+    "▁x",
+    "▁",
+    "[UNK]"
+   ],
+   "ids": [
+    1204,
+    507,
+    3
+   ]
+  },
+  {
+   "text": "[UNK]",
+   "tokens": [
+    "[UNK]"
+   ],
+   "ids": [
+    3
+   ]
+  },
+  {
+   "text": "a[UNK]b",
+   "tokens": [
+    "▁a",
+    "[UNK]",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    3,
+    2165
+   ]
+  },
+  {
+   "text": "a [UNK]",
+   "tokens": [
+    "▁a",
+    "▁",
+    "[UNK]"
+   ],
+   "ids": [
+    266,
+    507,
+    3
+   ]
+  },
+  {
+   "text": "[UNK] b",
+   "tokens": [
+    "[UNK]",
+    "▁b"
+   ],
+   "ids": [
+    3,
+    2165
+   ]
+  },
+  {
+   "text": "[UNK][UNK]",
+   "tokens": [
+    "[UNK]",
+    "[UNK]"
+   ],
+   "ids": [
+    3,
+    3
+   ]
+  },
+  {
+   "text": "A  [UNK]  B",
+   "tokens": [
+    "▁A",
+    "▁",
+    "[UNK]",
+    "▁B"
+   ],
+   "ids": [
+    336,
+    507,
+    3,
+    736
+   ]
+  },
+  {
+   "text": "x [DESCRIPTION] [UNK] y",
+   "tokens": [
+    "▁x",
+    "[DESCRIPTION]",
+    "▁",
+    "[UNK]",
+    "▁y"
+   ],
+   "ids": [
+    1204,
+    128010,
+    507,
+    3,
+    2982
+   ]
+  },
+  {
+   "text": "q [unk] r",
+   "tokens": [
+    "▁q",
+    "▁[",
+    "unk",
+    "]",
+    "▁r"
+   ],
+   "ids": [
+    10562,
+    647,
+    38838,
+    592,
+    3638
+   ]
+  },
+  {
+   "text": "a [MASK] b",
+   "tokens": [
+    "▁a",
+    "[MASK]",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    128000,
+    2165
+   ]
+  },
+  {
+   "text": "[P]x[L]",
+   "tokens": [
+    "[P]",
+    "▁x",
+    "[L]"
+   ],
+   "ids": [
+    128003,
+    1204,
+    128007
+   ]
+  },
+  {
+   "text": "( [P] )",
+   "tokens": [
+    "▁(",
+    "[P]",
+    "▁)"
+   ],
+   "ids": [
+    287,
+    128003,
+    1263
+   ]
+  },
+  {
+   "text": "[DESCRIPTION]x",
+   "tokens": [
+    "[DESCRIPTION]",
+    "▁x"
+   ],
+   "ids": [
+    128010,
+    1204
+   ]
+  },
+  {
+   "text": "x[DESCRIPTION]",
+   "tokens": [
+    "▁x",
+    "[DESCRIPTION]"
+   ],
+   "ids": [
+    1204,
+    128010
+   ]
+  },
+  {
+   "text": "intent [DESCRIPTION] card_pin_change: The customer wants",
+   "tokens": [
+    "▁intent",
+    "[DESCRIPTION]",
+    "▁card",
+    "_",
+    "pin",
+    "_",
+    "change",
+    ":",
+    "▁The",
+    "▁customer",
+    "▁wants"
+   ],
+   "ids": [
+    5875,
+    128010,
+    1081,
+    616,
+    10161,
+    616,
+    18982,
+    294,
+    279,
+    1099,
+    1654
+   ]
+  },
+  {
+   "text": " leading space",
+   "tokens": [
+    "▁leading",
+    "▁space"
+   ],
+   "ids": [
+    1249,
+    754
+   ]
+  },
+  {
+   "text": "trailing space ",
+   "tokens": [
+    "▁trailing",
+    "▁space"
+   ],
+   "ids": [
+    18347,
+    754
+   ]
+  },
+  {
+   "text": " both ",
+   "tokens": [
+    "▁both"
+   ],
+   "ids": [
+    462
+   ]
+  },
+  {
+   "text": "a   b",
+   "tokens": [
+    "▁a",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    2165
+   ]
+  },
+  {
+   "text": "a\nb",
+   "tokens": [
+    "▁a",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    2165
+   ]
+  },
+  {
+   "text": "a\tb",
+   "tokens": [
+    "▁a",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    2165
+   ]
+  },
+  {
+   "text": "a\r\nb",
+   "tokens": [
+    "▁a",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    2165
+   ]
+  },
+  {
+   "text": "",
+   "tokens": [],
+   "ids": []
+  },
+  {
+   "text": " ",
+   "tokens": [],
+   "ids": []
+  },
+  {
+   "text": "\n",
+   "tokens": [],
+   "ids": []
+  },
+  {
+   "text": "a b",
+   "tokens": [
+    "▁a",
+    " ",
+    "b"
+   ],
+   "ids": [
+    266,
+    3,
+    1285
+   ]
+  },
+  {
+   "text": "a  b",
+   "tokens": [
+    "▁a",
+    "▁b"
+   ],
+   "ids": [
+    266,
+    2165
+   ]
+  },
+  {
+   "text": "a​b",
+   "tokens": [
+    "▁a",
+    "​",
+    "b"
+   ],
+   "ids": [
+    266,
+    3,
+    1285
+   ]
+  },
+  {
+   "text": "x　　y",
+   "tokens": [
+    "▁x",
+    "▁y"
+   ],
+   "ids": [
+    1204,
+    2982
+   ]
+  },
+  {
+   "text": "é",
+   "tokens": [
+    "▁é"
+   ],
+   "ids": [
+    14287
+   ]
+  },
+  {
+   "text": "Å",
+   "tokens": [
+    "▁Å"
+   ],
+   "ids": [
+    37483
+   ]
+  },
+  {
+   "text": "ﬁle",
+   "tokens": [
+    "▁",
+    "ﬁ",
+    "le"
+   ],
+   "ids": [
+    507,
+    3,
+    2624
+   ]
+  },
+  {
+   "text": "ＡＢＣ",
+   "tokens": [
+    "▁",
+    "ＡＢＣ"
+   ],
+   "ids": [
+    507,
+    3
+   ]
+  },
+  {
+   "text": "😀",
+   "tokens": [
+    "▁😀"
+   ],
+   "ids": [
+    54783
+   ]
+  },
+  {
+   "text": "東京",
+   "tokens": [
+    "▁",
+    "東",
+    "京"
+   ],
+   "ids": [
+    507,
+    105590,
+    118398
+   ]
+  },
+  {
+   "text": "naïve café",
+   "tokens": [
+    "▁naïve",
+    "▁café"
+   ],
+   "ids": [
+    34972,
+    15924
+   ]
+  },
+  {
+   "text": "İstanbul",
+   "tokens": [
+    "▁İstanbul"
+   ],
+   "ids": [
+    117621
+   ]
+  },
+  {
+   "text": "card_pin_change",
+   "tokens": [
+    "▁card",
+    "_",
+    "pin",
+    "_",
+    "change"
+   ],
+   "ids": [
+    1081,
+    616,
+    10161,
+    616,
+    18982
+   ]
+  },
+  {
+   "text": "science_fiction",
+   "tokens": [
+    "▁science",
+    "_",
+    "fiction"
+   ],
+   "ids": [
+    1693,
+    616,
+    18513
+   ]
+  },
+  {
+   "text": "10",
+   "tokens": [
+    "▁10"
+   ],
+   "ids": [
+    466
+   ]
+  },
+  {
+   "text": "3.14",
+   "tokens": [
+    "▁3",
+    ".",
+    "14"
+   ],
+   "ids": [
+    404,
+    260,
+    2160
+   ]
+  },
+  {
+   "text": "e-mail",
+   "tokens": [
+    "▁e",
+    "-",
+    "mail"
+   ],
+   "ids": [
+    865,
+    271,
+    3410
+   ]
+  },
+  {
+   "text": "don't",
+   "tokens": [
+    "▁don",
+    "'",
+    "t"
+   ],
+   "ids": [
+    418,
+    280,
+    297
+   ]
+  },
+  {
+   "text": "U.S.A.",
+   "tokens": [
+    "▁U",
+    ".",
+    "S",
+    ".",
+    "A",
+    "."
+   ],
+   "ids": [
+    543,
+    260,
+    430,
+    260,
+    558,
+    260
+   ]
+  },
+  {
+   "text": "Did the treaty enter into force in 1992?",
+   "tokens": [
+    "▁Did",
+    "▁the",
+    "▁treaty",
+    "▁enter",
+    "▁into",
+    "▁force",
+    "▁in",
+    "▁1992",
+    "?"
+   ],
+   "ids": [
+    2709,
+    262,
+    13281,
+    1916,
+    352,
+    1711,
+    267,
+    5762,
+    302
+   ]
+  },
+  {
+   "text": "answer: Did the treaty enter into force in 1992?",
+   "tokens": [
+    "▁answer",
+    ":",
+    "▁Did",
+    "▁the",
+    "▁treaty",
+    "▁enter",
+    "▁into",
+    "▁force",
+    "▁in",
+    "▁1992",
+    "?"
+   ],
+   "ids": [
+    1330,
+    294,
+    2709,
+    262,
+    13281,
+    1916,
+    352,
+    1711,
+    267,
+    5762,
+    302
+   ]
+  },
+  {
+   "text": "refund_request",
+   "tokens": [
+    "▁refund",
+    "_",
+    "request"
+   ],
+   "ids": [
+    6257,
+    616,
+    40952
+   ]
+  },
+  {
+   "text": "speak_to_human",
+   "tokens": [
+    "▁speak",
+    "_",
+    "to",
+    "_",
+    "human"
+   ],
+   "ids": [
+    1828,
+    616,
+    725,
+    616,
+    11975
+   ]
+  },
+  {
+   "text": "https://example.com/a?b=c",
+   "tokens": [
+    "▁https",
+    ":",
+    "/",
+    "/",
+    "example",
+    ".",
+    "com",
+    "/",
+    "a",
+    "?",
+    "b",
+    "=",
+    "c"
+   ],
+   "ids": [
+    3597,
+    294,
+    320,
+    320,
+    28748,
+    260,
+    549,
+    320,
+    452,
+    302,
+    1285,
+    1510,
+    1207
+   ]
+  },
+  {
+   "text": "user@example.com",
+   "tokens": [
+    "▁user",
+    "@",
+    "example",
+    ".",
+    "com"
+   ],
+   "ids": [
+    1143,
+    1683,
+    28748,
+    260,
+    549
+   ]
+  },
+  {
+   "text": "@handle",
+   "tokens": [
+    "▁@",
+    "handle"
+   ],
+   "ids": [
+    1944,
+    33982
+   ]
+  },
+  {
+   "text": "[SEP_TEXT]",
+   "tokens": [
+    "[SEP_TEXT]"
+   ],
+   "ids": [
+    128002
+   ]
+  },
+  {
+   "text": "[SEP_STRUCT]",
+   "tokens": [
+    "[SEP_STRUCT]"
+   ],
+   "ids": [
+    128001
+   ]
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+GLiNER2.5 Decide Android host sample
+
+Model: fastino/GLiNER2.5-Decide, revision 7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6,
+licensed under Apache License 2.0 (model card base_model: fastino/gliner2-large-v1).
+Its encoder is DeBERTa-v3-large (microsoft/deberta-v3-large), licensed under the MIT License.
+
+The input builder and the classification decoder are Kotlin ports of the gliner2 2.0.0
+classification path from Fastino AI's GLiNER2 project, licensed under Apache License 2.0:
+processor.py schema and input formatting, processing/word_splitter.py and the
+inference/runtime.py classification post-processing. Changes include Kotlin float32
+arithmetic, the float16 embedding-table upcast, fixed graph windows, and rejection of
+inputs that gliner2 would decode under another task's settings.
+
+The tokenizer follows the published DeBERTa-v3 tokenizer JSON contract of Hugging Face
+tokenizers and transformers (Apache License 2.0).
+
+The debug gate asset app/src/debug/assets/gate_fixtures.json contains the README examples
+of fastino/GLiNER2.5-Decide and rows of the public dev split of fastino/fast-decisions
+(revision 1a33070cabf94ce2e29105482dd2ef6c157ad7f2), both licensed under Apache License 2.0.
+
+Gradle wrapper files retain their upstream Apache License 2.0 headers.
+Retained model/runtime/encoder licenses are under licenses/.

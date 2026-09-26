@@ -2144,6 +2144,32 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 
 **Original project**: [NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) (Apache-2.0)
 
+### GLiNER2.5-Decide (zero-shot text classification)
+
+[fastino/GLiNER2.5-Decide](https://huggingface.co/fastino/GLiNER2.5-Decide) (DeBERTa-v3-large, Apache-2.0,
+gliner2 **span** architecture, classification path only) converted to LiteRT as **encoder + classification
+head**: the graph takes the word-embedding rows, the attention mask and a one-hot routing matrix of the `[L]`
+label markers, and returns one logit per label slot (32). The host builds the gliner2 schema and tokens and
+looks up the embeddings before it, and applies softmax / sigmoid and the threshold after it. The graph body is
+the GLiNER2.5 Small shaped-DeBERTa type unchanged (rank-4 attention, exact log-bucket relative positions baked
+as constants), here 24 layers at hidden 1024.
+
+**On-device (Galaxy S26, SM8850, LiteRT 2.2.0 — verified):** fully on the GPU delegate (1,780/1,780 nodes, one
+partition) with `GpuOptions(precision = FP32)` (default precision: 14/42 decisions correct); decisions equal
+the official fp32 gliner2 result on **126/126** (request, window) pairs in the sample app on GPU FP32 and on
+CPU, and on 361/361 requests on desktop LiteRT CPU. GPU median 69.6 / 198.8 / 733.1 ms back to back from a
+cool start (windows 128 / 256 / 512, fp16 weights; opening request 66.3 / 174.9 / 575.2 ms before the GPU
+clock steps down).
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| GLiNER2.5-Decide s128 / s256 / s512 | [HF: litert-community/GLiNER2.5-Decide-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Decide-LiteRT) | 660 / 711 / 811 MB fp16-weight (1.27 / 1.32 / 1.42 GB fp32) + 262 MB fp16 embed table | inputs_embeds [1,N,1024] + attention_mask [1,N] + label_routing [1,32,N] → logits [1,1,1,32] → host softmax / sigmoid → decisions | GPU |
+
+**Sample app**: [gliner25decide/](gliner25decide/) — Kotlin host (word splitter + SentencePiece Unigram tokenizer, gliner2 schema tokens, memory-mapped float16 embedding table with float32 upcast, decision rules) in a Compose app: text + one task per line → decision and probability per task, GPU / CPU selectable. On the Galaxy S26 (LiteRT 2.2.0, GPU FP32, debug build) a request right after a cold start takes 72–78 ms end to end at s128 (after 0.38–0.39 s of warm-up) and requests paced every 2 s a median 93.0 ms. The same module is mirrored in the HF repo under `android/`.
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-26 GLiNER2.5-Decide section).
+
+**Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0)
+
 # Text Generation (LLM)
 
 > **Conversion recipes** (official `litert-torch` `export_hf`, no fork — blockwise int4 + OCTAV, `externalize_embedder`, simple chat templates): [`text-generation/`](text-generation/).

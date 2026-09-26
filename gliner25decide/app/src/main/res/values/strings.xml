@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">GLiNER2.5 Decide</string>
+  <string name="status_loading">Loading model…</string>
+  <string name="status_warming_up">Warming up…</string>
+  <string name="status_gpu_ready">Ready · GPU FP32</string>
+  <string name="status_cpu_ready">Ready · CPU</string>
+  <string name="status_classifying">Classifying…</string>
+  <string name="status_error">Model unavailable</string>
+  <string name="status_gate_running">Running debug fixture gate…</string>
+  <string name="status_gate_passed">Debug fixture gate passed</string>
+  <string name="status_gate_failed">Debug fixture gate failed</string>
+  <string name="status_paced_running">Running debug paced requests…</string>
+  <string name="status_paced_done">Debug paced requests finished</string>
+  <string name="gate_description">
+    Gate results are saved in the app’s private gate directory.
+  </string>
+  <string name="error_message">%1$s</string>
+  <string name="accelerator_title">Run on</string>
+  <string name="accelerator_gpu">GPU</string>
+  <string name="accelerator_cpu">CPU</string>
+  <string name="input_label">Text to classify</string>
+  <string name="tasks_label">Tasks</string>
+  <string name="tasks_help">One task per line as task: label1, label2. Append | multi 0.4 to allow several labels above a threshold, or | prompt: your question to ask about the text.</string>
+  <string name="example_text">Hi, this is Mirela Tovantis. The wireless headphones I ordered arrived on Tuesday with a cracked case, and the left earbud will not charge. Please send a replacement or refund me before the weekend.</string>
+  <string name="example_tasks">intent: refund_request, replacement_request, order_status, technical_support, other\nurgency: low, medium, high\nsentiment: positive, neutral, negative\ntopics: shipping, product_quality, billing, battery | multi 0.4</string>
+  <string name="classify">Classify</string>
+  <string name="decisions_title">Decisions</string>
+  <string name="task_single_label">%1$s</string>
+  <string name="task_multi_label">%1$s (multi-label)</string>
+  <string name="decision_label">%1$s · %2$.4f</string>
+  <string name="result_window">s%1$d · %2$d encoded tokens · %3$d labels · %4$s</string>
+  <string name="result_timing">
+    Tokenize + embed: %1$.2f ms · Graph: %2$.2f ms · Decode: %3$.2f ms
+  </string>
+</resources>
