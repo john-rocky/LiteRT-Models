@@ -2094,6 +2094,38 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 
 **Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0)
 
+### GLiFormer Large v1 — NER path (schema-prompted entity extraction, 575M)
+
+[knowledgator/gliformer-large-v1](https://huggingface.co/knowledgator/gliformer-large-v1) (575.6M, Apache-2.0, layout-aware
+DeBERTa-large backbone, 24 layers / hidden 1024; one encoder shared by NER, classification, relations and structuring) —
+only the **NER path** is converted: encoder (text inputs only; the layout/page embeddings are skipped exactly as the upstream
+text path does) → first-subtoken pooling → the checkpoint's one-layer BiLSTM over words → parent-anchor linear fusion with the
+five `[ENTITY]` label embeddings → AnchoredSpanScorer → start/end/inside logits `[1,T,5,3]`. The host does the token-table
+lookup before the graph (128,008 × 1024 rows, fp32 or fp16 file) and runs the unchanged upstream start/end/inside pairing decoder
+after it. Attention at rank 4, float masks, one-hot routing as matmul, exact DeBERTa log-bucket relative positions as O(N)
+projected tables, one packed rank-4 output.
+
+**On-device (Galaxy S26, SM8850, LiteRT 2.2.0 — verified):** the 128-token window runs as one graph fully on the GPU delegate
+(4149/4149 ops, one partition, `GpuOptions(precision = FP32)` — the default precision returns finite logits but zero entities),
+82 ms median, 10/10 exact spans. **The 256/512-token windows do not compile as one GPU graph**: the unrolled BiLSTM head
+(≥ 6,286 ops) crashes the ML Drift compiler (SIGSEGV, not memory — it dies at 570 MB RSS with the recurrent weights supplied
+as runtime inputs), while the encoder alone (1,773 ops) compiles at every window. They ship as **encoder on GPU + head on CPU**
+behind one host API that picks the window: s256 15/15 exact at 410 ms in one process (4.6 GB resident), s512 20/20 at
+≈ 1.3 s (head 4.7 GB resident — s256 is the practical upper window on a phone). Span micro-F1 1.000 vs the official fp32
+`gliformer` implementation on 70 inputs (fp32 and fp16-weight files). Memory is the cost of this model: s128 loads 2.6 GB
+resident and peaks at 4.5 GB during compile; first call after process start 5.0 s (80 ms thereafter). Flagship phones only.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| GLiFormer Large v1 NER s128 | [HF: litert-community/GLiFormer-Large-NER-LiteRT](https://huggingface.co/litert-community/GLiFormer-Large-NER-LiteRT) | 707 MB fp16-weight (1.36 GB fp32) + 262 MB fp16 table (524 MB fp32) | inputs_embeds [1,128,1024] + mask + routing (text / parent / 5 labels) → packed [1,1,48,15] start/end/inside logits → host pairing decoder → spans | GPU |
+| GLiFormer Large v1 NER s256 / s512 (split) | same repo | encoder 707 / 807 MB + head 53 / 56 MB (fp16-weight) | encoder: inputs_embeds [1,N,1024] + mask → hidden [1,1,N,1024]; head: hidden + routing → logits [1,1,N,15] | encoder GPU + head CPU |
+
+Python host runtime (`host_assets/runtime`, one `extract(text, labels)` call, window and backend chosen automatically) ships in the
+HF repo. Android sample: in progress.
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-26 GLiFormer section).
+
+**Original project**: [Knowledgator/GLiFormer](https://github.com/Knowledgator/GLiFormer) (Apache-2.0)
+
 ### Laya Multilingual (typed text decisions)
 
 [convaiinnovations/laya](https://huggingface.co/convaiinnovations/laya) multilingual checkpoint (322M, Apache-2.0, **mmBERT-base** encoder + a typed decision head): give it a text or JSON state plus questions defined at request time — pick one of N options, score on an ordinal scale, or a yes/no probability — and every option is scored at its own `<mask>` marker in one forward pass per question. Converted as **one question row per call**: the graph runs the encoder, the two head layers and the option scorer at every position; the host builds the prompt, does the token-embedding lookup from a memory-mapped float16 table, reads the logits at the marker positions and applies a per-bucket temperature. A 1 MB second graph holds the act head.
