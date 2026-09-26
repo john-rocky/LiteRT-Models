@@ -2121,7 +2121,16 @@ resident and peaks at 4.5 GB during compile; first call after process start 5.0 
 | GLiFormer Large v1 NER s256 / s512 (split) | same repo | encoder 707 / 807 MB + head 53 / 56 MB (fp16-weight) | encoder: inputs_embeds [1,N,1024] + mask → hidden [1,1,N,1024]; head: hidden + routing → logits [1,1,N,15] | encoder GPU + head CPU |
 
 Python host runtime (`host_assets/runtime`, one `extract(text, labels)` call, window and backend chosen automatically) ships in the
-HF repo. Android sample: in progress.
+HF repo.
+
+**Sample app**: [gliformer/](gliformer/) — Kotlin host (whitespace word splitter, SentencePiece Unigram tokenizer, memory-mapped fp16
+table lookup with upcast, routing construction, float32 port of the upstream start/end/inside pairing decoder) in a Compose/MVVM app:
+type text → highlighted entities with score and offsets; GPU / CPU selectable; s128 as one graph, s256 as encoder (GPU) + head (CPU),
+one window resident at a time; the whole pipeline is warmed 12 times before Ready. On the Galaxy S26 (LiteRT 2.2.0, GPU FP32 precision)
+the app returns the official fp32 spans on 60/60 (s128 GPU), 60/60 (s128 CPU) and 65/65 (s256 split) validation inputs, with the on-device
+tokenizer output identical to the captured Python inputs on all 80; graph readback medians 116 / 189 / 526 ms; process RSS 2.4 GB (s128)
+and 4.4 GB (s256 pair). Non-debuggable build: launch → Ready 4.8 s, first Extract tap 168 ms, fifth 155 ms (screen on). The same module
+is mirrored in the HF repo under `android/`.
 Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-26 GLiFormer section).
 
 **Original project**: [Knowledgator/GLiFormer](https://github.com/Knowledgator/GLiFormer) (Apache-2.0)

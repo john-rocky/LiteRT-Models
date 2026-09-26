@@ -1,0 +1,22 @@
+GLiFormer Large NER Android host sample
+
+The pairing decoder is a Kotlin port of Knowledgator GLiFormer 0.1.2
+(tasks/span_decoder.py and tasks/ner/decoder.py), Apache License 2.0.
+Changes include Kotlin float32 arrays, packed-logit binding and conversion
+between Python code-point offsets and Java UTF-16 indices. Preprocessing
+follows GLiFormer 0.1.2 and GLiNER 0.2.29, both Apache License 2.0.
+
+The tokenizer follows the published DeBERTa SentencePiece Unigram JSON.
+Tokenizer structure and the standalone Gradle shell were adapted from
+LiteRT-Models' GLiNER2.5 Android sample (Apache License 2.0).
+
+Model and host assets are downloaded separately from
+litert-community/GLiFormer-Large-NER-LiteRT. The model source is
+knowledgator/gliformer-large-v1 at revision
+d0a4e53d09cebe6bc963dd9be319d4279084bb2d, declared Apache License 2.0.
+The DeBERTa MIT notice covers code lineage, not an independent license
+for the unavailable knowledgator/DeBERTa-large-joint-3000 base-weight card.
+Transformers tokenizer/runtime code is Apache License 2.0.
+
+Gradle wrapper files retain their original Apache License 2.0 headers.
+Original model/runtime/encoder licenses are retained under licenses/.

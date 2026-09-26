@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GLiFormer NER</string>
+    <string name="status_loading">Loading model…</string>
+    <string name="status_warming">Warming the full pipeline…</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_extracting">Extracting entities…</string>
+    <string name="status_error">Extraction unavailable</string>
+    <string name="fixed_labels">Labels: person · organization · location · product · date</string>
+    <string name="input_label">Text to analyze</string>
+    <string name="backend_gpu">GPU FP32</string>
+    <string name="backend_cpu">CPU (s128)</string>
+    <string name="extract">Extract</string>
+    <string name="retry">Retry loading</string>
+    <string name="window_info" translatable="false">s%1$d · %2$d encoded tokens · %3$d words</string>
+    <string name="timing_info" translatable="false">Tokenize + lookup %1$.2f ms · Graph %2$.2f ms · Decode %3$.2f ms</string>
+    <string name="entity_info" translatable="false">%1$s · %2$s · %3$.2f%% · [%4$d, %5$d)</string>
+    <string name="no_entities">No entities found at threshold 0.5.</string>
+    <string name="offset_explanation">Offsets count Unicode code points; the end offset is exclusive.</string>
+    <string name="example_text">Mira Okafor, the founder of Halden Robotics, unveiled the Atlas Pro headset in Lisbon on 3 March 2025.</string>
+</resources>
