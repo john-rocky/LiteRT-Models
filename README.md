@@ -64,6 +64,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Inflect-Nano-v2](#inflect-nano-v2-dynamic-length-exact-streaming) | Text-to-speech (exact streaming) | Mac | 25–32 ms first chunk | [scripts](inflect/) |
 | [Sopro v2 turbo](#sopro-v2-turbo-zero-shot-voice-cloning) | Text-to-speech (zero-shot voice cloning, EN / PT / FR / DE) | Galaxy S26 GPU (acoustic + encoders) + CPU (AR, vocoder); Pixel 8a pending | TTFA 2.07 s, RTF 0.41 (S26, release) | [🤗 HF](https://huggingface.co/litert-community/sopro-v2-turbo) |
 | [SmolVLM-256M](#smolvlm-256m) | Vision-language model |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_vision.tflite) |
+| [SmolVLA](#smolvla-lerobotsmolvla_base) | Vision-language-action robot policy | Galaxy S26 | 207 ms per 50-step action chunk (GPU) | [scripts](smolvla/) |
 | [RWKV-7 World 0.1B](#rwkv-7-world-01b) | Text generation (RNN LM, whole forward on GPU) | Pixel 8a | ~18 ms/token | [🤗 HF](https://huggingface.co/litert-community/RWKV-7-World-0.1B-LiteRT) |
 | [Whisper + SmolLM2 + Kokoro](#whisper--smollm2--kokoro-pipeline) | Voice assistant pipeline | Pixel 8a | ~5 s per turn, end-to-end | [module](voiceassistant/) |
 | [DAC 16kHz](#dac-16khz) | Neural audio codec | Pixel 8a | RTF ≈ 0.82 | [🤗 HF](https://huggingface.co/mlboydaisuke/DAC-16kHz-LiteRT) |
@@ -1075,6 +1076,24 @@ Vision encoder converted via **litert-torch** with SigLIP position embedding pre
 **Sample app**: [smolvlm/](smolvlm/) — Image picker + text prompt + streaming response.
 
 **Original project**: [HuggingFaceTB/SmolVLM-256M-Instruct](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct) | [Apache-2.0](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/blob/main/LICENSE)
+
+### SmolVLA (lerobot/smolvla_base)
+
+SmolVLA: vision-language-action robot policy from Hugging Face lerobot. One camera image, a task string and the robot state go in; a chunk of 50 future actions comes out. It runs as three fixed-shape graphs plus a host loop: the SigLIP vision encoder, the 16 SmolVLM2 layers that fill a K/V cache, and one flow-matching expert step that the loop calls 10 times.
+
+Converted via **litert-torch** from re-authored modules (exact rewrites only). The RMSNorm/LayerNorm of the vision and prefix graphs use exact down-scaled forms, because the stock formulas overflow at the GPU's default fp16 precision (the prefix residual stream reaches about 2,570). On a Galaxy S26 (SM8850, LiteRT 2.2.0) every node of the three graphs delegates to `LITERT_CL`. One action chunk takes 207 ms at the default GPU precision (actions within 3.4e-2 of lerobot float32 on the fixture input) or 352 ms with FP32 precision (within 1.4e-3), with 2.4 / 3.8 GB process PSS.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Vision encoder | built by `smolvla/scripts/build_smolvla.py` | 195 MB (fp16 weights) | image [1, 3, 512, 512], pos_embed [1, 1024, 768] | img_emb [1, 64, 960] | CompiledModel GPU |
+| VLM prefix (16 layers) | same | 297 MB | img_emb, lang_emb [1, 48, 960], state [1, 32], attn_bias [1, 1, 113, 113], rope cos/sin [1, 1, 113, 32] | k_all, v_all [1, 80, 113, 64] | CompiledModel GPU |
+| Expert step (x10 per chunk) | same | 200 MB | x_t [1, 50, 32], time_emb [1, 1, 720], k_all, v_all, 2 masks, 4 RoPE tables | v_t [1, 50, 32] | CompiledModel GPU |
+
+**Host side** (Python reference, `smolvla/scripts/smolvla_host.py`): letterbox to 512x512 with zero padding on the left and top, then x*2-1; SmolVLM2 tokenizer (48 tokens); fp16 embedding-table lookup; attention masks, RoPE and time tables; 10 Euler steps (dt = -0.1).
+
+**Scripts**: [smolvla/](smolvla/) — build, verification against lerobot, the host loop and the Galaxy S26 results.
+
+**Original project**: [lerobot/smolvla_base](https://huggingface.co/lerobot/smolvla_base) | Apache-2.0
 
 # Text Generation
 
