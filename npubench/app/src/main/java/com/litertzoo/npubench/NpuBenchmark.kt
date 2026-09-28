@@ -186,11 +186,12 @@ class NpuBenchmark(private val context: Context) {
     modelPath: String,
     accelerator: Accelerator,
     signature: String,
-    inputFile: String,
+    inputFiles: List<String>,
     outDir: File,
     outKinds: List<String>,
     warmup: Int = 5,
     iterations: Int = 20,
+    gpuFp32: Boolean = false,
   ): BenchResult {
     val thermalBefore = thermalStatus()
     val headroomBefore = thermalHeadroom()
@@ -202,6 +203,12 @@ class NpuBenchmark(private val context: Context) {
       )
     Environment.create(context, envOptions).use { env ->
       val options = CompiledModel.Options(accelerator)
+      if (accelerator == Accelerator.GPU && gpuFp32) {
+        // Default GPU compute is fp16 on most delegates; FP32 is the precision-vs-bug
+        // discriminator: a wrong output that stays wrong under FP32 is not fp16 rounding.
+        options.gpuOptions =
+          CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
+      }
       val loadStart = System.nanoTime()
       val model = CompiledModel.create(modelPath, options, env)
       val loadMs = (System.nanoTime() - loadStart) / 1e6
@@ -214,13 +221,21 @@ class NpuBenchmark(private val context: Context) {
           if (signature.isEmpty()) model.createOutputBuffers()
           else model.createOutputBuffers(signature)
 
-        val bytes = File(inputFile).readBytes()
-        val floats = FloatArray(bytes.size / 4)
-        java.nio.ByteBuffer.wrap(bytes)
-          .order(java.nio.ByteOrder.LITTLE_ENDIAN)
-          .asFloatBuffer()
-          .get(floats)
-        inputs[0].writeFloat(floats)
+        // One raw little-endian float32 file per input, in signature input order. A
+        // multi-input graph (KV-cache step graphs) needs every buffer written, not just
+        // the first; a count mismatch is an error, not a silent partial write.
+        require(inputFiles.size == inputs.size) {
+          "model has ${inputs.size} inputs but ${inputFiles.size} input files were given"
+        }
+        inputFiles.forEachIndexed { i, inputFile ->
+          val bytes = File(inputFile).readBytes()
+          val floats = FloatArray(bytes.size / 4)
+          java.nio.ByteBuffer.wrap(bytes)
+            .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            .asFloatBuffer()
+            .get(floats)
+          inputs[i].writeFloat(floats)
+        }
 
         fun runOnce() {
           if (signature.isEmpty()) model.run(inputs, outputs)
@@ -273,6 +288,152 @@ class NpuBenchmark(private val context: Context) {
           )
         Log.i(TAG, "RESULT $result")
         return result
+      }
+    }
+  }
+
+  /** Process memory now: total PSS, graphics (GPU buffers) and native heap, in MB. */
+  private fun memorySnapshot(): String {
+    val mi = android.os.Debug.MemoryInfo()
+    android.os.Debug.getMemoryInfo(mi)
+    fun stat(key: String) = (mi.getMemoryStat(key)?.toLongOrNull() ?: -1L) / 1024
+    return "pss=${stat("summary.total-pss")}MB graphics=${stat("summary.graphics")}MB " +
+      "native=${stat("summary.native-heap")}MB"
+  }
+
+  /**
+   * SmolVLA action chunk in one process with its three graphs resident, chained on the
+   * host the way an app runs them: vision -> prefix -> 10 expert steps, x += -0.1 * v.
+   *
+   * `dir` holds raw little-endian float32 inputs: v_image, v_pos (vision); p_lang, p_state,
+   * p_bias, p_cos, p_sin (prefix, after img_emb); e_bias_self, e_bias_cross, e_cos_s,
+   * e_sin_s, e_cos_c, e_sin_c (expert, after x_t, time_emb, k_all, v_all); noise and
+   * temb0..temb9 (all `.bin`). The prefix K/V are written into the expert's input buffers
+   * once per chunk; only x_t and time_emb change per step. Returns the CHAIN log line and
+   * writes the last chunk's x to outDir/x_final.bin.
+   */
+  fun chainBench(
+    visionPath: String,
+    prefixPath: String,
+    expertPath: String,
+    dir: File,
+    accelerator: Accelerator,
+    gpuFp32: Boolean,
+    outDir: File,
+    warmup: Int = 2,
+    iterations: Int = 5,
+  ): String {
+    fun load(name: String): FloatArray {
+      val bytes = File(dir, "$name.bin").readBytes()
+      val floats = FloatArray(bytes.size / 4)
+      java.nio.ByteBuffer.wrap(bytes)
+        .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        .asFloatBuffer()
+        .get(floats)
+      return floats
+    }
+
+    val thermalBefore = thermalStatus()
+    val headroomBefore = thermalHeadroom()
+    val memBefore = memorySnapshot()
+    val envOptions =
+      mapOf(
+        Environment.Option.DispatchLibraryDir to libDir,
+        Environment.Option.CompilerPluginLibraryDir to libDir,
+      )
+    Environment.create(context, envOptions).use { env ->
+      fun options() =
+        CompiledModel.Options(accelerator).also {
+          if (accelerator == Accelerator.GPU && gpuFp32) {
+            it.gpuOptions =
+              CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
+          }
+        }
+      val loadStart = System.nanoTime()
+      val vision = CompiledModel.create(visionPath, options(), env)
+      val prefix = CompiledModel.create(prefixPath, options(), env)
+      val expert = CompiledModel.create(expertPath, options(), env)
+      val loadMs = (System.nanoTime() - loadStart) / 1e6
+      val memLoaded = memorySnapshot()
+
+      vision.use {
+        prefix.use {
+          expert.use {
+            val vIn = vision.createInputBuffers()
+            val vOut = vision.createOutputBuffers()
+            val pIn = prefix.createInputBuffers()
+            val pOut = prefix.createOutputBuffers()
+            val eIn = expert.createInputBuffers()
+            val eOut = expert.createOutputBuffers()
+            vIn[0].writeFloat(load("v_image"))
+            vIn[1].writeFloat(load("v_pos"))
+            listOf("p_lang", "p_state", "p_bias", "p_cos", "p_sin").forEachIndexed { i, n ->
+              pIn[i + 1].writeFloat(load(n))
+            }
+            listOf("e_bias_self", "e_bias_cross", "e_cos_s", "e_sin_s", "e_cos_c", "e_sin_c")
+              .forEachIndexed { i, n -> eIn[i + 4].writeFloat(load(n)) }
+            val noise = load("noise")
+            val tembs = (0 until 10).map { load("temb$it") }
+            val dt = -0.1f
+
+            val stageMs = DoubleArray(3)
+            fun chunk(): FloatArray {
+              var t = System.nanoTime()
+              vision.run(vIn, vOut)
+              val imgEmb = vOut[0].readFloat()
+              stageMs[0] = (System.nanoTime() - t) / 1e6
+              t = System.nanoTime()
+              pIn[0].writeFloat(imgEmb)
+              prefix.run(pIn, pOut)
+              eIn[2].writeFloat(pOut[0].readFloat())
+              eIn[3].writeFloat(pOut[1].readFloat())
+              stageMs[1] = (System.nanoTime() - t) / 1e6
+              t = System.nanoTime()
+              val x = noise.copyOf()
+              for (step in 0 until 10) {
+                eIn[0].writeFloat(x)
+                eIn[1].writeFloat(tembs[step])
+                expert.run(eIn, eOut)
+                val v = eOut[0].readFloat()
+                for (i in x.indices) x[i] = x[i] + dt * v[i]
+              }
+              stageMs[2] = (System.nanoTime() - t) / 1e6
+              return x
+            }
+
+            repeat(warmup) { chunk() }
+            val total = DoubleArray(iterations)
+            val perStage = Array(3) { DoubleArray(iterations) }
+            var x = FloatArray(0)
+            for (i in 0 until iterations) {
+              val t0 = System.nanoTime()
+              x = chunk()
+              total[i] = (System.nanoTime() - t0) / 1e6
+              for (s in 0 until 3) perStage[s][i] = stageMs[s]
+            }
+            val memRun = memorySnapshot()
+            outDir.mkdirs()
+            val bb = java.nio.ByteBuffer.allocate(x.size * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            x.forEach { bb.putFloat(it) }
+            File(outDir, "x_final.bin").writeBytes(bb.array())
+
+            fun median(a: DoubleArray) = a.sorted()[a.size / 2]
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val sys = android.app.ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+            val line =
+              "CHAIN ${accelerator.name}${if (gpuFp32) "/FP32" else ""} " +
+                "chunk median=${"%.1f".format(median(total))}ms min=${"%.1f".format(total.min())}ms " +
+                "vision=${"%.1f".format(median(perStage[0]))}ms " +
+                "prefix=${"%.1f".format(median(perStage[1]))}ms " +
+                "expert10=${"%.1f".format(median(perStage[2]))}ms load=${"%.0f".format(loadMs)}ms " +
+                "runs=$iterations | mem before [$memBefore] loaded [$memLoaded] running [$memRun] " +
+                "| device RAM total=${sys.totalMem / (1 shl 20)}MB avail=${sys.availMem / (1 shl 20)}MB " +
+                "| thermal=$thermalBefore->${thermalStatus()} headroom=$headroomBefore->" +
+                "${run { Thread.sleep(1100); thermalHeadroom() }} outdir=${outDir.absolutePath}"
+            Log.i(TAG, line)
+            return line
+          }
+        }
       }
     }
   }

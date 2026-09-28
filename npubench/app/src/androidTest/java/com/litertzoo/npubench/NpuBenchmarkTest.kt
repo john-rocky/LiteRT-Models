@@ -108,6 +108,10 @@ class NpuBenchmarkTest {
    *   -e model /data/local/tmp/gsctc/m.tflite -e accel cpu -e sig transcribe_10s
    *   -e input /data/local/tmp/gsctc/in_10s.raw -e outkinds i,f [-e iters 20]
    *
+   * Multi-input graphs pass one raw f32 file per input, in signature order, as a
+   * comma-separated list: `-e inputs a.raw,b.raw,c.raw`. `-e gpuprec fp32` requests
+   * FP32 GPU compute (default is the delegate's own, fp16 on most GPUs).
+   *
    * Dumps each output to the app's external files dir under <tag>/out<i>.bin and
    * logs a PARITY line with the bench figures and the dump dir.
    */
@@ -121,13 +125,19 @@ class NpuBenchmarkTest {
       else -> Accelerator.GPU
     }
     val sig = args.getString("sig") ?: ""
-    val input = args.getString("input") ?: error("pass -e input <raw f32 file>")
+    val inputs =
+      args.getString("inputs")?.split(",")?.filter { it.isNotEmpty() }
+        ?: listOf(args.getString("input") ?: error("pass -e input <raw f32 file> or -e inputs a,b,c"))
     val outKinds = (args.getString("outkinds") ?: "f").split(",")
     val iterations = args.getString("iters")?.toIntOrNull() ?: 20
+    val gpuFp32 = args.getString("gpuprec")?.lowercase() == "fp32"
     val tag = args.getString("tag") ?: "parity"
     val outDir = java.io.File(context.getExternalFilesDir(null), tag)
     try {
-      val r = bench.parityBench(path, accel, sig, input, outDir, outKinds, iterations = iterations)
+      val r =
+        bench.parityBench(
+          path, accel, sig, inputs, outDir, outKinds, iterations = iterations, gpuFp32 = gpuFp32,
+        )
       Log.i(
         TAG,
         "PARITY ${r.accelerator} [${r.asset}] median=${"%.3f".format(r.medianMs)}ms " +
@@ -138,6 +148,33 @@ class NpuBenchmarkTest {
       )
     } catch (e: Throwable) {
       Log.e(TAG, "PARITY ${accel.name} [$path#$sig] FAILED: ${e::class.java.simpleName}: ${e.message}")
+    }
+  }
+
+  /**
+   * Three resident models chained on the host (SmolVLA action chunk), with memory:
+   *
+   *   -e vision v.tflite -e prefix p.tflite -e expert e.tflite -e chaindir <dir>
+   *   [-e accel gpu|cpu] [-e gpuprec fp32] [-e iters 5] [-e tag chain]
+   */
+  @Test
+  fun chain() {
+    val args = InstrumentationRegistry.getArguments()
+    val accel = if (args.getString("accel")?.lowercase() == "cpu") Accelerator.CPU else Accelerator.GPU
+    val tag = args.getString("tag") ?: "chain"
+    try {
+      bench.chainBench(
+        visionPath = args.getString("vision") ?: error("pass -e vision <path>"),
+        prefixPath = args.getString("prefix") ?: error("pass -e prefix <path>"),
+        expertPath = args.getString("expert") ?: error("pass -e expert <path>"),
+        dir = java.io.File(args.getString("chaindir") ?: error("pass -e chaindir <dir>")),
+        accelerator = accel,
+        gpuFp32 = args.getString("gpuprec")?.lowercase() == "fp32",
+        outDir = java.io.File(context.getExternalFilesDir(null), tag),
+        iterations = args.getString("iters")?.toIntOrNull() ?: 5,
+      )
+    } catch (e: Throwable) {
+      Log.e(TAG, "CHAIN ${accel.name} FAILED: ${e::class.java.simpleName}: ${e.message}")
     }
   }
 
