@@ -1209,6 +1209,26 @@ which op overflows and the Metal run as the plain-FP16 pre-gate; the Python API 
 Not needed here: scaling q before QKᵀ, keeping softmax output in fp32 or scaling it by 2^10 (attention mass below the
 fp16 normal range was ≤ 0.14 % per row; the 2^10 scale made the error worse).
 
+**English, typed-decisions and the token-id form (same day).** ModernBERT-large carries 1.7e3–1.9e3 from layer 6,
+3.4e3–3.7e3 from layer 8, 1.2e4 from layer 15 and 3.2e4–3.3e4 from layer 20 (both checkpoints, no GeGLU product above 4096), so
+the per-LayerNorm k reaches 9–10; the same rule (k = ceil(log2(max / 64))) and −1e4 masks made every fp32 graph
+bit-identical and every NPU run pass. S26 NPU, rewritten graphs, warm median per question:
+
+| Graph | Rows | Choice/score argmax | Max Δp | NPU ms | GPU FP32 ms, same session |
+|---|---:|---:|---:|---:|---:|
+| English S256 wfp16 (embeds) | 140 | 59/59 | 0.0072 | 65.7 | 192.6 [120.4, 252.8], phone warming |
+| English S512 wfp16 (embeds) | 209 | 87/87 | 0.0072 | 167.2 | — |
+| typed-decisions S256 wfp16 | 100 | 65/65 | 0.0034 | 72.8 | 124.8 |
+| typed-decisions S512 wfp16 | 175 | 112/112 | 0.0034 | 173.7 | — |
+| English S256 fp32 (token ids, table in graph) | 140 | 59/59 | 0.0054 | 83.8 | — |
+| multilingual S256 fp32 (token ids) | 201 | 81/81 | 0.0115 | 37.1 | — |
+| multilingual S256 wfp16 (token ids, fp16 table + DEQUANTIZE) | 201 | 81/81 | 0.0068 | 36.8 | — |
+
+Two NPU facts from this table: the fp16-weight file (DEQUANTIZE-fed FULLY_CONNECTED and EMBEDDING_LOOKUP) compiles whole
+on the HTP although ML Drift rejects it on the GPU, and on the same rows it was *more* accurate than the fp32-weight
+file with identical weight values (0.0068 against 0.0115) — take the wfp16 file for the NPU. First-launch JIT compile was
+31–59 s for these 0.64–1.7 GB graphs; later launches load the cache.
+
 **No integer path keeps the answers.** Post-training int8 weights change answers (per-channel 36/38, max Δp 0.089; GPTQ
 38/38 but 0.040; every projection type alone already exceeds 0.01); int4 flips 6–11 of 38. int16 activations pass
 (38/38, 5.3e-3) only with 16-bit weights and the few input columns above 16× the median column max (the neurons above)
