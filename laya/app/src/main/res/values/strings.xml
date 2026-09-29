@@ -3,9 +3,11 @@
   <string name="app_name">Laya multilingual</string>
   <string name="status_loading_tokenizer">Loading tokenizer…</string>
   <string name="status_compiling_gpu">Compiling GPU…</string>
+  <string name="status_compiling_npu">Compiling NPU… (about 40 s on the first launch only)</string>
   <string name="status_loading_cpu">Loading CPU model…</string>
   <string name="status_warming_up">Warming up the full pipeline…</string>
   <string name="status_gpu_ready">Ready · GPU FP32</string>
+  <string name="status_npu_ready">Ready · NPU</string>
   <string name="status_cpu_ready">Ready · CPU</string>
   <string name="status_running">Answering questions…</string>
   <string name="status_error">Model unavailable</string>
@@ -20,6 +22,7 @@
   <string name="launch_to_ready">Launch to Ready: %1$.2f ms</string>
   <string name="accelerator_title">Accelerator</string>
   <string name="accelerator_gpu">GPU (FP32 precision)</string>
+  <string name="accelerator_npu">NPU</string>
   <string name="accelerator_cpu">CPU</string>
   <string name="use_cpu">Use CPU</string>
   <string name="preset_email">Email triage</string>

@@ -12,7 +12,10 @@ import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
-/** Single-row multilingual Laya execution; GPU explicitly requests FP32 with no CPU fallback. */
+/**
+ * Single-row multilingual Laya execution. GPU explicitly requests FP32; the NPU (Qualcomm HTP)
+ * compiles the same fp16-safe graph on the device (JIT, cached after the first launch).
+ */
 class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Closeable {
   /** Storage changes graph weights only; GPU arithmetic remains explicitly FP32 in both cases. */
   enum class Storage(val argument: String) {
@@ -33,6 +36,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
   /** Selects the accelerator explicitly; GPU creation never silently falls back. */
   enum class Backend(val accelerator: Accelerator) {
     GPU(Accelerator.GPU),
+    NPU(Accelerator.NPU),
     CPU(Accelerator.CPU);
 
     companion object {
@@ -40,8 +44,9 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
       fun fromArgument(value: String): Backend =
         when (value.lowercase()) {
           "gpu" -> GPU
+          "npu" -> NPU
           "cpu" -> CPU
-          else -> error("Unknown accelerator: $value; expected gpu or cpu")
+          else -> error("Unknown accelerator: $value; expected gpu, npu or cpu")
         }
     }
   }
@@ -116,7 +121,8 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
     }
   }
 
-  private val filesDir = context.applicationContext.filesDir
+  private val appContext = context.applicationContext
+  private val filesDir = appContext.filesDir
   private val mainGraphs = linkedMapOf<Key, Graph>()
   private val actGraphs = linkedMapOf<Backend, Graph>()
   private val embeddingInputs = linkedMapOf<Int, FloatArray>()
@@ -153,6 +159,9 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
     LayaProcessRuntime.call {
       checkOpen()
       requireWindow(window)
+      check(backend != Backend.NPU || npuLibrariesInstalled(appContext)) {
+        "This APK has no Qualcomm NPU libraries; see the NPU section of the README."
+      }
       mainGraph(window, backend)
       actGraph(backend)
       Unit
@@ -278,6 +287,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
         backend,
         listOf("attention_mask", "inputs_embeds", "qtype_onehot"),
         listOf("pooled_cls", "token_logits"),
+        main = true,
       )
     }
 
@@ -288,6 +298,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
         backend,
         listOf("feats", "pooled_cls"),
         listOf("act_logits"),
+        main = false,
       )
     }
 
@@ -296,20 +307,29 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
     backend: Backend,
     inputNames: List<String>,
     outputNames: List<String>,
+    main: Boolean,
   ): Graph {
+    // The action head is tiny and its logits reach 2e3-5e3, so an NPU run keeps it on the CPU.
+    val accelerator = if (backend == Backend.NPU && !main) Accelerator.CPU else backend.accelerator
     val options =
-      CompiledModel.Options(backend.accelerator).apply {
-        if (backend == Backend.GPU) {
-          gpuOptions = CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
-        } else {
-          cpuOptions = CompiledModel.CpuOptions(numThreads = 4)
+      CompiledModel.Options(accelerator).apply {
+        when {
+          backend == Backend.GPU ->
+            gpuOptions =
+              CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
+          backend == Backend.NPU && main ->
+            qualcommOptions =
+              CompiledModel.QualcommOptions(
+                htpPerformanceMode = CompiledModel.QualcommOptions.HtpPerformanceMode.BURST
+              )
+          else -> cpuOptions = CompiledModel.CpuOptions(numThreads = 4)
         }
       }
     val model =
       CompiledModel.create(
         requireFile(filename).absolutePath,
         options,
-        LayaProcessRuntime.environment(),
+        LayaProcessRuntime.environment(appContext),
       )
     val inputs = linkedMapOf<String, TensorBuffer>()
     val outputs = linkedMapOf<String, TensorBuffer>()
@@ -371,6 +391,15 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
 
     private fun milliseconds(nanos: Long) = nanos / 1_000_000.0
 
+    /** The dispatch library and the JIT compiler plugin must both be packaged for the NPU. */
+    fun npuLibrariesInstalled(context: Context): Boolean {
+      val libDir = File(context.applicationInfo.nativeLibraryDir)
+      return NPU_LIBRARIES.all { File(libDir, it).isFile }
+    }
+
+    private val NPU_LIBRARIES =
+      listOf("libLiteRtDispatch_Qualcomm.so", "libLiteRtCompilerPlugin_Qualcomm.so", "libQnnHtp.so")
+
     private fun timing(start: Long, written: Long, enqueued: Long, read: Long) =
       GraphTiming(
         milliseconds(written - start),
@@ -388,8 +417,18 @@ private object LayaProcessRuntime {
     }
   private var sharedEnvironment: Environment? = null
 
-  fun environment(): Environment =
-    sharedEnvironment ?: Environment.create().also { sharedEnvironment = it }
+  // Both directories point at the packaged vendor libraries. Without CompilerPluginLibraryDir a
+  // model requested on the NPU is not compiled for it; harmless for GPU and CPU.
+  fun environment(context: Context): Environment =
+    sharedEnvironment
+      ?: Environment.create(
+          context,
+          mapOf(
+            Environment.Option.DispatchLibraryDir to context.applicationInfo.nativeLibraryDir,
+            Environment.Option.CompilerPluginLibraryDir to context.applicationInfo.nativeLibraryDir,
+          ),
+        )
+        .also { sharedEnvironment = it }
 
   fun <T> call(block: () -> T): T =
     try {

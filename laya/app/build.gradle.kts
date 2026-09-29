@@ -68,6 +68,11 @@ android {
     }
   }
 
+  packaging {
+    // The Hexagon skel is opened by the DSP through ADSP_LIBRARY_PATH, which needs real files.
+    jniLibs { useLegacyPackaging = true }
+  }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17

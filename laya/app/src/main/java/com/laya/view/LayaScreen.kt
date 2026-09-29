@@ -133,7 +133,7 @@ fun LayaScreen(
               )
             }
           }
-          item { AcceleratorPicker(state.accelerator, editable, onAccelerator) }
+          item { AcceleratorPicker(state.accelerator, editable, state.npuAvailable, onAccelerator) }
           item {
             Row(
               modifier =
@@ -255,18 +255,21 @@ private fun PresetPicker(selected: Preset, enabled: Boolean, onPreset: (Preset) 
 private fun AcceleratorPicker(
   selected: LayaEngine.Backend,
   enabled: Boolean,
+  npuAvailable: Boolean,
   onAccelerator: (LayaEngine.Backend) -> Unit,
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     Text(stringResource(R.string.accelerator_title), style = MaterialTheme.typography.subtitle2)
     Row(modifier = Modifier.fillMaxWidth().selectableGroup()) {
       LayaEngine.Backend.entries.forEach { backend ->
+        // The NPU needs vendor libraries that are not in git; without them the option is disabled.
+        val available = enabled && (backend != LayaEngine.Backend.NPU || npuAvailable)
         Row(
           modifier =
             Modifier.weight(1f)
               .selectable(
                 selected = selected == backend,
-                enabled = enabled,
+                enabled = available,
                 role = Role.RadioButton,
                 onClick = { onAccelerator(backend) },
               )
@@ -274,13 +277,13 @@ private fun AcceleratorPicker(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-          RadioButton(selected = selected == backend, onClick = null, enabled = enabled)
+          RadioButton(selected = selected == backend, onClick = null, enabled = available)
           Text(
             stringResource(
-              if (backend == LayaEngine.Backend.GPU) {
-                R.string.accelerator_gpu
-              } else {
-                R.string.accelerator_cpu
+              when (backend) {
+                LayaEngine.Backend.GPU -> R.string.accelerator_gpu
+                LayaEngine.Backend.NPU -> R.string.accelerator_npu
+                LayaEngine.Backend.CPU -> R.string.accelerator_cpu
               }
             )
           )

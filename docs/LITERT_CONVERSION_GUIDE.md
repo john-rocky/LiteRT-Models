@@ -1169,3 +1169,47 @@ Shipped as `litert-community/GLiNER2.5-Decide-LiteRT` (windows 128/256/512, fp16
 **App timing behind a secure keyguard.** `am start` on a phone whose lock screen is a credential starts the app behind the keyguard: it is never top-resumed (`TOP_SLEEPING`) and its process sits in the `background` cpuset (cores 0–1 and 4–5 on the S26, without the two fastest cores 6–7), so host-side timings and the CPU backend are measured on the wrong cores. For debug measurement runs only, the sample calls `setShowWhenLocked(true)` + `setTurnScreenOn(true)` when a diagnostic extra is present; verify `topResumedActivity` and `/proc/<pid>/cgroup` (`top-app`) before trusting a number. With that, a request right after a cold start took 72–78 ms end to end at s128 (0.38–0.39 s of warm-up before Ready) and paced requests a median 93.0 ms on GPU FP32.
 
 **Tokenizer.** Decide's `tokenizer.json` marks `[UNK]` as `normalized: true` (Small's has `false`), and the Small Kotlin tokenizer refused to load it. Normalized added tokens must be matched the way Hugging Face tokenizers' `AddedVocabulary::extract_and_normalize` does: split out the non-normalized added tokens on the raw text, normalize each remaining segment once, then split it on the normalized tokens (`"a [UNK] b"` → `▁a ▁ [UNK] ▁b`). A tokenizer port is per checkpoint; re-check `added_tokens` flags when reusing it.
+
+## 2026-09-29 追記 — Laya Multilingual on fp16: the NPU passes after three fp32-exact rewrites, GPU fp16 does not
+
+Evidence: `~/code/codex-conversions/2026-09-29/laya-fp16-gate/` (`STATUS.md`, `device/`, `device_zoo/`, `emulation/`).
+Galaxy S26 SM-S942Q, LiteRT 2.2.0, S256 WFP16 graph, 201 fixture rows, thermal status none before each run.
+
+**The shipped graph returns no finite row in fp16.** On the S26 GPU at `Precision.FP16`, on the Hexagon NPU (which
+computes float graphs in fp16) and on the Mac through LiteRT's own Metal GPU at default precision, 0/201 rows are
+finite. Two causes: the attention masks multiply `(1 - mask)` by −1e9, which is −inf in fp16, so every real token gets
+0 × −inf = NaN; and LayerNorm (MEAN / SQUARED_DIFFERENCE / RSQRT) squares activations that fp16 cannot hold. From
+layer 12 the `<bos>` row carries 1.3e4–1.4e4, separator rows 1.4e3–3.8e3 and some punctuation / common-word rows
+4e3–7.6e3, all in channels 418, 424, 449, 468, 488, 530, 580, 614; `(x − mean)²` reaches 2e8. One layer-11 MLP neuron
+(924, GeGLU product up to 36,341) writes the `<bos>` value; layer-12 neurons 957 and 878 write most of the rest.
+
+**Three rewrites, each exact in fp32** (the rewritten graph is bit-identical to the shipped one in PyTorch on 5 probe
+rows; Mac CPU 201/201, argmax 81/81, max Δp 1.45e-3 WFP16 as before; +30 MUL, 1809 ops):
+1. LayerNorm on `x · 2^-k` with `eps · 2^-2k`, k per LayerNorm from max |input| over the fixture rows with one power of
+   two of margin (k = 2 in layers 9–11, 8 in layers 12–21 and the final norm, 4 in the second head layer and the
+   scorer, 0 elsewhere). One global 2^-8 for every LayerNorm NaNs instead: small rows underflow to a zero variance.
+2. Masks −1e4 (key + band = −2e4, finite in fp16; exp(−1e4) is already 0 in fp32).
+3. Layers 11–12: the gate half of `Wi` × 2^-4 and `Wo` × 2^4 (the GeGLU product used 55 % of the fp16 range).
+
+| Graph / accelerator | Finite | Choice/score argmax | Max Δp | Warm median ms |
+|---|---:|---:|---:|---:|
+| rewritten, GPU FP32 | 201/201 | 81/81 | 0.0014 | 51.8 |
+| rewritten, GPU FP16_WITH_FP32_ACCUM | 201/201 | 81/81 | 0.0124 (one row over 0.01) | 40.8 |
+| rewritten, GPU FP16 | 201/201 | 80/81 | 0.0331 | 28.2 |
+| rewritten, NPU (JIT; one `DispatchDelegate` node) | 201/201 | 81/81 | 0.0069 | 36.5 |
+| shipped, GPU FP16 / NPU | 0/201 | — | — | 27.2 / 35.1 |
+
+The NPU result repeated exactly on a second process (JIT compile 40.3 s first, 0.22 s from the cache). The sample app
+ships GPU FP32 and the NPU; GPU fp16 stays off.
+
+**Predict fp16 on the Mac before the device.** A PyTorch emulation that rounds every op to fp16 but accumulates matmuls
+in fp32 predicted 81/81 / 5.1e-3 — close to the NPU and to FP16_WITH_FP32_ACCUM. LiteRT's Metal GPU at default precision
+(`ai_edge_litert` GpuOptions without `enforce_f32`) gave 78/81 / 0.038 — close to S26 GPU FP16. Use the emulation to find
+which op overflows and the Metal run as the plain-FP16 pre-gate; the Python API cannot select FP16_WITH_FP32_ACCUM.
+Not needed here: scaling q before QKᵀ, keeping softmax output in fp32 or scaling it by 2^10 (attention mass below the
+fp16 normal range was ≤ 0.14 % per row; the 2^10 scale made the error worse).
+
+**No integer path keeps the answers.** Post-training int8 weights change answers (per-channel 36/38, max Δp 0.089; GPTQ
+38/38 but 0.040; every projection type alone already exceeds 0.01); int4 flips 6–11 of 38. int16 activations pass
+(38/38, 5.3e-3) only with 16-bit weights and the few input columns above 16× the median column max (the neurons above)
+kept in float. Weight-only int8 / int4 does not change NPU speed anyway (NPU factor lane).

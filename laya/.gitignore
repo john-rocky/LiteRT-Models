@@ -10,3 +10,4 @@ model-files/
 test-data/
 validation-data/
 __pycache__/
+app/src/main/jniLibs/

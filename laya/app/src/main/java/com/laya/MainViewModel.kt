@@ -34,6 +34,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
       UiState(
         inputSubject = context.getString(R.string.example_email_ja_subject),
         inputText = context.getString(R.string.example_email_ja_body),
+        npuAvailable = LayaEngine.npuLibrariesInstalled(context),
       )
     )
 
@@ -175,10 +176,10 @@ class MainViewModel(private val context: Context) : ViewModel() {
         mutableUiState.update {
           it.copy(
             statusMessage =
-              if (backend == LayaEngine.Backend.GPU) {
-                R.string.status_compiling_gpu
-              } else {
-                R.string.status_loading_cpu
+              when (backend) {
+                LayaEngine.Backend.GPU -> R.string.status_compiling_gpu
+                LayaEngine.Backend.NPU -> R.string.status_compiling_npu
+                LayaEngine.Backend.CPU -> R.string.status_loading_cpu
               }
           )
         }
@@ -216,9 +217,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
             "embedding_map_ms=${helper.embeddingLoadMs} compile_ms=$compileMs warmup_ms=$warmupMs",
         )
       } catch (failure: Exception) {
-        showFailure(failure, canFallbackToCpu = backend == LayaEngine.Backend.GPU && compiling)
+        showFailure(failure, canFallbackToCpu = backend != LayaEngine.Backend.CPU && compiling)
       } catch (failure: LinkageError) {
-        showFailure(failure, canFallbackToCpu = backend == LayaEngine.Backend.GPU && compiling)
+        showFailure(failure, canFallbackToCpu = backend != LayaEngine.Backend.CPU && compiling)
       }
     }
   }
@@ -429,6 +430,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
     private fun readyStatus(backend: LayaEngine.Backend) =
       when (backend) {
         LayaEngine.Backend.GPU -> R.string.status_gpu_ready
+        LayaEngine.Backend.NPU -> R.string.status_npu_ready
         LayaEngine.Backend.CPU -> R.string.status_cpu_ready
       }
 

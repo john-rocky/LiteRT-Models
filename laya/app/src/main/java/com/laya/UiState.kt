@@ -61,5 +61,7 @@ data class UiState(
   val launchToReadyMs: Double? = null,
   val errorMessage: String? = null,
   val canFallbackToCpu: Boolean = false,
+  /** True when this APK packages the Qualcomm NPU libraries (see the README). */
+  val npuAvailable: Boolean = false,
   val gateFile: String? = null,
 )
