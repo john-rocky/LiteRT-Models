@@ -123,6 +123,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
 
   private val appContext = context.applicationContext
   private val filesDir = appContext.filesDir
+  private val npuInstalled = npuLibrariesInstalled(appContext)
   private val mainGraphs = linkedMapOf<Key, Graph>()
   private val actGraphs = linkedMapOf<Backend, Graph>()
   private val embeddingInputs = linkedMapOf<Int, FloatArray>()
@@ -317,12 +318,18 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
           backend == Backend.GPU ->
             gpuOptions =
               CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
-          backend == Backend.NPU && main ->
-            qualcommOptions =
-              CompiledModel.QualcommOptions(
-                htpPerformanceMode = CompiledModel.QualcommOptions.HtpPerformanceMode.BURST
-              )
+          backend == Backend.NPU && main -> Unit
           else -> cpuOptions = CompiledModel.CpuOptions(numThreads = 4)
+        }
+        // LiteRT 2.2.0 starts the NPU runtime once per process, from the options of the first
+        // graph it compiles on any accelerator, and the HTP performance mode is fixed then. So
+        // every graph carries BURST, the mode the published NPU numbers were measured with;
+        // without it a GPU or CPU graph compiled first leaves a later NPU graph about 5x slower.
+        if (npuInstalled) {
+          qualcommOptions =
+            CompiledModel.QualcommOptions(
+              htpPerformanceMode = CompiledModel.QualcommOptions.HtpPerformanceMode.BURST
+            )
         }
       }
     val model =
