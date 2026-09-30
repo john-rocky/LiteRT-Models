@@ -105,6 +105,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Qwen3-Reranker-0.6B](#qwen3-reranker-06b) | Text reranking (RAG) |  |  | [🤗 HF](https://huggingface.co/litert-community/Qwen3-Reranker-0.6B-LiteRT) |
 | [Laya Multilingual](#laya-multilingual-typed-text-decisions) | Text classification / triage with request-time questions (EN / JA) | Galaxy S26 | 51 ms per question (GPU), 36 ms (NPU) | [🤗 HF](https://huggingface.co/litert-community/Laya-Multilingual-LiteRT) |
 | [Laya English + typed-decisions](#laya-multilingual-typed-text-decisions) | English text classification / typed decisions with request-time questions (ModernBERT-large) | Galaxy S26 | 123 ms per question (GPU), 66 ms (NPU) | [🤗 HF](https://huggingface.co/litert-community/Laya-English-LiteRT) |
+| [Julia-1](#julia-1-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text (EN) | Galaxy S26 | 82 ms per question (GPU FP32) | [🤗 HF](https://huggingface.co/litert-community/Julia-1-LiteRT) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
@@ -2171,6 +2172,22 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-22 Laya section; 2026-09-29 fp16 / NPU section).
 
 **Original project**: [NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) (Apache-2.0)
+
+### Julia-1 (typed decisions)
+
+[SupersonicLabs/Julia-1](https://huggingface.co/SupersonicLabs/Julia-1) (144.3M, Apache-2.0, **mmBERT-small** encoder + a decision head) reads a state (text or JSON), a typed question and 2–20 options, and returns one probability per option from one forward pass: `choice` picks an option, `score` gives the expected index on an ordered rubric, `noul` gives P(true). Same graph cut as Laya (one question row per call; the host tokenizes, looks the ids up in a float16 table, reads the logits at the `<mask>` markers and applies softmax), but the options are the criteria descriptions themselves (no `level i:` / `false:` prefixes), there is no calibration (T=1) and no act head. The checkpoint's weights are float32, so the shipped float16 token table moves probabilities by up to 0.0077 and every fp16 arithmetic path changes answers: **GPU FP32 only** (Galaxy S26 NPU: 684/706 rows, max Δp 0.425 — not shipped).
+
+**On-device (Galaxy S26, LiteRT 2.2.0 — verified 2026-09-30):** fully on the GPU delegate (1,704/1,704 ops, one partition) with `GpuOptions(precision = FP32)`; on 706 rows (all 306 boundary rows plus 400 others) the answers match the author's runtime on every row (argmax 706/706, max probability difference 0.0077 with the float16 table, 0.00005 with a float32 table); **GPU median 81.5 ms per question at 512 tokens** (warm rows 56.8–103.0 ms, thermal status 0 before and after, battery 32.6 → 37.8 °C), 298.5 ms at 1,024 tokens (100 rows, thermal status 2). On desktop CPU the S1024 graph gives the author's answer on all 2,000 typed-decisions test questions (426/600 choice, 542/800 score, 483/600 noul, the author's CPU FP32 numbers).
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| Julia-1 s512 / s1024 | [HF: litert-community/Julia-1-LiteRT](https://huggingface.co/litert-community/Julia-1-LiteRT) | 185 / 189 MB fp32 graph + 197 MB fp16 token table + 34 MB tokenizer.json | inputs_embeds [1,N,384] + attention_mask [1,N] + qtype_onehot [1,3] → token_logits [1,N] → host marker gather + softmax | GPU FP32 (s512 verified on 706 rows, s1024 on 100) |
+
+**Sample app**: [julia1/](julia1/) — pure-Kotlin host (the Laya sample's Gemma-style BPE tokenizer, which is the same `tokenizer.json`, the author's strict sequence rules with no truncation, memory-mapped float16 lookup, float64 softmax decoder) in a Compose app: pick Support ticket / Agent trace / Product review, edit the text, and read per-question answers with probabilities. On the S26 the on-device tokenizer and builder reproduced the reference host's ids and markers on 2,065/2,065 requests that fit 512 tokens and rejected the 35 longer ones; the debug gate's 706 rows gave the numbers above. The HF repo carries the standalone Python host (`julia_litert.py`, no torch) and the conversion scripts.
+
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-09-30 Julia-1 section).
+
+**Original project**: [SupersonicLabs/Julia-1](https://huggingface.co/SupersonicLabs/Julia-1) (Apache-2.0)
 
 ### GLiNER2.5-Decide (zero-shot text classification)
 

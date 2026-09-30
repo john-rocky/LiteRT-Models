@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "repository": "litert-community/Julia-1-LiteRT",
+  "revision": "b92a0d21eb1aedad6afdc815e027a47896d16eb3",
+  "files": [
+    {
+      "name": "julia1_s512_fp32.tflite",
+      "size_bytes": 185095348,
+      "sha256": "be2d0b7d5f80f9cc1d468198d9cab2944cef55c2089f6db418e758b34359cd6e"
+    },
+    {
+      "name": "julia1_s1024_fp32.tflite",
+      "size_bytes": 188503220,
+      "sha256": "b4f260595776c0a126f0e1aadbefb0c2acc6e0b1ca0cfe9499b4d322d591e632"
+    },
+    {
+      "name": "julia1_token_table_fp16.bin",
+      "size_bytes": 196608000,
+      "sha256": "5c7ad7bd7325d4d230a822d1ecee5e33b6c36376df1c028e8e7ddafb7d43be9c"
+    },
+    {
+      "name": "tokenizer.json",
+      "size_bytes": 34363188,
+      "sha256": "609d8f4c067cd3950f88594c5a802616cea245823836ef5848ee4fc40aab5b6f"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Julia-1 decisions</string>
+  <string name="status_loading_tokenizer">Loading tokenizer…</string>
+  <string name="status_compiling_gpu">Compiling GPU (FP32)…</string>
+  <string name="status_loading_cpu">Loading CPU model…</string>
+  <string name="status_warming_up">Warming up the full pipeline…</string>
+  <string name="status_gpu_ready">Ready · GPU FP32</string>
+  <string name="status_cpu_ready">Ready · CPU</string>
+  <string name="status_running">Answering questions…</string>
+  <string name="status_error">Model unavailable</string>
+  <string name="status_not_installed">Model not installed</string>
+  <string name="status_gate_running">Running debug fixture gate…</string>
+  <string name="status_gate_measured">Gate measurements saved for review</string>
+  <string name="status_gate_failed">Debug fixture gate failed</string>
+  <string name="gate_file">Report: %1$s</string>
+  <string name="error_message">%1$s</string>
+  <string name="missing_model_file">Missing %1$s. Run scripts/install_to_device.sh, then relaunch.</string>
+  <string name="error_nonfinite">The model returned a nonfinite value. Try the other accelerator.</string>
+  <string name="launch_to_ready">Launch to Ready: %1$.2f ms</string>
+  <string name="accelerator_title">Accelerator</string>
+  <string name="accelerator_gpu">GPU (FP32 precision)</string>
+  <string name="accelerator_cpu">CPU</string>
+  <string name="use_cpu">Use CPU</string>
+  <string name="preset_ticket">Support ticket</string>
+  <string name="preset_agent">Agent trace</string>
+  <string name="preset_review">Product review</string>
+  <string name="preset_selected">Preset: %1$s</string>
+  <string name="state_label">State (text the questions are asked about)</string>
+  <string name="example_ticket">Can I change the delivery address for order 7120? The courier picks it up in an hour.</string>
+  <string name="example_agent">Task: delete unused storage buckets to cut costs. Budget: at most $50 of cloud spend; $61 spent so far. Trace: 7 steps, 2 tool errors, 1 irreversible action. Next step: permanently delete a bucket that still receives traffic.</string>
+  <string name="example_review">The kettle boils fast and looks good on the counter, but the lid handle came loose after two weeks and the seller has not answered my message.</string>
+  <string name="run">Run</string>
+  <string name="run_summary">Run total: %1$.2f ms · %2$d tokens · %3$d questions</string>
+  <string name="token_count_hint">Tokens across all question prompts, excluding padding. Each question is one graph call.</string>
+  <string name="results_title">Results</string>
+  <string name="result_choice">Answer: %1$s</string>
+  <string name="result_score">Score: %1$.4f</string>
+  <string name="result_true_probability">True probability: %1$.4f</string>
+  <string name="score_legend">Score = expected zero-based index; probabilities per rubric level</string>
+  <string name="score_level">Level %1$d</string>
+  <string name="option_true">True</string>
+  <string name="option_false">False</string>
+  <string name="option_probability" translatable="false">%1$.2f%%</string>
+  <string name="result_window">Window S%1$d · %2$d tokens</string>
+  <string name="result_timing" translatable="false">%1$.2f ms</string>
+</resources>

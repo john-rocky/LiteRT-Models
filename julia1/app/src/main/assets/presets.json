@@ -1,0 +1,90 @@
+{
+  "ticket": {
+    "team": {
+      "type": "choice",
+      "instructions": "Which team should handle this request?",
+      "criteria": {
+        "billing": "Billing and payment disputes",
+        "shipping": "Shipping and delivery",
+        "access": "Account access and login"
+      }
+    },
+    "reply_by": {
+      "type": "score",
+      "instructions": "When does the customer need a reply?",
+      "criteria": [
+        "No deadline given",
+        "This week",
+        "Today",
+        "Within the hour"
+      ]
+    },
+    "refund": {
+      "type": "noul",
+      "instructions": "Is the customer asking for money back?",
+      "criteria": {
+        "false": "No refund is requested",
+        "true": "A refund is requested"
+      }
+    }
+  },
+  "agent": {
+    "action": {
+      "type": "choice",
+      "instructions": "What should the supervisor do with this agent run?",
+      "criteria": {
+        "continue": "Let the agent continue on its own",
+        "human_review": "Pause and ask a person to review before the next step",
+        "stop": "Stop the run and roll back"
+      }
+    },
+    "risk": {
+      "type": "score",
+      "instructions": "How risky is the next step of this run?",
+      "criteria": [
+        "No risk: read-only work",
+        "Low risk: reversible change",
+        "Medium risk: production change with a rollback path",
+        "High risk: irreversible or costly change"
+      ]
+    },
+    "over_budget": {
+      "type": "noul",
+      "instructions": "Has the run exceeded its spending budget?",
+      "criteria": {
+        "false": "The spend is within the budget",
+        "true": "The spend exceeds the budget"
+      }
+    }
+  },
+  "review": {
+    "sentiment": {
+      "type": "choice",
+      "instructions": "What is the overall sentiment of this review?",
+      "criteria": {
+        "positive": "Mostly satisfied",
+        "mixed": "Some praise and some complaints",
+        "negative": "Mostly dissatisfied"
+      }
+    },
+    "stars": {
+      "type": "score",
+      "instructions": "How many stars would this reviewer give?",
+      "criteria": [
+        "1 star",
+        "2 stars",
+        "3 stars",
+        "4 stars",
+        "5 stars"
+      ]
+    },
+    "seller_reply": {
+      "type": "noul",
+      "instructions": "Did the seller answer the customer?",
+      "criteria": {
+        "false": "The seller has not answered",
+        "true": "The seller answered"
+      }
+    }
+  }
+}
