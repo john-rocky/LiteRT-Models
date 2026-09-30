@@ -1233,3 +1233,101 @@ file with identical weight values (0.0068 against 0.0115) — take the wfp16 fil
 38/38 but 0.040; every projection type alone already exceeds 0.01); int4 flips 6–11 of 38. int16 activations pass
 (38/38, 5.3e-3) only with 16-bit weights and the few input columns above 16× the median column max (the neurons above)
 kept in float. Weight-only int8 / int4 does not change NPU speed anyway (NPU factor lane).
+
+## 2026-09-30 追記 — Julia-1 (mmBERT-small decision model) on the S26 GPU: an F32 checkpoint pays for fp16 storage, and fp16 arithmetic changes its answers
+
+Shipped as `litert-community/Julia-1-LiteRT` (S512 and S1024 fp32 graphs, float16 token table, the source
+`tokenizer.json`, Python host, conversion scripts). Evidence: `~/code/codex-conversions/2026-09-30/julia1-litert/`
+(`scripts/julia_graph.py`, `scripts/safe_v*.json`, `results/`, `device/`; `card/README.facts.md` names the source file
+of every number). Galaxy S26 SM-S942Q, LiteRT 2.2.0, a debug gate app in the Laya English pattern (captured ids +
+markers from `/data/local/tmp`, raw marker logits back to the Mac). Reference = the author's runtime raw logits on CPU
+FP32; the S512 device rows are all 306 boundary rows (reference top-1 < 0.9) + 400 others = 706.
+
+**The Laya cut carries over unchanged to a 384-wide encoder.** `SupersonicLabs/Julia-1` is the same marker-based
+decision model as Laya (type embedding + two pre-norm ReLU `nn.TransformerEncoderLayer` blocks + LayerNorm–Linear–GELU–
+Linear scorer) on `jhu-clsp/mmBERT-small`: 22 layers, hidden 384, 6 heads, global attention every third layer, local
+band ±64, RoPE theta 160000 for both layer types, vocabulary 256,000. The 09-22 graph — host token lookup,
+`inputs_embeds [1,S,384]` + float `attention_mask [1,S]` + `qtype_onehot [1,3]` → `token_logits [1,S]`, RoPE tables
+baked per layer type as separate contiguous clones, the band as a constant, the head's fused fast path written out —
+exported at the first attempt: 1,704 ops at S512 and at S1024 (only the baked constants grow, 185.1 → 188.5 MB), one
+LITERT_CL partition on the S26 under `GpuOptions(precision = FP32)`. Two outputs fewer than Laya: no `pooled_cls` and
+no act-head graph, because Julia's public API (`predict`, `logits`, the named questions) runs with
+`return_actions=False` — the `act_head` weights in the checkpoint are dead for a port. Oracle: the author's
+`scripts/reproduce_typed.py` run unchanged reproduces the published CPU FP32 numbers on `LocalLLaMA/typed-decisions`
+(choice 426/600, score 542/800, noul 483/600); the Python host over the S1024 graph returns the same answer on all
+2,000 questions with either table (35 of them need more than 512 tokens, max 607 — read the window off the dataset's
+token lengths, p50 309 / p99 566). Trap in the author's `Julia-1-ONNX/parity-cases.json`: its 100 requests were
+encoded with `head_length` 256, not the runtime default 512; reproduce a parity file at its own setting before
+comparing (argmax 100/100, max |Δlogit| 1.0e-4 once matched).
+
+**An F32 checkpoint pays for fp16 storage.** Laya's token tables round-tripped fp32 → fp16 → fp32 exactly (09-22),
+so its float16 host table cost nothing. Julia-1 stores float32 weights (170 tensors, all F32), and every fp16 storage
+step is a measurable rounding — Mac CPU, S512 graph, 2,065 rows, fp32 arithmetic throughout:
+
+| Storage | Same argmax | Max Δp | Rows > 0.01 |
+|---|---:|---:|---:|
+| fp32 graph + float32 table | 2,065/2,065 | 0.00007 | 0 |
+| fp32 graph + float16 table (shipped) | 2,065/2,065 | 0.0077 | 0 |
+| wfp16 graph + float32 table | 2,065/2,065 | 0.031 | 31 |
+| wfp16 graph + float16 table | 2,065/2,065 | 0.027 | 33 |
+
+The float16 table passes the fp16-storage bar (same argmax, |Δp| ≤ 1e-2 on every row) and ships as the default; the
+wfp16 graph does not and is not shipped. "The table is exact" was a checkpoint fact for Laya, not a rule: measure the
+table on every checkpoint and state its cost on the card.
+
+**fp16 arithmetic changes the answers; the fp32-exact rewrites only make it finite.** Both graphs carry two of the
+09-29 rewrites (per-LayerNorm 2^-k with eps·2^-2k: k = 8 in layers 12–21 and the final norm, k = 2 in the head and
+scorer norms; masks −1e4) plus q × 1/8 before QKᵀ (a power of two, exact; its effect was not isolated) and no GeGLU
+gate rescale; the rewritten graph is bit-identical to the plain graph in PyTorch fp32 on 5 probe rows. The
+residual stream needs them: ≤ 36 through layer 11, then one layer-11 GeGLU product (14,345) writes 3,147 into layers
+12–18 and layer 18's MLP raises it to 5,315 through the final norm, where (x − mean)² reaches 2.8e7. Every fp16 path
+then returned finite rows and different answers:
+
+| Path | Graph + table | Rows | Same argmax | Max Δp | Rows > 0.01 | Warm median ms |
+|---|---|---:|---:|---:|---:|---:|
+| S26 GPU FP32 (session 1) | s512 fp32 + f32 table | 706 | 706 | 0.00005 | 0 | 80.7 |
+| S26 NPU, JIT 34 s, one DispatchDelegate node (1803/1803) | s512 wfp16 + f32 table | 706 | 684 | 0.425 | 296 | 27.7 |
+| S26 NPU, JIT 41 s (1704/1704) | s512 fp32 + f32 table | 706 | 685 | 0.418 | 286 | 29.3 |
+| Mac Metal, `enforce_f32` | s512 fp32 + f32 table | 400 | 400 | 0.00007 | 0 | 11.4 (informational) |
+| Mac Metal, default precision | s512 fp32 + f32 table | 400 | 375 | 0.57 | 285 | — |
+
+Three facts a port can reuse. (1) The wfp16-on-CPU number is the NPU's floor: the HTP computes with fp16 weights, so
+0.031 on the Mac had already failed the bar before the phone was touched. The two NPU files compiled to identical QNN
+runlists (the same `finalize_runlist` line, 14,954 vector + 3,414 matrix ops): on the HTP the storage dtype changes
+nothing but the rounding of the weights, so the fp32 file is not a way around that floor. (2) Mac Metal at default
+precision predicts plain GPU fp16 (375/400 here; 78/81 on Laya, where S26 GPU FP16 gave 80/81), and Metal
+`enforce_f32` predicts S26 GPU FP32 (0.00007 vs 0.00005). Run both before any device fp16 gate. (3) The encoder, not
+the head, is the sensitive part: PyTorch in float16 on the Apple GPU (MPS) over the 306 boundary rows gave max Δp 0.087
+with only the encoder in fp16 (303/306) and 0.0014 with only the head + scorer in fp16 (306/306). An "encoder on the
+NPU, head in FP32" split would not rescue this model, so it was not built; S26 GPU FP16 and FP16_WITH_FP32_ACCUM were
+not measured.
+
+**A static 2^-k sized for the massive-activation rows pushes other rows toward fp16 underflow; a per-row scale fixes
+the emulation, not the kernels.** In a flush-to-zero emulation (every op rounded to fp16, |x| < 2^-14 → 0, LayerNorm
+decomposed as the LiteRT graph computes it) the k = 8 graph returned 0/150 finite boundary rows and k = 6 returned
+150/150 (with max Δp 0.71 — finite, not right). The split matches rsqrt(eps·2^-2k) on a row whose scaled variance
+flushes to zero: 8.1e4 at k = 8 (above the fp16 maximum 65,504), 2.0e4 at k = 6. A row-scaled LayerNorm — SafeLayerNorm
+v2 with the floor lowered from 1 to 2^-6 so small rows are scaled *up* as well (`s = max(max|x|/8, 2^-6)`, the epsilon
+term formed as `(√eps / s)²` so `s²` never exists) — kept 149/150 rows finite in that emulation (max Δp 0.079). ML
+Drift's Metal kernels never needed it: the static k = 8 graph was already finite on 400/400 rows there, and the
+row-scaled graph gave the same wrong answers (374/400, max Δp 0.45, against 375/400, 0.57). Use the flush-to-zero
+emulation to locate an underflow, not to predict a kernel; when the fp16-safe graph is finite on Metal and still wrong,
+the wall is sensitivity and no LayerNorm rewrite moves it.
+
+**S26 GPU timing moves by session on the same graph; report the minimum with the median.** Three S512 GPU FP32 runs
+of the same file (compile 0.88–0.92 s, 1704/1704 LITERT_CL, median over 701 warm rows):
+
+| Run | Start thermal status / battery | Warm median ms | Min | Max | First call |
+|---|---|---:|---:|---:|---:|
+| session 1, f32 table | 0 / 34.2 °C | 80.7 | 56.3 | 104.1 | 62.9 |
+| session 2 run 1, fp16 table | 0 / 35.7 °C | 111.8 | 56.0 | 134.9 | 57.5 |
+| session 2 run 2, fp16 table, 60 s later | 1 / 38.2 °C | 112.1 | 56.7 | 134.2 | 78.4 |
+
+The start thermal status and battery temperature did not separate the sessions (both started at status 0, 1.5 °C
+apart); the phone had run other work before session 2. The minimum agreed within 0.7 ms across the three runs and the
+first call was fast in all three, so the medians reflect the phone's state during the run (GPU clock and kgsl
+temperature were not captured), not warm-up and not the table file (the host lookup is outside the timed interval: Kotlin loop median 19.0 ms over the f32 table, 23.6 ms with
+`Half.toFloat` over the fp16 table, debug build). S1024 in the same warm session: 100 rows (the 35 typed-decisions
+questions over 512 tokens + 65 others, 18 boundary), 100/100, max Δp 0.0077, median 298.5 ms [155.6, 305.2] at thermal
+status 2. Publish the minimum and the start state next to the median, as the GLiNER2.5-Decide section says; a median
+alone does not reproduce.
