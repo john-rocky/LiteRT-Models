@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Open Decision</string>
+  <string name="status_loading">Loading model…</string>
+  <string name="status_warming_up">Warming up…</string>
+  <string name="status_gpu_ready">Ready · GPU FP32</string>
+  <string name="status_cpu_ready">Ready · CPU</string>
+  <string name="status_deciding">Deciding…</string>
+  <string name="status_error">Model unavailable</string>
+  <string name="status_gate_running">Running debug fixture gate…</string>
+  <string name="status_gate_passed">Debug fixture gate passed</string>
+  <string name="status_gate_failed">Debug fixture gate failed</string>
+  <string name="gate_description">Gate results are saved in the app’s private gate directory.</string>
+  <string name="error_message">%1$s</string>
+  <string name="backend_title">Run on</string>
+  <string name="backend_gpu">GPU</string>
+  <string name="backend_cpu">CPU</string>
+  <string name="presets_title">Examples</string>
+  <string name="preset_ticket">Support ticket</string>
+  <string name="preset_review">Review sentence</string>
+  <string name="preset_passage">Passage yes/no</string>
+  <string name="state_label">State (the text to decide about)</string>
+  <string name="questions_label">Questions</string>
+  <string name="questions_help">One question per line: choice: question | option, option … · score: question | level, level … (ordered) · noul: statement (yes/no). Options cannot contain commas.</string>
+  <string name="preset_ticket_state">Order 8841 was supposed to arrive on Monday and the tracking page still says \'label created\'. I need it before Friday for a gift.</string>
+  <string name="preset_ticket_questions">choice: Which team should handle this message? | billing, technical support, shipping, account access, sales\nscore: How frustrated is the customer? | calm, mildly annoyed, frustrated, angry\nnoul: The customer asks for a refund.</string>
+  <string name="preset_review_state">The second half drags, but the lead performance is so sharp and funny that I left the theater smiling.</string>
+  <string name="preset_review_questions">score: How positive is the sentiment of this review sentence? | very negative, negative, neutral, positive, very positive\nchoice: What is the overall polarity of the sentence? | negative, neutral, positive\nnoul: The sentence expresses a positive opinion.</string>
+  <string name="preset_passage_state">The Larkspur Lighthouse was automated in 1987, and the last keeper left the island that autumn. The tower still operates, but its lamp is now solar powered and switches on at dusk without anyone present.</string>
+  <string name="preset_passage_questions">noul: Is the Larkspur Lighthouse still staffed by a keeper?\nnoul: Does the lighthouse still work?\nchoice: What powers the lamp today? | electricity from the mainland, solar power, oil, a diesel generator</string>
+  <string name="decide">Decide</string>
+  <string name="answers_title">Answers</string>
+  <string name="answer_choice">choice = %1$s · %2$.3f</string>
+  <string name="answer_score">score = %1$.2f (expected level, 0–%2$d) · best %3$s %4$.3f</string>
+  <string name="answer_noul">noul: p(yes) = %1$.3f</string>
+  <string name="option_probability">%1$s · %2$.3f</string>
+  <string name="result_window">s%1$d · %2$d tokens · %3$d options · %4$s</string>
+  <string name="result_timing">Tokenize + lookup: %1$.1f ms · Graph: %2$.1f ms · Decode: %3$.2f ms</string>
+</resources>

@@ -106,6 +106,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Laya Multilingual](#laya-multilingual-typed-text-decisions) | Text classification / triage with request-time questions (EN / JA) | Galaxy S26 | 51 ms per question (GPU), 36 ms (NPU) | [🤗 HF](https://huggingface.co/litert-community/Laya-Multilingual-LiteRT) |
 | [Laya English + typed-decisions](#laya-multilingual-typed-text-decisions) | English text classification / typed decisions with request-time questions (ModernBERT-large) | Galaxy S26 | 123 ms per question (GPU), 66 ms (NPU) | [🤗 HF](https://huggingface.co/litert-community/Laya-English-LiteRT) |
 | [Julia-1](#julia-1-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text (EN) | Galaxy S26 | 82 ms per question (GPU FP32) | [🤗 HF](https://huggingface.co/litert-community/Julia-1-LiteRT) |
+| [Open Decision (DeBERTa-v3-large)](#open-decision-deberta-v3-large-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text (EN), one forward pass per request | Galaxy S26 | 697 ms per 512-token request (GPU FP32, 3 questions) | [🤗 HF](https://huggingface.co/litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
@@ -2189,6 +2190,21 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 
 **Original project**: [SupersonicLabs/Julia-1](https://huggingface.co/SupersonicLabs/Julia-1) (Apache-2.0)
 
+
+### Open Decision (DeBERTa-v3-large, typed decisions)
+
+[com-kotobalabs/open-jev-deberta-v3-large](https://huggingface.co/com-kotobalabs/open-jev-deberta-v3-large) (434M, Apache-2.0, English, **DeBERTa-v3-large** encoder + a span-pool decision head): give it a text (the state) plus questions defined at request time — `choice` over 2–255 options, `score` over 2–10 ordered levels, `noul` yes/no — and every question is answered from one forward pass with a calibrated probability distribution. Converted in the host-lookup form: `inputs_embeds [1,S,1024]` + `attention_mask [1,S]` + two routing inputs `[1,128,S]` (the question-text and option-text means of the author's span pooling as matrix products) → `logits [1,1,1,128]`; the host tokenizes, looks the rows up in a memory-mapped float16 table, builds the routings and applies softmax at temperature 1.05 within each question.
+
+**On-device (Galaxy S26, LiteRT 2.2.0 — verified):** fully on the GPU delegate (1785/1785 ops, one partition) with `GpuOptions(precision = FP32)`; on 500 requests / 1,302 questions of the author's public test files (754 boundary questions) every question gets the same winning option as the author's implementation on CPU FP32 (max probability difference 0.00083); **GPU median 697 ms per 512-token request** [576, 1202] over a 6-minute run that warmed the phone from thermal status 0 to 3. At S256 the GPU FP32 median is 408 ms (419 requests, 1,074/1,074 answers). Default GPU precision returns non-finite outputs (the attention mask constant −3.4e38 is −inf in fp16); with a −1e4 mask and a power-of-two LayerNorm pre-scale (both exact in fp32) Mac Metal fp16 keeps every answer and **the Hexagon NPU keeps 274 of 276 answers at 110 ms per 256-token request**, two near-tie questions short of the strict bar, so the shipped files stay GPU-FP32-only. The NPU JIT prepare of the S512 graph aborts out of memory on the S26 (`libQnnHtpPrepare` sequencing stage). On desktop CPU all 4,327 questions of the 1,809 fixture requests match (fp16 weights + fp16 table, max probability difference 0.0016).
+
+| Model | File | Size | Input → Output | Delegate |
+|---|---|---|---|---|
+| Open Decision s256 / s512 | [HF: litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT](https://huggingface.co/litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT) | 713 / 813 MB fp16-weight + 262 MB fp16 word table + 8.7 MB tokenizer.json | inputs_embeds [1,N,1024] + attention_mask [1,N] + q_routing [1,128,N] + o_routing [1,128,N] → logits [1,1,1,128] → host softmax (T 1.05) per question | GPU FP32 (s512 verified on the S26; s256 desktop + Metal) |
+
+**Sample app**: [opendecision/](opendecision/) — pure-Kotlin host (the DeBERTa-v3 Unigram tokenizer with SentencePiece's precompiled charsmap ported as Hugging Face tokenizers reads it, the author's sequence rules with no truncation, memory-mapped float16 lookup, routing builder, read-out at T 1.05) in a Compose app: pick a support ticket / review sentence / passage preset, edit the state and the questions, and read every answer with its probabilities. The Kotlin tokenizer and builder reproduce the official ids and spans on 1,809/1,809 fixture requests on the JVM. The HF repo carries the standalone Python host (`decision_litert.py`, no torch), the host contract, the Kotlin block and the conversion scripts.
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-01 Open Decision section).
+
+**Original project**: [kotoba-lang/typed-decisions](https://github.com/kotoba-lang/typed-decisions) (Apache-2.0); base model [microsoft/deberta-v3-large](https://huggingface.co/microsoft/deberta-v3-large) (MIT)
 ### GLiNER2.5-Decide (zero-shot text classification)
 
 [fastino/GLiNER2.5-Decide](https://huggingface.co/fastino/GLiNER2.5-Decide) (DeBERTa-v3-large, Apache-2.0,

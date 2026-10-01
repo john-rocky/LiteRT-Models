@@ -1331,3 +1331,70 @@ temperature were not captured), not warm-up and not the table file (the host loo
 questions over 512 tokens + 65 others, 18 boundary), 100/100, max Δp 0.0077, median 298.5 ms [155.6, 305.2] at thermal
 status 2. Publish the minimum and the start state next to the median, as the GLiNER2.5-Decide section says; a median
 alone does not reproduce.
+
+## 2026-10-01 追記 — Open Decision (DeBERTa-v3-large typed decisions, com-kotobalabs/open-jev-deberta-v3-large) on the S26 GPU: the GLiNER2.5 shaped-DeBERTa layer reuses as is, the mask constant is the fp16 NaN but not the fp16 wall, and the NPU prepare runs out of memory at S512
+
+Shipped as `litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT` (S256 and S512 fp16-weight graphs, float16
+word table, the source `tokenizer.json`, Python host, Kotlin snippet, conversion scripts). Evidence:
+`~/code/codex-conversions/2026-10-01/openjev-deberta-litert/` (`scripts/graph.py`, `results/`, `device/`;
+`card/README.facts.md` names the source file of every number). Reference = the checkpoint's own
+`typed_decisions` package (CPU fp32, transformers 4.57.6) on the author's public test files
+(`kotoba-lang/typed-decisions`: 1,809 requests / 4,327 questions, 1,830 of them boundary = top-1 < 0.9).
+
+**The GLiNER2.5-Decide graph type carries over to a span-pool decision head unchanged.** The model is a
+`DebertaV2Model` (24 layers, hidden 1,024, 16 heads, relative attention with 256 log buckets) plus a head that scores
+each option from `[mean(question text tokens); mean(option text tokens); product]` and softmaxes within each
+question at temperature 1.05. The 09-26 `ShapedDebertaLayer` (log-bucket relative positions pre-expanded as
+constants, rank-4 batch matmuls, float mask, native GELU) was vendored verbatim; the author's `scatter_add` span
+means became two host-built routing inputs `q_routing [1,128,S]` / `o_routing [1,128,S]` (row j = 1/len over the
+text tokens of option j's question and of option j), so the pooling is two batch matmuls against the hidden states
+and the head stays in the graph: `inputs_embeds [1,S,1024]` + `attention_mask [1,S]` + the two routings →
+`logits [1,1,1,128]`. In PyTorch fp32 the rewritten graph is bit-identical to the stock `DebertaV2Model` path.
+Export: 1,639 ops (1,785 with fp16 FC weights), no GATHER / CAST / int64, rank ≤ 4, 25 s per window; the 48
+relative-position constants stay fp32 under FLOAT_CASTING. Option slots (128) are the only contract knob; the
+fixtures need at most 89 (banking77: 77 intents + 10 areas + 2).
+
+| Where | Graph + table | Requests | Questions (boundary) | Same argmax | Max Δp | Median ms |
+|---|---|---:|---:|---:|---:|---:|
+| Mac CPU | s512 fp32 + f32 table | 1,809 | 4,327 (1,830) | 4,327 | 1.1e-5 | 291 (loaded) |
+| Mac CPU | s512 wfp16 + fp16 table (shipped) | 1,809 | 4,327 (1,830) | 4,327 | 0.0016 | 532 (loaded) |
+| Mac Metal, `enforce_f32` | s512 wfp16 + fp16 table | 100 | 222 (92) | 222 | 0.0016 | 68 |
+| Mac Metal, default precision | any graph | 100 | 222 | 0 — every output non-finite | | |
+| S26 GPU FP32 explicit (LiteRT 2.2.0) | s512 wfp16 + fp16 table | 500 | 1,302 (754) | 1,302 | 0.00083 | 697 [576, 1202] |
+| S26 GPU FP32 explicit | s256 wfp16 + fp16 table | 419 | 1,074 (712) | 1,074 | 0.00074 | 408 [376, 485] |
+| S26 NPU, JIT (experiment: −1e4 mask + SafeLayerNorm k=3) | s256 wfp16 + fp16 table | 100 | 276 (192) | 274 | 0.025 | 110 [107, 117] |
+
+**fp16 weights + fp16 table keep every answer on this F32 checkpoint** (unlike Julia-1, 09-30): the mean pooling
+averages the rounding out, and the shipped form is the fp16-weight graph.
+
+**Two fp16 walls, both fixed by fp32-exact rewrites; the NPU then lands two questions short of the bar.**
+`torch.finfo(float32).min` (transformers' own DeBERTa mask value, kept by the shaped layer) is −inf in fp16, so
+`(1 − mask)·min` is NaN at every real position: Mac Metal at default precision returns all non-finite logits for
+the fp32 and the wfp16 graphs alike, and the S26 NPU returns finite but wrong answers (95/276) with the same
+constant. A −1e4 mask (fp32 bit-identical; `ShapedDebertaLayerFiniteMask` in `graph.py`) is not enough: Metal fp16
+becomes finite but wrong (185/222) and the NPU stays wrong (102/270, 6 non-finite questions), because the
+LayerNorm sums of squares overflow fp16 — the residual stream only reaches 28.5, but 1024 × 28.5² ≈ 8e5. With the
+09-29 SafeLayerNorm (every LayerNorm on x·2⁻³ with eps·2⁻⁶, bit-identical in fp32; `--ln-shift 3`) on top of the
+mask, Metal fp16 keeps 200/200 answers (max Δp 0.015) and the S26 NPU keeps 274/276 (max Δp 0.025, 7 questions
+over 0.01) at **110 ms per 256-token request** (JIT 172 s, one DispatchDelegate node) against 408 ms on the GPU
+with explicit FP32; k = 2 still overflows (8 non-finite), k = 4 is no better (273/276). The two NPU flips are
+near-ties (reference gaps 0.0065 and 0.040), so the fp16-sensitivity remainder is real but small; the strict bar
+(every answer, Δp ≤ 0.01) is not met and the NPU form is not shipped. Lesson: "finite but wrong after the mask
+fix" means an overflow is still hiding — check the LayerNorm inputs before calling it sensitivity. GPU default
+precision on the S26 behaves like Metal (216/274 with the mask fix alone). The S26 GPU warmed from thermal status
+0 to 3 (31 → 45 °C battery) over 500 back-to-back 512-token requests; the median above covers that whole run
+(min 576 ms); at S256 the GPU FP32 median is 408 ms [376, 485] on 419 requests, 1,074/1,074 answers.
+
+**The HTP JIT prepare of the S512 graph runs out of memory on the S26.** `CompiledModel` with `Accelerator.NPU`
+(QualcommOptions BURST, JIT) aborted 94 s into the compile: `Scudo ERROR: internal map failure (Out of memory)` from
+`malloc` inside `libQnnHtpPrepare.so GraphPrepare::sequencing_stage` (SIGABRT, no row ran). This is the
+compiler's host-side memory, not the graph's op set (the same ops compile on the GPU as one partition and the S256
+graph compiles for the HTP in 170–200 s).
+
+**Tokenizer: this checkpoint's `tokenizer.json` keeps SentencePiece's `Precompiled` charsmap** (`Strip` →
+`Precompiled` → `Replace " {2,}"`), unlike the GLiNER2.5 files (`Replace` + `NFC` + `Strip`). The sample's
+`DecisionTokenizer.kt` ports the charsmap as Hugging Face tokenizers reads it (darts-clone double array over UTF-8
+bytes, applied per extended grapheme cluster shorter than 6 bytes, else per code point, first common-prefix match)
+and reproduces the official ids and spans on all 1,809 requests on the JVM and 29/29 edge probes (ligatures,
+full-width letters, emoji, IPA, Japanese). The official path is the fast tokenizer; `spm.model` (slow) differs on
+exotic characters (an IPA "ꜜ" → `[UNK]` vs byte pieces), so a port must follow `tokenizer.json`.

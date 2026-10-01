@@ -1,0 +1,9 @@
+Open Decision — Android sample for the DeBERTa-v3-large typed-decision model on LiteRT
+
+The graphs and the float16 word table the app loads are converted from
+com-kotobalabs/open-jev-deberta-v3-large (Apache License 2.0), published by Kotoba Labs Inc.
+(Mithril, formerly Kotoba Cloud): https://huggingface.co/litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT
+Base model: microsoft/deberta-v3-large (MIT License), Microsoft.
+The Kotlin tokenizer follows Hugging Face tokenizers' Unigram, Metaspace and Precompiled normalizer behavior
+(Apache License 2.0; licenses/Transformers-APACHE-2.0.txt) and the GLiNER2.5-Decide sample's port in this repository.
+This sample is licensed under the Apache License 2.0 (LICENSE).
