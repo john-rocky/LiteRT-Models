@@ -1398,3 +1398,88 @@ bytes, applied per extended grapheme cluster shorter than 6 bytes, else per code
 and reproduces the official ids and spans on all 1,809 requests on the JVM and 29/29 edge probes (ligatures,
 full-width letters, emoji, IPA, Japanese). The official path is the fast tokenizer; `spm.model` (slow) differs on
 exotic characters (an IPA "ꜜ" → `[UNK]` vs byte pieces), so a port must follow `tokenizer.json`.
+
+## 2026-10-02 追記 — ModernBERT-Ja-310M Decision (argos1111/modernbert-ja-310m-jev, Japanese cross-encoder) on the S26 GPU and NPU: the Laya ModernBERT cut as a one-logit pair scorer, the NPU keeps every answer but one probability by 0.0113, and fp16 computation still moves answers after the exact rewrites
+
+Shipped as `mlboydaisuke/ModernBERT-Ja-310M-Decision-LiteRT` (CC BY-SA 4.0, the source weights' license, so not litert-community;
+S256 and S512 fp16-weight graphs, float16 token table, the source `tokenizer.json`, Python host, Kotlin block, the debug gate app,
+conversion scripts). Evidence: `~/code/codex-conversions/2026-10-02/modernbert-ja-decision-litert/` (`scripts/graph.py`,
+`results/`, `device/`; `card/README.facts.md` names the source file of every number). Galaxy S26 SM-S942Q, LiteRT 2.2.0, a debug
+gate app in the Laya English pattern. Reference = the card's own transformers snippet with transformers 5.17.0 (the author's
+version) on CPU FP32: 547 requests / 621 questions / 2,357 pairs (JGLUE v1.3 test 250 JNLI + 250 JCommonsenseQA, the author's
+16 hand-written items and 12-question example, 30 invented Japanese requests; 123 boundary questions with top-1 < 0.9).
+
+**A cross-encoder decision model is the Laya cut with one logit out.** `ModernBertForSequenceClassification` (25 layers,
+hidden 768, 12 heads, GeGLU, global attention every third layer with RoPE theta 160000, sliding ±64 with theta 10000, CLS
+pooling) scores one `<s> context </s><s> candidate </s>` pair per call; the softmax over a question's candidates is the
+answer. The 09-21 ModernBERT graph form carries over: host token lookup (`inputs_embeds [1,S,768]` + float
+`attention_mask [1,S]`), RoPE baked per layer type as two separate contiguous clones, the band as a constant, the final
+LayerNorm applied to position 0 only, the head (dense → GELU → LayerNorm → classifier) inside the graph → `logit [1,1,1,1]`.
+1,809 ops at fp32 (1,911 with fp16 FULLY_CONNECTED weights), rank ≤ 4, no GATHER / CAST / int64. In PyTorch fp32 the graph is
+within 3.8e-6 of the stock forward. One request costs one call per candidate (the 547 fixture requests took 2,357 calls); a
+batched `[K,S,768]` form was not built.
+
+**transformers 4.57.6 cannot load this repository's tokenizer; the `tokenizers` library can.** The checkpoint was saved by
+transformers 5.17.0 (`tokenizer_class: TokenizersBackend`, config with `layer_types` and `rope_parameters`). 4.57.6 loads the
+model (the v5 rope keys are ignored and the 4.x defaults 160000 / 10000 equal them; logits identical to 5.17.0 on the probe) but
+raises on `AutoTokenizer`. The host reads `tokenizer.json` with the `tokenizers` library (`enable_truncation(512,
+strategy="only_first")`): same ids as the 5.17.0 `AutoTokenizer` on all 2,357 pairs, and the base model's `tokenizer.json`
+(which the author's serving code loads) gives the same ids. The pair template is `<s> A </s><s> B </s>` (ids 1 / 2); `<cls>` 6
+and `<sep>` 4 exist but are unused, and the card's "CLS pooling" means position 0 = `<s>`. Take the oracle in a transformers
+5.x venv when a checkpoint is saved by 5.x, and compare the ids before trusting the 4.x conversion venv.
+
+**fp32-exact rewrites, calibrated on the fixture pairs.** LayerNorm inputs stay ≤ 64 through layer 13, then 1,200 (layers
+14–15), ~2,000 (16–18) and 2,629–2,694 (19–24); the final norm sees 207 at position 0; the GeGLU product peaks at 1,236
+(< 4,096, no gate rescale). SafeLayerNorm k = ceil(log2(max/64)) → k 5 in layers 14–18, 6 in 19–24, 2 on the final norm; masks
+−1e4. Bit-identical in fp32 on 7 probe pairs at S512 and 5 at S256. The rewrites make every fp16 path finite; they do not
+make it correct (next point).
+
+| Where | Graph + table | Requests | Questions (boundary) | Same argmax | Max Δp | Questions > 0.01 | Warm median per pair |
+|---|---|---:|---:|---:|---:|---:|---|
+| Mac CPU | s512 fp32 + f32 table | 547 | 621 (123) | 621 | 9.8e-6 | 0 | 251 ms (loaded) |
+| Mac CPU | s512 fp32 + fp16 table | 547 | 621 (123) | 621 | 0.00039 | 0 | 142 ms |
+| Mac CPU | s512 wfp16 + fp16 table (shipped) | 547 | 621 (123) | 621 | 0.00079 | 0 | 198 ms |
+| Mac Metal explicit FP32 | s512 wfp16 + fp16 table | 547 | 621 (123) | 621 | 0.00078 | 0 | 33 ms |
+| Mac Metal default precision (fp16) | s512 wfp16 + fp16 table | 547 | 621 (123) | 619 (flip gaps 0.027, 0.0018) | 0.042 | 32 | 30 ms |
+| S26 GPU explicit FP32, thermal 0 → 2, 34.9 → 44.8 °C | s512 wfp16 + fp16 table | 547 | 621 (123) | 621 | 0.00079 | 0 | 416.4 ms [183.6, 669.0] |
+| S26 GPU explicit FP32, thermal 2, 44.8 °C | s256 wfp16 + fp16 table | 546 | 618 (120) | 618 | 0.00079 | 0 | 229.2 ms [199.7, 296.9] |
+| S26 GPU default precision / FP16, thermal 3 | s512 wfp16 + fp16 table | 60 | 60 (3) | 60 | 0.0202 | 2 | 231 / 253 ms |
+| S26 GPU FP16_WITH_FP32_ACCUM, thermal 3 | s512 wfp16 + fp16 table | 60 | 60 (3) | 60 | 0.0045 | 0 | 403 ms |
+| S26 NPU (JIT 29.5 s, one DispatchDelegate node), thermal 2 → 3 | s256 wfp16 + fp16 table | 546 | 618 (120) | 618 | 0.0113 | 1 | 41.7 ms [30.6, 53.4] |
+| S26 NPU (JIT 83.0 s, one node), thermal 3 | s512 wfp16 + fp16 table | 547 | 621 (123) | 621 | 0.0113 | 1 | 142.6 ms [110.6, 151.7] |
+| S26 NPU (JIT cache 0.5 s) | s256 wfp16 + **f32 table** | 546 | 618 (120) | 618 | 0.0113 (same question) | 1 | 44.6 ms |
+
+**The NPU keeps every winner and misses the Δp bar by one question.** Both windows compile whole for the HTP (unlike the
+24-layer / 1024-wide DeBERTa graph, whose S512 prepare ran out of host memory): JIT 29.5 s at S256, 83.0 s at S512. Same
+argmax on all 618 / 621 questions including every boundary question, max Δp 0.0113 on one invented internal-document `noul`
+question (reference p(true) 0.234 → 0.245, reference gap 0.53, not a near-tie), every other question ≤ 0.0062. The float32
+table reproduces the 0.0113 exactly, so the one miss is the HTP's fp16 arithmetic, not the table rounding. 3.4–5.5× faster
+than the GPU with explicit FP32 on the same hot phone (42 vs 229 ms at S256, 143 vs 416 ms at S512). The card reports the NPU
+with that number; the verified path is the GPU with explicit FP32.
+
+**fp16 computation moves answers after the rewrites — the Laya / Julia-1 pattern on ModernBERT-base.** Mac Metal default
+precision flips 2 of 621 (and 2 of 618 at S256) with 32 questions over 0.01; the S26 GPU at default precision and at FP16
+(identical numbers) keeps the 60 winners of a 60-request probe but moves 2 over 0.01 (0.0202) at 0.55× the explicit-FP32 time;
+FP16_WITH_FP32_ACCUM stays within 0.0045 on the same 60 but runs as slowly as explicit FP32 (403 vs 416 ms). Metal default
+precision predicted the S26 GPU fp16 behaviour again (both: finite, a few answers move).
+
+**The float16 table costs 0.00039 on this F32 checkpoint** (104 of 78.6M values flush to zero, max rounding 6.1e-5): fp32
+graph + fp16 table 0.00039, wfp16 graph + f32 table 0.00071, both 0.00079 — all under the 0.01 bar with every winner kept, so
+the fp16 pair ships (the Julia-1 lesson: measure the table on every F32 checkpoint).
+
+**Rank-3 versus rank-4 attention matmuls.** litert-torch lowers `q @ kᵀ` on `[1,12,S,64]` to rank-3 BATCH_MATMUL ([12,S,64]),
+as in the Laya graphs. A `--rank4` export through a marker op (`torch.library.custom_op` + a `dot_general` lowering, the
+GLiNER2.5 recipe) keeps rank 4 (1,761 ops in wfp16): identical answers on the Mac and on the S26 GPU at S512 (621/621,
+0.00079; 489 ms median at thermal status 3, measured hotter than the rank-3 run, so not a speed comparison). The shipped
+files are the rank-3 form (measured on every path); the rank-4 twin is one flag away for a Mali phone, where the rank-3
+chain is the known-bad one (Pixel not measured here).
+
+**S26 timing moves with heat within one run.** The S512 GPU run started at thermal status 0 / 34.9 °C and ended at 2 /
+44.8 °C after 17 minutes; per-pair time went from 184 ms (minimum, first rows) to 500–670 ms. Every later row started hot
+(status 2–3, 44.8–47 °C). Report median with [min, max] and the thermal state; the S256 GPU median (229 ms) is a hot-phone
+number and the cool-phone S256 time was not measured.
+
+**Accuracy on our subset (reference, fp32):** JNLI 238/250 (95.2%), JCommonsenseQA 233/250 (93.2%), the author's 16 items
+14/16 (one miss is a 0.450 / 0.448 tie on a 3-level score question). The author reports 92.62% / 92.40% / 93.8% on the full
+files through their API; the card's printed example (0.9996 for `billing — 請求・返金`) is 0.9981 in fp32 on CPU with either
+transformers version (the author trained and ran with bf16 autocast).
