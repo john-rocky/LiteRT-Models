@@ -2117,6 +2117,36 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 
 **Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0)
 
+### GLiNER2.5 Multi (multilingual schema-based entity extraction, English + Japanese verified)
+
+[fastino/gliner2.5-multi-v1](https://huggingface.co/fastino/gliner2.5-multi-v1) (Apache-2.0, mDeBERTa-v3-base
+**BoundaryExtractor**, hidden 768, vocabulary 250,112) converted with the GLiNER2.5 Small recipe above (dense prefix +
+host sparse decoder, one packed rank-4 output, baked log-bucket relative positions) plus two fp32-exact rewrites that
+keep the same files finite under fp16 delegates: attention-mask fill −10000 and every LayerNorm computed on x·2⁻³ with
+eps·2⁻⁶ (bit-identical to the stock graph, 60/60 comparisons). The host looks up a **float16 embedding table (384 MB,
+upcast per row; fp32 768 MB reference)** and chooses the official word splitter per request (`whitespace` for
+space-delimited text, `char` for Japanese / CJK — `。` costs one extra slot).
+
+**On-device (Galaxy S26, SM8850, LiteRT 2.2.0 — verified):** GPU with `GpuOptions(precision = FP32)` returns the official
+fp32 gliner2 spans on every bilingual input (70 / 75 / 80 inputs, 35 English + 45 Japanese; span F1 1.000, confidence
+drift ≤ 1.4e-3) at windows 128 / 256 / 512, one partition; median 24.3 / 93.0 / 422.5 ms sustained (24.5 / 63.5 / 200.9 ms
+on a cool phone — the s256 / s512 jobs throttle). GPU default precision stays finite but flips one threshold near-tie
+(69/70, drift 0.033). **Hexagon NPU (JIT, one DispatchDelegate node, all three windows compile):** 69/70, 72/75, 77/80 —
+every difference a 0.5-threshold near-tie (official 0.502 / 0.503, NPU 0.519) — at 8.3 / 34.4 / 186.5 ms; reported on the
+card, not offered as a validated path. CPU (XNNPACK): all spans identical.
+
+| Model | Download | Size | Input → Output | Placement |
+| ----- | -------- | ---- | -------------- | --------- |
+| GLiNER2.5 Multi s128 / s256 / s512 | [HF: litert-community/GLiNER2.5-Multi-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Multi-LiteRT) | 192 / 211 / 250 MB fp16-weight (364 / 383 / 422 MB fp32) + 384 MB fp16 embed table (768 MB fp32) | inputs_embeds [1,N,768] + mask + routing → packed [1,1,1,1492·T+6494] (17 logical outputs) → host sparse decode → spans | GPU (NPU measured) |
+
+**Sample app**: none yet — the HF repo ships the Python host runtime (`host_assets/runtime/`), the host contract and
+both worked examples; the Kotlin host of [gliner25/](gliner25/) needs a mDeBERTa tokenizer port and the char splitter
+before it can serve this checkpoint.
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-02 GLiNER2.5 Multi section).
+
+**Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0); encoder
+[microsoft/mdeberta-v3-base](https://huggingface.co/microsoft/mdeberta-v3-base) (MIT)
+
 ### GLiFormer Large v1 — NER path (schema-prompted entity extraction, 575M)
 
 [knowledgator/gliformer-large-v1](https://huggingface.co/knowledgator/gliformer-large-v1) (575.6M, Apache-2.0, layout-aware
