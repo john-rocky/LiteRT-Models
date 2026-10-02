@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">GLiClass Edge</string>
+  <string name="status_loading">Loading model…</string>
+  <string name="status_warming_up">Warming up…</string>
+  <string name="status_gpu_ready">Ready · GPU FP32</string>
+  <string name="status_cpu_ready">Ready · CPU</string>
+  <string name="status_classifying">Classifying…</string>
+  <string name="status_error">Model unavailable</string>
+  <string name="status_gate_running">Running debug fixture gate…</string>
+  <string name="status_gate_passed">Debug fixture gate passed</string>
+  <string name="status_gate_failed">Debug fixture gate failed</string>
+  <string name="status_paced_running">Running paced requests…</string>
+  <string name="status_paced_done">Paced requests finished</string>
+  <string name="gate_description">Results are saved in the app’s private files directory.</string>
+  <string name="error_message">%1$s</string>
+  <string name="error_no_labels">Add at least one label.</string>
+  <string name="accelerator_title">Run on</string>
+  <string name="accelerator_gpu">GPU</string>
+  <string name="accelerator_cpu">CPU</string>
+  <string name="input_label">Text to classify</string>
+  <string name="labels_label">Labels</string>
+  <string name="labels_help">One label per line, or one line of comma-separated labels. Up to 25 labels.</string>
+  <string name="prompt_label">Prompt (optional)</string>
+  <string name="prompt_help">A task description placed right before the text, without a separator.</string>
+  <string name="mode_single">Single label</string>
+  <string name="mode_multi">Multi-label</string>
+  <string name="threshold_value">Threshold %1$.2f</string>
+  <string name="example_text">The Zorvik X2 router from Tallowmere Networks keeps dropping the connection every evening around 9 pm. I have restarted it and reset it to factory settings, but the status light still blinks orange.</string>
+  <string name="example_labels">connectivity problem\nhardware defect\nbilling issue\nfeature request\ninstallation help</string>
+  <string name="classify">Classify</string>
+  <string name="scores_title_single">Scores (softmax, top label chosen)</string>
+  <string name="scores_title_multi">Scores (sigmoid, chosen at ≥ %1$.2f)</string>
+  <string name="no_label_chosen">No label reaches the threshold.</string>
+  <string name="label_score">%1$s · %2$.3f</string>
+  <string name="result_window">s%1$d · %2$d tokens · %3$d labels · %4$s</string>
+  <string name="result_timing">Tokenize + embed: %1$.2f ms · Graph: %2$.2f ms · Decode: %3$.2f ms</string>
+</resources>

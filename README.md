@@ -2246,6 +2246,35 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 
 **Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0)
 
+### GLiClass-Edge v3.0 (zero-shot text classification)
+
+[knowledgator/gliclass-edge-v3.0](https://huggingface.co/knowledgator/gliclass-edge-v3.0) (32.7M, Apache-2.0, English,
+GLiClass uni-encoder on the ModernBERT encoder jhu-clsp/ettin-encoder-32m): the labels and the text go into one
+sequence (`<<LABEL>>label 1<<LABEL>>label 2…<<SEP>>` + optional prompt + text), and one forward pass scores every
+label, up to 25. Single-label takes the softmax top label; multi-label returns every label with sigmoid ≥ 0.5.
+Converted in the host-lookup form: `inputs_embeds [1,S,384]` + `attention_mask [1,S]` + a one-hot
+`label_routing [1,25,S]` of the `<<LABEL>>` tokens → `logits [1,1,1,25]`. The host tokenizes (byte-level BPE),
+looks the rows up in a memory-mapped float16 table, and applies softmax / sigmoid and the threshold.
+
+**On-device (Galaxy S26, LiteRT 2.2.0, verified):** fully on the GPU delegate (670/670 nodes, one partition per
+window) with `GpuOptions(precision = FP32)`. In the sample app the single-label and multi-label answers equal the
+official `gliclass` 0.1.20 pipeline (CPU fp32) on **552/552** requests from text to labels (482 at s128, 70 at
+s256), on GPU FP32 and on CPU; **GPU graph median 5.86 ms at s128 and 8.23 ms at s256** (input write to readback).
+Default GPU precision runs but changes answers: LayerNorm row sums reach 6.4e6, above the fp16 maximum. The shipped
+graphs carry a power-of-two LayerNorm pre-scale (exact in fp32); with it the default-precision GPU keeps 475/482
+top labels and 455/482 label sets at 3.86 ms, and **the Hexagon NPU runs the whole graph in one partition at
+2.51 ms** with 480/482 and 462/482, so the shipped mode stays GPU FP32. On desktop CPU all 552 requests match
+(fp16 table, max |Δlogit| 0.009); the fp16-weight graphs change 2 near-tie answers.
+
+| Model | Download | Size | Input → Output | Delegate |
+|---|---|---|---|---|
+| GLiClass-Edge s128 / s256 | [HF: litert-community/GLiClass-Edge-v3.0-LiteRT](https://huggingface.co/litert-community/GLiClass-Edge-v3.0-LiteRT) | 54 / 54 MB fp32 (27 / 27 MB fp16-weight) + 39 MB fp16 embed table + 3.6 MB tokenizer.json | inputs_embeds [1,N,384] + attention_mask [1,N] + label_routing [1,25,N] → logits [1,1,1,25] → host softmax / sigmoid | GPU FP32 (verified on the S26; CPU also verified) |
+
+**Sample app**: [gliclass/](gliclass/) — pure-Kotlin host (byte-level BPE tokenizer read from `tokenizer.json`, the pipeline's request string with no truncation, memory-mapped float16 lookup with float32 upcast, label routing, the pipeline's float32 softmax / sigmoid) in a Compose app: text + labels (+ optional prompt) → every label's score, single- or multi-label, GPU / CPU selectable. On the Galaxy S26 (benchmark build, GPU FP32) the app is ready 0.59 s after process start, a request right after a cold start takes 8.05–8.38 ms end to end, and requests paced every 2 s a median 13.15 ms. On the JVM the Kotlin tokenizer reproduces the official token IDs on 552/552 requests and 261/261 edge strings. The same module is mirrored in the HF repo under `android/sample/`, next to the standalone Python host (`gliclass_litert.py`, no torch), the Kotlin block and the conversion scripts.
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-02 GLiClass-Edge section).
+
+**Original project**: [Knowledgator/GLiClass](https://github.com/Knowledgator/GLiClass) (Apache-2.0); encoder [jhu-clsp/ettin-encoder-32m](https://huggingface.co/jhu-clsp/ettin-encoder-32m) (MIT)
+
 # Text Generation (LLM)
 
 > **Conversion recipes** (official `litert-torch` `export_hf`, no fork — blockwise int4 + OCTAV, `externalize_embedder`, simple chat templates): [`text-generation/`](text-generation/).

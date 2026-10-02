@@ -1,0 +1,25 @@
+GLiClass Edge Android host sample
+
+Model: knowledgator/gliclass-edge-v3.0, revision df03993a2ed98e5e4a0d2dd7efbbd105abe874cf,
+licensed under Apache License 2.0. Its encoder is jhu-clsp/ettin-encoder-32m (a ModernBERT
+encoder), licensed under the MIT License.
+
+The input builder and the decoder are Kotlin ports of the classification path of the gliclass
+package 0.1.20 by Knowledgator (GitHub Knowledgator/GLiClass), licensed under Apache License 2.0:
+ZeroShotClassificationPipeline.prepare_input (labels, separator, prompt, text) and
+_postprocess_logits (softmax / sigmoid decisions). Changes include Kotlin float32 arithmetic, the
+float16 embedding-table upcast, fixed graph windows, and rejection of inputs that do not fit
+instead of truncation.
+
+The tokenizer follows the published tokenizer.json contract of Hugging Face tokenizers and
+transformers (Apache License 2.0): added-token extraction, NFC, the ByteLevel pre-tokenizer and
+byte-level BPE.
+
+The debug gate asset app/src/debug/assets/gate_fixtures.json holds the 144 items of SemIf
+benchmarks/data/authored144.jsonl (github.com/TheoLeeCJ/SemIf-OpenJev, formerly TheoLeeCJ/SemIf,
+commit ca3ba65f), Copyright (c) 2026 TheoLeeCJ, licensed under the MIT License
+(licenses/SemIf-MIT.txt), together with the two examples of the model card and six invented
+requests.
+
+Gradle wrapper files retain their upstream Apache License 2.0 headers.
+Retained model, encoder, library and fixture licenses are under licenses/.

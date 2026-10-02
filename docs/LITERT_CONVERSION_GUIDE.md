@@ -1483,3 +1483,46 @@ number and the cool-phone S256 time was not measured.
 14/16 (one miss is a 0.450 / 0.448 tie on a 3-level score question). The author reports 92.62% / 92.40% / 93.8% on the full
 files through their API; the card's printed example (0.9996 for `billing — 請求・返金`) is 0.9981 in fp32 on CPU with either
 transformers version (the author trained and ran with bf16 autocast).
+
+## 2026-10-02 追記 — GLiClass-Edge v3.0 (ModernBERT ettin-encoder-32m zero-shot classifier) on the S26 GPU and NPU: the label read-out is one routing matmul, `torch.matmul` lowers below rank 4, and a LayerNorm pre-scale makes fp16 close but not exact
+
+Shipped as `litert-community/GLiClass-Edge-v3.0-LiteRT` (S128 / S256 graphs, fp32 and fp16-weight, float16 token
+table, Python host, Kotlin snippet, conversion scripts, the Android sample). Evidence:
+`~/code/codex-conversions/2026-10-02/gliclass-edge-litert/` (`card/README.facts.md` names the source of every number).
+Reference = pip `gliclass` 0.1.20 on CPU fp32 (it needs transformers ≥ 5): 552 requests (SemIf authored144, ag_news
+test 200, banking77 test 200 as 25-label own subsets, the card's 2, invented 6), 482 fit 128 tokens.
+
+**Graph cut: the classification path only.** The pipeline scores the hidden state at each `<<LABEL>>` of
+`<<LABEL>>l1…<<LABEL>>ln<<SEP>>` + prompt + text (no separator between prompt and text) against `[CLS]`. The graph
+takes `inputs_embeds [1,S,384]` (host lookup) + float `attention_mask [1,S]` + a one-hot `label_routing [1,25,S]` and
+returns `logits [1,1,1,25]`: the label states are one batch matmul of the routing against the hidden states, `[CLS]`
+is a slice, and both projectors and the MLP scorer stay inside. The scorer's first Linear on `[text; label]` is split
+into a text half and a label half that are added, so the text row broadcasts by shape (no BROADCAST_TO). The
+ModernBERT layers follow the Laya / Julia-1 cut (Wqkv / Wi split by rows, one RoPE table, ±64 band constant, −1e4
+mask, exact builtin GELU): 670 ops (748 with fp16 FC weights), no GATHER / CAST / int64, rank ≤ 4.
+
+**litert-torch 0.9.3 lowered `torch.matmul` below rank 4**: rank-3 attention (`[6,128,64]`) and a rank-2 routing
+matmul (`[25,128]@[128,384]`). The vendored `rank4_matmul` marker (Open Decision run) keeps all 21 BATCH_MATMUL at
+rank 4 with unchanged logits; use it from the start on ModernBERT graphs.
+
+**The converter folds each LayerNorm scale into the next FULLY_CONNECTED weights** (50 of 78), so FLOAT_CASTING
+rounds W·γ, not W. Rounding the folded weights in PyTorch reproduces the 2 near-tie flips of the wfp16 graphs
+(`banking77_015`, top-2 gap 0.0012; `banking77_064`, sigmoid 0.4998); rounding W alone flips 4 other rows. As with
+Julia-1 (09-30), fp16 storage of an F32 checkpoint costs near ties, so the default download is the fp32 graphs + the
+fp16 table (482/482 and 552/552 on desktop CPU; table rounding ≤ 1.2e-4 moves logits by ≤ 0.009).
+
+**fp16 arithmetic: the audit found LayerNorm sums of squares up to 6.4e6** (rows up to 2,064 from their mean in
+layers 7–9). SafeLayerNorm at the audit's k (`ceil(log2(max |x − mean| / 64))`: 0 for layers 0–2, 5 for 3–6, 6 for
+7–9 and the final norm; 15 norms) is bit-identical in fp32 (PyTorch 552/552, LiteRT CPU and S26 GPU FP32 482/482) and
+turns collapse into near ties (top label / label set of 482): Metal default 258/133 → 479/469; S26 GPU default
+261/138 → 475/455 at 3.86 ms; S26 NPU (JIT, one partition, 748/748 ops, compile 0.98 s) 480/462 at 2.51 ms, against
+5.83 ms on the GPU with explicit FP32. Metal predicted the direction, not the size (16 flipped rows vs 32 on the S26
+GPU, 8 shared). NPU flips are all near ties (gaps ≤ 0.0043, sigmoid margins ≤ 0.026), but the bar is every answer:
+the shipped mode is GPU explicit FP32 (and CPU), and the sln graphs ship because they are exact in fp32.
+
+**Tokenizer port (byte-level BPE, no JNI).** `add_prefix_space` applies to every split between added tokens, so the
+prompt after `<<SEP>>` starts with `Ġ` and text glued to the prompt does not (`fitted.The`). Java's `\s` is
+ASCII-only and Android rejects `UNICODE_CHARACTER_CLASS`, so the GPT-2 regex spells out onig's Unicode White_Space.
+The Kotlin host matches Python `tokenizers` on 552/552 oracle strings and 261/261 edge strings. On the S26 (LiteRT
+2.2.0, GPU explicit FP32) the sample gives the official answers on 552/552 requests from text to labels: graph median
+5.86 / 8.23 ms (s128 / s256), a request right after a cold start 8.05–8.38 ms end to end.
