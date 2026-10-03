@@ -6,8 +6,8 @@ import kotlin.math.abs
  * The Android-free part of the debug gate: the tokenizer on the probes, then every request of the
  * gate asset through `to_record` and the encoder (rows against the oracle), and the rows that fit
  * [runner]'s window (at most [limit] of them when it is above 0) through the graph and the head
- * (probabilities against the oracle). [shouldStop] is asked after every graph call. [rows] grows
- * as the run goes, so a partial report can be written at any time.
+ * (probabilities against the oracle). [shouldStop] is asked after every graph call. [rows] grows as
+ * the run goes, so a partial report can be written at any time.
  */
 class KevGateCore(
   private val pipeline: KevPipeline,
@@ -45,7 +45,9 @@ class KevGateCore(
   private var probesRawEqual = 0
   private var probesUserEqual = 0
 
-  /** The device tokenizer against the IDs transformers gives each probe, raw and via `user_tokens`. */
+  /**
+   * The device tokenizer against the IDs transformers gives each probe, raw and via `user_tokens`.
+   */
   fun probes(probes: List<KevTokenizerProbe>): LinkedHashMap<String, Any?> {
     val mismatches = ArrayList<Any?>()
     for (probe in probes) {
@@ -57,16 +59,28 @@ class KevGateCore(
       if (userSame) probesUserEqual++
       if ((!rawSame || !userSame) && mismatches.size < MAX_MISMATCHES) {
         mismatches.add(
-          linkedMapOf("id" to probe.id, "category" to probe.category, "expected_raw" to probe.rawIds, "actual_raw" to raw)
+          linkedMapOf(
+            "id" to probe.id,
+            "category" to probe.category,
+            "expected_raw" to probe.rawIds,
+            "actual_raw" to raw,
+          )
         )
       }
     }
     probeCases = probes.size
     log("GATE_PROBES raw_equal=$probesRawEqual user_equal=$probesUserEqual cases=$probeCases")
-    return linkedMapOf("cases" to probeCases, "raw_equal" to probesRawEqual, "user_equal" to probesUserEqual, "mismatches" to mismatches)
+    return linkedMapOf(
+      "cases" to probeCases,
+      "raw_equal" to probesRawEqual,
+      "user_equal" to probesUserEqual,
+      "mismatches" to mismatches,
+    )
   }
 
-  /** Checks every asset question; [onProgress] gets the rows run so far every [PROGRESS_EVERY] rows. */
+  /**
+   * Checks every asset question; [onProgress] gets the rows run so far every [PROGRESS_EVERY] rows.
+   */
   fun run(items: List<KevGateItem>, onProgress: (Int) -> Unit) {
     for (item in items) {
       val prepared = pipeline.prepare(KevRequest.fromJson(item.request))
@@ -78,7 +92,8 @@ class KevGateCore(
         when {
           prepared.rows[index].length > runner.length ->
             skip(entry, "needs L${prepared.rows[index].window ?: "> ${KevEncoder.WINDOWS.last()}"}")
-          stoppedEarly || (limit > 0 && run >= limit) -> skip(entry, if (stoppedEarly) "stopped" else "limit")
+          stoppedEarly || (limit > 0 && run >= limit) ->
+            skip(entry, if (stoppedEarly) "stopped" else "limit")
           else -> {
             runRow(prepared, index, question, entry)
             if (run % PROGRESS_EVERY == 0) {
@@ -95,9 +110,15 @@ class KevGateCore(
     }
   }
 
-  private fun compareRow(item: KevGateItem, row: KevRow, question: KevGateQuestion): LinkedHashMap<String, Any?> {
+  private fun compareRow(
+    item: KevGateItem,
+    row: KevRow,
+    question: KevGateQuestion,
+  ): LinkedHashMap<String, Any?> {
     val idsSame = row.ids.contentEquals(question.rowIds)
-    val indicesSame = row.decideIndex == question.decideIndex && row.optionIndices.contentEquals(question.optionIndices)
+    val indicesSame =
+      row.decideIndex == question.decideIndex &&
+        row.optionIndices.contentEquals(question.optionIndices)
     questions++
     if (idsSame) idsIdentical++
     if (indicesSame) indicesIdentical++
@@ -120,10 +141,17 @@ class KevGateCore(
   private fun skip(entry: LinkedHashMap<String, Any?>, reason: String) {
     entry["status"] = "skipped"
     entry["reason"] = reason
-    skippedRows.add(linkedMapOf("key" to entry["key"], "row_len" to entry["row_len"], "reason" to reason))
+    skippedRows.add(
+      linkedMapOf("key" to entry["key"], "row_len" to entry["row_len"], "reason" to reason)
+    )
   }
 
-  private fun runRow(prepared: KevPrepared, index: Int, question: KevGateQuestion, entry: LinkedHashMap<String, Any?>) {
+  private fun runRow(
+    prepared: KevPrepared,
+    index: Int,
+    question: KevGateQuestion,
+    entry: LinkedHashMap<String, Any?>,
+  ) {
     run++
     entry["status"] = "run"
     entry["window"] = runner.length
@@ -139,7 +167,8 @@ class KevGateCore(
         return
       }
     val device = result.probabilities
-    val argmaxSame = KevAnswers.firstArgmax(device) == KevAnswers.firstArgmax(question.probabilities)
+    val argmaxSame =
+      KevAnswers.firstArgmax(device) == KevAnswers.firstArgmax(question.probabilities)
     val maxDp = KevGateChecks.maxAbsDifference(device, question.probabilities)
     if (argmaxSame) argmaxEqual++
     if (question.nearTie) {
@@ -154,7 +183,8 @@ class KevGateCore(
     options += device.size
     inferMs.add(result.inferMs)
     headMs.add(result.headMs)
-    val answer = KevAnswers.toAnswers(listOf(device), listOf(prepared.meta[index])).getValue(question.qid)
+    val answer =
+      KevAnswers.toAnswers(listOf(device), listOf(prepared.meta[index])).getValue(question.qid)
     if (KevJson.write(answer) == KevJson.write(question.answer)) answersEqual++
     entry.putAll(
       linkedMapOf(

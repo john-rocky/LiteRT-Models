@@ -74,13 +74,18 @@ fun KevScreen(
     topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
   ) { contentPadding ->
     Column(
-      Modifier.padding(contentPadding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+      Modifier.padding(contentPadding)
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
+        .padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       StatusLine(state)
       if (state.mode != LaunchMode.INTERACTIVE) {
         Text(stringResource(R.string.diagnostics_description))
-        state.diagnostics?.let { SelectionContainer { Text(it, style = MaterialTheme.typography.body2) } }
+        state.diagnostics?.let {
+          SelectionContainer { Text(it, style = MaterialTheme.typography.body2) }
+        }
         state.requestError?.let { Text(it, color = MaterialTheme.colors.error) }
       } else {
         Editor(
@@ -102,16 +107,26 @@ fun KevScreen(
         state.cards.forEach { AnswerCard(it) }
         if (state.footerLines.isNotEmpty()) {
           Column {
-            state.footerLines.forEach { Text(it, style = MaterialTheme.typography.caption) }
+            state.footerLines.forEach {
+              Text(wrapBetweenItems(it), style = MaterialTheme.typography.caption)
+            }
           }
         }
         state.responseJson?.let { json ->
           TextButton(onClick = onToggleResponse) {
-            Text(stringResource(if (state.showResponse) R.string.response_hide else R.string.response_show))
+            Text(
+              stringResource(
+                if (state.showResponse) R.string.response_hide else R.string.response_show
+              )
+            )
           }
           if (state.showResponse) {
             SelectionContainer {
-              Text(json, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.caption)
+              Text(
+                json,
+                fontFamily = FontFamily.Monospace,
+                style = MaterialTheme.typography.caption,
+              )
             }
           }
         }
@@ -125,24 +140,32 @@ private fun StatusLine(state: UiState) {
   val status = state.status
   val text =
     when (status) {
-      is KevStatus.MissingFiles -> stringResource(R.string.status_missing, status.files.joinToString(", "))
+      is KevStatus.MissingFiles ->
+        stringResource(R.string.status_missing, status.files.joinToString(", "))
       is KevStatus.Loading ->
         when {
-          status.switching -> stringResource(R.string.status_switching, status.window, status.elapsedSeconds)
-          status.stage == LoadStage.TOKENIZER -> stringResource(R.string.status_tokenizer, status.elapsedSeconds)
-          status.stage == LoadStage.HEAD -> stringResource(R.string.status_head, status.elapsedSeconds)
+          status.switching ->
+            stringResource(R.string.status_switching, status.window, status.elapsedSeconds)
+          status.stage == LoadStage.TOKENIZER ->
+            stringResource(R.string.status_tokenizer, status.elapsedSeconds)
+          status.stage == LoadStage.HEAD ->
+            stringResource(R.string.status_head, status.elapsedSeconds)
           else -> stringResource(R.string.status_graph, status.window, status.elapsedSeconds)
         }
       is KevStatus.Ready -> stringResource(R.string.status_ready)
-      is KevStatus.Running -> stringResource(R.string.status_running, status.questionIndex + 1, status.total)
-      is KevStatus.Done -> stringResource(R.string.status_done, status.questions, status.requestTotalMs)
+      is KevStatus.Running ->
+        stringResource(R.string.status_running, status.questionIndex + 1, status.total)
+      is KevStatus.Done ->
+        stringResource(R.string.status_done, status.questions, status.requestTotalMs)
       is KevStatus.Error -> stringResource(R.string.status_error, status.text)
     }
   Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     Text(
       text,
       style = MaterialTheme.typography.subtitle1,
-      color = if (status is KevStatus.Error) MaterialTheme.colors.error else MaterialTheme.colors.onSurface,
+      color =
+        if (status is KevStatus.Error) MaterialTheme.colors.error
+        else MaterialTheme.colors.onSurface,
     )
     state.engine?.let { engine ->
       Text(
@@ -156,7 +179,11 @@ private fun StatusLine(state: UiState) {
         style = MaterialTheme.typography.caption,
       )
       engine.gpuFailure?.let {
-        Text(stringResource(R.string.gpu_fallback, it), style = MaterialTheme.typography.caption, color = MaterialTheme.colors.error)
+        Text(
+          stringResource(R.string.gpu_fallback, it),
+          style = MaterialTheme.typography.caption,
+          color = MaterialTheme.colors.error,
+        )
       }
     }
     if (status is KevStatus.Loading || status is KevStatus.Running) {
@@ -181,16 +208,22 @@ private fun Editor(
   Text(stringResource(R.string.backend_title), style = MaterialTheme.typography.subtitle2)
   Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
     KevDecider.Backend.entries.forEach { backend ->
-      Choice(backendTitle(backend), state.backendChoice == backend, state.canDecide) { onBackend(backend) }
+      Choice(backendTitle(backend), state.backendChoice == backend, state.canDecide) {
+        onBackend(backend)
+      }
     }
   }
   Text(stringResource(R.string.examples_title), style = MaterialTheme.typography.subtitle2)
   Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
     EXAMPLE_TITLES.forEachIndexed { index, title ->
       if (state.example == index) {
-        Button(onClick = { onExample(index) }, enabled = state.editable) { Text(stringResource(title)) }
+        Button(onClick = { onExample(index) }, enabled = state.editable) {
+          Text(stringResource(title))
+        }
       } else {
-        OutlinedButton(onClick = { onExample(index) }, enabled = state.editable) { Text(stringResource(title)) }
+        OutlinedButton(onClick = { onExample(index) }, enabled = state.editable) {
+          Text(stringResource(title))
+        }
       }
     }
   }
@@ -225,7 +258,9 @@ private fun Editor(
       onRemoveQuestion,
     )
   }
-  TextButton(onClick = onAddQuestion, enabled = state.editable) { Text(stringResource(R.string.add_question)) }
+  TextButton(onClick = onAddQuestion, enabled = state.editable) {
+    Text(stringResource(R.string.add_question))
+  }
 }
 
 @Composable
@@ -242,7 +277,10 @@ private fun QuestionEditor(
   Card(Modifier.fillMaxWidth(), elevation = 2.dp) {
     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
       Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(R.string.question_title, index + 1), style = MaterialTheme.typography.subtitle2)
+        Text(
+          stringResource(R.string.question_title, index + 1),
+          style = MaterialTheme.typography.subtitle2,
+        )
         Spacer(Modifier.weight(1f))
         TextButton(onClick = { onRemoveQuestion(question.key) }, enabled = enabled) {
           Text(stringResource(R.string.remove_question))
@@ -258,7 +296,9 @@ private fun QuestionEditor(
       )
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         QuestionType.entries.forEach { type ->
-          Choice(type.wireName, question.type == type, enabled) { onQuestionType(question.key, type) }
+          Choice(type.wireName, question.type == type, enabled) {
+            onQuestionType(question.key, type)
+          }
         }
       }
       OutlinedTextField(
@@ -300,13 +340,17 @@ private fun AnswerCard(card: AnswerCardUi) {
       Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(14.dp).background(stateColor(card.state), CircleShape))
         Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.card_header, card.qid, card.type.wireName), style = MaterialTheme.typography.subtitle2)
+        Text(
+          stringResource(R.string.card_header, card.qid, card.type.wireName),
+          style = MaterialTheme.typography.subtitle2,
+        )
         Spacer(Modifier.weight(1f))
         card.msText?.let { Text(it, style = MaterialTheme.typography.caption) }
       }
       Text(card.question, style = MaterialTheme.typography.body2)
       when (card.state) {
-        CardState.PENDING -> Text(stringResource(R.string.card_pending), style = MaterialTheme.typography.caption)
+        CardState.PENDING ->
+          Text(stringResource(R.string.card_pending), style = MaterialTheme.typography.caption)
         CardState.RUNNING -> LinearProgressIndicator(Modifier.fillMaxWidth())
         CardState.FAILED -> Text(card.error.orEmpty(), color = MaterialTheme.colors.error)
         CardState.DONE -> card.view?.let { AnswerContent(it) }
@@ -331,7 +375,9 @@ private fun AnswerContent(view: KevAnswerView) {
       color = MaterialTheme.colors.primary,
     )
     Spacer(Modifier.weight(1f))
-    view.confidence?.let { Text(stringResource(R.string.answer_confidence, it), style = MaterialTheme.typography.caption) }
+    view.confidence?.let {
+      Text(stringResource(R.string.answer_confidence, it), style = MaterialTheme.typography.caption)
+    }
   }
   view.bars.forEach { bar ->
     Column {
@@ -354,7 +400,19 @@ private fun Choice(title: String, selected: Boolean, enabled: Boolean, onSelect:
 
 @Composable
 private fun backendTitle(backend: KevDecider.Backend): String =
-  stringResource(if (backend == KevDecider.Backend.GPU) R.string.backend_gpu else R.string.backend_cpu)
+  stringResource(
+    if (backend == KevDecider.Backend.GPU) R.string.backend_gpu else R.string.backend_cpu
+  )
 
-private val EXAMPLE_TITLES = listOf(R.string.example_ticket, R.string.example_incident, R.string.example_review)
+/**
+ * [line] with the spaces inside each " · "-separated item made non-breaking, so that a narrow
+ * screen wraps the line only between items and never inside one such as "GPU FP32".
+ */
+private fun wrapBetweenItems(line: String): String =
+  line.split(ITEM_SEPARATOR).joinToString(ITEM_SEPARATOR) { it.replace(' ', NO_BREAK_SPACE) }
+
+private val EXAMPLE_TITLES =
+  listOf(R.string.example_ticket, R.string.example_incident, R.string.example_review)
 private const val MILLIS_PER_SECOND = 1000f
+private const val ITEM_SEPARATOR = " · "
+private const val NO_BREAK_SPACE = '\u00A0'

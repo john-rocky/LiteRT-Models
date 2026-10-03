@@ -2,13 +2,14 @@
 """Writes the Kev sample's bundled test data from the conversion run's reference data.
 
 The reference data stays outside the module (see scripts/TEST_DATA.md). This script copies only
-what may be redistributed: the SemIf records (MIT) and the invented "own" records. It never writes
-the transfer-v4 rows (tv4, tv4x, tv4s) into the module.
+what may be redistributed: the SemIf records (MIT), the invented "own" records and the three
+invented demo requests. It never writes the transfer-v4 rows (tv4, tv4x, tv4s) into the module.
 
     python3 scripts/make_test_data.py --kev-work /path/to/kev_work
-        app/src/debug/assets/gate_fixtures.json, app/src/test/resources/head_fixture.{json,f32} and
-        the app's three example requests app/src/main/res/raw/example_*.json (standard library +
-        numpy)
+        app/src/debug/assets/gate_fixtures.json, app/src/test/resources/head_fixture.{json,f32},
+        the app's three example requests app/src/main/res/raw/example_*.json (the demo requests,
+        byte for byte) and their expected rows and answers app/src/test/resources/examples_oracle.json
+        (standard library + numpy)
 
     /path/to/venv/bin/python scripts/make_test_data.py --kev-work /path/to/kev_work --probes
         also app/src/test/resources/tokenizer_probes.json (and the same file as
@@ -20,6 +21,13 @@ Sources under --kev-work (their sha256 is checked before anything is written):
     fixtures/requests.json   dfe55fb145df7a3967ed7213ae24d67b5d4ec42da0315fdb409d5e4b702e3a48
     oracle/oracle_0.8b.json  d3792f3fc92e5e6148ef3b927d389f02e9cbbe458787834e70138339c26e4c79
     oracle/hidden_0.8b.npz   9f0cafeb3ea4f984cb9529f1c6b00ca621de1d2cb5b96bbbc49be292ce3535fa
+    demo/fixtures/demo_ticket_01.json    bc9dba71c5dd4e011f41d23eb5b48ba25adaa64a015f1160a7baa3ff94a1bafd
+    demo/fixtures/demo_incident_02.json  abe9c38841bb54fc8f459d5f970c9dee179ec40e46dddadaebe8b54083ba9ab6
+    demo/fixtures/demo_review_03.json    a33fa058c17e5ab1f4d1cf0261a5c1900a9050eef35663d064495d5b34f317f2
+    demo/oracle/oracle_demo.json         6b00e472b41ebd9748d87e538074383c40395a86714c4aa10f73aa897713567e
+                             (the author's fp32 model on the demo requests)
+    demo/oracle/expected_v2_L512_cpu.json  438044bc0dc2593426c17111278b42e8677635bf2b5a5c7301ce227152f997cd
+                             (the shipped L512 graph on a desktop CPU, head in numpy float32)
     hf/hub/models--jaredpalmer--kev-0.8b/snapshots/788ddbdd65715bb03a56788c822f6c632c9a551d/
         tokenizer.json       06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523
                              (--probes; the tokenizer the author's checkpoint publishes)
@@ -44,22 +52,30 @@ HEAD_BIN = MODULE / "app/src/test/resources/head_fixture.f32"
 PROBES = MODULE / "app/src/test/resources/tokenizer_probes.json"
 PROBES_ASSET = MODULE / "app/src/debug/assets/tokenizer_probes.json"
 EXAMPLES = {
-    "own_ticket_01": MODULE / "app/src/main/res/raw/example_ticket.json",
-    "own_incident_02": MODULE / "app/src/main/res/raw/example_incident.json",
-    "own_review_05": MODULE / "app/src/main/res/raw/example_review.json",
+    "demo_ticket_01": MODULE / "app/src/main/res/raw/example_ticket.json",
+    "demo_incident_02": MODULE / "app/src/main/res/raw/example_incident.json",
+    "demo_review_03": MODULE / "app/src/main/res/raw/example_review.json",
 }
+EXAMPLES_ORACLE = MODULE / "app/src/test/resources/examples_oracle.json"
 RENDER_CASES = MODULE / "app/src/test/resources/render_cases.json"
 PYTHON_NUMBERS = MODULE / "app/src/test/resources/python_numbers.json"
 
 REQUESTS = "fixtures/requests.json"
 ORACLE = "oracle/oracle_0.8b.json"
 HIDDEN = "oracle/hidden_0.8b.npz"
+DEMO_ORACLE = "demo/oracle/oracle_demo.json"
+DEMO_GRAPH_CPU = "demo/oracle/expected_v2_L512_cpu.json"
 KEV_SNAPSHOT = "hf/hub/models--jaredpalmer--kev-0.8b/snapshots/788ddbdd65715bb03a56788c822f6c632c9a551d"
 BASE_SNAPSHOT = "hf/hub/models--Qwen--Qwen3.5-0.8B-Base/snapshots/dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68"
 SHA256 = {
     REQUESTS: "dfe55fb145df7a3967ed7213ae24d67b5d4ec42da0315fdb409d5e4b702e3a48",
     ORACLE: "d3792f3fc92e5e6148ef3b927d389f02e9cbbe458787834e70138339c26e4c79",
     HIDDEN: "9f0cafeb3ea4f984cb9529f1c6b00ca621de1d2cb5b96bbbc49be292ce3535fa",
+    "demo/fixtures/demo_ticket_01.json": "bc9dba71c5dd4e011f41d23eb5b48ba25adaa64a015f1160a7baa3ff94a1bafd",
+    "demo/fixtures/demo_incident_02.json": "abe9c38841bb54fc8f459d5f970c9dee179ec40e46dddadaebe8b54083ba9ab6",
+    "demo/fixtures/demo_review_03.json": "a33fa058c17e5ab1f4d1cf0261a5c1900a9050eef35663d064495d5b34f317f2",
+    DEMO_ORACLE: "6b00e472b41ebd9748d87e538074383c40395a86714c4aa10f73aa897713567e",
+    DEMO_GRAPH_CPU: "438044bc0dc2593426c17111278b42e8677635bf2b5a5c7301ce227152f997cd",
     KEV_SNAPSHOT + "/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
 }
 
@@ -155,17 +171,49 @@ def write_gate_asset(kev_work, records, oracle):
           f"{doc['questions']} questions, windows {windows}")
 
 
-def write_examples(records):
-    """The app's example requests: three invented records, verbatim, as {id, state, questions}."""
-    by_id = {record["id"]: record for record in records}
+def write_examples(kev_work):
+    """The app's example requests: the three invented demo requests ({id, state, questions}) byte
+    for byte, and per question the author's oracle and the shipped L512 graph's answer."""
+    oracle = json.loads((kev_work / DEMO_ORACLE).read_text(encoding="utf-8"))
+    graph = json.loads((kev_work / DEMO_GRAPH_CPU).read_text(encoding="utf-8"))
+    if graph["oracle"]["file_sha256"] != SHA256[DEMO_ORACLE]:
+        sys.exit(f"{DEMO_GRAPH_CPU} was computed against another oracle file")
+    oracle_rows = {(q["id"], q["qid"]): q for q in oracle["questions"]}
+    graph_rows = {(q["id"], q["qid"]): q for q in graph["questions"]}
+    usage = {r["id"]: r["usage"]["input_tokens"] for r in oracle["requests"]}
+    examples = []
     for record_id, path in EXAMPLES.items():
-        record = by_id[record_id]
-        if record["source"] != "own":
-            sys.exit(f"{record_id} is not an invented record")
-        example = {"id": record_id, **record["request"]}
+        source = f"demo/fixtures/{record_id}.json"
+        data = (kev_work / source).read_bytes()
+        request = json.loads(data)
+        if request["id"] != record_id:
+            sys.exit(f"{source} holds {request['id']}")
+        questions = []
+        for qid in request["questions"]:
+            question, shipped = oracle_rows[(record_id, qid)], graph_rows[(record_id, qid)]
+            if shipped["keys"] != question["keys"] or shipped["row_len"] != len(question["row_ids"]):
+                sys.exit(f"{record_id}/{qid}: the graph's row differs from the oracle's")
+            questions.append({
+                **{field: question[field] for field in ORACLE_FIELDS},
+                "graph_l512_cpu": {"probs": shipped["probs"], "answer": shipped["answer"]},
+            })
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(example, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        print(f"{path.relative_to(MODULE)}: {len(record['request']['questions'])} questions")
+        path.write_bytes(data)
+        examples.append({"file": path.name, "id": record_id, "sha256": SHA256[source],
+                         "input_tokens": usage[record_id], "questions": questions})
+        print(f"{path.relative_to(MODULE)}: {source}, {len(questions)} questions")
+    doc = {
+        "version": 1,
+        "description": "The app's three example requests (res/raw, the demo requests byte for byte): per "
+                       "question the author's fp32 oracle (row ids, readout indices, probabilities, answer) "
+                       "and graph_l512_cpu, the shipped L512 graph on a desktop CPU with the head in numpy "
+                       "float32 (probabilities and the 4-decimal answer the app shows).",
+        "sources": {name: SHA256[name] for name in (DEMO_ORACLE, DEMO_GRAPH_CPU)},
+        "examples": examples,
+    }
+    EXAMPLES_ORACLE.parent.mkdir(parents=True, exist_ok=True)
+    EXAMPLES_ORACLE.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"{EXAMPLES_ORACLE.relative_to(MODULE)}: {sum(len(e['questions']) for e in examples)} questions")
 
 
 def write_head_fixture(kev_work, oracle):
@@ -422,12 +470,13 @@ def main():
     parser.add_argument("--probes", action="store_true", help="also write the AutoTokenizer / kev.api cases")
     args = parser.parse_args()
     kev_work = args.kev_work.resolve()
-    check_sources(kev_work, (REQUESTS, ORACLE, HIDDEN) + ((KEV_SNAPSHOT + "/tokenizer.json",) if args.probes else ()))
+    demo = tuple(f"demo/fixtures/{record_id}.json" for record_id in EXAMPLES) + (DEMO_ORACLE, DEMO_GRAPH_CPU)
+    check_sources(kev_work, (REQUESTS, ORACLE, HIDDEN) + demo + ((KEV_SNAPSHOT + "/tokenizer.json",) if args.probes else ()))
     records = json.loads((kev_work / REQUESTS).read_text(encoding="utf-8"))["records"]
     oracle = json.loads((kev_work / ORACLE).read_text(encoding="utf-8"))
     write_gate_asset(kev_work, records, oracle)
     write_head_fixture(kev_work, oracle)
-    write_examples(records)
+    write_examples(kev_work)
     if args.probes:
         write_probes(kev_work)
         write_render_cases(kev_work)

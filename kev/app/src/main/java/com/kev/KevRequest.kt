@@ -33,7 +33,11 @@ class KevQuestion(
  * A `/v1/systemone` request (the author's `SystemOneRequest`): a state (text or JSON) and typed
  * questions in request order. [parse] applies the same validation as the author's pydantic model.
  */
-class KevRequest(val state: Any?, val questions: List<KevQuestion>, val model: String = DEFAULT_MODEL) {
+class KevRequest(
+  val state: Any?,
+  val questions: List<KevQuestion>,
+  val model: String = DEFAULT_MODEL,
+) {
   companion object {
     /** `SystemOneRequest.model`'s default. */
     const val DEFAULT_MODEL = "kev-latest"
@@ -45,13 +49,16 @@ class KevRequest(val state: Any?, val questions: List<KevQuestion>, val model: S
 
     /** Validates a parsed request object the way the author's pydantic models do. */
     fun fromJson(value: Any?): KevRequest {
-      val request = value as? Map<*, *> ?: throw IllegalArgumentException("Request is not an object")
+      val request =
+        value as? Map<*, *> ?: throw IllegalArgumentException("Request is not an object")
       require(request.containsKey("state")) { "Request has no state" }
       // pydantic: an absent model takes the default; a present one must be a string (not null).
       val model = if (request.containsKey("model")) request["model"] else DEFAULT_MODEL
       require(model is String) { "model is not a string" }
       val questions = request["questions"] as? Map<*, *>
-      require(questions != null && questions.isNotEmpty()) { "questions must be a non-empty object" }
+      require(questions != null && questions.isNotEmpty()) {
+        "questions must be a non-empty object"
+      }
       return KevRequest(
         request["state"],
         questions.map { (id, question) -> parseQuestion(id as String, question) },
@@ -60,12 +67,15 @@ class KevRequest(val state: Any?, val questions: List<KevQuestion>, val model: S
     }
 
     private fun parseQuestion(id: String, value: Any?): KevQuestion {
-      val question = value as? Map<*, *> ?: throw IllegalArgumentException("Question $id is not an object")
+      val question =
+        value as? Map<*, *> ?: throw IllegalArgumentException("Question $id is not an object")
       val type = QuestionType.fromWireName(question["type"])
       val criteria = question["criteria"]
       when (type) {
         QuestionType.NOUL ->
-          require(criteria == null || criteria is Map<*, *>) { "Question $id: noul criteria must be an object" }
+          require(criteria == null || criteria is Map<*, *>) {
+            "Question $id: noul criteria must be an object"
+          }
         QuestionType.CHOICE ->
           require(criteria is Map<*, *> && criteria.size in 1..MAX_OPTIONS) {
             "Question $id: choice criteria must have 1..$MAX_OPTIONS options"
@@ -97,12 +107,14 @@ class QuestionMeta(
   val legend: Map<String, String>?,
 )
 
-/** Ports of the author's `render`, `option_text`, `question_keys` and `to_record` (`kev/api.py`). */
+/**
+ * Ports of the author's `render`, `option_text`, `question_keys` and `to_record` (`kev/api.py`).
+ */
 object KevRecords {
   /**
    * Flattens a JSON value into the text the model sees (`render`): strings as they are, scalars as
-   * Python's `str()` (`True`, `1`, `64.9`, `1840.0`), arrays as `- item` lines, objects as
-   * `key: value` lines, nested containers indented by two spaces per level.
+   * Python's `str()` (`True`, `1`, `64.9`, `1840.0`), arrays as `- item` lines, objects as `key:
+   * value` lines, nested containers indented by two spaces per level.
    */
   fun render(value: Any?, indent: Int = 0): String {
     val pad = INDENT.repeat(indent)
@@ -158,9 +170,11 @@ object KevRecords {
               optionText(name as String, description)
             }
           QuestionType.SCORE ->
-            (question.criteria as List<*>).map { render(it) }.also { levels ->
-              legend = LinkedHashMap<String, String>().apply { keys.zip(levels).toMap(this) }
-            }
+            (question.criteria as List<*>)
+              .map { render(it) }
+              .also { levels ->
+                legend = LinkedHashMap<String, String>().apply { keys.zip(levels).toMap(this) }
+              }
         }
       questions.add(KevRecordQuestion(render(question.instructions), options))
       meta.add(QuestionMeta(question.id, question.type, keys, legend))

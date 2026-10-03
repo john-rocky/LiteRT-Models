@@ -8,12 +8,14 @@ import org.junit.Test
 /**
  * The bundled debug gate asset (`app/src/debug/assets/gate_fixtures.json`: SemIf 144 + 12 invented
  * records with the oracle per question): every request encodes to the asset's rows and readout
- * indices, its answers follow from its probabilities, the declared counts hold, and every
- * question equals the external oracle.
+ * indices, its answers follow from its probabilities, the declared counts hold, and every question
+ * equals the external oracle.
  */
 class GateFixturesTest {
   private val asset =
-    KevJson.parse(ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes()) as Map<*, *>
+    KevJson.parse(
+      ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes()
+    ) as Map<*, *>
   private val items = (asset["items"] as List<*>).map { it as Map<*, *> }
 
   @Test
@@ -34,10 +36,16 @@ class GateFixturesTest {
   fun answersFollowFromTheAssetProbabilities() {
     for (item in items) {
       val (_, meta) = KevRecords.toRecord(KevRequest.fromJson(item["request"]))
-      val questions = (item["questions"] as List<*>).map { OracleFixtures.question(it as Map<*, *> + ("id" to item["id"])) }
+      val questions =
+        (item["questions"] as List<*>).map {
+          OracleFixtures.question(it as Map<*, *> + ("id" to item["id"]))
+        }
       val answers = KevAnswers.toAnswers(questions.map { it.probabilities }, meta)
       for (question in questions) {
-        assertNull("${item["id"]}/${question.qid}", OracleFixtures.jsonDifference(question.answer, answers[question.qid]))
+        assertNull(
+          "${item["id"]}/${question.qid}",
+          OracleFixtures.jsonDifference(question.answer, answers[question.qid]),
+        )
       }
     }
   }
@@ -50,7 +58,11 @@ class GateFixturesTest {
     for (item in items) {
       val (record, meta) = KevRecords.toRecord(KevRequest.fromJson(item["request"]))
       val encoded = encoder.encode(record)
-      assertEquals(item["id"].toString(), (item["input_tokens"] as JsonNumber).toInt(), encoded.inputTokens)
+      assertEquals(
+        item["id"].toString(),
+        (item["input_tokens"] as JsonNumber).toInt(),
+        encoded.inputTokens,
+      )
       val questions = item["questions"] as List<*>
       assertEquals(questions.size, meta.size)
       for ((index, question) in questions.withIndex()) {
@@ -65,7 +77,10 @@ class GateFixturesTest {
         rows++
       }
     }
-    val declared = (asset["windows"] as Map<*, *>).entries.associate { (k, v) -> (k as String).toInt() to (v as JsonNumber).toInt() }
+    val declared =
+      (asset["windows"] as Map<*, *>).entries.associate { (k, v) ->
+        (k as String).toInt() to (v as JsonNumber).toInt()
+      }
     assertEquals(declared, windows)
     ExternalTestData.writeReport(
       "gate_fixtures.json",

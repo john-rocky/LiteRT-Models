@@ -10,7 +10,8 @@ import org.junit.Test
  * edge inputs (`render_cases.json`, written by scripts/make_test_data.py --probes; self-contained).
  */
 class KevRecordsTest {
-  private val cases = KevJson.parse(ExternalTestData.resource("render_cases.json").readBytes()) as Map<*, *>
+  private val cases =
+    KevJson.parse(ExternalTestData.resource("render_cases.json").readBytes()) as Map<*, *>
 
   @Test
   fun renderMatchesTheAuthor() {
@@ -18,7 +19,11 @@ class KevRecordsTest {
     for (case in renders) {
       val entry = case as Map<*, *>
       val indent = (entry["indent"] as JsonNumber).toInt()
-      assertEquals("render(${KevJson.write(entry["value"])}, $indent)", entry["text"], KevRecords.render(entry["value"], indent))
+      assertEquals(
+        "render(${KevJson.write(entry["value"])}, $indent)",
+        entry["text"],
+        KevRecords.render(entry["value"], indent),
+      )
     }
     assertEquals(62, renders.size)
   }
@@ -52,12 +57,16 @@ class KevRecordsTest {
         assertEquals(expected["instr"], question.instructions)
         assertEquals(expected["options"], question.options)
       }
-      val actualMeta =
-        meta.map { question ->
-          linkedMapOf<String, Any?>("id" to question.id, "type" to question.type.wireName, "keys" to question.keys).apply {
+      val actualMeta = meta.map { question ->
+        linkedMapOf<String, Any?>(
+            "id" to question.id,
+            "type" to question.type.wireName,
+            "keys" to question.keys,
+          )
+          .apply {
             question.legend?.let { put("legend", it) }
           }
-        }
+      }
       assertNull(OracleFixtures.jsonDifference(entry["meta"], actualMeta))
     }
     assertEquals(8, records.size)

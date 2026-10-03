@@ -103,7 +103,9 @@ class KevPointerHead(weights: File, val temperature: Double = TEMPERATURE) {
       require(bytes.size >= HEADER_LENGTH_BYTES) { "Not a safetensors file" }
       val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
       val headerLength = buffer.getLong(0)
-      require(headerLength in 2..(bytes.size - HEADER_LENGTH_BYTES).toLong()) { "Bad safetensors header length" }
+      require(headerLength in 2..(bytes.size - HEADER_LENGTH_BYTES).toLong()) {
+        "Bad safetensors header length"
+      }
       val dataStart = HEADER_LENGTH_BYTES + headerLength.toInt()
       val header =
         KevJson.parse(bytes.copyOfRange(HEADER_LENGTH_BYTES, dataStart)) as? Map<*, *>
@@ -119,7 +121,9 @@ class KevPointerHead(weights: File, val temperature: Double = TEMPERATURE) {
         require(offsets.size == 2 && offsets[1] - offsets[0] == count * FLOAT_BYTES) {
           "$name offsets $offsets do not match shape ${shape.toList()}"
         }
-        require(offsets[0] >= 0 && dataStart + offsets[1] <= bytes.size) { "$name lies outside the file" }
+        require(offsets[0] >= 0 && dataStart + offsets[1] <= bytes.size) {
+          "$name lies outside the file"
+        }
         val data = FloatArray(count)
         ByteBuffer.wrap(bytes, dataStart + offsets[0], count * FLOAT_BYTES)
           .order(ByteOrder.LITTLE_ENDIAN)

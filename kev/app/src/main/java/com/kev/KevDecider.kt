@@ -105,14 +105,16 @@ private constructor(
       }
     }
 
-    fun describe(failure: Throwable): String = "${failure.javaClass.simpleName}: ${failure.message.orEmpty()}"
+    fun describe(failure: Throwable): String =
+      "${failure.javaClass.simpleName}: ${failure.message.orEmpty()}"
 
     private fun compile(context: Context, file: File, window: Int, backend: Backend): KevDecider {
       val options =
         CompiledModel.Options(backend.accelerator).apply {
           when (backend) {
             Backend.GPU ->
-              gpuOptions = CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
+              gpuOptions =
+                CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
             Backend.CPU -> cpuOptions = CompiledModel.CpuOptions(numThreads = CPU_THREADS)
           }
         }
@@ -121,8 +123,18 @@ private constructor(
       val compileMs = KevPipeline.millis(System.nanoTime() - start)
       val buffers = ArrayList<TensorBuffer>()
       try {
-        checkTensor(model.getInputTensorType(IDS, SIGNATURE), TensorType.ElementType.INT, listOf(1, window), IDS)
-        checkTensor(model.getInputTensorType(VALID, SIGNATURE), TensorType.ElementType.FLOAT, listOf(1, window), VALID)
+        checkTensor(
+          model.getInputTensorType(IDS, SIGNATURE),
+          TensorType.ElementType.INT,
+          listOf(1, window),
+          IDS,
+        )
+        checkTensor(
+          model.getInputTensorType(VALID, SIGNATURE),
+          TensorType.ElementType.FLOAT,
+          listOf(1, window),
+          VALID,
+        )
         checkTensor(
           model.getOutputTensorType(HIDDEN, SIGNATURE),
           TensorType.ElementType.FLOAT,
@@ -140,7 +152,12 @@ private constructor(
       }
     }
 
-    private fun checkTensor(type: TensorType, element: TensorType.ElementType, shape: List<Int>, name: String) {
+    private fun checkTensor(
+      type: TensorType,
+      element: TensorType.ElementType,
+      shape: List<Int>,
+      name: String,
+    ) {
       val dimensions = type.layout?.dimensions.orEmpty()
       check(type.elementType == element && dimensions == shape) {
         "Graph tensor $name is ${type.elementType} $dimensions, expected $element $shape"
@@ -154,15 +171,18 @@ private constructor(
  * run, close) runs on [dispatcher]; the Environment outlives Activity and ViewModel instances.
  */
 object KevRuntime {
-  private val executor =
-    Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "Kev-LiteRT").apply { isDaemon = true } }
+  private val executor = Executors.newSingleThreadExecutor { runnable ->
+    Thread(runnable, "Kev-LiteRT").apply { isDaemon = true }
+  }
 
   /** The single worker thread as a coroutine dispatcher. */
   val dispatcher: CoroutineDispatcher = executor.asCoroutineDispatcher()
 
   private var environment: Environment? = null
 
-  /** The process Environment; `Environment.create(context)` also gives it the app's cache directory. */
+  /**
+   * The process Environment; `Environment.create(context)` also gives it the app's cache directory.
+   */
   fun environment(context: Context): Environment =
     environment ?: Environment.create(context.applicationContext).also { environment = it }
 }

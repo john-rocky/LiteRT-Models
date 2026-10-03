@@ -42,7 +42,11 @@ class KevPipelineTest {
 
   @Test
   fun oracleRequestsGiveTheOracleAnswers() {
-    val pipeline = KevPipeline(ExternalTestData.tokenizer(), KevPointerHead(ExternalTestData.file(ExternalTestData.HEAD)))
+    val pipeline =
+      KevPipeline(
+        ExternalTestData.tokenizer(),
+        KevPointerHead(ExternalTestData.file(ExternalTestData.HEAD)),
+      )
     val oracle = OracleFixtures.loadOracle()
     val byKey = oracle.questions.associateBy { it.key }
     val usage = oracle.requests.associateBy { it.id }
@@ -67,7 +71,8 @@ class KevPipelineTest {
           val window = row.requireWindow()
           windows[window] = windows.getValue(window) + 1
           val (_, values) = npz.floats(expected.key)
-          val runner = OracleRunner(window, row.ids, intArrayOf(row.decideIndex) + row.optionIndices, values)
+          val runner =
+            OracleRunner(window, row.ids, intArrayOf(row.decideIndex) + row.optionIndices, values)
           val result = pipeline.run(prepared, index, runner)
           if (runner.inputsChecked) inputsChecked++
           assertEquals(window, result.window)
@@ -78,9 +83,16 @@ class KevPipelineTest {
         val answers = pipeline.answers(prepared, results)
         for ((index, meta) in prepared.meta.withIndex()) {
           val key = "${record.id}/${meta.id}"
-          ours[key] = linkedMapOf("row_len" to prepared.rows[index].length, "ids_sha256" to KevPipeline.idsSha256(prepared.rows[index].ids), "answer" to answers[meta.id])
-          val difference = OracleFixtures.jsonDifference(byKey.getValue(key).answer, answers[meta.id])
-          if (difference == null) answersEqual++ else if (failures.size < 3) failures.add("$key $difference")
+          ours[key] =
+            linkedMapOf(
+              "row_len" to prepared.rows[index].length,
+              "ids_sha256" to KevPipeline.idsSha256(prepared.rows[index].ids),
+              "answer" to answers[meta.id],
+            )
+          val difference =
+            OracleFixtures.jsonDifference(byKey.getValue(key).answer, answers[meta.id])
+          if (difference == null) answersEqual++
+          else if (failures.size < 3) failures.add("$key $difference")
         }
         val response = pipeline.response(prepared, answers)
         assertEquals(listOf("model", "answers", "usage"), response.keys.toList())
@@ -99,10 +111,13 @@ class KevPipelineTest {
         "input_tokens_equal" to usageEqual,
         "windows" to windows.mapKeys { it.key.toString() },
         "failures" to failures,
-        "execution" to "Desktop JVM ${System.getProperty("java.version")}, fake RowRunner with the oracle's h_sel",
+        "execution" to
+          "Desktop JVM ${System.getProperty("java.version")}, fake RowRunner with the oracle's h_sel",
       ),
     )
-    println("KEV_PIPELINE answers_equal=$answersEqual/${oracle.questions.size} inputs_checked=$inputsChecked usage=$usageEqual/${oracle.requests.size} windows=$windows")
+    println(
+      "KEV_PIPELINE answers_equal=$answersEqual/${oracle.questions.size} inputs_checked=$inputsChecked usage=$usageEqual/${oracle.requests.size} windows=$windows"
+    )
     assertEquals(failures.joinToString("\n"), 402, answersEqual)
     assertEquals(402, inputsChecked)
     assertEquals(377, usageEqual)
@@ -111,8 +126,13 @@ class KevPipelineTest {
 
   @Test
   fun rowsOverTheWindowAndNonFiniteOutputsAreRejected() {
-    val pipeline = KevPipeline(ExternalTestData.tokenizer(), KevPointerHead(ExternalTestData.file(ExternalTestData.HEAD)))
-    val request = KevRequest.parse("""{"state":"${"word ".repeat(600)}","questions":{"q":{"type":"noul"}}}""")
+    val pipeline =
+      KevPipeline(
+        ExternalTestData.tokenizer(),
+        KevPointerHead(ExternalTestData.file(ExternalTestData.HEAD)),
+      )
+    val request =
+      KevRequest.parse("""{"state":"${"word ".repeat(600)}","questions":{"q":{"type":"noul"}}}""")
     val prepared = pipeline.prepare(request)
     assertEquals(1024, prepared.window)
     val small =
@@ -128,7 +148,8 @@ class KevPipelineTest {
       object : RowRunner {
         override val length = 1024
 
-        override fun run(ids: IntArray, valid: FloatArray) = FloatArray(length * HIDDEN) { if (it == 5) Float.NaN else 0f }
+        override fun run(ids: IntArray, valid: FloatArray) =
+          FloatArray(length * HIDDEN) { if (it == 5) Float.NaN else 0f }
       }
     val nonFinite = runCatching { pipeline.run(prepared, 0, nan) }.exceptionOrNull()
     assertTrue(nonFinite is KevNonFiniteException)
@@ -138,14 +159,16 @@ class KevPipelineTest {
       object : RowRunner {
         override val length = 1024
 
-        override fun run(ids: IntArray, valid: FloatArray) = FloatArray(length * HIDDEN) { if (it == length * HIDDEN - 1) Float.NaN else 0f }
+        override fun run(ids: IntArray, valid: FloatArray) =
+          FloatArray(length * HIDDEN) { if (it == length * HIDDEN - 1) Float.NaN else 0f }
       }
     assertNull(runCatching { pipeline.run(prepared, 0, padNan) }.exceptionOrNull())
   }
 
   @Test
   fun idsSha256IsTheHashOfLittleEndianInt32() {
-    // Python: hashlib.sha256(b"".join(x.to_bytes(4, "little", signed=True) for x in ids)).hexdigest()
+    // Python: data = b"".join(x.to_bytes(4, "little", signed=True) for x in ids)
+    //         hashlib.sha256(data).hexdigest()
     assertEquals(
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       KevPipeline.idsSha256(IntArray(0)),

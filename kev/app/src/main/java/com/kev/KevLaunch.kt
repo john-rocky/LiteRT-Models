@@ -8,7 +8,12 @@ sealed interface KevLaunch {
   data object Normal : KevLaunch
 
   /** Debug build: the fixture gate on [window] into `files/<report>`. */
-  data class Gate(val backend: KevDecider.Backend, val report: String, val window: Int, val limit: Int) : KevLaunch
+  data class Gate(
+    val backend: KevDecider.Backend,
+    val report: String,
+    val window: Int,
+    val limit: Int,
+  ) : KevLaunch
 
   /**
    * Debug and benchmark builds: the timing protocol on the rows of `files/<rows>`, limited to the
@@ -25,7 +30,8 @@ sealed interface KevLaunch {
   ) : KevLaunch
 
   /** The demo recording: answer the request in [fixture] on the presentation layout. */
-  data class Autoplay(val fixture: String, val delayMs: Long, val gapMs: Long, val window: Int) : KevLaunch
+  data class Autoplay(val fixture: String, val delayMs: Long, val gapMs: Long, val window: Int) :
+    KevLaunch
 
   /** Extras that cannot be followed; [autoplay] says which log tag reports it. */
   data class Invalid(val reason: String, val autoplay: Boolean) : KevLaunch
@@ -37,12 +43,16 @@ sealed interface KevLaunch {
     fun backend(name: String?): KevDecider.Backend? =
       KevDecider.Backend.entries.firstOrNull { it.name == (name ?: "gpu").uppercase(Locale.ROOT) }
 
-    fun reportNameValid(name: String): Boolean = name.matches(REPORT_NAME) && !name.endsWith(".partial")
+    fun reportNameValid(name: String): Boolean =
+      name.matches(REPORT_NAME) && !name.endsWith(".partial")
 
     fun windowValid(window: Int): Boolean = window in KevEncoder.WINDOWS
 
-    /** The `sets` extra: comma-separated set names, or `none` for no set (the request path only). */
+    /**
+     * The `sets` extra: comma-separated set names, or `none` for no set (the request path only).
+     */
     fun setNames(extra: String): List<String> =
-      if (extra.trim() == "none") emptyList() else extra.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+      if (extra.trim() == "none") emptyList()
+      else extra.split(',').map { it.trim() }.filter { it.isNotEmpty() }
   }
 }

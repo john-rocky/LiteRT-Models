@@ -1544,3 +1544,136 @@ Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-
 **Process traps measured this run.** (1) The Codex workspace-write sandbox blocks Metal device creation (`SIGSEGV` in `ml_drift::metal::CreateGpuInfoFromMetalDevice` before any inference); run Metal predictor gates outside the sandbox. (2) A device driver that releases the shared S26 hold between cells is interrupted by any lane whose keeper holds continuously (we lost about 80 minutes at 1/11 cells); hold across the whole cell list or plan for the gap. (3) Under the S26 secure keyguard an `am start` gate activity needs `setShowWhenLocked(true)` + `setTurnScreenOn(true)` to be top-resumed (Decide finding, verified here). (4) s256 / s512 GPU medians rise 1.5–2.1× within one 75–80-input job (63.5 → 93.0 ms, 200.9 → 422.5 ms, thermal status 0 → 1–2); publish the cool opening value and the sustained median with their conditions.
 
 **Japanese.** The official `word_splitter="char"` is the caller's choice (no detector); the processor appends `.` after `。`, so a 48-slot window holds 47 Japanese characters. Upstream organization recall on ten early Japanese sentences was 4/10 — upstream behaviour, preserved by the conversion (the gate is agreement with the official implementation, not accuracy).
+
+## 2026-10-04 追記 — Kev-0.8B (Qwen3.5 hybrid + pointer head, typed decisions) on the S26 GPU: one graph call per question under explicit FP32, the checkpoint's own tokenizer.json, and a Kotlin host that reproduces CPython's float sum and round
+
+Model repo: `litert-community/Kev-0.8B-LiteRT` (row-prefill graphs L512 / L1024 / L2048, pointer head, tokenizer);
+Android sample `kev/`. Evidence: `~/code/standup/handoffs/assets/2026-10-03-kev-sample-app/` (`ROUND1.md`–`ROUND4.md`;
+`readme.facts.md` names the source of every number; device reports under `device/`). Reference = the author's code
+(`kev.api`, `kev.model`, transformers 5.17.0) on CPU fp32: 402 questions of 377 requests. On a desktop JVM the Kotlin
+host equals it on 402/402 rows and readout indices (`usage.input_tokens` 377/377), the head stays within max |Δp|
+2.98e-7, and `to_answers` gives the oracle's answers on 402/402. On the S26 (LiteRT 2.2.0, debug build, GPU explicit
+FP32) all 181 bundled gate questions get identical row IDs. The 172 L512 rows keep the oracle's argmax on 166/166
+rows outside near-ties (max |Δp| 0.0078), the 9 L2048 rows match 9/9, and both graphs run whole on the GPU delegate
+in one partition.
+
+**Graph cut: a state-free row prefill.** The conversion run exports one graph per window: `ids` int32 `[1,L]` +
+`valid` float32 `[1,L]` → `hidden` float32 `[1,L,d]` (every position after the final RMSNorm, d = 1024 for 0.8B
+and 2560 for 4B, no lm_head). No KV or Gated DeltaNet state goes in or out: each call computes one row, the state
+plus one question, from scratch. Positions are the constants 0..L−1, the mask is a constant causal mask plus
+(1 − valid) × (−1e4), rows are right-padded with 248044, and the L512 / L1024 / L2048 files share their weights.
+Kev never decodes, so the graph needs no cache-update ops, and forms that failed on the GPU before stay out of it:
+masked_fill, in-place index_put row updates, the rank-5 repeat_interleave of the 4B and a rank-4 PAD. The price is
+one call per question, each recomputing the state. As a check, the fp32 graph (not shipped) matches the author's
+fp32 PyTorch on 392/392 argmax with max |Δp| 4.4e-6 at L512, L1024 and L2048 (4B at L1024: 9.8e-6).
+
+**Three patched classes, not the stock exporters.** The conversion run swaps three classes of the transformers
+5.14.1 Qwen3.5 text model: `PatchedQwen3_5GatedDeltaNet` (chunk kernel `_rank4_chunk_gated_delta_rule`: the tail PAD
+becomes a concat, the diagonal and triangular masks are constants, rank ≤ 4), `PatchedQwen3_5TextRotaryEmbedding`
+(1-D RoPE) and `PatchedQwen3_5TextModel` (the mask built from `valid`); attention is `kev_eager` (GQA copies K/V by
+concat, additive mask). For the 4B, Gated DeltaNet's 16 key heads and 32 value heads (ratio 2) are copied by concat,
+which avoids a rank-5 tensor. An anchor check pins the patch to `modeling_qwen3_5.py` (sha256 0e2cd8dc…). The
+rewrite moves real-position hidden states at L1024 by 3.2e-5 (0.8B) and 2.6e-4 (4B) over 393 questions; unpatched
+transformers 5.14.1 itself differs from the author's oracle (5.17.0) by 5.1e-5 / 1.2e-4. Not used: litert-torch
+0.9.4's stock `qwen3_5` static model, which contains the GPU-hostile forms above, and upstream main, whose chunked
+delta rule becomes `tfl.custom` ops (`gated_delta_update` and others) that the delegate does not take. Export is
+`litert_torch.convert(graph, sample_kwargs={'ids', 'valid'}).export()` with litert-torch 0.9.4, transformers 5.14.1,
+torch 2.13.0, ai-edge-litert 2.2.0 and ai-edge-quantizer 0.9.0; the 4B fp32 export peaks at a physical footprint of
+50.4 GB (L1024) and 52.7 GB (L2048).
+
+**Quantization ladder: fp16 fully connected weights + an int8 table.** 0.8B, L1024, 392 questions against the
+author's fp32; the 15 near-ties (reference top-2 gap ≤ 0.02) are counted apart. The red arm is a request with one
+word changed; a runtime detects it above 0.02.
+
+| Variant | Contents | Bytes | Mac GPU (Metal, FP32 precision) | Mac CPU | Red arm | Verdict |
+|---|---|---:|---|---|---|---|
+| fp32 | not quantized | 3,024,236,656 | not measured | max 4.4e-6, 392/392 | 0.0476 | check only, not shipped |
+| V1 `wi8fc` | fully connected weights + embedding table int8 (channelwise, INTEGER compute = dynamic int8) | 776,130,240 | max 0.0701, mean 5.2e-3, 376/377 outside near-ties, near-ties 11/15 | max 0.1465, mean 1.5e-2, 373/377, 9/15 | GPU 0.0447, CPU 0.0159: not detectable | not shipped (breaks the calibration) |
+| V2 `fp16fc_i8emb` | fully connected weights fp16 (float casting, through DEQUANTIZE) + embedding table int8 (per-row scale); activations, conv and the delta rule fp32 | 1,269,023,216 | max 0.0104, mean 9.1e-4, 377/377, 13/15 | the same numbers | 0.0477 | shipped (L512 1,264,068,368, L2048 1,285,227,888) |
+| V3 `i8emb` | only the embedding table int8, fully connected weights fp32 | 2,264,171,344 | max 0.0103, 377/377, 13/15 | the same numbers | 0.0477 | control: the 0.0104 comes from the int8 table (not shipped) |
+| V4 `fp16fc_fp16emb` | fully connected weights and table fp16 | 1,520,323,136 | rejected by the GPU: `EMBEDDING_LOOKUP: Empty quantization params` (CompiledModel creation fails) | max 0.0010, 377/377, 15/15 | 0.0477 | not shipped (does not run on the GPU) |
+
+V2 ships because it is the smallest file that runs whole on the GPU, keeps the probabilities within the bar (argmax
+100% outside near-ties, max |Δp| ≤ 0.02, mean ≤ 0.002) and still detects the red arm. Its two near-tie flips
+(`tv4_023`, gap 0.0020; `own_sensor_08`, gap 8.1e-05) are the same in V3, so they come from the int8 table. Only V2
+was built for the 4B: 383/383 outside near-ties and 9/9 near-ties on 392 questions at L512 and L1024, 392/392 + 9/9
+on 401 at L2048, max 0.0152, mean 4.5e-4, red arm 0.0528 (its most likely option changes from c to a), and 2.8e-5
+between the GPU and the CPU on the same file.
+
+**fp16 activations give non-finite rows; the 4B does not fit the S26.** At default GPU precision (fp16 activations)
+V2 L1024 gives non-finite read-out rows on 18 of 392 questions on desktop Metal (V1 and V3: the same 18), and the
+other 374 still reach max |Δp| 0.0399 with one argmax flip outside near-ties. On the Galaxy S26 GPU at default
+precision (V2 L512, a 58-question tap run) 18 questions are non-finite and the other 40 reach max 0.0193. The fix is
+FP32 precision requested explicitly (Python `GpuOptions(enforce_f32=True)`, Kotlin
+`CompiledModel.GpuOptions(precision = Precision.FP32)`): the S26 GPU then gives the Mac's numbers (max 0.0104, the
+same 2 flips) with every node in one LITERT_CL partition, and the host answers no question whose row is non-finite.
+The 4B V2 L1024 graph (7,799,218,560 B) did not fit the 12 GB Galaxy S26 (one try): the GPU delegate took all 34,313
+nodes in one partition, then lmkd reclaimed memory ("min2x watermark is breached even after kill") and killed the
+process before the compile finished. The process's VmHWM reached 5,579,828 kB; the lmkd line shows 1,742,792 kB
+resident and 6,996,624 kB swapped, with MemAvailable 6.6 GB just before. lmkd reclaimed 68 other processes in the
+same window. On the Mac the 4B needs desktop-class memory: 20.1–21.1 GB after compiling on the GPU at FP32
+precision (peak 37.1–38.8 GB) and 14.9–16.7 GB on the CPU. Evidence (conversion run): `results/litert_{gpu_f32,cpu}_rows_L1024_v*.json`,
+`results/quant_recipes.json`, `results/litert_gpu_f16_rows_L1024_v*.json`, `results/timing_mac_r7_4b.json`,
+`device/r6/kev_s26_r6_E_4b.kill_lines.txt`.
+
+**The tokenizer is the checkpoint's own `tokenizer.json`, not the base model's.** The author's oracle tokenizes with
+transformers 5.17.0 `Qwen2Tokenizer`, which builds its pre-tokenizer in code: the Qwen2 split regex without `\p{M}`,
+ByteLevel without a prefix space, and 33 added tokens (the 22 of the base `tokenizer.json` plus 11 that only
+`tokenizer_config.json` lists, `<think>` and `<tool_response>` among them). The `tokenizer.json` published with the
+Kev checkpoint (19,989,325 B) is that pipeline saved. The Qwen3.5-0.8B-Base `tokenizer.json` has the same vocabulary
+and merges but a regex with `\p{M}` and 22 added tokens; raw `tokenizers` on it differs from the oracle on 4 of 12
+probe strings (Devanagari, `<think>`, `<tool_response>`, `<tts_pad>`). The fixture's 2,038 user strings give
+identical IDs with either file, so a 402/402 row parity cannot tell them apart; only the probes do. The Kotlin host
+reads the Kev file as it is (regex, added tokens, vocabulary, merges) and matches `AutoTokenizer` on 54/54 probes on
+the JVM and on the S26. Evidence: `ROUND1.md` §1, `r1_evidence/probe_three.py`, `r1_evidence/probe_added.py`.
+
+**The split regex follows different Unicode rules in onig, java.util.regex and ICU.** onig's case-insensitive
+contractions fold `ſ` (U+017F): `'ſtuff` splits as `'ſ` + `tuff`. Java's `(?i)` folds ASCII only, so the port spells
+the class out (`'[sSſ]`, written `ſ` in the source). `\s` becomes onig's White_Space class (25 code points),
+because Java's `\s` is ASCII-only and Android rejects `UNICODE_CHARACTER_CLASS`. Java 17's regex classes follow
+Unicode 13 and onig (tokenizers 0.23.2) Unicode 16: 9,787 letters and 130 digits exist only in onig's `\p{L}` /
+`\p{N}`. On the JVM 6,000 random strings still gave identical IDs, 2,254 of them with code points Java 17 does not
+define; on the S26 the 54 probes pass under Android's ICU. Evidence: `ROUND1.md` §2, `r1_evidence/probe_fold.py`,
+`r1_evidence/Fold.java`, `r1_evidence/onig_classes.json`, `r1_evidence/ClassDiff.java`.
+
+**The response is bit-identical only with CPython's float semantics.** `to_answers` normalizes and takes
+expectations with Python 3.12's built-in `sum`, which adds floats with Neumaier compensation, and rounds with
+`round(x, 4)`, which rounds the exact binary value half to even: `round(0.12345, 4)` and `round(0.12355, 4)` are
+both 0.1235, and `round(0.03125, 4)` is 0.0312. The port sums in the same order with the same compensation
+(`KevAnswers.pythonSum`) and rounds with `BigDecimal(x).setScale(4, HALF_EVEN)`; with a plain loop the score and the
+confidences do not match bit for bit. A JSON state needs Python's semantics as well: keys keep the file's order (the
+JVM `org.json` artifact uses a HashMap), and `1` and `1.0` render differently, so the reader keeps number literals.
+Evidence: `KevAnswersTest`, `kev/app/src/test/resources/python_numbers.json`, `ROUND1.md` §1.
+
+**Time to the read-back, and pick the smallest window.** `CompiledModel.run()` returns before the GPU finishes, so
+the app times each question from the input writes through `run()` to `readFloat()` of `hidden`; every ms on the
+cards and in the README is that span. The graph computes every position of its window: from thermal status 0 a
+300-token row at L512 takes a median 615.1 ms, and the five-question rows of 128–142 tokens took 617–630 ms at the
+start of their leg. A 1,000-token row at L1024 takes a median 1,333.4 ms. Evidence: `device/r3_timing_gpu_T300.json`,
+`device/r3_timing_gpu_L512.json`, `device/r3b_timing_gpu_T1000.json`.
+
+**A 360 dp screen sets the demo layout.** The S26 reports density 3.0, a 360 × 780 dp screen; a layout planned at
+density 2.625 cut the ticket's last line even at its 16 sp floor. Compose Material 1 `Text` inherits body1's 24 sp
+line height, which cut a three-line footer until each line height was explicit. The presentation now measures every
+fitted text with `rememberTextMeasurer` inside the layout pass and draws it once, at the size that fits, instead of
+shrinking it frame by frame. The editing screen's footer wrapped inside "GPU FP32" at 360 dp; it now puts one group
+per line and joins the words of an item with non-breaking spaces. Evidence: `ROUND3.md` §1–2,
+`device/s4_autoplay_done.png`, `device/u10_answers.png`.
+
+**Heat decides which timing legs count.** About 2.5 minutes of GPU FP32 at L512 (the 172-row gate) took the S26
+from thermal status 0 to 3 (skin 37.9 → 45.0 °C, GPU clock ceiling down to 726 MHz). A launch that timed every set
+back to back met the protocol only for its opening set (five-question calls drifted from 618 to 775 ms), so each set
+now gets a launch of its own (`--es sets`, `--ez request_path`). Two cooling traps. When the app is not in the
+foreground the screen dozes, and a watcher that sends `KEYCODE_WAKEUP` every 17 s starts face unlock; that held the
+phone at status 1 for 11 minutes. Cool with the screen off and the watcher idle, then wake the screen 5 s before the
+leg. And `am force-stop` right after a leg briefly caps the prime cluster during the keyguard transition, so read
+the caps when the next leg starts. Evidence: `ROUND3.md` §1–3, `device/wake_keeper.log`, `device/legs_status.txt`,
+`device/r3b_chain.sh`.
+
+**Process traps.** (1) The repository's root `.gitignore` has `*.bin`, which silently dropped `head_fixture.bin`
+from `git add kev/`; the fixture is `.f32` now. Check new data with `git status --short --ignored <dir>`, and give
+`git check-ignore -v` the path from the repository root. (2) Lint `NewApi` caught `BigInteger.intValueExact()` (API
+31) in the JSON reader, which would throw `NoSuchMethodError` on API 26–30; the JVM tests pass because the desktop
+JVM has the method, so run `:app:lintDebug` after host changes. (3) Gradle reports the test task of a docs-only
+change as UP-TO-DATE and prints no results; evidence logs need `--rerun` or `--rerun-tasks`. Evidence: `ROUND1.md`
+§2, `ROUND2.md` §1–2.

@@ -13,11 +13,15 @@ import org.junit.Test
 class KevGateChecksTest {
   @Test
   fun bundledAssetsParse() {
-    val items = KevGateChecks.parseAsset(ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes())
+    val items =
+      KevGateChecks.parseAsset(
+        ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes()
+      )
     assertEquals(156, items.size)
     assertEquals(181, items.sumOf { it.questions.size })
     assertTrue(items.any { it.id == KevTimingCore.REQUEST_PATH_RECORD && it.questions.size == 5 })
-    val asset = ExternalTestData.moduleFile("app/src/debug/assets/tokenizer_probes.json").readBytes()
+    val asset =
+      ExternalTestData.moduleFile("app/src/debug/assets/tokenizer_probes.json").readBytes()
     // The device gate's probes are the JVM test's probes, byte for byte.
     assertArrayEquals(ExternalTestData.resource("tokenizer_probes.json").readBytes(), asset)
     assertEquals(54, KevGateChecks.parseProbes(asset).size)
@@ -27,7 +31,10 @@ class KevGateChecksTest {
   fun deviceTokenizerProbesPassOnTheJvm() {
     val tokenizer = ExternalTestData.tokenizer()
     val encoder = KevEncoder(tokenizer)
-    val probes = KevGateChecks.parseProbes(ExternalTestData.moduleFile("app/src/debug/assets/tokenizer_probes.json").readBytes())
+    val probes =
+      KevGateChecks.parseProbes(
+        ExternalTestData.moduleFile("app/src/debug/assets/tokenizer_probes.json").readBytes()
+      )
     for (probe in probes) {
       assertArrayEquals(probe.id, probe.rawIds, tokenizer.encode(probe.text))
       assertArrayEquals(probe.id, probe.userIds, encoder.userTokens(probe.text))
@@ -36,7 +43,8 @@ class KevGateChecksTest {
 
   @Test
   fun nearTieGapIsTheOraclesFloat32Gap() {
-    val oracle = KevJson.parse(ExternalTestData.file(ExternalTestData.ORACLE).readBytes()) as Map<*, *>
+    val oracle =
+      KevJson.parse(ExternalTestData.file(ExternalTestData.ORACLE).readBytes()) as Map<*, *>
     var nearTies = 0
     for (entry in oracle["questions"] as List<*>) {
       val json = entry as Map<*, *>
@@ -51,7 +59,12 @@ class KevGateChecksTest {
           OracleFixtures.doubles(json["probs"]),
           json["answer"] as Map<*, *>,
         )
-      assertEquals("${json["id"]}/${question.qid}", (json["top2_gap"] as JsonNumber).toDouble(), question.top2Gap, 0.0)
+      assertEquals(
+        "${json["id"]}/${question.qid}",
+        (json["top2_gap"] as JsonNumber).toDouble(),
+        question.top2Gap,
+        0.0,
+      )
       assertEquals(json["near_tie"], question.nearTie)
       if (question.nearTie) nearTies++
     }
@@ -64,9 +77,16 @@ class KevGateChecksTest {
     assertEquals(Int.MIN_VALUE, JsonNumber("-2147483648").toInt())
     assertEquals(0, JsonNumber("-0").toInt())
     assertEquals(248076, JsonNumber("248076").toInt())
-    assertTrue(runCatching { JsonNumber("2147483648").toInt() }.exceptionOrNull() is IllegalArgumentException)
-    assertTrue(runCatching { JsonNumber("-2147483649").toInt() }.exceptionOrNull() is IllegalArgumentException)
-    assertTrue(runCatching { JsonNumber("1.0").toInt() }.exceptionOrNull() is IllegalArgumentException)
+    assertTrue(
+      runCatching { JsonNumber("2147483648").toInt() }.exceptionOrNull() is IllegalArgumentException
+    )
+    assertTrue(
+      runCatching { JsonNumber("-2147483649").toInt() }.exceptionOrNull()
+        is IllegalArgumentException
+    )
+    assertTrue(
+      runCatching { JsonNumber("1.0").toInt() }.exceptionOrNull() is IllegalArgumentException
+    )
   }
 
   @Test
@@ -88,8 +108,14 @@ class KevGateChecksTest {
     assertEquals(listOf(300), rows.sets[1].rows.map { it.ids.size })
     assertEquals(listOf(false, true, true), rows.sets.map { it.synthetic })
     // The five-question set is the bundled own_fiveq_09 request's rows.
-    val items = KevGateChecks.parseAsset(ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes())
+    val items =
+      KevGateChecks.parseAsset(
+        ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes()
+      )
     val fiveq = items.first { it.id == KevTimingCore.REQUEST_PATH_RECORD }
-    for ((row, question) in rows.sets[0].rows.zip(fiveq.questions)) assertArrayEquals(question.rowIds, row.ids)
+    for ((row, question) in rows.sets[0].rows.zip(fiveq.questions)) assertArrayEquals(
+      question.rowIds,
+      row.ids,
+    )
   }
 }

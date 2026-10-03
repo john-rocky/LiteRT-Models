@@ -5,8 +5,8 @@ import android.util.Log
 import java.io.File
 
 /**
- * The debug gate on the device (debug build only), run on [KevRuntime.dispatcher]: loads the
- * engine on the requested window and backend, then runs [KevGateCore] over the bundled assets
+ * The debug gate on the device (debug build only), run on [KevRuntime.dispatcher]: loads the engine
+ * on the requested window and backend, then runs [KevGateCore] over the bundled assets
  * (`tokenizer_probes.json`, `gate_fixtures.json`) with the device facts around it (cgroup, thermal
  * status, battery temperature, cache directory, load and compile times). Android's ICU regex and
  * NFC follow other Unicode versions than the desktop JVM, so the probes run on the device too.
@@ -41,7 +41,8 @@ class KevGateRunner(private val context: Context) {
         "cgroup_start" to KevDevice.cgroup(),
         "thermal_status_start" to KevDevice.thermalStatus(context),
         "battery_temperature_start" to KevDevice.batteryTemperature(context),
-        "infer_timing" to "input writes + run() + read-back of hidden (run() alone returns before the GPU work ends)",
+        "infer_timing" to
+          "input writes + run() + read-back of hidden (run() alone returns before the GPU work ends)",
         "near_tie" to "oracle top-2 probability gap <= ${KevGateChecks.NEAR_TIE}",
         "bar" to
           "max |dp| <= ${KevGateChecks.MAX_ABS_DP} and mean |dp| <= ${KevGateChecks.MEAN_ABS_DP} over all options " +
@@ -61,12 +62,16 @@ class KevGateRunner(private val context: Context) {
       report["compile_ms"] = engine.decider.compileMs
       val gate = KevGateCore(engine.pipeline, engine.decider, args.limit, { stop.exists() }, ::log)
       core = gate
-      report["tokenizer_probes"] = gate.probes(KevGateChecks.parseProbes(asset(KevGateChecks.PROBES_NAME)))
+      report["tokenizer_probes"] =
+        gate.probes(KevGateChecks.parseProbes(asset(KevGateChecks.PROBES_NAME)))
       val items = KevGateChecks.parseAsset(asset(KevGateChecks.ASSET_NAME))
-      report["fixtures"] = linkedMapOf("records" to items.size, "questions" to items.sumOf { it.questions.size })
+      report["fixtures"] =
+        linkedMapOf("records" to items.size, "questions" to items.sumOf { it.questions.size })
       report["rows"] = gate.rows
       write(partial, report)
-      log("GATE_START backend=${args.backend.name.lowercase()} window=${args.window} limit=${args.limit} records=${items.size}")
+      log(
+        "GATE_START backend=${args.backend.name.lowercase()} window=${args.window} limit=${args.limit} records=${items.size}"
+      )
       gate.run(items) { rowsRun ->
         progress("row $rowsRun")
         write(partial, report.apply { putAll(gate.summary()) })

@@ -15,19 +15,34 @@ object KevAnswers {
   private const val DECIMALS = 4
 
   /** `to_answers`: one answer object per question, keyed by question ID, in question order. */
-  fun toAnswers(probabilities: List<DoubleArray>, meta: List<QuestionMeta>): LinkedHashMap<String, Any?> {
-    require(probabilities.size == meta.size) { "${probabilities.size} distributions for ${meta.size} questions" }
+  fun toAnswers(
+    probabilities: List<DoubleArray>,
+    meta: List<QuestionMeta>,
+  ): LinkedHashMap<String, Any?> {
+    require(probabilities.size == meta.size) {
+      "${probabilities.size} distributions for ${meta.size} questions"
+    }
     val answers = LinkedHashMap<String, Any?>()
     for ((p, question) in probabilities.zip(meta)) {
-      require(p.size == question.keys.size) { "Question ${question.id}: ${p.size} probabilities, ${question.keys.size} keys" }
+      require(p.size == question.keys.size) {
+        "Question ${question.id}: ${p.size} probabilities, ${question.keys.size} keys"
+      }
       answers[question.id] = answer(p, question)
     }
     return answers
   }
 
   /** The response body of the author's server, without its timing and output-token fields. */
-  fun response(answers: Map<String, Any?>, inputTokens: Int, model: String = KevRequest.DEFAULT_MODEL): LinkedHashMap<String, Any?> =
-    linkedMapOf("model" to model, "answers" to answers, "usage" to linkedMapOf("input_tokens" to inputTokens))
+  fun response(
+    answers: Map<String, Any?>,
+    inputTokens: Int,
+    model: String = KevRequest.DEFAULT_MODEL,
+  ): LinkedHashMap<String, Any?> =
+    linkedMapOf(
+      "model" to model,
+      "answers" to answers,
+      "usage" to linkedMapOf("input_tokens" to inputTokens),
+    )
 
   private fun answer(p: DoubleArray, question: QuestionMeta): LinkedHashMap<String, Any?> =
     when (question.type) {
@@ -43,7 +58,8 @@ object KevAnswers {
         linkedMapOf(
           "type" to "score",
           "score" to roundProb(pythonSum(DoubleArray(p.size) { it * p[it] })),
-          "legend" to requireNotNull(question.legend) { "Score question ${question.id} has no legend" },
+          "legend" to
+            requireNotNull(question.legend) { "Score question ${question.id} has no legend" },
           "probabilities" to rounded(question.keys, p),
           "confidence" to roundProb(scoreConfidence(p)),
         )
@@ -92,7 +108,8 @@ object KevAnswers {
   /** `_normalize`: scaled to sum 1; a distribution that sums to 0 becomes uniform. */
   internal fun normalize(p: DoubleArray): DoubleArray {
     val total = pythonSum(p)
-    return if (total == 0.0) DoubleArray(p.size) { 1.0 / p.size } else DoubleArray(p.size) { p[it] / total }
+    return if (total == 0.0) DoubleArray(p.size) { 1.0 / p.size }
+    else DoubleArray(p.size) { p[it] / total }
   }
 
   /** Index of the first maximum, as Python's `max(range(n), key=p.__getitem__)`. */

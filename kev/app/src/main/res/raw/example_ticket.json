@@ -1,23 +1,24 @@
 {
- "id": "own_ticket_01",
- "state": "Ticket #48213, opened by Mara Quellen.\n\nHi, I ordered the Thistlebeam desk lamp (order TB-20931) on September 14 and was charged twice on my card: two identical charges of 64.90 appeared on September 15. The lamp arrived yesterday and works perfectly, no complaints there. Could you refund the duplicate charge? I need it sorted before my card statement closes on Friday. No rush on anything else, and thanks for the lovely lamp.",
+ "id": "demo_ticket_01",
+ "state": "Ticket from Tova, a customer of the Quorlane Home online shop:\n\nMy Vessaby kettle arrived on time and works fine. But my card shows two identical charges for this order, and I only placed one order. Please refund the extra charge. This is the second billing mix-up this year, and I am getting tired of it.",
  "questions": {
   "team": {
    "type": "choice",
    "instructions": "Which team should handle this ticket?",
    "criteria": {
     "billing": "Charges, refunds and invoices",
-    "shipping": "Deliveries, tracking and lost parcels",
-    "returns": "Exchanges and sending a product back",
-    "technical": "Product faults and setup help"
+    "shipping": "Delivery times, tracking and lost parcels",
+    "returns": "Sending a product back or exchanging it",
+    "technical": "Product faults and setup help",
+    "account": "Login, password and profile settings"
    }
   },
-  "deadline": {
+  "refund": {
    "type": "noul",
-   "instructions": "Does the customer ask for action by a specific deadline?",
+   "instructions": "Does the customer ask for money back?",
    "criteria": {
-    "true": "The ticket names a day or date by which something must happen",
-    "false": "No deadline is stated"
+    "true": "The customer asks for a refund",
+    "false": "No refund is asked for"
    }
   },
   "mood": {

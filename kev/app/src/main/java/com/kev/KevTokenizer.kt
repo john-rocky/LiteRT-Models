@@ -255,7 +255,8 @@ class KevTokenizer(tokenizerJson: File) {
 
     fun mergedId(slot: Int): Int = mergedIds[slot]
 
-    private fun start(key: Long): Int = ((key * HASH_MULTIPLIER) ushr HASH_SHIFT).toInt() and (capacity - 1)
+    private fun start(key: Long): Int =
+      ((key * HASH_MULTIPLIER) ushr HASH_SHIFT).toInt() and (capacity - 1)
 
     private fun key(left: Int, right: Int): Long = (left.toLong() shl 32) or right.toLong()
 
@@ -452,7 +453,9 @@ class KevTokenizer(tokenizerJson: File) {
      * group with case folding spelled out, `\s` and `\S` as explicit White_Space classes.
      */
     fun javaPattern(regex: String): String {
-      require(regex.indexOf(CONTRACTIONS) >= 0 && regex.indexOf("(?i") == regex.indexOf(CONTRACTIONS)) {
+      require(
+        regex.indexOf(CONTRACTIONS) >= 0 && regex.indexOf("(?i") == regex.indexOf(CONTRACTIONS)
+      ) {
         "Unsupported case-insensitive group in $regex"
       }
       val folded = regex.replace(CONTRACTIONS, FOLDED_CONTRACTIONS)

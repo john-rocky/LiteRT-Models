@@ -24,16 +24,31 @@ class KevJsonTest {
 
   @Test
   fun numbersKeepIntegerAndFloatApart() {
-    val numbers = KevJson.parse("[1, 1.0, -0, -0.0, 1E5, 1e+16, 64.90, 100000000000000000000, 2.5e-7]") as List<*>
+    val numbers =
+      KevJson.parse("[1, 1.0, -0, -0.0, 1E5, 1e+16, 64.90, 100000000000000000000, 2.5e-7]")
+        as List<*>
     val literals = numbers.map { (it as JsonNumber).literal }
-    assertEquals(listOf("1", "1.0", "-0", "-0.0", "1E5", "1e+16", "64.90", "100000000000000000000", "2.5e-7"), literals)
+    assertEquals(
+      listOf("1", "1.0", "-0", "-0.0", "1E5", "1e+16", "64.90", "100000000000000000000", "2.5e-7"),
+      literals,
+    )
     assertEquals(
       listOf(true, false, true, false, false, false, false, true, false),
       numbers.map { (it as JsonNumber).isInteger },
     )
     // Python: str(json.loads(literal)).
     assertEquals(
-      listOf("1", "1.0", "0", "-0.0", "100000.0", "1e+16", "64.9", "100000000000000000000", "2.5e-07"),
+      listOf(
+        "1",
+        "1.0",
+        "0",
+        "-0.0",
+        "100000.0",
+        "1e+16",
+        "64.9",
+        "100000000000000000000",
+        "2.5e-07",
+      ),
       numbers.map { (it as JsonNumber).pythonString() },
     )
     val special = KevJson.parse("[NaN, Infinity, -Infinity]") as List<*>
@@ -50,7 +65,21 @@ class KevJsonTest {
 
   @Test
   fun malformedInputIsRejectedLikePython() {
-    for (bad in listOf("[1,]", "{\"a\":1,}", "[01]", "\"tab\there\"", "{\"a\" 1}", "[1] x", "", "[1.]", "[.5]", "[+1]", "{'a': 1}", "\"\\x\"")) {
+    for (bad in
+      listOf(
+        "[1,]",
+        "{\"a\":1,}",
+        "[01]",
+        "\"tab\there\"",
+        "{\"a\" 1}",
+        "[1] x",
+        "",
+        "[1.]",
+        "[.5]",
+        "[+1]",
+        "{'a': 1}",
+        "\"\\x\"",
+      )) {
       try {
         KevJson.parse(bad)
         fail("accepted: $bad")
@@ -79,7 +108,10 @@ class KevJsonTest {
 
   @Test
   fun floatReprMatchesCPython() {
-    val cases = (KevJson.parse(ExternalTestData.resource("python_numbers.json").readBytes()) as Map<*, *>)["repr"] as List<*>
+    val cases =
+      (KevJson.parse(ExternalTestData.resource("python_numbers.json").readBytes()) as Map<*, *>)[
+        "repr"]
+        as List<*>
     var checked = 0
     for (case in cases) {
       val entry = case as Map<*, *>

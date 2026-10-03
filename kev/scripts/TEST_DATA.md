@@ -12,15 +12,16 @@ author's fp32 oracle: the Kev-0.8B checkpoint run on the CPU with the author's o
 | `app/src/test/resources/head_fixture.json` + `.f32` | 5,016 + 233,472 B | Question 1 of each invented request: the oracle's hidden states at the decide token and at each option's closing token (float32 little-endian, row after row) with the oracle's logits and probabilities. |
 | `app/src/test/resources/tokenizer_probes.json` | 15,613 B | 54 edge strings (Devanagari, the 33 added tokens, emoji sequences, NFD text, whitespace kinds, digits, contractions, other scripts) with the IDs of transformers' `AutoTokenizer` and of the author's `user_tokens`. |
 | `app/src/debug/assets/tokenizer_probes.json` | 15,613 B | The same file, for the on-device gate (Android's ICU regex and NFC follow other Unicode versions than the desktop JVM). |
-| `app/src/main/res/raw/example_{ticket,incident,review}.json` | 1,222 / 1,362 / 1,368 B | The app's three example requests: the invented records `own_ticket_01`, `own_incident_02` and `own_review_05`, verbatim, as `{"id", "state", "questions"}`. |
-| `app/src/test/resources/render_cases.json` | 19,107 B | The author's `render`, `option_text` and `to_record` on edge values, and 13 requests the author's pydantic model rejects. |
+| `app/src/main/res/raw/example_{ticket,incident,review}.json` | 1,110 / 1,218 / 1,043 B | The app's three example requests: the invented demo requests `demo_ticket_01`, `demo_incident_02` and `demo_review_03`, byte for byte, as `{"id", "state", "questions"}`. |
+| `app/src/test/resources/examples_oracle.json` | 21,910 B | For each example its sha256 and `usage.input_tokens`, and per question the author's oracle (row IDs, decide and option indices, float32 probabilities, answer) and `graph_l512_cpu`: the shipped L512 graph on a desktop CPU with the head in numpy float32 (probabilities and the 4-decimal answer the app shows). |
+| `app/src/test/resources/render_cases.json` | 19,211 B | The author's `render`, `option_text` and `to_record` on edge values, and 13 requests the author's pydantic model rejects. |
 | `app/src/test/resources/python_numbers.json` | 90,814 B | CPython 3.12 `sum`, `round(x, 4)` and `repr` on fixed and random inputs, and the author's `to_answers` and confidence functions on 46 distributions. |
 
 All of them are written by `scripts/make_test_data.py`, which checks the sha256 of its sources
 before writing and never writes the transfer-v4 rows (below) into the module.
 
 ```bash
-python3 scripts/make_test_data.py --kev-work /path/to/kev_work            # gate + head fixtures, examples
+python3 scripts/make_test_data.py --kev-work /path/to/kev_work            # gate + head fixtures, examples + their answers
 /path/to/venv/bin/python scripts/make_test_data.py --kev-work /path/to/kev_work --probes
 # --probes also writes the probe, render and number files; it needs Python 3.12,
 # transformers 5.17, tokenizers, pydantic and the author's kev package (kev_work/kev).
@@ -53,9 +54,10 @@ kev_work/
   host/kev_0.8b_pointer_head.json           # temperature, scale, delimiter IDs (sha256 aad6c553…)
   hf/hub/models--jaredpalmer--kev-0.8b/snapshots/788ddbdd65715bb03a56788c822f6c632c9a551d/tokenizer.json
                                             # 19,989,325 B (sha256 06b95093…)
-  demo/fixtures/<id>.json                   # demo requests {"id", "state", "questions"} (optional)
+  demo/fixtures/<id>.json                   # demo requests {"id", "state", "questions"} (the examples' source)
   demo/fixtures/token_lengths.json          # their row lengths from the author's code
-  demo/oracle/oracle_demo.json              # their oracle rows (optional)
+  demo/oracle/oracle_demo.json              # their oracle rows (sha256 6b00e472…)
+  demo/oracle/expected_v2_L512_cpu.json     # the shipped L512 graph on a desktop CPU (sha256 438044bc…)
   device/timing_rows.json                   # the model card's timing rows
 ```
 
@@ -77,8 +79,8 @@ and the other 9 tokens that only `tokenizer_config.json` lists.
 | `KevJsonTest` | numbers | key order, integer vs float literals, escapes, rejection of malformed JSON, Python's float `repr` |
 | `GateFixturesTest` | debug asset, tokenizer, oracle | declared counts (156 requests, 181 questions), rows and indices of every asset question, answers from the asset's probabilities, asset = oracle |
 | `KevPipelineTest` | tokenizer, head, requests, oracle, hidden states | the app's decision path with a stand-in graph that checks the padded inputs and returns the oracle's hidden states at the readout positions: answers of all 402 questions, `usage.input_tokens` of all 377 requests, windows 393 / 0 / 9; rows over the window and NaN outputs are rejected; the IDs' sha256 |
-| `DemoFixtureTest` | tokenizer, demo fixtures | every demo fixture parses and encodes to the row lengths of `token_lengths.json` (`demo_ticket_01`: 131 / 101 / 93) and the demo oracle's row IDs; without the demo files, the bundled ticket example; the demo run JSON has every key the recording scripts read |
-| `KevDraftsTest` | debug asset | the three examples are the invented gate records verbatim; the editor round trip keeps the record; editor errors; Python's `indent=2` JSON; 4-decimal strings |
+| `DemoFixtureTest` | tokenizer, demo fixtures | every demo fixture parses and encodes to the row lengths of `token_lengths.json` (`demo_ticket_01`: 131 / 101 / 93) and the demo oracle's row IDs; without the demo files, the bundled ticket example against `examples_oracle.json`; the demo run JSON has every key the recording scripts read |
+| `KevDraftsTest` | `examples_oracle.json`, tokenizer | the three examples are the demo requests byte for byte (sha256) and encode to the demo oracle's rows (9/9) and `usage.input_tokens`; `to_answers` on the oracle's and on the shipped graph's probabilities gives their answers (18/18); the editor round trip keeps the record; editor errors; Python's `indent=2` JSON; 4-decimal strings |
 | `KevDeviceRunsTest` | debug assets, tokenizer, head, hidden states, timing rows | the on-device gate's checks with a stand-in graph that returns the oracle's hidden states: PASS with probes 54/54, rows 181/181, 172 rows run and 9 skipped as `needs L2048`; `limit`, the stop file and a NaN graph cut or fail the run; the timing protocol's numbers of calls (5 + 20, request sets 20 × rows, the request path) |
 | `KevGateChecksTest` | debug assets, tokenizer, oracle, timing rows | the gate's assets parse, the device probes equal the test probes, the near-tie gap equals the oracle's float32 gap (15 near-ties), numpy's median, the timing rows (`fiveq` = `own_fiveq_09`'s rows) |
 
@@ -130,8 +132,8 @@ The timing report holds, for every set of `timing_rows.json` whose L is the resi
 only the sets named by `--es sets`, comma-separated; `none` times no set), 5 warm-up calls and 20 timed calls (a `request` set: 20 requests of its rows back to back) with
 median (numpy's), min and max, then (unless `--ez request_path false`) `request_path`: the bundled
 `own_fiveq_09` request from its text (tokenize, five graph calls, head, answers), 5 warm-up and 20
-timed requests. The sets run back to back in one launch, so the phone warms up from the first set to
-the last; to start every set at the same temperature, give each set a launch of its own (`--es sets
+timed requests. The sets run back to back in one launch, so the phone is warmer for each set than for
+the one before; to start every set at the same temperature, give each set a launch of its own (`--es sets
 fiveq --ez request_path false`, then `--es sets T300 --ez request_path false`, then `--es sets none`).
 The report records `sets_requested` and `request_path_requested`. A call is input
 writes + `run()` + read-back. With `clear_cache` the app's cache directory is emptied before the

@@ -18,14 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,8 +32,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -51,32 +52,33 @@ import com.kev.R
 /**
  * The read-only demo layout of an autoplay run, inside the centred 9:16 band of the screen (y from
  * 210 to 2130 on a 1080 × 2340 screen): title, the ticket (state), one card per question that turns
- * grey → blue → green, and the footer. Card heights do not change between states, and the ticket
- * shrinks from [TICKET_SP] until everything fits (at [MIN_TICKET_SP] it ends with an ellipsis on its
- * last complete line), so nothing moves while the questions run. Where things were drawn goes to
- * [onLayout] for the run JSON.
+ * grey → blue → green, and the footer. Card heights do not change between states. Every text that
+ * has to fit is measured before it is drawn: the ticket gets the largest size from [TICKET_SP] down
+ * that fits the space left (at [MIN_TICKET_SP] it ends with an ellipsis on its last complete line),
+ * so the presentation opens on its final layout and nothing moves while the questions run. Where
+ * things were drawn goes to [onLayout] for the run JSON.
  */
 @Composable
 fun PresentationScreen(ui: PresentationUi, onLayout: (KevDemoLayout) -> Unit, onLeave: () -> Unit) {
   BackHandler(onBack = onLeave)
   val view = LocalView.current
   val density = LocalDensity.current
+  val measurer = rememberTextMeasurer()
+  val textStyle = LocalTextStyle.current
   val qids = ui.cards.map { it.qid }
   val store = remember(qids) { LayoutStore(qids) }
-  var ticketSp by remember(ui.ticket) { mutableFloatStateOf(TICKET_SP) }
-  // At MIN_TICKET_SP the ticket ends with an ellipsis on its last complete line instead of a cut line.
-  var ticketMaxLines by remember(ui.ticket) { mutableIntStateOf(Int.MAX_VALUE) }
   fun report() {
     val location = IntArray(2).also { view.rootView.getLocationOnScreen(it) }
-    store.toLayout(
-      view.rootView.width,
-      view.rootView.height,
-      location,
-      with(density) { ticketSp.sp.toPx() },
-      with(density) { ANSWER_SP.sp.toPx() },
-      density.density,
-      density.fontScale,
-    )?.let(onLayout)
+    store
+      .toLayout(
+        view.rootView.width,
+        view.rootView.height,
+        location,
+        with(density) { ANSWER_SP.sp.toPx() },
+        density.density,
+        density.fontScale,
+      )
+      ?.let(onLayout)
   }
   BoxWithConstraints(Modifier.fillMaxSize().background(Color.White)) {
     val band = minOf(constraints.maxHeight, constraints.maxWidth * BAND_HEIGHT / BAND_WIDTH)
@@ -93,36 +95,63 @@ fun PresentationScreen(ui: PresentationUi, onLayout: (KevDemoLayout) -> Unit, on
         fontSize = TITLE_SP.sp,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colors.primary,
-        modifier = Modifier.onGloballyPositioned { store.title = it.boundsTopBottom(); report() },
+        modifier =
+          Modifier.onGloballyPositioned {
+            store.title = it.boundsTopBottom()
+            report()
+          },
       )
-      Text(
-        ui.ticket,
-        fontSize = ticketSp.sp,
-        lineHeight = (ticketSp * LINE_HEIGHT).sp,
-        maxLines = ticketMaxLines,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.weight(1f).fillMaxWidth(),
-        onTextLayout = { result ->
-          when {
-            !result.hasVisualOverflow -> report()
-            ticketSp > MIN_TICKET_SP -> ticketSp -= 1f
-            ticketMaxLines == Int.MAX_VALUE ->
-              ticketMaxLines =
-                (0 until result.lineCount).count { result.getLineBottom(it) <= result.size.height }.coerceAtLeast(1)
-            else -> report()
+      // The ticket takes the height the other rows leave; its size is chosen in this layout pass.
+      BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+        val space = Constraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
+        val fit =
+          remember(measurer, textStyle, ui.ticket, space) {
+            measurer.fit(
+              ui.ticket,
+              { sp -> ticketStyle(textStyle, sp) },
+              TICKET_SP,
+              MIN_TICKET_SP,
+              space,
+            )
           }
-        },
-      )
+        Text(
+          ui.ticket,
+          style = ticketStyle(textStyle, fit.sp),
+          maxLines = fit.maxLines,
+          overflow = TextOverflow.Ellipsis,
+          onTextLayout = {
+            store.ticketPx = with(density) { fit.sp.sp.toPx() }
+            report()
+          },
+        )
+      }
       ui.failure?.let { Text(it, fontSize = QUESTION_SP.sp, color = MaterialTheme.colors.error) }
       ui.cards.forEach { card ->
-        PresentationCard(card) { indicator -> store.indicators[card.qid] = indicator; report() }
+        PresentationCard(card) { indicator ->
+          store.indicators[card.qid] = indicator
+          report()
+        }
       }
-      // Room for every footer line from the start (the total line stays empty until the end), so the
-      // total arriving moves nothing; each line shrinks instead of wrapping.
-      Box(Modifier.fillMaxWidth().heightIn(min = with(density) { (FOOTER_SP * LINE_HEIGHT * FOOTER_LINES).sp.toDp() })) {
-        Column(Modifier.onGloballyPositioned { store.footer = it.boundsTopBottom(); report() }) {
+      // Room for every footer line from the start (the total line stays empty until the end), so
+      // the total arriving moves nothing; each line shrinks instead of wrapping.
+      Box(
+        Modifier.fillMaxWidth()
+          .heightIn(min = with(density) { (FOOTER_SP * LINE_HEIGHT * FOOTER_LINES).sp.toDp() })
+      ) {
+        Column(
+          Modifier.onGloballyPositioned {
+            store.footer = it.boundsTopBottom()
+            report()
+          }
+        ) {
           ui.footerLines.forEach {
-            FittedText(it, FOOTER_SP, MIN_FOOTER_SP, color = Color.DarkGray, lineHeight = (FOOTER_SP * LINE_HEIGHT).sp)
+            FittedText(
+              it,
+              FOOTER_SP,
+              MIN_FOOTER_SP,
+              color = Color.DarkGray,
+              lineHeight = (FOOTER_SP * LINE_HEIGHT).sp,
+            )
           }
         }
       }
@@ -162,13 +191,21 @@ private fun PresentationCard(card: AnswerCardUi, onIndicator: (IntArray) -> Unit
           fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.width(12.dp))
-        Text(view?.headline?.value.orEmpty(), fontSize = ANSWER_SP.sp, maxLines = 1, softWrap = false)
+        Text(
+          view?.headline?.value.orEmpty(),
+          fontSize = ANSWER_SP.sp,
+          maxLines = 1,
+          softWrap = false,
+        )
       }
       Row(verticalAlignment = Alignment.CenterVertically) {
         if (card.state == CardState.RUNNING) {
           LinearProgressIndicator(Modifier.weight(1f).height(BAR_DP.dp))
         } else {
-          LinearProgressIndicator(progress = view?.headline?.fraction ?: 0f, modifier = Modifier.weight(1f).height(BAR_DP.dp))
+          LinearProgressIndicator(
+            progress = view?.headline?.fraction ?: 0f,
+            modifier = Modifier.weight(1f).height(BAR_DP.dp),
+          )
         }
         Spacer(Modifier.width(12.dp))
         Text(
@@ -185,8 +222,9 @@ private fun PresentationCard(card: AnswerCardUi, onIndicator: (IntArray) -> Unit
 }
 
 /**
- * Text that shrinks from [startSp] by 1 sp until it fits in [maxLines] lines, down to [minSp]; text
- * that still does not fit ends with an ellipsis.
+ * Text drawn at the largest size from [startSp] down to [minSp] (1 sp steps) at which it fits the
+ * width in [maxLines] lines, chosen before it is drawn; text that does not fit at [minSp] ends with
+ * an ellipsis.
  */
 @Composable
 private fun FittedText(
@@ -199,38 +237,94 @@ private fun FittedText(
   color: Color = Color.Unspecified,
   lineHeight: TextUnit = TextUnit.Unspecified,
 ) {
-  var fontSp by remember(text, startSp) { mutableFloatStateOf(startSp) }
-  Text(
-    text,
-    modifier = modifier,
-    color = color,
-    fontSize = fontSp.sp,
-    fontWeight = fontWeight,
-    lineHeight = lineHeight,
-    maxLines = maxLines,
-    overflow = TextOverflow.Ellipsis,
-    onTextLayout = { if (it.hasVisualOverflow && fontSp > minSp) fontSp -= 1f },
-  )
+  val measurer = rememberTextMeasurer()
+  val base = LocalTextStyle.current
+  val style = { sp: Float ->
+    base.merge(TextStyle(fontSize = sp.sp, fontWeight = fontWeight, lineHeight = lineHeight))
+  }
+  BoxWithConstraints(modifier) {
+    val width = constraints.maxWidth
+    val fit =
+      remember(measurer, base, text, startSp, minSp, maxLines, fontWeight, lineHeight, width) {
+        measurer.fit(text, style, startSp, minSp, Constraints(maxWidth = width), maxLines)
+      }
+    Text(
+      text,
+      color = color,
+      style = style(fit.sp),
+      maxLines = fit.maxLines,
+      overflow = TextOverflow.Ellipsis,
+    )
+  }
 }
+
+/** A font size in sp and the line limit a text is drawn with. */
+private class TextFit(val sp: Float, val maxLines: Int)
+
+/**
+ * The largest size from [startSp] down to [minSp], in 1 sp steps, at which [text] in [style] fits
+ * [constraints] within [maxLines] lines. Text that still overflows at [minSp] keeps the lines that
+ * are completely inside (at least one), so that it ends with an ellipsis instead of a cut line.
+ */
+private fun TextMeasurer.fit(
+  text: String,
+  style: (Float) -> TextStyle,
+  startSp: Float,
+  minSp: Float,
+  constraints: Constraints,
+  maxLines: Int = Int.MAX_VALUE,
+): TextFit {
+  var sp = startSp
+  var layout =
+    measure(
+      text,
+      style(sp),
+      overflow = TextOverflow.Ellipsis,
+      maxLines = maxLines,
+      constraints = constraints,
+    )
+  while (layout.hasVisualOverflow && sp > minSp) {
+    sp -= 1f
+    layout =
+      measure(
+        text,
+        style(sp),
+        overflow = TextOverflow.Ellipsis,
+        maxLines = maxLines,
+        constraints = constraints,
+      )
+  }
+  if (!layout.hasVisualOverflow) return TextFit(sp, maxLines)
+  val complete = (0 until layout.lineCount).count { layout.getLineBottom(it) <= layout.size.height }
+  return TextFit(sp, minOf(maxLines, complete.coerceAtLeast(1)))
+}
+
+/**
+ * The ticket's style at [sp]: [base] with that size and a line height of [LINE_HEIGHT] times it.
+ */
+private fun ticketStyle(base: TextStyle, sp: Float): TextStyle =
+  base.merge(TextStyle(fontSize = sp.sp, lineHeight = (sp * LINE_HEIGHT).sp))
 
 /** Window-pixel bounds collected while the presentation of the cards [qids] lays out. */
 private class LayoutStore(private val qids: List<String>) {
   var title: IntArray? = null
   var footer: IntArray? = null
+  /** The ticket's font size in px, once it is laid out. */
+  var ticketPx: Float? = null
   val indicators = LinkedHashMap<String, IntArray>()
 
-  /** The layout in screen pixels, once the title and the footer have been placed. */
+  /** The layout in screen pixels, once the title, the ticket and the footer have been placed. */
   fun toLayout(
     width: Int,
     height: Int,
     windowOnScreen: IntArray,
-    ticketPx: Float,
     answerPx: Float,
     density: Float,
     fontScale: Float,
   ): KevDemoLayout? {
     val title = title ?: return null
     val footer = footer ?: return null
+    val ticketPx = ticketPx ?: return null
     val (dx, dy) = windowOnScreen[0] to windowOnScreen[1]
     return KevDemoLayout(
       width,
@@ -238,7 +332,9 @@ private class LayoutStore(private val qids: List<String>) {
       title[0] + dy,
       footer[1] + dy,
       qids.mapNotNull { qid ->
-        indicators[qid]?.let { box -> KevDemoLayout.Card(qid, box[0] + dx, box[1] + dy, box[2], box[3], answerPx) }
+        indicators[qid]?.let { box ->
+          KevDemoLayout.Card(qid, box[0] + dx, box[1] + dy, box[2], box[3], answerPx)
+        }
       },
       ticketPx,
       density,
@@ -253,7 +349,9 @@ private fun LayoutCoordinates.boundsTopBottom(): IntArray =
 
 /** Left, top, width and height in window pixels. */
 private fun LayoutCoordinates.bounds(): IntArray =
-  boundsInWindow().let { intArrayOf(it.left.toInt(), it.top.toInt(), it.width.toInt(), it.height.toInt()) }
+  boundsInWindow().let {
+    intArrayOf(it.left.toInt(), it.top.toInt(), it.width.toInt(), it.height.toInt())
+  }
 
 private const val TITLE_SP = 24f
 private const val TICKET_SP = 26f

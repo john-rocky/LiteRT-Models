@@ -42,10 +42,10 @@ class KevDraftException(val problem: DraftProblem, val question: Int, val detail
   IllegalArgumentException("$problem at question $question: $detail")
 
 /**
- * Converts between requests and the editor. Options are one per line: choice `key: description`
- * or `key`, noul `true: description` / `false: description` (both optional), score one level per
- * line. Descriptions are plain text. The state is JSON when the whole text parses as a JSON object
- * or array, plain text otherwise.
+ * Converts between requests and the editor. Options are one per line: choice `key: description` or
+ * `key`, noul `true: description` / `false: description` (both optional), score one level per line.
+ * Descriptions are plain text. The state is JSON when the whole text parses as a JSON object or
+ * array, plain text otherwise.
  */
 object KevDrafts {
   /** The editor form of [request]; question keys count up from [firstKey]. */
@@ -79,7 +79,9 @@ object KevDrafts {
           "criteria" to criteria(question, number),
         )
     }
-    return KevRequest.fromJson(linkedMapOf("state" to stateValue(draft.state), "questions" to questions))
+    return KevRequest.fromJson(
+      linkedMapOf("state" to stateValue(draft.state), "questions" to questions)
+    )
   }
 
   /** The request state the editor text stands for: a parsed JSON object or array, or the text. */
@@ -90,7 +92,8 @@ object KevDrafts {
     val start = text.trimStart()
     if (!start.startsWith("{") && !start.startsWith("[")) return StateFormat.TEXT
     val parsed = runCatching { KevJson.parse(text) }.getOrNull()
-    return if (parsed is Map<*, *> || parsed is List<*>) StateFormat.JSON else StateFormat.TEXT_INVALID_JSON
+    return if (parsed is Map<*, *> || parsed is List<*>) StateFormat.JSON
+    else StateFormat.TEXT_INVALID_JSON
   }
 
   private fun criteria(question: QuestionDraft, number: Int): Any? {
@@ -107,7 +110,8 @@ object KevDrafts {
       QuestionType.NOUL -> {
         val options = namedOptions(lines, number)
         for (name in options.keys) {
-          if (name != "true" && name != "false") throw KevDraftException(DraftProblem.BAD_NOUL_OPTION, number, name)
+          if (name != "true" && name != "false")
+            throw KevDraftException(DraftProblem.BAD_NOUL_OPTION, number, name)
         }
         options.takeIf { it.isNotEmpty() }
       }
@@ -145,7 +149,8 @@ object KevDrafts {
   private fun optionLines(question: KevQuestion): List<String> =
     when (question.type) {
       QuestionType.SCORE -> (question.criteria as List<*>).map { oneLine(it) }
-      QuestionType.CHOICE -> (question.criteria as Map<*, *>).map { (name, value) -> optionLine(name as String, value) }
+      QuestionType.CHOICE ->
+        (question.criteria as Map<*, *>).map { (name, value) -> optionLine(name as String, value) }
       // to_record reads only "false" and "true".
       QuestionType.NOUL ->
         (question.criteria as Map<*, *>? ?: emptyMap<String, Any?>())

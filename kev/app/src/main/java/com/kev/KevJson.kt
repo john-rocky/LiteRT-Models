@@ -463,7 +463,8 @@ object KevJson {
       null -> out.append("null")
       is Boolean -> out.append(if (value) "true" else "false")
       is String -> appendString(out, value)
-      is JsonNumber -> out.append(if (value.isInteger) value.pythonString() else number(value.toDouble()))
+      is JsonNumber ->
+        out.append(if (value.isInteger) value.pythonString() else number(value.toDouble()))
       is Int,
       is Long -> out.append(value.toString())
       is Double -> out.append(number(value))

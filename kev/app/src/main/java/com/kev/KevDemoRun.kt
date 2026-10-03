@@ -1,6 +1,8 @@
 package com.kev
 
-/** One question of a demo run: the result, its answer, the strings on screen and whole-ms phases. */
+/**
+ * One question of a demo run: the result, its answer, the strings on screen and whole-ms phases.
+ */
 class KevDemoQuestion(
   val result: KevQuestionResult,
   /** The question's `to_answers` entry. */
@@ -30,7 +32,14 @@ class KevDemoLayout(
   val fontScale: Float,
 ) {
   /** A card's state indicator box and the size of its answer text. */
-  class Card(val qid: String, val left: Int, val top: Int, val width: Int, val height: Int, val textPx: Float)
+  class Card(
+    val qid: String,
+    val left: Int,
+    val top: Int,
+    val width: Int,
+    val height: Int,
+    val textPx: Float,
+  )
 }
 
 /** Everything a demo run JSON records. */
@@ -80,16 +89,46 @@ object KevDemoRun {
   /** Top-level keys every run JSON has. */
   val KEYS =
     listOf(
-      "fixture_id", "fixture", "device", "runtime", "graph", "engine_load_ms", "warmup_ms", "title",
-      "footer_lines", "delay_ms", "gap_ms", "tokenize_ms", "request_total_ms", "questions", "airplane_mode",
-      "cgroup", "cgroup_end", "layout",
+      "fixture_id",
+      "fixture",
+      "device",
+      "runtime",
+      "graph",
+      "engine_load_ms",
+      "warmup_ms",
+      "title",
+      "footer_lines",
+      "delay_ms",
+      "gap_ms",
+      "tokenize_ms",
+      "request_total_ms",
+      "questions",
+      "airplane_mode",
+      "cgroup",
+      "cgroup_end",
+      "layout",
     )
 
   /** Keys of every `questions[]` entry. */
   val QUESTION_KEYS =
     listOf(
-      "qid", "type", "keys", "probs", "shown", "shown_ms", "answer", "row_ids", "row_len", "decide_idx",
-      "opt_idx", "window", "ids_sha256", "tokenize_ms", "infer_ms", "head_ms", "total_ms",
+      "qid",
+      "type",
+      "keys",
+      "probs",
+      "shown",
+      "shown_ms",
+      "answer",
+      "row_ids",
+      "row_len",
+      "decide_idx",
+      "opt_idx",
+      "window",
+      "ids_sha256",
+      "tokenize_ms",
+      "infer_ms",
+      "head_ms",
+      "total_ms",
     )
 
   /** Keys of `layout` (pixel values exist only on the device). */
@@ -108,7 +147,8 @@ object KevDemoRun {
           "android_release" to input.deviceAndroidRelease,
         ),
       "runtime" to linkedMapOf("litert" to input.litert, "accelerator" to input.accelerator),
-      "graph" to linkedMapOf("file" to input.graphFile, "L" to input.window, "bytes" to input.graphBytes),
+      "graph" to
+        linkedMapOf("file" to input.graphFile, "L" to input.window, "bytes" to input.graphBytes),
       "engine_load_ms" to input.engineLoadMs,
       "warmup_ms" to input.warmupMs,
       "title" to input.title,
@@ -151,13 +191,20 @@ object KevDemoRun {
   private fun layout(layout: KevDemoLayout?): LinkedHashMap<String, Any?> =
     linkedMapOf(
       "screen_px" to layout?.let { listOf(it.screenWidth, it.screenHeight) },
-      "content_px" to layout?.let { linkedMapOf("top" to it.contentTop, "bottom" to it.contentBottom) },
+      "content_px" to
+        layout?.let { linkedMapOf("top" to it.contentTop, "bottom" to it.contentBottom) },
       "palette" to PALETTE,
       "cards" to
         layout?.cards?.map {
           linkedMapOf(
             "qid" to it.qid,
-            "indicator_px" to linkedMapOf("left" to it.left, "top" to it.top, "width" to it.width, "height" to it.height),
+            "indicator_px" to
+              linkedMapOf(
+                "left" to it.left,
+                "top" to it.top,
+                "width" to it.width,
+                "height" to it.height,
+              ),
             "text_px" to it.textPx,
           )
         },

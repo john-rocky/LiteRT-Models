@@ -28,7 +28,11 @@ class KevTimingRunner(private val context: Context) {
 
   private val files = context.filesDir
 
-  fun run(args: Args, loadEngine: () -> KevEngine, progress: (String) -> Unit): KevGateRunner.Summary {
+  fun run(
+    args: Args,
+    loadEngine: () -> KevEngine,
+    progress: (String) -> Unit,
+  ): KevGateRunner.Summary {
     val destination = File(files, args.report)
     val partial = File(files, "${args.report}.partial")
     val stop = File(files, KevGateRunner.STOP_FILE)
@@ -77,7 +81,9 @@ class KevTimingRunner(private val context: Context) {
       report["skipped_sets"] = skipped
       write(partial, report)
       val selection = timingRows.select(args.sets, engine.window)
-      selection.skipped.forEach { skipped.add(linkedMapOf("name" to it.name, "L" to it.window, "reason" to it.reason)) }
+      selection.skipped.forEach {
+        skipped.add(linkedMapOf("name" to it.name, "L" to it.window, "reason" to it.reason))
+      }
       for (set in selection.run) {
         if (timing.stoppedEarly) break
         progress(set.name)
@@ -87,7 +93,10 @@ class KevTimingRunner(private val context: Context) {
       }
       if (!timing.stoppedEarly && args.requestPath) {
         progress("request path")
-        val items = KevGateChecks.parseAsset(context.assets.open(KevGateChecks.ASSET_NAME).use { it.readBytes() })
+        val items =
+          KevGateChecks.parseAsset(
+            context.assets.open(KevGateChecks.ASSET_NAME).use { it.readBytes() }
+          )
         val item = items.first { it.id == KevTimingCore.REQUEST_PATH_RECORD }
         report["request_path"] = timing.timeRequestPath(item.id, KevRequest.fromJson(item.request))
       }
@@ -123,5 +132,7 @@ class KevTimingRunner(private val context: Context) {
   }
 
   private fun sha256(bytes: ByteArray): String =
-    MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') }
+    MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") {
+      (it.toInt() and 0xff).toString(16).padStart(2, '0')
+    }
 }

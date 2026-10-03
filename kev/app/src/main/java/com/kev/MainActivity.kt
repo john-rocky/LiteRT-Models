@@ -22,11 +22,14 @@ import com.kev.view.PresentationScreen
 /**
  * Hosts the Compose screen (`launchMode="singleTop"`: a demo intent reaches the running activity
  * through [onNewIntent], without a new process). Extras:
- * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800 [--ei window 512]`
- * - debug build: `--ez gate true --es backend gpu|cpu --es report <name.json> [--ei window 512] [--ei limit n]`
- * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|cpu
- *   --es report <name.json> [--ei window 512] [--ez clear_cache true] [--es sets <name[,name…]>|none]
- *   [--ez request_path false]` (one set per launch keeps every set at the same starting temperature)
+ * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800
+ *   [--ei window 512]`
+ * - debug build: `--ez gate true --es backend gpu|cpu --es report <name.json> [--ei window 512]
+ *   [--ei limit n]`
+ * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|cpu --es
+ *   report <name.json> [--ei window 512] [--ez clear_cache true] [--es sets <name[,name…]>|none]
+ *   [--ez request_path false]` (one set per launch keeps every set at the same starting
+ *   temperature)
  */
 class MainActivity : ComponentActivity() {
   private val viewModel: MainViewModel by viewModels { MainViewModel.getFactory(this) }
@@ -43,7 +46,11 @@ class MainActivity : ComponentActivity() {
       ApplicationTheme {
         val presentation = state.presentation
         if (presentation != null) {
-          PresentationScreen(presentation, viewModel::onPresentationLayout, viewModel::leavePresentation)
+          PresentationScreen(
+            presentation,
+            viewModel::onPresentationLayout,
+            viewModel::leavePresentation,
+          )
         } else {
           KevScreen(
             state,
@@ -73,9 +80,9 @@ class MainActivity : ComponentActivity() {
   }
 
   /**
-   * On a locked test phone the measured process must stay in the foreground (top-app): in the
-   * debug build, and for every autoplay, gate and timing launch, show above the keyguard, turn the
-   * screen on and keep it on. A normal launch of the other builds is unchanged.
+   * On a locked test phone the measured process must stay in the foreground (top-app): in the debug
+   * build, and for every autoplay, gate and timing launch, show above the keyguard, turn the screen
+   * on and keep it on. A normal launch of the other builds is unchanged.
    */
   private fun keepVisible(launch: KevLaunch) {
     val debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
@@ -90,7 +97,8 @@ class MainActivity : ComponentActivity() {
   /** The presentation layout hides the navigation bar; the status bar stays visible. */
   private fun showNavigationBar(show: Boolean) {
     val controller = WindowCompat.getInsetsController(window, window.decorView)
-    controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    controller.systemBarsBehavior =
+      WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     if (show) {
       controller.show(WindowInsetsCompat.Type.navigationBars())
     } else {
@@ -106,7 +114,8 @@ class MainActivity : ComponentActivity() {
         val fixture = intent.getStringExtra(EXTRA_FIXTURE)
         when {
           fixture.isNullOrEmpty() -> KevLaunch.Invalid("no fixture extra", autoplay = true)
-          !KevLaunch.windowValid(window) -> KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = true)
+          !KevLaunch.windowValid(window) ->
+            KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = true)
           else ->
             KevLaunch.Autoplay(
               fixture,
@@ -118,23 +127,31 @@ class MainActivity : ComponentActivity() {
       }
       BuildConfig.DEBUG && intent.getBooleanExtra(EXTRA_GATE, false) -> {
         val backend = KevLaunch.backend(intent.getStringExtra(EXTRA_BACKEND))
-        val report = intent.getStringExtra(EXTRA_REPORT) ?: "app_gate_${backend?.name?.lowercase()}_L$window.json"
+        val report =
+          intent.getStringExtra(EXTRA_REPORT)
+            ?: "app_gate_${backend?.name?.lowercase()}_L$window.json"
         when {
           backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
-          !KevLaunch.windowValid(window) -> KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
-          !KevLaunch.reportNameValid(report) -> KevLaunch.Invalid("invalid report name $report", autoplay = false)
+          !KevLaunch.windowValid(window) ->
+            KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
+          !KevLaunch.reportNameValid(report) ->
+            KevLaunch.Invalid("invalid report name $report", autoplay = false)
           else -> KevLaunch.Gate(backend, report, window, intent.getIntExtra(EXTRA_LIMIT, 0))
         }
       }
       diagnostics && intent.getBooleanExtra(EXTRA_TIMING, false) -> {
         val backend = KevLaunch.backend(intent.getStringExtra(EXTRA_BACKEND))
         val rows = intent.getStringExtra(EXTRA_ROWS)
-        val report = intent.getStringExtra(EXTRA_REPORT) ?: "app_timing_${backend?.name?.lowercase()}_L$window.json"
+        val report =
+          intent.getStringExtra(EXTRA_REPORT)
+            ?: "app_timing_${backend?.name?.lowercase()}_L$window.json"
         when {
           backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
           rows.isNullOrEmpty() -> KevLaunch.Invalid("no rows extra", autoplay = false)
-          !KevLaunch.windowValid(window) -> KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
-          !KevLaunch.reportNameValid(report) -> KevLaunch.Invalid("invalid report name $report", autoplay = false)
+          !KevLaunch.windowValid(window) ->
+            KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
+          !KevLaunch.reportNameValid(report) ->
+            KevLaunch.Invalid("invalid report name $report", autoplay = false)
           else ->
             KevLaunch.Timing(
               rows,

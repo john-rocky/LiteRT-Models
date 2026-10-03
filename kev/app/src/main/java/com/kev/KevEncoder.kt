@@ -42,7 +42,9 @@ class KevPaddedRow(val ids: IntArray, val valid: FloatArray) {
 /** One question's branch, with readout offsets inside the branch (`rows_of`). */
 class KevBranch(val ids: IntArray, val decide: Int, val options: IntArray)
 
-/** A record encoded as the author's `encode` + `rows_of`: the state IDs and one branch per question. */
+/**
+ * A record encoded as the author's `encode` + `rows_of`: the state IDs and one branch per question.
+ */
 class KevEncoded(val stateIds: IntArray, val branches: List<KevBranch>) {
   /** `usage.input_tokens`: the state once plus every branch (`len(enc["ids"])`). */
   val inputTokens: Int
@@ -53,7 +55,12 @@ class KevEncoded(val stateIds: IntArray, val branches: List<KevBranch>) {
     val branch = branches[question]
     val offset = stateIds.size
     val ids = stateIds + branch.ids
-    val row = KevRow(ids, offset + branch.decide, IntArray(branch.options.size) { offset + branch.options[it] })
+    val row =
+      KevRow(
+        ids,
+        offset + branch.decide,
+        IntArray(branch.options.size) { offset + branch.options[it] },
+      )
     check(row.ids[row.decideIndex] == KevEncoder.DECIDE_ID && row.decideIndex == ids.size - 1) {
       "Decide token is not the row's last token"
     }
@@ -76,7 +83,9 @@ class KevEncoded(val stateIds: IntArray, val branches: List<KevBranch>) {
 class KevEncoder(private val tokenizer: KevTokenizer) {
   init {
     for ((token, id) in DELIMITERS) {
-      check(tokenizer.tokenId(token) == id) { "tokenizer.json gives $token ${tokenizer.tokenId(token)}, not $id" }
+      check(tokenizer.tokenId(token) == id) {
+        "tokenizer.json gives $token ${tokenizer.tokenId(token)}, not $id"
+      }
     }
   }
 
@@ -94,7 +103,10 @@ class KevEncoder(private val tokenizer: KevTokenizer) {
   /** The state part every row starts with: `[state] + state tokens`. */
   fun stateIds(state: String): IntArray = intArrayOf(STATE_ID) + userTokens(state)
 
-  /** One question's branch: `[question] + instructions + ([option] + option + [/option])… + [decide]`. */
+  /**
+   * One question's branch: `[question] + instructions + ([option] +
+   * option + [/option])… + [decide]`.
+   */
   fun branch(question: KevRecordQuestion): KevBranch {
     val ids = ArrayList<Int>()
     ids.add(QUESTION_ID)

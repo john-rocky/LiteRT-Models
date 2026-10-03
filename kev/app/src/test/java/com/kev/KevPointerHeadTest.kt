@@ -29,20 +29,35 @@ class KevPointerHeadTest {
     OracleFixtures.Npz(ExternalTestData.file(ExternalTestData.HIDDEN)).use { npz ->
       for (question in oracle.questions) {
         val (shape, values) = npz.floats(question.key)
-        assertEquals(question.key, listOf(1 + question.keys.size, KevPointerHead.HIDDEN_SIZE), shape.toList())
-        val scores = head.score(
-          OracleFixtures.row(values, 0, KevPointerHead.HIDDEN_SIZE),
-          (1..question.keys.size).map { OracleFixtures.row(values, it, KevPointerHead.HIDDEN_SIZE) },
+        assertEquals(
+          question.key,
+          listOf(1 + question.keys.size, KevPointerHead.HIDDEN_SIZE),
+          shape.toList(),
         )
-        ours[question.key] = linkedMapOf("z_pre" to scores.zPre, "z_post" to scores.zPost, "probs" to scores.probabilities)
+        val scores =
+          head.score(
+            OracleFixtures.row(values, 0, KevPointerHead.HIDDEN_SIZE),
+            (1..question.keys.size).map {
+              OracleFixtures.row(values, it, KevPointerHead.HIDDEN_SIZE)
+            },
+          )
+        ours[question.key] =
+          linkedMapOf(
+            "z_pre" to scores.zPre,
+            "z_post" to scores.zPost,
+            "probs" to scores.probabilities,
+          )
         val dp = maxDifference(question.probabilities, scores.probabilities)
         val dz = maxDifference(question.zPost, scores.zPost)
         maxProbability = maxOf(maxProbability, dp)
         maxLogit = maxOf(maxLogit, dz)
         maxRawLogit = maxOf(maxRawLogit, maxDifference(question.zPre, scores.zPre))
-        if (KevAnswers.firstArgmax(question.probabilities) == firstArgmax(scores.probabilities)) argmaxSame++
+        if (KevAnswers.firstArgmax(question.probabilities) == firstArgmax(scores.probabilities))
+          argmaxSame++
         if (dp > PROBABILITY_TOLERANCE || dz > LOGIT_TOLERANCE) {
-          failures.add(linkedMapOf("id" to question.key, "max_abs_dp" to dp, "max_abs_dz_post" to dz))
+          failures.add(
+            linkedMapOf("id" to question.key, "max_abs_dp" to dp, "max_abs_dz_post" to dz)
+          )
         }
       }
     }
@@ -64,17 +79,27 @@ class KevPointerHeadTest {
         "execution" to "Desktop JVM ${System.getProperty("java.version")}",
       ),
     )
-    println("KEV_HEAD within=${oracle.questions.size - failures.size}/${oracle.questions.size} max|dp|=$maxProbability max|dz_post|=$maxLogit")
-    assertEquals("questions outside tolerance: ${KevJson.write(failures.take(5))}", 0, failures.size)
+    println(
+      "KEV_HEAD within=${oracle.questions.size - failures.size}/${oracle.questions.size} max|dp|=$maxProbability max|dz_post|=$maxLogit"
+    )
+    assertEquals(
+      "questions outside tolerance: ${KevJson.write(failures.take(5))}",
+      0,
+      failures.size,
+    )
     assertEquals(402, oracle.questions.size)
   }
 
   @Test
   fun bundledFixtureMatches() {
     val head = KevPointerHead(ExternalTestData.file(ExternalTestData.HEAD))
-    val fixture = KevJson.parse(ExternalTestData.resource("head_fixture.json").readBytes()) as Map<*, *>
+    val fixture =
+      KevJson.parse(ExternalTestData.resource("head_fixture.json").readBytes()) as Map<*, *>
     val bytes = ExternalTestData.resource("head_fixture.f32").readBytes()
-    val floats = FloatArray(bytes.size / 4).also { ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().get(it) }
+    val floats =
+      FloatArray(bytes.size / 4).also {
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().get(it)
+      }
     assertEquals((fixture["floats"] as JsonNumber).toInt(), floats.size)
     val items = fixture["items"] as List<*>
     var maxProbability = 0.0
@@ -82,29 +107,48 @@ class KevPointerHeadTest {
       val entry = item as Map<*, *>
       val rows = (entry["rows"] as JsonNumber).toInt()
       val offset = (entry["offset_floats"] as JsonNumber).toInt()
-      val hidden = { row: Int -> floats.copyOfRange(offset + row * KevPointerHead.HIDDEN_SIZE, offset + (row + 1) * KevPointerHead.HIDDEN_SIZE) }
+      val hidden = { row: Int ->
+        floats.copyOfRange(
+          offset + row * KevPointerHead.HIDDEN_SIZE,
+          offset + (row + 1) * KevPointerHead.HIDDEN_SIZE,
+        )
+      }
       val scores = head.score(hidden(0), (1 until rows).map(hidden))
       val dp = maxDifference(OracleFixtures.doubles(entry["probs"]), scores.probabilities)
       assertTrue("${entry["id"]} max|dp| $dp", dp <= PROBABILITY_TOLERANCE)
-      assertTrue(maxDifference(OracleFixtures.doubles(entry["z_post"]), scores.zPost) <= LOGIT_TOLERANCE)
+      assertTrue(
+        maxDifference(OracleFixtures.doubles(entry["z_post"]), scores.zPost) <= LOGIT_TOLERANCE
+      )
       maxProbability = maxOf(maxProbability, dp)
     }
     assertEquals(12, items.size)
     ExternalTestData.writeReport(
       "head_fixture.json",
-      linkedMapOf("test" to "KevPointerHeadTest.bundledFixtureMatches", "questions" to items.size, "max_abs_dp" to maxProbability),
+      linkedMapOf(
+        "test" to "KevPointerHeadTest.bundledFixtureMatches",
+        "questions" to items.size,
+        "max_abs_dp" to maxProbability,
+      ),
     )
     println("KEV_HEAD_FIXTURE questions=${items.size} max|dp|=$maxProbability")
   }
 
   @Test
   fun constantsMatchTheHeadDescription() {
-    val description = KevJson.parse(ExternalTestData.file(ExternalTestData.HEAD_JSON).readBytes()) as Map<*, *>
-    assertEquals(KevPointerHead.TEMPERATURE, (description["temperature"] as JsonNumber).toDouble(), 0.0)
+    val description =
+      KevJson.parse(ExternalTestData.file(ExternalTestData.HEAD_JSON).readBytes()) as Map<*, *>
+    assertEquals(
+      KevPointerHead.TEMPERATURE,
+      (description["temperature"] as JsonNumber).toDouble(),
+      0.0,
+    )
     val head = description["head"] as Map<*, *>
     assertEquals(KevPointerHead.HEAD_DIM, (head["head_dim"] as JsonNumber).toInt())
     assertEquals(KevPointerHead.SCALE.toDouble(), (head["scale"] as JsonNumber).toDouble(), 0.0)
-    assertEquals(KevPointerHead.HIDDEN_SIZE, ((description["base"] as Map<*, *>)["hidden_size"] as JsonNumber).toInt())
+    assertEquals(
+      KevPointerHead.HIDDEN_SIZE,
+      ((description["base"] as Map<*, *>)["hidden_size"] as JsonNumber).toInt(),
+    )
     val ids = description["delimiter_token_ids"] as Map<*, *>
     assertEquals(KevEncoder.STATE_ID, (ids["state"] as JsonNumber).toInt())
     assertEquals(KevEncoder.QUESTION_ID, (ids["question"] as JsonNumber).toInt())
@@ -127,7 +171,8 @@ class KevPointerHeadTest {
     return expected.indices.maxOf { abs(expected[it] - actual[it].toDouble()) }
   }
 
-  private fun firstArgmax(values: FloatArray): Int = KevAnswers.firstArgmax(DoubleArray(values.size) { values[it].toDouble() })
+  private fun firstArgmax(values: FloatArray): Int =
+    KevAnswers.firstArgmax(DoubleArray(values.size) { values[it].toDouble() })
 
   private companion object {
     const val PROBABILITY_TOLERANCE = 1e-5

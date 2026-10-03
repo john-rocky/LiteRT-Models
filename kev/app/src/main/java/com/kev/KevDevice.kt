@@ -24,7 +24,8 @@ object KevDevice {
 
   /** Battery temperature in °C from the sticky battery broadcast, or null. */
   fun batteryTemperature(context: Context): Double? {
-    val battery = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return null
+    val battery =
+      context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return null
     val tenths = battery.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)
     return if (tenths == Int.MIN_VALUE) null else tenths / TENTHS
   }
@@ -33,14 +34,16 @@ object KevDevice {
    * The cpuset line of `/proc/self/cgroup` (`…:cpuset:/top-app` while the app is in the
    * foreground), or every line when there is none.
    */
-  fun cgroup(): String =
-    runCatching {
-        val lines = File("/proc/self/cgroup").readLines().filter { it.isNotBlank() }
-        lines.firstOrNull { ":cpuset:" in it } ?: lines.joinToString("; ")
-      }
-      .getOrElse { "unreadable: ${it.message}" }
+  fun cgroup(): String = runCatching {
+    val lines = File("/proc/self/cgroup").readLines().filter { it.isNotBlank() }
+    lines.firstOrNull { ":cpuset:" in it } ?: lines.joinToString("; ")
+  }
+    .getOrElse { "unreadable: ${it.message}" }
 
-  /** `Build.MODEL`, with the market name in front for the models in [MARKET_NAMES]: "Galaxy S26 (SM-S942Q)". */
+  /**
+   * `Build.MODEL`, with the market name in front for the models in [MARKET_NAMES]: "Galaxy S26
+   * (SM-S942Q)".
+   */
   fun displayName(): String = displayName(Build.MODEL)
 
   fun displayName(model: String): String {
@@ -51,7 +54,8 @@ object KevDevice {
   /** The market name for the models in [MARKET_NAMES] ("Galaxy S26"), else `Build.MODEL`. */
   fun marketName(): String = marketNameOrNull(Build.MODEL) ?: Build.MODEL
 
-  private fun marketNameOrNull(model: String): String? = MARKET_NAMES.entries.firstOrNull { model.startsWith(it.key) }?.value
+  private fun marketNameOrNull(model: String): String? =
+    MARKET_NAMES.entries.firstOrNull { model.startsWith(it.key) }?.value
 
   fun airplaneMode(context: Context): Boolean =
     Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0

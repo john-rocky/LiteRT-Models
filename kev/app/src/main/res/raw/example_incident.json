@@ -1,32 +1,34 @@
 {
- "id": "own_incident_02",
- "state": "Incident report IR-1177, Orrinwick Foods cold-storage site B.\n\nAt 02:14 the compressor in freezer room 3 stopped after its breaker tripped. The on-call technician, Tobias Ferrow, reset the breaker at 02:51 and the compressor restarted. The room temperature rose from -21 C to -9 C during the outage. Product inspection found that 40 cartons of frozen berries had partly thawed; they were discarded. No staff were injured. The same breaker had tripped twice in the previous month. An electrician is booked for Monday.",
+ "id": "demo_incident_02",
+ "state": "Incident note, Ostrelle Data Hall, room C.\n\nOvernight a cooling fan in one server rack stopped and the rack's heat alarm went off. The on-call engineer, Ilari, moved its workloads to a spare rack within the hour. No customer service went down and no data was lost. A loose power connector had cut the fan's power. The fan is back in place, and the same connector type is being checked in every rack.",
  "questions": {
-  "severity": {
-   "type": "score",
-   "instructions": "How severe was this incident?",
-   "criteria": [
-    "No impact",
-    "Minor: no product lost",
-    "Moderate: some product lost, nobody hurt",
-    "Major: most stock lost or someone slightly hurt",
-    "Critical: serious injury or the site shut down"
-   ]
-  },
   "cause": {
    "type": "choice",
-   "instructions": "What was the immediate cause of the outage?",
+   "instructions": "What made the fan stop?",
    "criteria": {
-    "power": "Electrical supply or breaker problem",
-    "mechanical": "Mechanical failure inside the compressor",
-    "human": "A person's mistake",
-    "weather": "Outside weather conditions",
-    "unknown": "The report does not say"
+    "power": "A power or cable problem",
+    "wear": "The fan wore out with age",
+    "heat": "The room was too hot",
+    "human": "Someone made a mistake",
+    "unknown": "The note does not say"
    }
   },
-  "repeat": {
+  "customers_hit": {
    "type": "noul",
-   "instructions": "Has this kind of failure happened before?"
+   "instructions": "Were customers affected?",
+   "criteria": {
+    "true": "A customer service went down or data was lost",
+    "false": "Customers were not affected"
+   }
+  },
+  "severity": {
+   "type": "score",
+   "instructions": "How serious was the incident?",
+   "criteria": [
+    "Minor: no impact on customers",
+    "Major: some customers affected",
+    "Critical: a long outage or lost data"
+   ]
   }
  }
 }

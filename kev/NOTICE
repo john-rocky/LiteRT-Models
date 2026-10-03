@@ -26,8 +26,8 @@ regex, the ByteLevel mapping and byte-level BPE.
 The debug gate asset app/src/debug/assets/gate_fixtures.json holds the 144 items of SemIf
 benchmarks/data/authored144.jsonl (github.com/TheoLeeCJ/SemIf, commit
 ca3ba65f142967030ecb453346e94d6f476a69df), Copyright (c) 2026 TheoLeeCJ, licensed under the MIT
-License (licenses/SemIf-MIT.txt), together with 12 invented requests. The three example requests
-in app/src/main/res/raw/ are invented requests of the same set.
+License (licenses/SemIf-MIT.txt), together with 12 invented requests. The example requests in
+app/src/main/res/raw/ are three invented requests.
 
 Gradle wrapper files retain their upstream Apache License 2.0 headers.
 Retained model, library and fixture licenses are under licenses/.

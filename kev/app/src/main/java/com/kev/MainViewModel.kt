@@ -25,8 +25,8 @@ import kotlinx.coroutines.sync.withLock
 
 /**
  * Owns the [KevEngine] and runs every model call on [KevRuntime.dispatcher], one job at a time
- * ([engineLock]), because LiteRT reuses its native buffers. Publishes [UiState] for
- * [MainActivity]: the editable sample, the demo autoplay, and the debug gate and timing runs.
+ * ([engineLock]), because LiteRT reuses its native buffers. Publishes [UiState] for [MainActivity]:
+ * the editable sample, the demo autoplay, and the debug gate and timing runs.
  */
 class MainViewModel(private val context: Context) : ViewModel() {
   private val worker = CoroutineScope(SupervisorJob() + KevRuntime.dispatcher)
@@ -40,10 +40,12 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private var lastWarmupMs = 0.0
 
   /** The bundled requests (`res/raw`): invented support ticket, incident report and review. */
-  private val examples: List<KevFixture> =
-    EXAMPLES.map { id -> KevFixture.parse(context.resources.openRawResource(id).use { it.readBytes() }.decodeToString()) }
+  private val examples: List<KevFixture> = EXAMPLES.map { id ->
+    KevFixture.parse(context.resources.openRawResource(id).use { it.readBytes() }.decodeToString())
+  }
 
-  private val mutableState = MutableStateFlow(UiState(draft = KevDrafts.fromRequest(examples[0].request)))
+  private val mutableState =
+    MutableStateFlow(UiState(draft = KevDrafts.fromRequest(examples[0].request)))
 
   /** Immutable screen state, replaced after every event. */
   val uiState: StateFlow<UiState> = mutableState.asStateFlow()
@@ -75,7 +77,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
       is KevLaunch.Autoplay -> autoplay(launch, received)
       is KevLaunch.Invalid -> reportInvalid(launch)
       is KevLaunch.Gate,
-      is KevLaunch.Timing -> Log.i(KevGateRunner.LOG_TAG, "failed the app is running; force-stop it and launch again")
+      is KevLaunch.Timing ->
+        Log.i(KevGateRunner.LOG_TAG, "failed the app is running; force-stop it and launch again")
       KevLaunch.Normal -> Unit
     }
   }
@@ -83,7 +86,10 @@ class MainViewModel(private val context: Context) : ViewModel() {
   // ---- Editor ----
 
   fun selectExample(index: Int) = edit {
-    it.copy(example = index, draft = KevDrafts.fromRequest(examples[index].request, nextKeys(examples[index])))
+    it.copy(
+      example = index,
+      draft = KevDrafts.fromRequest(examples[index].request, nextKeys(examples[index])),
+    )
   }
 
   fun setState(text: String) = edit { it.copy(example = null, draft = it.draft.copy(state = text)) }
@@ -102,20 +108,31 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   fun removeQuestion(key: Long) = edit {
-    it.copy(example = null, draft = it.draft.copy(questions = it.draft.questions.filterNot { q -> q.key == key }))
+    it.copy(
+      example = null,
+      draft = it.draft.copy(questions = it.draft.questions.filterNot { q -> q.key == key }),
+    )
   }
 
   fun toggleResponse() = mutableState.update { it.copy(showResponse = !it.showResponse) }
 
   private fun editQuestion(key: Long, change: (QuestionDraft) -> QuestionDraft) = edit {
-    it.copy(example = null, draft = it.draft.copy(questions = it.draft.questions.map { q -> if (q.key == key) change(q) else q }))
+    it.copy(
+      example = null,
+      draft =
+        it.draft.copy(
+          questions = it.draft.questions.map { q -> if (q.key == key) change(q) else q }
+        ),
+    )
   }
 
   private fun edit(change: (UiState) -> UiState) {
     if (uiState.value.editable) mutableState.update { change(it).copy(requestError = null) }
   }
 
-  private fun nextKeys(fixture: KevFixture): Long = nextKey.also { nextKey += fixture.request.questions.size }
+  private fun nextKeys(fixture: KevFixture): Long = nextKey.also {
+    nextKey += fixture.request.questions.size
+  }
 
   // ---- Engine ----
 
@@ -145,12 +162,15 @@ class MainViewModel(private val context: Context) : ViewModel() {
     }
     worker.launch {
       engineLock.withLock {
-        guarded(onFailure = { message ->
-          showError(message)
-          KevDemo.failed("engine $message")
-        }) {
+        guarded(
+          onFailure = { message ->
+            showError(message)
+            KevDemo.failed("engine $message")
+          }
+        ) {
           val loaded =
-            KevEngine.load(context, window, uiState.value.backendChoice, cpuFallback = true) { stage ->
+            KevEngine.load(context, window, uiState.value.backendChoice, cpuFallback = true) { stage
+              ->
               setLoading(stage, window, switching = false)
             }
           engine = loaded
@@ -163,7 +183,10 @@ class MainViewModel(private val context: Context) : ViewModel() {
     }
   }
 
-  /** One untimed pass of the bundled ticket's question 1, so a request does not pay the graph's start-up costs. */
+  /**
+   * One untimed pass of the bundled ticket's question 1, so a request does not pay the graph's
+   * start-up costs.
+   */
   private fun warmUp(loaded: KevEngine): Double {
     val start = System.nanoTime()
     val prepared = loaded.pipeline.prepare(examples[0].request)
@@ -189,7 +212,12 @@ class MainViewModel(private val context: Context) : ViewModel() {
       }
     val loaded = engine ?: return
     mutableState.update {
-      it.copy(requestError = null, responseJson = null, showResponse = false, status = KevStatus.Running(0, request.questions.size))
+      it.copy(
+        requestError = null,
+        responseJson = null,
+        showResponse = false,
+        status = KevStatus.Running(0, request.questions.size),
+      )
     }
     worker.launch {
       engineLock.withLock {
@@ -206,7 +234,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
           val results = ArrayList<KevQuestionResult>()
           var workMs = prepared.tokenizeMs
           for (index in request.questions.indices) {
-            mutableState.update { it.copy(status = KevStatus.Running(index, request.questions.size)) }
+            mutableState.update {
+              it.copy(status = KevStatus.Running(index, request.questions.size))
+            }
             cards[index] = cards[index].copy(state = CardState.RUNNING)
             mutableState.update { it.copy(cards = cards.toList()) }
             val start = System.nanoTime()
@@ -214,7 +244,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
             cards[index] = outcome.card
             workMs += KevPipeline.millis(System.nanoTime() - start)
             mutableState.update { it.copy(cards = cards.toList()) }
-            outcome.result?.let { results.add(it) } ?: return@guarded requestFailed(loaded, outcome.card.error ?: "")
+            outcome.result?.let { results.add(it) }
+              ?: return@guarded requestFailed(loaded, outcome.card.error ?: "")
           }
           val answers = loaded.pipeline.answers(prepared, results)
           val totalMs = KevAnswerView.wholeMillis(workMs)
@@ -235,7 +266,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private fun requiredWindow(prepared: KevPrepared): Int? {
     val window = prepared.window
     if (window == null) {
-      requestRejected(string(R.string.error_over_largest, prepared.longestRow, KevEncoder.WINDOWS.last()))
+      requestRejected(
+        string(R.string.error_over_largest, prepared.longestRow, KevEncoder.WINDOWS.last())
+      )
       return null
     }
     val file = File(context.filesDir, KevFiles.graph(window))
@@ -248,7 +281,11 @@ class MainViewModel(private val context: Context) : ViewModel() {
 
   private class QuestionOutcome(val card: AnswerCardUi, val result: KevQuestionResult?)
 
-  private fun answerQuestion(loaded: KevEngine, prepared: KevPrepared, index: Int): QuestionOutcome {
+  private fun answerQuestion(
+    loaded: KevEngine,
+    prepared: KevPrepared,
+    index: Int,
+  ): QuestionOutcome {
     val question = prepared.request.questions[index]
     val card = pendingCard(question)
     return try {
@@ -258,15 +295,27 @@ class MainViewModel(private val context: Context) : ViewModel() {
       val ms = string(R.string.card_ms, KevAnswerView.wholeMillis(result.inferMs))
       QuestionOutcome(card.copy(state = CardState.DONE, view = view, msText = ms), result)
     } catch (failure: KevNonFiniteException) {
-      QuestionOutcome(card.copy(state = CardState.FAILED, error = string(R.string.error_nonfinite, failure.questionId, failure.count)), null)
+      QuestionOutcome(
+        card.copy(
+          state = CardState.FAILED,
+          error = string(R.string.error_nonfinite, failure.questionId, failure.count),
+        ),
+        null,
+      )
     }
   }
 
   private fun singleAnswer(result: KevQuestionResult): Map<*, *> =
-    KevAnswers.toAnswers(listOf(result.probabilities), listOf(result.meta)).getValue(result.meta.id) as Map<*, *>
+    KevAnswers.toAnswers(listOf(result.probabilities), listOf(result.meta)).getValue(result.meta.id)
+      as Map<*, *>
 
   private fun pendingCard(question: KevQuestion) =
-    AnswerCardUi(question.id, question.type, KevRecords.render(question.instructions).ifEmpty { question.id }, CardState.PENDING)
+    AnswerCardUi(
+      question.id,
+      question.type,
+      KevRecords.render(question.instructions).ifEmpty { question.id },
+      CardState.PENDING,
+    )
 
   private fun requestRejected(message: String) {
     mutableState.update { state ->
@@ -275,7 +324,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   private fun requestFailed(loaded: KevEngine, message: String) {
-    mutableState.update { it.copy(requestError = message, status = readyStatus(loaded), engine = engineUi(loaded)) }
+    mutableState.update {
+      it.copy(requestError = message, status = readyStatus(loaded), engine = engineUi(loaded))
+    }
   }
 
   // ---- Autoplay (demo recording) ----
@@ -305,7 +356,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   private suspend fun runAutoplay(launch: KevLaunch.Autoplay, receivedNanos: Long) {
-    val file = filesPath(launch.fixture) ?: throw AutoplayFailure("fixture outside the app files dir: ${launch.fixture}")
+    val file =
+      filesPath(launch.fixture)
+        ?: throw AutoplayFailure("fixture outside the app files dir: ${launch.fixture}")
     if (!file.isFile) throw AutoplayFailure("missing fixture ${file.path}")
     val fixture =
       try {
@@ -313,7 +366,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
       } catch (failure: IllegalArgumentException) {
         throw AutoplayFailure("fixture does not parse: ${failure.message}")
       }
-    val loaded = engine ?: throw AutoplayFailure("engine not ready: ${statusText(uiState.value.status)}")
+    val loaded =
+      engine ?: throw AutoplayFailure("engine not ready: ${statusText(uiState.value.status)}")
     if (launch.window != loaded.window || loaded.decider.isClosed) {
       if (!File(context.filesDir, KevFiles.graph(launch.window)).isFile) {
         throw AutoplayFailure("missing ${KevFiles.graph(launch.window)}")
@@ -343,15 +397,24 @@ class MainViewModel(private val context: Context) : ViewModel() {
     val title = string(R.string.presentation_title)
     val cards = fixture.request.questions.map { pendingCard(it) }.toMutableList()
     var presentation =
-      PresentationUi(title, KevRecords.render(fixture.request.state), cards.toList(), presentationFooter(loaded, null))
-    mutableState.update { it.copy(presentation = presentation, status = KevStatus.Running(0, cards.size)) }
+      PresentationUi(
+        title,
+        KevRecords.render(fixture.request.state),
+        cards.toList(),
+        presentationFooter(loaded, null),
+      )
+    mutableState.update {
+      it.copy(presentation = presentation, status = KevStatus.Running(0, cards.size))
+    }
     val questions = ArrayList<KevDemoQuestion>()
     var lastAnswerNanos = requestStart
     for (index in cards.indices) {
       waitFor(launch.gapMs)
       cards[index] = cards[index].copy(state = CardState.RUNNING)
       presentation = presentation.copy(cards = cards.toList())
-      mutableState.update { it.copy(presentation = presentation, status = KevStatus.Running(index, cards.size)) }
+      mutableState.update {
+        it.copy(presentation = presentation, status = KevStatus.Running(index, cards.size))
+      }
       val start = System.nanoTime()
       val outcome = answerQuestion(loaded, prepared, index)
       lastAnswerNanos = System.nanoTime()
@@ -376,10 +439,13 @@ class MainViewModel(private val context: Context) : ViewModel() {
       )
     }
     // From the start of tokenizing to the last answer, without the presentation waits.
-    val requestTotalMs = KevAnswerView.wholeMillis(KevPipeline.millis(lastAnswerNanos - requestStart - waitedNanos))
+    val requestTotalMs =
+      KevAnswerView.wholeMillis(KevPipeline.millis(lastAnswerNanos - requestStart - waitedNanos))
     val footer = presentationFooter(loaded, requestTotalMs)
     presentation = presentation.copy(footerLines = footer)
-    mutableState.update { it.copy(presentation = presentation, status = KevStatus.Done(requestTotalMs, questions.size)) }
+    mutableState.update {
+      it.copy(presentation = presentation, status = KevStatus.Done(requestTotalMs, questions.size))
+    }
     // Let the final frame reach the screen before the layout is recorded.
     delay(LAYOUT_SETTLE_MS)
     val run =
@@ -420,7 +486,15 @@ class MainViewModel(private val context: Context) : ViewModel() {
     mutableState.update { state ->
       val presentation = state.presentation?.copy(failure = reason)
       state.copy(
-        presentation = presentation ?: PresentationUi(string(R.string.presentation_title), "", emptyList(), emptyList(), reason),
+        presentation =
+          presentation
+            ?: PresentationUi(
+              string(R.string.presentation_title),
+              "",
+              emptyList(),
+              emptyList(),
+              reason,
+            ),
         status = engine?.let { readyStatus(it) } ?: state.status,
       )
     }
@@ -440,16 +514,27 @@ class MainViewModel(private val context: Context) : ViewModel() {
   // ---- Gate and timing (debug) ----
 
   private fun runGate(launch: KevLaunch.Gate) {
-    mutableState.update { it.copy(mode = LaunchMode.GATE, backendChoice = launch.backend, diagnostics = string(R.string.gate_running)) }
+    mutableState.update {
+      it.copy(
+        mode = LaunchMode.GATE,
+        backendChoice = launch.backend,
+        diagnostics = string(R.string.gate_running),
+      )
+    }
     worker.launch {
       engineLock.withLock {
         guarded(onFailure = ::diagnosticsFailed) {
           val summary =
-            KevGateRunner(context).run(
-              KevGateRunner.Args(launch.backend, launch.report, launch.window, launch.limit),
-              loadEngine = { diagnosticEngine(launch.window, launch.backend) },
-              progress = { step -> mutableState.update { it.copy(diagnostics = string(R.string.gate_progress, step)) } },
-            )
+            KevGateRunner(context)
+              .run(
+                KevGateRunner.Args(launch.backend, launch.report, launch.window, launch.limit),
+                loadEngine = { diagnosticEngine(launch.window, launch.backend) },
+                progress = { step ->
+                  mutableState.update {
+                    it.copy(diagnostics = string(R.string.gate_progress, step))
+                  }
+                },
+              )
           diagnosticsDone(summary)
         }
       }
@@ -457,22 +542,43 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   private fun runTiming(launch: KevLaunch.Timing) {
-    mutableState.update { it.copy(mode = LaunchMode.TIMING, backendChoice = launch.backend, diagnostics = string(R.string.timing_running)) }
+    mutableState.update {
+      it.copy(
+        mode = LaunchMode.TIMING,
+        backendChoice = launch.backend,
+        diagnostics = string(R.string.timing_running),
+      )
+    }
     val rows = filesPath(launch.rows)
     if (rows == null) {
       Log.i(KevGateRunner.LOG_TAG, "failed rows outside the app files dir: ${launch.rows}")
-      mutableState.update { it.copy(diagnostics = string(R.string.diagnostics_failed, launch.rows)) }
+      mutableState.update {
+        it.copy(diagnostics = string(R.string.diagnostics_failed, launch.rows))
+      }
       return
     }
     worker.launch {
       engineLock.withLock {
         guarded(onFailure = ::diagnosticsFailed) {
           val summary =
-            KevTimingRunner(context).run(
-              KevTimingRunner.Args(rows, launch.backend, launch.report, launch.window, launch.clearCache, launch.sets, launch.requestPath),
-              loadEngine = { diagnosticEngine(launch.window, launch.backend) },
-              progress = { step -> mutableState.update { it.copy(diagnostics = string(R.string.timing_progress, step)) } },
-            )
+            KevTimingRunner(context)
+              .run(
+                KevTimingRunner.Args(
+                  rows,
+                  launch.backend,
+                  launch.report,
+                  launch.window,
+                  launch.clearCache,
+                  launch.sets,
+                  launch.requestPath,
+                ),
+                loadEngine = { diagnosticEngine(launch.window, launch.backend) },
+                progress = { step ->
+                  mutableState.update {
+                    it.copy(diagnostics = string(R.string.timing_progress, step))
+                  }
+                },
+              )
           diagnosticsDone(summary)
         }
       }
@@ -485,7 +591,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
     check(missing.isEmpty()) { "missing ${missing.joinToString(" ")}" }
     engine?.close()
     engine = null
-    return KevEngine.load(context, window, backend, cpuFallback = false) { stage -> setLoading(stage, window, false) }
+    return KevEngine.load(context, window, backend, cpuFallback = false) { stage ->
+        setLoading(stage, window, false)
+      }
       .also {
         engine = it
         setReady(it)
@@ -496,7 +604,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private fun diagnosticsDone(summary: KevGateRunner.Summary) {
     mutableState.update {
       it.copy(
-        diagnostics = string(R.string.diagnostics_done, summary.status, summary.path) + (summary.error?.let { e -> "\n$e" } ?: ""),
+        diagnostics =
+          string(R.string.diagnostics_done, summary.status, summary.path) +
+            (summary.error?.let { e -> "\n$e" } ?: "")
       )
     }
   }
@@ -508,32 +618,36 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   private fun reportInvalid(launch: KevLaunch.Invalid) {
-    if (launch.autoplay) KevDemo.failed(launch.reason) else Log.i(KevGateRunner.LOG_TAG, "failed ${launch.reason}")
+    if (launch.autoplay) KevDemo.failed(launch.reason)
+    else Log.i(KevGateRunner.LOG_TAG, "failed ${launch.reason}")
     mutableState.update { it.copy(requestError = launch.reason) }
   }
 
   // ---- State helpers ----
 
   private fun setLoading(stage: LoadStage, window: Int, switching: Boolean) {
-    mutableState.update { it.copy(status = KevStatus.Loading(stage, window, switching, SystemClock.elapsedRealtime())) }
+    mutableState.update {
+      it.copy(status = KevStatus.Loading(stage, window, switching, SystemClock.elapsedRealtime()))
+    }
     startTicker()
   }
 
   /** Advances the elapsed seconds of a Loading status once a second. */
   private fun startTicker() {
     if (ticker?.isActive == true) return
-    ticker =
-      viewModelScope.launch {
-        while (isActive) {
-          delay(TICK_MS)
-          val status = uiState.value.status as? KevStatus.Loading ?: break
-          val elapsed = ((SystemClock.elapsedRealtime() - status.startedAt) / TICK_MS).toInt()
-          mutableState.update { state ->
-            val current = state.status
-            if (current is KevStatus.Loading) state.copy(status = current.copy(elapsedSeconds = elapsed)) else state
-          }
+    ticker = viewModelScope.launch {
+      while (isActive) {
+        delay(TICK_MS)
+        val status = uiState.value.status as? KevStatus.Loading ?: break
+        val elapsed = ((SystemClock.elapsedRealtime() - status.startedAt) / TICK_MS).toInt()
+        mutableState.update { state ->
+          val current = state.status
+          if (current is KevStatus.Loading)
+            state.copy(status = current.copy(elapsedSeconds = elapsed))
+          else state
         }
       }
+    }
   }
 
   private fun setReady(loaded: KevEngine, warmupMs: Double? = null) {
@@ -559,7 +673,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
     )
 
   private fun showError(message: String) {
-    mutableState.update { it.copy(status = KevStatus.Error(message), engine = engine?.let { e -> engineUi(e) }) }
+    mutableState.update {
+      it.copy(status = KevStatus.Error(message), engine = engine?.let { e -> engineUi(e) })
+    }
   }
 
   /** Runs [block], turning failures (including a missing native library) into [onFailure]. */
@@ -573,11 +689,16 @@ class MainViewModel(private val context: Context) : ViewModel() {
     }
   }
 
-  /** The footer: device, LiteRT and backend; graph and the request total once known. */
+  /**
+   * The footer under the answers, one line per group so that a 360 dp wide screen does not wrap
+   * them: device and Android version; LiteRT and backend; graph and the request total once known.
+   */
   private fun footerLines(loaded: KevEngine, totalMs: Long?): List<String> =
     listOf(
-      string(R.string.footer_runtime, deviceLine(), KevDecider.LITERT_VERSION, backendName(loaded.backend)),
-      if (totalMs == null) string(R.string.footer_graph, loaded.window) else string(R.string.footer_graph_total, loaded.window, totalMs),
+      string(R.string.footer_device, KevDevice.displayName(), Build.VERSION.RELEASE),
+      string(R.string.footer_litert, KevDecider.LITERT_VERSION, backendName(loaded.backend)),
+      if (totalMs == null) string(R.string.footer_graph, loaded.window)
+      else string(R.string.footer_graph_total, loaded.window, totalMs),
     )
 
   /**
@@ -587,12 +708,15 @@ class MainViewModel(private val context: Context) : ViewModel() {
    */
   private fun presentationFooter(loaded: KevEngine, totalMs: Long?): List<String> =
     listOf(
-      string(R.string.footer_runtime, KevDevice.marketName(), KevDecider.LITERT_VERSION, backendName(loaded.backend)),
+      string(
+        R.string.footer_runtime,
+        KevDevice.marketName(),
+        KevDecider.LITERT_VERSION,
+        backendName(loaded.backend),
+      ),
       string(R.string.footer_graph, loaded.window),
       if (totalMs == null) "" else string(R.string.presentation_total, totalMs),
     )
-
-  private fun deviceLine(): String = string(R.string.footer_device, KevDevice.displayName(), Build.VERSION.RELEASE)
 
   private fun backendName(backend: KevDecider.Backend): String =
     string(if (backend == KevDecider.Backend.GPU) R.string.backend_gpu else R.string.backend_cpu)
@@ -603,15 +727,22 @@ class MainViewModel(private val context: Context) : ViewModel() {
     when (failure.problem) {
       DraftProblem.NO_QUESTIONS -> string(R.string.draft_no_questions)
       DraftProblem.EMPTY_ID -> string(R.string.draft_empty_id, failure.question)
-      DraftProblem.DUPLICATE_ID -> string(R.string.draft_duplicate_id, failure.question, failure.detail)
+      DraftProblem.DUPLICATE_ID ->
+        string(R.string.draft_duplicate_id, failure.question, failure.detail)
       DraftProblem.NO_OPTIONS -> string(R.string.draft_no_options, failure.question)
-      DraftProblem.TOO_MANY_OPTIONS -> string(R.string.draft_too_many_options, failure.question, KevRequest.MAX_OPTIONS)
-      DraftProblem.EMPTY_OPTION_NAME -> string(R.string.draft_empty_option_name, failure.question, failure.detail)
-      DraftProblem.DUPLICATE_OPTION -> string(R.string.draft_duplicate_option, failure.question, failure.detail)
-      DraftProblem.BAD_NOUL_OPTION -> string(R.string.draft_bad_noul_option, failure.question, failure.detail)
+      DraftProblem.TOO_MANY_OPTIONS ->
+        string(R.string.draft_too_many_options, failure.question, KevRequest.MAX_OPTIONS)
+      DraftProblem.EMPTY_OPTION_NAME ->
+        string(R.string.draft_empty_option_name, failure.question, failure.detail)
+      DraftProblem.DUPLICATE_OPTION ->
+        string(R.string.draft_duplicate_option, failure.question, failure.detail)
+      DraftProblem.BAD_NOUL_OPTION ->
+        string(R.string.draft_bad_noul_option, failure.question, failure.detail)
     }
 
-  /** [path] inside `files/`: a bare name or an absolute path there; null when it points elsewhere. */
+  /**
+   * [path] inside `files/`: a bare name or an absolute path there; null when it points elsewhere.
+   */
   private fun filesPath(path: String): File? {
     val base = context.filesDir.canonicalFile
     val file = (if (path.startsWith("/")) File(path) else File(base, path)).canonicalFile
@@ -638,7 +769,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   companion object {
-    private val EXAMPLES = listOf(R.raw.example_ticket, R.raw.example_incident, R.raw.example_review)
+    private val EXAMPLES =
+      listOf(R.raw.example_ticket, R.raw.example_incident, R.raw.example_review)
     private const val FIRST_ADDED_KEY = 1_000L
     private const val TICK_MS = 1_000L
     private const val NANOS_PER_MILLI = 1_000_000L

@@ -32,7 +32,13 @@ internal object OracleFixtures {
   }
 
   /** One request of the oracle: question count, usage and answers. */
-  class Request(val id: String, val source: String, val questions: Int, val inputTokens: Int, val answers: Map<*, *>)
+  class Request(
+    val id: String,
+    val source: String,
+    val questions: Int,
+    val inputTokens: Int,
+    val answers: Map<*, *>,
+  )
 
   class Oracle(
     val questions: List<Question>,
@@ -46,7 +52,8 @@ internal object OracleFixtures {
   class Record(val id: String, val source: String, val request: Any?)
 
   fun loadOracle(): Oracle {
-    val json = KevJson.parse(ExternalTestData.file(ExternalTestData.ORACLE).readBytes()) as Map<*, *>
+    val json =
+      KevJson.parse(ExternalTestData.file(ExternalTestData.ORACLE).readBytes()) as Map<*, *>
     val questions = (json["questions"] as List<*>).map { question(it as Map<*, *>) }
     val requests =
       (json["requests"] as List<*>).map {
@@ -86,14 +93,16 @@ internal object OracleFixtures {
     )
 
   fun loadRecords(): List<Record> {
-    val json = KevJson.parse(ExternalTestData.file(ExternalTestData.REQUESTS).readBytes()) as Map<*, *>
+    val json =
+      KevJson.parse(ExternalTestData.file(ExternalTestData.REQUESTS).readBytes()) as Map<*, *>
     return (json["records"] as List<*>).map {
       val record = it as Map<*, *>
       Record(record["id"] as String, record["source"] as String, record["request"])
     }
   }
 
-  fun ints(value: Any?): IntArray = (value as List<*>).map { (it as JsonNumber).toInt() }.toIntArray()
+  fun ints(value: Any?): IntArray =
+    (value as List<*>).map { (it as JsonNumber).toInt() }.toIntArray()
 
   fun doubles(value: Any?): DoubleArray =
     (value as List<*>).map { (it as JsonNumber).toDouble() }.toDoubleArray()
@@ -106,8 +115,8 @@ internal object OracleFixtures {
 
   /**
    * Structural equality of two parsed JSON values, numbers by double value: the same keys in the
-   * same order, the same strings, the same array lengths. Returns the path of the first
-   * difference, or null.
+   * same order, the same strings, the same array lengths. Returns the path of the first difference,
+   * or null.
    */
   fun jsonDifference(expected: Any?, actual: Any?, path: String = "$"): String? {
     fun number(value: Any?): Double? =
@@ -123,7 +132,10 @@ internal object OracleFixtures {
     val actualNumber = number(actual)
     if (expectedNumber != null || actualNumber != null) {
       // Doubles compare by bits so that -0.0 and 0.0 differ, as they print differently.
-      return if (expectedNumber != null && actualNumber != null && expectedNumber.equals(actualNumber)) null
+      return if (
+        expectedNumber != null && actualNumber != null && expectedNumber.equals(actualNumber)
+      )
+        null
       else "$path: expected $expected, got $actual"
     }
     return when (expected) {
@@ -132,11 +144,16 @@ internal object OracleFixtures {
         if (expected.keys.toList() != actual.keys.toList()) {
           return "$path: keys ${expected.keys.toList()} vs ${actual.keys.toList()}"
         }
-        expected.keys.firstNotNullOfOrNull { key -> jsonDifference(expected[key], actual[key], "$path.$key") }
+        expected.keys.firstNotNullOfOrNull { key ->
+          jsonDifference(expected[key], actual[key], "$path.$key")
+        }
       }
       is List<*> -> {
-        if (actual !is List<*> || actual.size != expected.size) return "$path: expected $expected, got $actual"
-        expected.indices.firstNotNullOfOrNull { jsonDifference(expected[it], actual[it], "$path[$it]") }
+        if (actual !is List<*> || actual.size != expected.size)
+          return "$path: expected $expected, got $actual"
+        expected.indices.firstNotNullOfOrNull {
+          jsonDifference(expected[it], actual[it], "$path[$it]")
+        }
       }
       else -> if (expected == actual) null else "$path: expected $expected, got $actual"
     }
@@ -159,7 +176,11 @@ internal object OracleFixtures {
     override fun close() = zip.close()
 
     private fun parseNpy(bytes: ByteArray): Pair<IntArray, FloatArray> {
-      require(bytes.size > MAGIC_LENGTH && bytes[0] == MAGIC_FIRST && String(bytes, 1, 5, Charsets.ISO_8859_1) == "NUMPY") {
+      require(
+        bytes.size > MAGIC_LENGTH &&
+          bytes[0] == MAGIC_FIRST &&
+          String(bytes, 1, 5, Charsets.ISO_8859_1) == "NUMPY"
+      ) {
         "Not an .npy array"
       }
       val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
@@ -180,9 +201,14 @@ internal object OracleFixtures {
           .toIntArray()
       val count = shape.fold(1) { product, dimension -> product * dimension }
       val dataStart = headerStart + headerLength
-      require(bytes.size - dataStart == count * 4) { "Array size does not match shape ${shape.toList()}" }
+      require(bytes.size - dataStart == count * 4) {
+        "Array size does not match shape ${shape.toList()}"
+      }
       val values = FloatArray(count)
-      ByteBuffer.wrap(bytes, dataStart, count * 4).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().get(values)
+      ByteBuffer.wrap(bytes, dataStart, count * 4)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .asFloatBuffer()
+        .get(values)
       return shape to values
     }
 

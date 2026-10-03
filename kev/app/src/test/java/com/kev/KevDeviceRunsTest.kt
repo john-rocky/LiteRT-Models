@@ -14,19 +14,31 @@ import org.junit.Test
  */
 class KevDeviceRunsTest {
   private val asset by lazy {
-    KevGateChecks.parseAsset(ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes())
+    KevGateChecks.parseAsset(
+      ExternalTestData.moduleFile("app/src/debug/assets/gate_fixtures.json").readBytes()
+    )
   }
 
   /** Returns the oracle's hidden states at the readout positions of whichever asset row it gets. */
-  private class OracleGraph(override val length: Int, private val rows: Map<String, Pair<IntArray, FloatArray>>) : RowRunner {
+  private class OracleGraph(
+    override val length: Int,
+    private val rows: Map<String, Pair<IntArray, FloatArray>>,
+  ) : RowRunner {
     var calls = 0
 
     override fun run(ids: IntArray, valid: FloatArray): FloatArray {
       calls++
       val real = valid.count { it == 1f }
-      val (positions, values) = requireNotNull(rows[KevPipeline.idsSha256(ids.copyOf(real))]) { "unknown row" }
+      val (positions, values) =
+        requireNotNull(rows[KevPipeline.idsSha256(ids.copyOf(real))]) { "unknown row" }
       val hidden = FloatArray(length * HIDDEN)
-      for ((row, position) in positions.withIndex()) System.arraycopy(values, row * HIDDEN, hidden, position * HIDDEN, HIDDEN)
+      for ((row, position) in positions.withIndex()) System.arraycopy(
+        values,
+        row * HIDDEN,
+        hidden,
+        position * HIDDEN,
+        HIDDEN,
+      )
       return hidden
     }
   }
@@ -37,16 +49,24 @@ class KevDeviceRunsTest {
       for (item in asset) {
         for (question in item.questions) {
           rows[KevPipeline.idsSha256(question.rowIds)] =
-            (intArrayOf(question.decideIndex) + question.optionIndices) to npz.floats("${item.id}/${question.qid}").second
+            (intArrayOf(question.decideIndex) + question.optionIndices) to
+              npz.floats("${item.id}/${question.qid}").second
         }
       }
     }
     return OracleGraph(window, rows)
   }
 
-  private fun pipeline() = KevPipeline(ExternalTestData.tokenizer(), KevPointerHead(ExternalTestData.file(ExternalTestData.HEAD)))
+  private fun pipeline() =
+    KevPipeline(
+      ExternalTestData.tokenizer(),
+      KevPointerHead(ExternalTestData.file(ExternalTestData.HEAD)),
+    )
 
-  private fun probes() = KevGateChecks.parseProbes(ExternalTestData.moduleFile("app/src/debug/assets/tokenizer_probes.json").readBytes())
+  private fun probes() =
+    KevGateChecks.parseProbes(
+      ExternalTestData.moduleFile("app/src/debug/assets/tokenizer_probes.json").readBytes()
+    )
 
   @Test
   fun gatePassesWithTheOracleGraph() {
@@ -56,7 +76,9 @@ class KevDeviceRunsTest {
     gate.run(asset) {}
     val summary = gate.summary()
     ExternalTestData.writeReport("gate_core.json", summary + ("tokenizer_probes" to probes))
-    println("KEV_GATE_CORE ${KevJson.write(summary.filterKeys { it !in setOf("skipped_rows", "infer_ms", "head_ms") })}")
+    println(
+      "KEV_GATE_CORE ${KevJson.write(summary.filterKeys { it !in setOf("skipped_rows", "infer_ms", "head_ms") })}"
+    )
     assertEquals(54, probes["raw_equal"])
     assertEquals(54, probes["user_equal"])
     assertEquals(156, summary["input_tokens_identical"])
@@ -64,7 +86,9 @@ class KevDeviceRunsTest {
     assertEquals(181, summary["indices_identical"])
     assertEquals(172, summary["rows_run"])
     assertEquals(9, summary["rows_skipped"])
-    assertTrue((summary["skipped_rows"] as List<*>).all { (it as Map<*, *>)["reason"] == "needs L2048" })
+    assertTrue(
+      (summary["skipped_rows"] as List<*>).all { (it as Map<*, *>)["reason"] == "needs L2048" }
+    )
     assertEquals(172, summary["argmax_equal"])
     assertEquals(172, summary["answers_equal_oracle"])
     assertEquals(0, summary["nonfinite_rows"])
@@ -74,7 +98,11 @@ class KevDeviceRunsTest {
     // Every asset question has an entry; run rows carry the probabilities and times.
     assertEquals(181, gate.rows.size)
     val run = gate.rows.map { it as Map<*, *> }.filter { it["status"] == "run" }
-    assertTrue(run.all { it.containsKey("probs") && it.containsKey("infer_ms") && it.containsKey("ids_sha256") })
+    assertTrue(
+      run.all {
+        it.containsKey("probs") && it.containsKey("infer_ms") && it.containsKey("ids_sha256")
+      }
+    )
   }
 
   @Test
@@ -95,7 +123,8 @@ class KevDeviceRunsTest {
       object : RowRunner {
         override val length = 512
 
-        override fun run(ids: IntArray, valid: FloatArray) = FloatArray(length * HIDDEN) { Float.NaN }
+        override fun run(ids: IntArray, valid: FloatArray) =
+          FloatArray(length * HIDDEN) { Float.NaN }
       }
     val broken = KevGateCore(pipeline(), nan, 3, { false }, {})
     broken.run(asset) {}
@@ -108,16 +137,31 @@ class KevDeviceRunsTest {
     val rows = KevTimingRows.parse(ExternalTestData.file("device/timing_rows.json").readBytes())
     assertEquals(listOf("fiveq", "T300", "T1000"), rows.sets.map { it.name })
     assertEquals(listOf("fiveq", "T300"), rows.select(null, 512).run.map { it.name })
-    assertEquals(listOf("T1000" to "the resident graph is L512"), rows.select(null, 512).skipped.map { it.name to it.reason })
+    assertEquals(
+      listOf("T1000" to "the resident graph is L512"),
+      rows.select(null, 512).skipped.map { it.name to it.reason },
+    )
     val t300 = rows.select(KevLaunch.setNames("T300"), 512)
     assertEquals(listOf("T300"), t300.run.map { it.name })
-    assertEquals(listOf("fiveq" to "not requested", "T1000" to "not requested"), t300.skipped.map { it.name to it.reason })
-    assertEquals(listOf("T1000"), rows.select(KevLaunch.setNames("T1000"), 1024).run.map { it.name })
+    assertEquals(
+      listOf("fiveq" to "not requested", "T1000" to "not requested"),
+      t300.skipped.map { it.name to it.reason },
+    )
+    assertEquals(
+      listOf("T1000"),
+      rows.select(KevLaunch.setNames("T1000"), 1024).run.map { it.name },
+    )
     assertTrue(rows.select(KevLaunch.setNames("none"), 512).run.isEmpty())
-    assertEquals(listOf("fiveq", "T300"), rows.select(KevLaunch.setNames(" fiveq,T300 ,"), 512).run.map { it.name })
+    assertEquals(
+      listOf("fiveq", "T300"),
+      rows.select(KevLaunch.setNames(" fiveq,T300 ,"), 512).run.map { it.name },
+    )
     val unknown = rows.select(KevLaunch.setNames("T300,T999"), 512)
     assertEquals(listOf("T300"), unknown.run.map { it.name })
-    assertEquals(KevTimingSkip("T999", null, "not in the rows file").reason, unknown.skipped.last().reason)
+    assertEquals(
+      KevTimingSkip("T999", null, "not in the rows file").reason,
+      unknown.skipped.last().reason,
+    )
     assertNull(unknown.skipped.last().window)
   }
 

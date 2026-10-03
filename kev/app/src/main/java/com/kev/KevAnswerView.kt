@@ -15,7 +15,10 @@ class KevAnswerView(
   val confidence: String?,
   /** Every option in option order (noul: only `true`, whose probability is the answer). */
   val bars: List<Bar>,
-  /** The option the compact (presentation) card shows: the chosen key, `true`, or the likeliest level. */
+  /**
+   * The option the compact (presentation) card shows: the chosen key, `true`, or the likeliest
+   * level.
+   */
   val headline: Bar,
 ) {
   /** One option: its key, its label on screen, its rounded probability and the bar length. */
@@ -27,15 +30,20 @@ class KevAnswerView(
    */
   fun shownCompact(): LinkedHashMap<String, Any?> =
     when (type) {
-      QuestionType.CHOICE -> linkedMapOf("choice" to answer, "probabilities" to linkedMapOf(headline.key to headline.value))
+      QuestionType.CHOICE ->
+        linkedMapOf(
+          "choice" to answer,
+          "probabilities" to linkedMapOf(headline.key to headline.value),
+        )
       QuestionType.NOUL -> linkedMapOf("noul" to answer)
-      QuestionType.SCORE -> linkedMapOf("probabilities" to linkedMapOf(headline.key to headline.value))
+      QuestionType.SCORE ->
+        linkedMapOf("probabilities" to linkedMapOf(headline.key to headline.value))
     }
 
   companion object {
     /**
-     * The view of [answer], one `to_answers` entry for [meta]; [probabilities] (unrounded) only pick
-     * the likeliest option and size the bars.
+     * The view of [answer], one `to_answers` entry for [meta]; [probabilities] (unrounded) only
+     * pick the likeliest option and size the bars.
      */
     fun of(answer: Map<*, *>, meta: QuestionMeta, probabilities: DoubleArray): KevAnswerView {
       val rounded = answer["probabilities"] as Map<*, *>?
@@ -44,8 +52,15 @@ class KevAnswerView(
         Bar(meta.keys[index], label, fourDecimals(value), probabilities[index].toFloat())
       return when (meta.type) {
         QuestionType.CHOICE -> {
-          val bars = meta.keys.indices.map { bar(it, meta.keys[it], rounded!![meta.keys[it]] as Double) }
-          KevAnswerView(meta.type, answer["choice"] as String, fourDecimals(answer["confidence"] as Double), bars, bars[first])
+          val bars =
+            meta.keys.indices.map { bar(it, meta.keys[it], rounded!![meta.keys[it]] as Double) }
+          KevAnswerView(
+            meta.type,
+            answer["choice"] as String,
+            fourDecimals(answer["confidence"] as Double),
+            bars,
+            bars[first],
+          )
         }
         QuestionType.NOUL -> {
           val noul = answer["noul"] as Double
@@ -54,7 +69,10 @@ class KevAnswerView(
         }
         QuestionType.SCORE -> {
           val legend = requireNotNull(meta.legend)
-          val bars = meta.keys.indices.map { bar(it, legend.getValue(meta.keys[it]), rounded!![meta.keys[it]] as Double) }
+          val bars =
+            meta.keys.indices.map {
+              bar(it, legend.getValue(meta.keys[it]), rounded!![meta.keys[it]] as Double)
+            }
           KevAnswerView(
             meta.type,
             fourDecimals(answer["score"] as Double),

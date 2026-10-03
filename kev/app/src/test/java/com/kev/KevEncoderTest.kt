@@ -41,19 +41,33 @@ class KevEncoderTest {
       val usage = requireNotNull(expectedUsage[record.id])
       ourUsage[record.id] = encoded.inputTokens
       if (encoded.inputTokens != usage.inputTokens) {
-        usageFailures.add(linkedMapOf("id" to record.id, "expected" to usage.inputTokens, "actual" to encoded.inputTokens))
+        usageFailures.add(
+          linkedMapOf(
+            "id" to record.id,
+            "expected" to usage.inputTokens,
+            "actual" to encoded.inputTokens,
+          )
+        )
       }
       assertEquals(record.id, usage.questions, meta.size)
       for ((index, question) in meta.withIndex()) {
         questions++
-        val expected = requireNotNull(expectedQuestions["${record.id}/${question.id}"]) { "${record.id}/${question.id}" }
+        val expected =
+          requireNotNull(expectedQuestions["${record.id}/${question.id}"]) {
+            "${record.id}/${question.id}"
+          }
         assertEquals(expected.keys, question.keys)
         assertEquals(expected.type, question.type.wireName)
         val row = encoded.row(index)
         val window = row.requireWindow()
         windows[window] = windows.getValue(window) + 1
         ourRows["${record.id}/${question.id}"] =
-          linkedMapOf("row_ids" to row.ids, "decide_idx" to row.decideIndex, "opt_idx" to row.optionIndices, "window" to window)
+          linkedMapOf(
+            "row_ids" to row.ids,
+            "decide_idx" to row.decideIndex,
+            "opt_idx" to row.optionIndices,
+            "window" to window,
+          )
         val same =
           row.ids.contentEquals(expected.rowIds) &&
             row.decideIndex == expected.decideIndex &&
@@ -66,7 +80,10 @@ class KevEncoderTest {
       }
     }
     val seconds = (System.nanoTime() - started) / 1e9
-    ExternalTestData.writeReport("encoder_rows.json", linkedMapOf("rows" to ourRows, "input_tokens" to ourUsage))
+    ExternalTestData.writeReport(
+      "encoder_rows.json",
+      linkedMapOf("rows" to ourRows, "input_tokens" to ourUsage),
+    )
     ExternalTestData.writeReport(
       "encoder.json",
       linkedMapOf(
@@ -83,10 +100,16 @@ class KevEncoderTest {
         "execution" to "Desktop JVM ${System.getProperty("java.version")}",
       ),
     )
-    println("KEV_ENCODER rows=$matched/$questions input_tokens=${records.size - usageFailures.size}/${records.size} windows=$windows")
+    println(
+      "KEV_ENCODER rows=$matched/$questions input_tokens=${records.size - usageFailures.size}/${records.size} windows=$windows"
+    )
     assertEquals("rows with differences: ${KevJson.write(failures.take(3))}", 402, matched)
     assertEquals(402, questions)
-    assertEquals("usage differences: ${KevJson.write(usageFailures.take(3))}", 0, usageFailures.size)
+    assertEquals(
+      "usage differences: ${KevJson.write(usageFailures.take(3))}",
+      0,
+      usageFailures.size,
+    )
     assertEquals(linkedMapOf(512 to 393, 1024 to 0, 2048 to 9), windows)
   }
 
@@ -108,7 +131,10 @@ class KevEncoderTest {
       tooLong.requireWindow()
       fail("a 2,049-token row was accepted")
     } catch (expected: IllegalArgumentException) {
-      assertTrue(expected.message!!, expected.message!!.contains("2049") && expected.message!!.contains("2048"))
+      assertTrue(
+        expected.message!!,
+        expected.message!!.contains("2049") && expected.message!!.contains("2048"),
+      )
     }
   }
 
@@ -121,8 +147,16 @@ class KevEncoderTest {
     val no = encoder.userTokens("no")
     val yes = encoder.userTokens("yes")
     val expected =
-      intArrayOf(KevEncoder.STATE_ID) + encoder.userTokens("s") + KevEncoder.QUESTION_ID + KevEncoder.OPTION_START_ID + no +
-        KevEncoder.OPTION_END_ID + KevEncoder.OPTION_START_ID + yes + KevEncoder.OPTION_END_ID + KevEncoder.DECIDE_ID
+      intArrayOf(KevEncoder.STATE_ID) +
+        encoder.userTokens("s") +
+        KevEncoder.QUESTION_ID +
+        KevEncoder.OPTION_START_ID +
+        no +
+        KevEncoder.OPTION_END_ID +
+        KevEncoder.OPTION_START_ID +
+        yes +
+        KevEncoder.OPTION_END_ID +
+        KevEncoder.DECIDE_ID
     assertArrayEquals(expected, row.ids)
     assertEquals(expected.size - 1, row.decideIndex)
   }

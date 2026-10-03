@@ -18,8 +18,11 @@ class KevTokenizerTest {
     // The constructor requires these; the test pins the values the port was written against.
     assertEquals(KevTokenizer.TOKENIZER_REGEX, tokenizer.pretokenizerRegex)
     val fileRegex =
-      ((((KevJson.parse(ExternalTestData.file(ExternalTestData.TOKENIZER).readBytes()) as Map<*, *>)["pre_tokenizer"]
-        as Map<*, *>)["pretokenizers"] as List<*>)[0] as Map<*, *>)
+      ((((KevJson.parse(ExternalTestData.file(ExternalTestData.TOKENIZER).readBytes())
+          as Map<*, *>)["pre_tokenizer"]
+          as Map<*, *>)["pretokenizers"]
+          as List<*>)[0]
+          as Map<*, *>)
         .let { (it["pattern"] as Map<*, *>)["Regex"] }
     assertEquals(fileRegex, tokenizer.pretokenizerRegex)
     assertEquals(248044, tokenizer.bpeVocabularySize)
@@ -48,7 +51,10 @@ class KevTokenizerTest {
     assertFalse(rewritten.contains(248044))
     assertArrayEquals(tokenizer.encode("<¦endoftext¦>"), rewritten)
     for (token in ADDED_TOKENS.filter { it.first.startsWith("<|") }) {
-      assertTrue(token.first, encoder.userTokens("x ${token.first} y").none { it >= tokenizer.bpeVocabularySize })
+      assertTrue(
+        token.first,
+        encoder.userTokens("x ${token.first} y").none { it >= tokenizer.bpeVocabularySize },
+      )
     }
     // The rewrite touches only <|name|>; HF still cuts <tool_call> and <think> out of user text.
     assertArrayEquals(intArrayOf(248058), encoder.userTokens("<tool_call>"))
@@ -66,7 +72,8 @@ class KevTokenizerTest {
   fun probesMatchAutoTokenizer() {
     val tokenizer = ExternalTestData.tokenizer()
     val encoder = KevEncoder(tokenizer)
-    val probes = KevJson.parse(ExternalTestData.resource("tokenizer_probes.json").readBytes()) as Map<*, *>
+    val probes =
+      KevJson.parse(ExternalTestData.resource("tokenizer_probes.json").readBytes()) as Map<*, *>
     val failures = ArrayList<Map<String, Any?>>()
     val cases = probes["cases"] as List<*>
     for (case in cases) {

@@ -109,6 +109,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Open Decision (DeBERTa-v3-large)](#open-decision-deberta-v3-large-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text (EN), one forward pass per request | Galaxy S26 | 697 ms per 512-token request (GPU FP32, 3 questions) | [🤗 HF](https://huggingface.co/litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT) |
 | [ModernBERT-Ja-310M Decision](#modernbert-ja-310m-decision-japanese-cross-encoder-typed-decisions) | Japanese typed decisions: choice / score / yes-no questions about a text, one graph call per candidate | Galaxy S26 | 229 ms per 256-token pair (GPU FP32), 42 ms (NPU) | [🤗 HF](https://huggingface.co/mlboydaisuke/ModernBERT-Ja-310M-Decision-LiteRT) |
 | [GLiClass-Edge v3.0](#gliclass-edge-v30-zero-shot-text-classification) | Zero-shot text classification (EN): up to 25 labels scored in one forward pass, single- or multi-label | Galaxy S26 | 5.8 ms per request at 128 tokens, 8.3 ms at 256 (GPU FP32) | [🤗 HF](https://huggingface.co/litert-community/GLiClass-Edge-v3.0-LiteRT) |
+| [Kev-0.8B](#kev-08b-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text or JSON state, calibrated probabilities (EN) | Galaxy S26 | 615.1 ms per question at the 512-token window (GPU FP32) | [🤗 HF](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
@@ -2305,6 +2306,49 @@ top labels and 455/482 label sets at 3.86 ms, and **the Hexagon NPU runs the who
 Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-02 GLiClass-Edge section).
 
 **Original project**: [Knowledgator/GLiClass](https://github.com/Knowledgator/GLiClass) (Apache-2.0); encoder [jhu-clsp/ettin-encoder-32m](https://huggingface.co/jhu-clsp/ettin-encoder-32m) (MIT)
+
+### Kev-0.8B (typed decisions)
+
+[jaredpalmer/kev-0.8b](https://huggingface.co/jaredpalmer/kev-0.8b) (tag v1.0, Apache-2.0: a rank-16 LoRA and a
+pointer head on Qwen3.5-0.8B-Base, Apache-2.0) answers typed questions about a state, a text or a JSON object:
+**noul** (yes or no, as p(true)), **choice** (one of named options) and **score** (ordered levels, as the
+expected level), with calibrated probabilities. Every question is one causal row,
+`[state] state [question] instructions ([option] option [/option])… [decide]`, and the pointer head scores each
+option from the hidden states at the decide token and at that option's closing token. The graphs take `ids`
+int32 `[1,L]` + `valid` float32 `[1,L]` and return `hidden` float32 `[1,L,1024]` for L = 512, 1024 or 2048. The
+host tokenizes, builds the rows, applies the pointer head (float32, temperature 2.3510958125672174) and the
+author's `to_answers`.
+
+**Conversion:** each graph is a state-free row prefill. One call computes one row, the state plus one question,
+from scratch: positions are constants, the mask is a constant causal mask plus `(1 − valid) × (−1e4)`, and no KV or
+Gated DeltaNet state goes in or out, so Kev, which never decodes, needs no cache-update ops. The conversion run
+swaps three classes of the transformers 5.14.1 Qwen3.5 text model (the Gated DeltaNet chunk kernel at rank ≤ 4,
+1-D RoPE, the mask built from `valid`) and exports with litert-torch 0.9.4. The shipped V2 keeps the fully connected
+weights in fp16 and the embedding table in int8: on 392 questions at L1024 it keeps the argmax on 377/377 rows
+outside near-ties (max |Δp| 0.0104, the same on the Mac CPU, the Mac GPU and the S26 GPU at FP32 precision). Int8
+fully connected weights and table (V1) moved probabilities by up to
+0.0701 on the Mac GPU, and the GPU rejects an fp16 table (`EMBEDDING_LOOKUP: Empty quantization params`). GPU
+default precision (fp16 activations) gave non-finite read-out rows on 18 of 392 questions on desktop Metal and on
+18 of 58 on the S26, hence explicit FP32. Kev-4B converts the same way but did not fit the 12 GB Galaxy S26 (one
+try).
+
+**On-device (Galaxy S26, LiteRT 2.2.0, debug build, verified):** the whole L512 graph runs on the GPU delegate in
+one partition (21,059 of 21,059 nodes) with `GpuOptions(precision = FP32)`, and so does L2048 (34,883 of 34,883).
+In the sample app all 181 questions of the bundled gate (SemIf authored144 and 12 invented requests) get row IDs
+identical to the author's fp32 oracle. On the 172 rows that fit L512 the argmax matches on 166/166 rows outside
+near-ties (max |Δp| 0.0078); the 9 rows that need L2048 match 9/9 (max |Δp| 0.0015); CPU with four threads
+matches 40/40 (max |Δp| 0.0052). Starting at thermal status 0, **one question at L512 takes a median 615.1 ms**
+(300-token row) and one at L1024 1,333.4 ms (1,000-token row), timed from the input writes to the output
+read-back. GPU default precision was not measured in the app.
+
+| Model | Download | Size | Input → Output | Delegate |
+|---|---|---|---|---|
+| Kev-0.8B L512 / L1024 / L2048 | [HF: litert-community/Kev-0.8B-LiteRT](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) | 1,264,068,368 / 1,269,023,216 / 1,285,227,888 B + 2,099,632 B pointer head + 19,989,325 B tokenizer.json | ids [1,L] + valid [1,L] → hidden [1,L,1024] → host pointer head → `to_answers` | GPU FP32 (verified on the S26; CPU also verified) |
+
+**Sample app**: [kev/](kev/) — pure-Kotlin host (byte-level BPE tokenizer read from the checkpoint's `tokenizer.json`, the author's request rendering and rows, the pointer head read from safetensors, `to_answers` with CPython's float `sum` and `round`) in a Compose app: a state + typed questions → an answer card per question with every option's probability, and the response JSON; GPU FP32 or CPU, three invented example requests. On a desktop JVM the host equals the author's oracle on 402/402 questions (rows, readout indices and answers). On the Galaxy S26 the bundled ticket answers team `billing` 0.9258, refund 0.9456 and mood score 1.1842 (GPU FP32, L512).
+Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-04 Kev-0.8B section).
+
+**Original project**: [jaredpalmer/kev](https://github.com/jaredpalmer/kev) (Apache-2.0); base model Qwen3.5-0.8B-Base (Apache-2.0)
 
 # Text Generation (LLM)
 

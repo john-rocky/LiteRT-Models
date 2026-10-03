@@ -6,10 +6,10 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * `to_answers` against the author: the oracle's float32 probabilities through [KevAnswers.toAnswers]
- * must give the oracle's `answer` object exactly (keys, key order, strings, every double; 402/402),
- * and CPython 3.12's `sum`, `round` and the confidence formulas must match on fixed and random
- * inputs (`python_numbers.json`).
+ * `to_answers` against the author: the oracle's float32 probabilities through
+ * [KevAnswers.toAnswers] must give the oracle's `answer` object exactly (keys, key order, strings,
+ * every double; 402/402), and CPython 3.12's `sum`, `round` and the confidence formulas must match
+ * on fixed and random inputs (`python_numbers.json`).
  */
 class KevAnswersTest {
   @Test
@@ -53,7 +53,9 @@ class KevAnswersTest {
         "execution" to "Desktop JVM ${System.getProperty("java.version")}",
       ),
     )
-    println("KEV_ANSWERS identical=${oracle.questions.size - failures.size}/${oracle.questions.size} requests=$requestsIdentical/${oracle.requests.size}")
+    println(
+      "KEV_ANSWERS identical=${oracle.questions.size - failures.size}/${oracle.questions.size} requests=$requestsIdentical/${oracle.requests.size}"
+    )
     assertEquals("answers with differences: ${KevJson.write(failures.take(5))}", 0, failures.size)
     assertEquals(402, oracle.questions.size)
     assertEquals(oracle.requests.size, requestsIdentical)
@@ -61,18 +63,27 @@ class KevAnswersTest {
 
   @Test
   fun pythonSumRoundAndReprMatchCPython() {
-    val numbers = KevJson.parse(ExternalTestData.resource("python_numbers.json").readBytes()) as Map<*, *>
+    val numbers =
+      KevJson.parse(ExternalTestData.resource("python_numbers.json").readBytes()) as Map<*, *>
     for (case in numbers["sum"] as List<*>) {
       val entry = case as Map<*, *>
       val values = OracleFixtures.doubles(entry["values"])
       val expected = (entry["sum"] as JsonNumber).toDouble()
-      assertEquals("sum(${entry["values"]})", expected.toRawBits(), KevAnswers.pythonSum(values).toRawBits())
+      assertEquals(
+        "sum(${entry["values"]})",
+        expected.toRawBits(),
+        KevAnswers.pythonSum(values).toRawBits(),
+      )
     }
     for (case in numbers["round"] as List<*>) {
       val entry = case as Map<*, *>
       val x = (entry["x"] as JsonNumber).toDouble()
       val expected = (entry["round_prob"] as JsonNumber).toDouble()
-      assertEquals("round(${entry["x"]}, 4)", expected.toRawBits(), KevAnswers.roundProb(x).toRawBits())
+      assertEquals(
+        "round(${entry["x"]}, 4)",
+        expected.toRawBits(),
+        KevAnswers.roundProb(x).toRawBits(),
+      )
     }
     // The exact binary values decide: 0.12345 is just above and 0.12355 just below their halfway
     // points (Python: round(0.12345, 4) == round(0.12355, 4) == 0.1235); 0.03125 is an exact tie.
@@ -83,14 +94,21 @@ class KevAnswersTest {
 
   @Test
   fun answerMathMatchesTheAuthorOnSyntheticDistributions() {
-    val numbers = KevJson.parse(ExternalTestData.resource("python_numbers.json").readBytes()) as Map<*, *>
+    val numbers =
+      KevJson.parse(ExternalTestData.resource("python_numbers.json").readBytes()) as Map<*, *>
     val sets = numbers["answers"] as List<*>
     for (set in sets) {
       val entry = set as Map<*, *>
       val p = OracleFixtures.doubles(entry["p"])
       assertArrayEquals(OracleFixtures.doubles(entry["normalize"]), KevAnswers.normalize(p), 0.0)
-      assertEquals((entry["choice_confidence"] as JsonNumber).toDouble().toRawBits(), KevAnswers.choiceConfidence(p).toRawBits())
-      assertEquals((entry["score_confidence"] as JsonNumber).toDouble().toRawBits(), KevAnswers.scoreConfidence(p).toRawBits())
+      assertEquals(
+        (entry["choice_confidence"] as JsonNumber).toDouble().toRawBits(),
+        KevAnswers.choiceConfidence(p).toRawBits(),
+      )
+      assertEquals(
+        (entry["score_confidence"] as JsonNumber).toDouble().toRawBits(),
+        KevAnswers.scoreConfidence(p).toRawBits(),
+      )
       val meta =
         (entry["meta"] as List<*>).map {
           val question = it as Map<*, *>
@@ -98,7 +116,9 @@ class KevAnswersTest {
             question["id"] as String,
             QuestionType.fromWireName(question["type"]),
             (question["keys"] as List<*>).map { key -> key as String },
-            (question["legend"] as Map<*, *>?)?.entries?.associate { (k, v) -> k as String to v as String },
+            (question["legend"] as Map<*, *>?)?.entries?.associate { (k, v) ->
+              k as String to v as String
+            },
           )
         }
       val answers = KevAnswers.toAnswers(List(meta.size) { p }, meta)
@@ -110,14 +130,26 @@ class KevAnswersTest {
   @Test
   fun ruleEdges() {
     // All-zero probabilities count as uniform; one option is fully confident.
-    assertArrayEquals(doubleArrayOf(0.25, 0.25, 0.25, 0.25), KevAnswers.normalize(DoubleArray(4)), 0.0)
+    assertArrayEquals(
+      doubleArrayOf(0.25, 0.25, 0.25, 0.25),
+      KevAnswers.normalize(DoubleArray(4)),
+      0.0,
+    )
     assertEquals(1.0, KevAnswers.choiceConfidence(doubleArrayOf(0.7)), 0.0)
     assertEquals(1.0, KevAnswers.scoreConfidence(doubleArrayOf(0.7)), 0.0)
     // The mode and the choice are the first maximum.
     assertEquals(1, KevAnswers.firstArgmax(doubleArrayOf(0.2, 0.4, 0.4)))
     val meta = QuestionMeta("q", QuestionType.CHOICE, listOf("a", "b", "c"), null)
-    assertEquals("b", (KevAnswers.toAnswers(listOf(doubleArrayOf(0.2, 0.4, 0.4)), listOf(meta))["q"] as Map<*, *>)["choice"])
-    val response = KevAnswers.response(linkedMapOf("q" to linkedMapOf("type" to "noul", "noul" to 0.5)), 42)
-    assertEquals("{\"model\":\"kev-latest\",\"answers\":{\"q\":{\"type\":\"noul\",\"noul\":0.5}},\"usage\":{\"input_tokens\":42}}", KevJson.write(response))
+    assertEquals(
+      "b",
+      (KevAnswers.toAnswers(listOf(doubleArrayOf(0.2, 0.4, 0.4)), listOf(meta))["q"] as Map<*, *>)[
+        "choice"],
+    )
+    val response =
+      KevAnswers.response(linkedMapOf("q" to linkedMapOf("type" to "noul", "noul" to 0.5)), 42)
+    assertEquals(
+      "{\"model\":\"kev-latest\",\"answers\":{\"q\":{\"type\":\"noul\",\"noul\":0.5}},\"usage\":{\"input_tokens\":42}}",
+      KevJson.write(response),
+    )
   }
 }

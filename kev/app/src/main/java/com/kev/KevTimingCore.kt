@@ -17,7 +17,9 @@ class KevTimingCore(
 
   /** One set of `timing_rows.json` (its L must be [runner]'s window). */
   fun timeSet(set: KevTimingSet): LinkedHashMap<String, Any?> {
-    require(set.window == runner.length) { "Set ${set.name} is for L${set.window}, the graph is L${runner.length}" }
+    require(set.window == runner.length) {
+      "Set ${set.name} is for L${set.window}, the graph is L${runner.length}"
+    }
     val padded = set.rows.map { KevPaddedRow.of(it.ids, runner.length) to it.ids.size }
     val warmup = ArrayList<Double>()
     var finite = true
@@ -50,7 +52,14 @@ class KevTimingCore(
       "kind" to set.kind,
       "L" to set.window,
       "synthetic" to set.synthetic,
-      "rows" to set.rows.map { linkedMapOf("key" to it.key, "row_len" to it.ids.size, "ids_sha256" to KevPipeline.idsSha256(it.ids)) },
+      "rows" to
+        set.rows.map {
+          linkedMapOf(
+            "key" to it.key,
+            "row_len" to it.ids.size,
+            "ids_sha256" to KevPipeline.idsSha256(it.ids),
+          )
+        },
       "warmup_ms" to warmup,
       "per_call_ms" to KevStats.of(perCall)?.toJson(),
       "per_request_ms" to (if (set.rows.size > 1) KevStats.of(perRequest)?.toJson() else null),
@@ -62,7 +71,8 @@ class KevTimingCore(
   /** [request] from its text: tokenize, one call and the head per question, `to_answers`. */
   fun timeRequestPath(id: String, request: KevRequest): LinkedHashMap<String, Any?> {
     val rowLengths = pipeline.prepare(request).rows.map { it.length }
-    if (rowLengths.max() > runner.length) return linkedMapOf("record" to id, "skipped" to "a row is over L${runner.length}")
+    if (rowLengths.max() > runner.length)
+      return linkedMapOf("record" to id, "skipped" to "a row is over L${runner.length}")
     val warmup = ArrayList<Double>()
     val total = ArrayList<Double>()
     val tokenize = ArrayList<Double>()

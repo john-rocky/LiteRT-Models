@@ -23,5 +23,6 @@ object KevFiles {
   fun required(window: Int): List<String> = listOf(TOKENIZER, HEAD, graph(window))
 
   /** The [required] files missing from [directory]. */
-  fun missing(directory: File, window: Int): List<String> = required(window).filterNot { File(directory, it).isFile }
+  fun missing(directory: File, window: Int): List<String> =
+    required(window).filterNot { File(directory, it).isFile }
 }

@@ -16,12 +16,19 @@ sealed interface KevStatus {
     val elapsedSeconds: Int = 0,
   ) : KevStatus
 
-  data class Ready(val backend: KevDecider.Backend, val window: Int, val loadMs: Long, val compileMs: Long) : KevStatus
+  data class Ready(
+    val backend: KevDecider.Backend,
+    val window: Int,
+    val loadMs: Long,
+    val compileMs: Long,
+  ) : KevStatus
 
   /** Question [questionIndex] (0-based) of [total] is in the graph. */
   data class Running(val questionIndex: Int, val total: Int) : KevStatus
 
-  /** A request finished: [requestTotalMs] from tokenizing to the last head, [questions] answered. */
+  /**
+   * A request finished: [requestTotalMs] from tokenizing to the last head, [questions] answered.
+   */
   data class Done(val requestTotalMs: Long, val questions: Int) : KevStatus
 
   data class Error(val text: String) : KevStatus
@@ -80,7 +87,8 @@ enum class LaunchMode {
 data class UiState(
   val draft: RequestDraft,
   val example: Int? = 0,
-  val status: KevStatus = KevStatus.Loading(LoadStage.TOKENIZER, KevFiles.DEFAULT_WINDOW, false, 0L),
+  val status: KevStatus =
+    KevStatus.Loading(LoadStage.TOKENIZER, KevFiles.DEFAULT_WINDOW, false, 0L),
   val engine: EngineUi? = null,
   val backendChoice: KevDecider.Backend = KevDecider.Backend.GPU,
   val cards: List<AnswerCardUi> = emptyList(),

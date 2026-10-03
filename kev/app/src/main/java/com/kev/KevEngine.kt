@@ -47,7 +47,12 @@ private constructor(
    * the new one (see [KevDecider.create]) unless it is already resident. A GPU request that already
    * fell back to CPU in this window keeps the CPU graph. Returns whether a graph was compiled.
    */
-  fun ensureGraph(context: Context, window: Int, backend: KevDecider.Backend, cpuFallback: Boolean): Boolean {
+  fun ensureGraph(
+    context: Context,
+    window: Int,
+    backend: KevDecider.Backend,
+    cpuFallback: Boolean,
+  ): Boolean {
     val resident =
       !decider.isClosed &&
         decider.length == window &&
@@ -63,7 +68,10 @@ private constructor(
   override fun close() = decider.close()
 
   companion object {
-    /** Loads tokenizer, head and the [window] graph from `files/`, reporting each stage as it starts. */
+    /**
+     * Loads tokenizer, head and the [window] graph from `files/`, reporting each stage as it
+     * starts.
+     */
     fun load(
       context: Context,
       window: Int,
@@ -82,7 +90,13 @@ private constructor(
       val headMs = KevPipeline.millis(System.nanoTime() - headStart)
       onStage(LoadStage.GRAPH)
       val created = KevDecider.create(context, window, backend, cpuFallback)
-      return KevEngine(KevPipeline(tokenizer, head), created.decider, tokenizerMs, headMs, created.gpuFailure)
+      return KevEngine(
+        KevPipeline(tokenizer, head),
+        created.decider,
+        tokenizerMs,
+        headMs,
+        created.gpuFailure,
+      )
     }
   }
 }

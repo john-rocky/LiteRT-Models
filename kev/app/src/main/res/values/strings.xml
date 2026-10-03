@@ -52,6 +52,7 @@
   <string name="response_show">Show the response JSON</string>
   <string name="response_hide">Hide the response JSON</string>
   <string name="footer_device">%1$s · Android %2$s</string>
+  <string name="footer_litert">LiteRT %1$s · %2$s</string>
   <string name="footer_runtime">%1$s · LiteRT %2$s · %3$s</string>
   <string name="footer_graph">Kev-0.8B fp16 FC + int8 emb, L%1$d</string>
   <string name="footer_graph_total">Kev-0.8B fp16 FC + int8 emb, L%1$d · total %2$d ms</string>

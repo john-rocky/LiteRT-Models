@@ -26,7 +26,8 @@ class KevFixture(val id: String, val request: KevRequest) {
     fun parse(text: String): KevFixture = fromJson(KevJson.parse(text))
 
     fun fromJson(value: Any?): KevFixture {
-      val fixture = value as? Map<*, *> ?: throw IllegalArgumentException("The fixture is not a JSON object")
+      val fixture =
+        value as? Map<*, *> ?: throw IllegalArgumentException("The fixture is not a JSON object")
       val id = fixture["id"] as? String
       require(!id.isNullOrEmpty()) { "The fixture has no id" }
       return KevFixture(id, KevRequest.fromJson(fixture))
@@ -36,7 +37,9 @@ class KevFixture(val id: String, val request: KevRequest) {
 
 /** A question row that the resident graph window cannot take. */
 class KevWindowException(val questionId: String, val rowTokens: Int, val window: Int) :
-  IllegalArgumentException("Question $questionId: the row is $rowTokens tokens, the graph takes $window")
+  IllegalArgumentException(
+    "Question $questionId: the row is $rowTokens tokens, the graph takes $window"
+  )
 
 /** The graph returned NaN or infinity on a question's real positions; no answer is produced. */
 class KevNonFiniteException(val questionId: String, val count: Int) :
@@ -86,7 +89,10 @@ class KevQuestionResult(
   val scores: KevScores,
   /** The float32 softmax widened exactly to double, as `to_answers` receives it. */
   val probabilities: DoubleArray,
-  /** Input writes, `run()` and the read-back of `hidden`: `run()` alone returns before the work ends. */
+  /**
+   * Input writes, `run()` and the read-back of `hidden`: `run()` alone returns before the work
+   * ends.
+   */
   val inferMs: Double,
   /** Readout rows, both projections, the dot products and the softmax. */
   val headMs: Double,
@@ -111,7 +117,13 @@ class KevPipeline(val tokenizer: KevTokenizer, val head: KevPointerHead) {
         val start = System.nanoTime()
         encoder.branch(question).also { branchMs[index] = millis(System.nanoTime() - start) }
       }
-    return KevPrepared(request, meta, KevEncoded(stateIds, branches), millis(stateEnd - stateStart), branchMs)
+    return KevPrepared(
+      request,
+      meta,
+      KevEncoded(stateIds, branches),
+      millis(stateEnd - stateStart),
+      branchMs,
+    )
   }
 
   /**
@@ -127,11 +139,18 @@ class KevPipeline(val tokenizer: KevTokenizer, val head: KevPointerHead) {
     val inferStart = System.nanoTime()
     val hidden = runner.run(padded.ids, padded.valid)
     val inferEnd = System.nanoTime()
-    check(hidden.size == window * HIDDEN) { "hidden has ${hidden.size} values, expected ${window * HIDDEN}" }
+    check(hidden.size == window * HIDDEN) {
+      "hidden has ${hidden.size} values, expected ${window * HIDDEN}"
+    }
     val nonFinite = nonFiniteCount(hidden, 0, row.length * HIDDEN)
     if (nonFinite > 0) throw KevNonFiniteException(meta.id, nonFinite)
-    val scores = head.score(hiddenRow(hidden, row.decideIndex), row.optionIndices.map { hiddenRow(hidden, it) })
-    val probabilities = DoubleArray(scores.probabilities.size) { scores.probabilities[it].toDouble() }
+    val scores =
+      head.score(
+        hiddenRow(hidden, row.decideIndex),
+        row.optionIndices.map { hiddenRow(hidden, it) },
+      )
+    val probabilities =
+      DoubleArray(scores.probabilities.size) { scores.probabilities[it].toDouble() }
     val headEnd = System.nanoTime()
     return KevQuestionResult(
       index,
@@ -146,7 +165,10 @@ class KevPipeline(val tokenizer: KevTokenizer, val head: KevPointerHead) {
   }
 
   /** `to_answers` over finished questions, keyed by question ID in question order. */
-  fun answers(prepared: KevPrepared, results: List<KevQuestionResult>): LinkedHashMap<String, Any?> =
+  fun answers(
+    prepared: KevPrepared,
+    results: List<KevQuestionResult>,
+  ): LinkedHashMap<String, Any?> =
     KevAnswers.toAnswers(results.map { it.probabilities }, results.map { prepared.meta[it.index] })
 
   /** The response body: model, answers and `usage.input_tokens`. */
