@@ -104,6 +104,24 @@ class KevDeviceRunsTest {
   }
 
   @Test
+  fun timingSelectsTheRequestedSets() {
+    val rows = KevTimingRows.parse(ExternalTestData.file("device/timing_rows.json").readBytes())
+    assertEquals(listOf("fiveq", "T300", "T1000"), rows.sets.map { it.name })
+    assertEquals(listOf("fiveq", "T300"), rows.select(null, 512).run.map { it.name })
+    assertEquals(listOf("T1000" to "the resident graph is L512"), rows.select(null, 512).skipped.map { it.name to it.reason })
+    val t300 = rows.select(KevLaunch.setNames("T300"), 512)
+    assertEquals(listOf("T300"), t300.run.map { it.name })
+    assertEquals(listOf("fiveq" to "not requested", "T1000" to "not requested"), t300.skipped.map { it.name to it.reason })
+    assertEquals(listOf("T1000"), rows.select(KevLaunch.setNames("T1000"), 1024).run.map { it.name })
+    assertTrue(rows.select(KevLaunch.setNames("none"), 512).run.isEmpty())
+    assertEquals(listOf("fiveq", "T300"), rows.select(KevLaunch.setNames(" fiveq,T300 ,"), 512).run.map { it.name })
+    val unknown = rows.select(KevLaunch.setNames("T300,T999"), 512)
+    assertEquals(listOf("T300"), unknown.run.map { it.name })
+    assertEquals(KevTimingSkip("T999", null, "not in the rows file").reason, unknown.skipped.last().reason)
+    assertNull(unknown.skipped.last().window)
+  }
+
+  @Test
   fun timingMakesTheProtocolsCalls() {
     var calls = 0
     val zeros =

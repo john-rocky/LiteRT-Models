@@ -40,6 +40,19 @@ object KevDevice {
       }
       .getOrElse { "unreadable: ${it.message}" }
 
+  /** `Build.MODEL`, with the market name in front for the models in [MARKET_NAMES]: "Galaxy S26 (SM-S942Q)". */
+  fun displayName(): String = displayName(Build.MODEL)
+
+  fun displayName(model: String): String {
+    val marketName = marketNameOrNull(model)
+    return if (marketName == null) model else "$marketName ($model)"
+  }
+
+  /** The market name for the models in [MARKET_NAMES] ("Galaxy S26"), else `Build.MODEL`. */
+  fun marketName(): String = marketNameOrNull(Build.MODEL) ?: Build.MODEL
+
+  private fun marketNameOrNull(model: String): String? = MARKET_NAMES.entries.firstOrNull { model.startsWith(it.key) }?.value
+
   fun airplaneMode(context: Context): Boolean =
     Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
 
@@ -63,4 +76,7 @@ object KevDevice {
     )
 
   private const val TENTHS = 10.0
+
+  /** Models this sample was measured on, shown by their market name (key: `Build.MODEL` prefix). */
+  private val MARKET_NAMES = mapOf("SM-S942" to "Galaxy S26")
 }

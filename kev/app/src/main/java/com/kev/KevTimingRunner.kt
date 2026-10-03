@@ -20,6 +20,10 @@ class KevTimingRunner(private val context: Context) {
     val window: Int,
     /** Empty the app's cache directory before compiling, so that the compile is cold. */
     val clearCache: Boolean,
+    /** The set names to time (null: every set for the window; empty: none). */
+    val sets: List<String>?,
+    /** Whether to time the request path after the sets. */
+    val requestPath: Boolean,
   )
 
   private val files = context.filesDir
@@ -45,6 +49,8 @@ class KevTimingRunner(private val context: Context) {
         "thermal_status_start" to KevDevice.thermalStatus(context),
         "battery_temperature_start" to KevDevice.batteryTemperature(context),
         "clear_cache" to args.clearCache,
+        "sets_requested" to (args.sets ?: "all"),
+        "request_path_requested" to args.requestPath,
       )
     )
     var error: String? = null
@@ -70,18 +76,16 @@ class KevTimingRunner(private val context: Context) {
       report["sets"] = sets
       report["skipped_sets"] = skipped
       write(partial, report)
-      for (set in timingRows.sets) {
-        if (set.window != engine.window) {
-          skipped.add(linkedMapOf("name" to set.name, "L" to set.window, "reason" to "the resident graph is L${engine.window}"))
-          continue
-        }
+      val selection = timingRows.select(args.sets, engine.window)
+      selection.skipped.forEach { skipped.add(linkedMapOf("name" to it.name, "L" to it.window, "reason" to it.reason)) }
+      for (set in selection.run) {
         if (timing.stoppedEarly) break
         progress(set.name)
         Log.i(KevGateRunner.LOG_TAG, "TIMING_SET ${set.name} rows=${set.rows.size} L=${set.window}")
         sets[set.name] = timing.timeSet(set)
         write(partial, report)
       }
-      if (!timing.stoppedEarly) {
+      if (!timing.stoppedEarly && args.requestPath) {
         progress("request path")
         val items = KevGateChecks.parseAsset(context.assets.open(KevGateChecks.ASSET_NAME).use { it.readBytes() })
         val item = items.first { it.id == KevTimingCore.REQUEST_PATH_RECORD }

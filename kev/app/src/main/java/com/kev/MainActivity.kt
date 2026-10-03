@@ -25,7 +25,8 @@ import com.kev.view.PresentationScreen
  * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800 [--ei window 512]`
  * - debug build: `--ez gate true --es backend gpu|cpu --es report <name.json> [--ei window 512] [--ei limit n]`
  * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|cpu
- *   --es report <name.json> [--ei window 512] [--ez clear_cache true]`
+ *   --es report <name.json> [--ei window 512] [--ez clear_cache true] [--es sets <name[,name…]>|none]
+ *   [--ez request_path false]` (one set per launch keeps every set at the same starting temperature)
  */
 class MainActivity : ComponentActivity() {
   private val viewModel: MainViewModel by viewModels { MainViewModel.getFactory(this) }
@@ -134,7 +135,16 @@ class MainActivity : ComponentActivity() {
           rows.isNullOrEmpty() -> KevLaunch.Invalid("no rows extra", autoplay = false)
           !KevLaunch.windowValid(window) -> KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
           !KevLaunch.reportNameValid(report) -> KevLaunch.Invalid("invalid report name $report", autoplay = false)
-          else -> KevLaunch.Timing(rows, backend, report, window, intent.getBooleanExtra(EXTRA_CLEAR_CACHE, false))
+          else ->
+            KevLaunch.Timing(
+              rows,
+              backend,
+              report,
+              window,
+              intent.getBooleanExtra(EXTRA_CLEAR_CACHE, false),
+              intent.getStringExtra(EXTRA_SETS)?.let(KevLaunch::setNames),
+              intent.getBooleanExtra(EXTRA_REQUEST_PATH, true),
+            )
         }
       }
       else -> KevLaunch.Normal
@@ -154,6 +164,8 @@ class MainActivity : ComponentActivity() {
     const val EXTRA_LIMIT = "limit"
     const val EXTRA_ROWS = "rows"
     const val EXTRA_CLEAR_CACHE = "clear_cache"
+    const val EXTRA_SETS = "sets"
+    const val EXTRA_REQUEST_PATH = "request_path"
     const val DEFAULT_DELAY_MS = 1500
     const val DEFAULT_GAP_MS = 800
   }

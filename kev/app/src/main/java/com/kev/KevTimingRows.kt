@@ -9,11 +9,35 @@ class KevTimingRow(val key: String, val ids: IntArray)
  */
 class KevTimingSet(val name: String, val kind: String, val window: Int, val synthetic: Boolean, val rows: List<KevTimingRow>)
 
+/** A set left out of a timing run ([window] is null for a requested name the file does not have). */
+class KevTimingSkip(val name: String, val window: Int?, val reason: String)
+
+/** The sets one timing run times, in file order, and the ones it leaves out. */
+class KevTimingSelection(val run: List<KevTimingSet>, val skipped: List<KevTimingSkip>)
+
 /**
  * The conversion run's timing rows (`{pad_id, protocol, source, sets: [{name, kind, L, rows: [{key,
  * ids}]}]}`), so the app times the same rows as the model card.
  */
 class KevTimingRows(val padId: Int, val protocol: String?, val source: String?, val sets: List<KevTimingSet>) {
+  /**
+   * The sets to time on a [window] graph: the [requested] names (every set when null, none when
+   * empty) whose L is [window], so that each set can get a launch of its own.
+   */
+  fun select(requested: List<String>?, window: Int): KevTimingSelection {
+    val run = ArrayList<KevTimingSet>()
+    val skipped = ArrayList<KevTimingSkip>()
+    for (set in sets) {
+      when {
+        requested != null && set.name !in requested -> skipped.add(KevTimingSkip(set.name, set.window, "not requested"))
+        set.window != window -> skipped.add(KevTimingSkip(set.name, set.window, "the resident graph is L$window"))
+        else -> run.add(set)
+      }
+    }
+    requested.orEmpty().filter { name -> sets.none { it.name == name } }.forEach { skipped.add(KevTimingSkip(it, null, "not in the rows file")) }
+    return KevTimingSelection(run, skipped)
+  }
+
   companion object {
     fun parse(bytes: ByteArray): KevTimingRows {
       val json = KevJson.parse(bytes) as Map<*, *>

@@ -39,8 +39,9 @@ class KevDemoRunInput(
   val fixturePath: String,
   val deviceModel: String,
   val deviceManufacturer: String,
-  /** The device line of the footer. */
+  /** The device name in the footer. */
   val deviceShownAs: String,
+  val deviceAndroidRelease: String,
   val litert: String,
   /** "GPU FP32" or "CPU 4 threads". */
   val accelerator: String,
@@ -104,6 +105,7 @@ object KevDemoRun {
           "model" to input.deviceModel,
           "manufacturer" to input.deviceManufacturer,
           "shown_as" to input.deviceShownAs,
+          "android_release" to input.deviceAndroidRelease,
         ),
       "runtime" to linkedMapOf("litert" to input.litert, "accelerator" to input.accelerator),
       "graph" to linkedMapOf("file" to input.graphFile, "L" to input.window, "bytes" to input.graphBytes),

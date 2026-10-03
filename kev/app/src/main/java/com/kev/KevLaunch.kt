@@ -10,13 +10,18 @@ sealed interface KevLaunch {
   /** Debug build: the fixture gate on [window] into `files/<report>`. */
   data class Gate(val backend: KevDecider.Backend, val report: String, val window: Int, val limit: Int) : KevLaunch
 
-  /** Debug and benchmark builds: the timing protocol on the rows of `files/<rows>`. */
+  /**
+   * Debug and benchmark builds: the timing protocol on the rows of `files/<rows>`, limited to the
+   * [sets] named (null: all of them) and with or without the request path.
+   */
   data class Timing(
     val rows: String,
     val backend: KevDecider.Backend,
     val report: String,
     val window: Int,
     val clearCache: Boolean,
+    val sets: List<String>?,
+    val requestPath: Boolean,
   ) : KevLaunch
 
   /** The demo recording: answer the request in [fixture] on the presentation layout. */
@@ -35,5 +40,9 @@ sealed interface KevLaunch {
     fun reportNameValid(name: String): Boolean = name.matches(REPORT_NAME) && !name.endsWith(".partial")
 
     fun windowValid(window: Int): Boolean = window in KevEncoder.WINDOWS
+
+    /** The `sets` extra: comma-separated set names, or `none` for no set (the request path only). */
+    fun setNames(extra: String): List<String> =
+      if (extra.trim() == "none") emptyList() else extra.split(',').map { it.trim() }.filter { it.isNotEmpty() }
   }
 }

@@ -343,7 +343,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
     val title = string(R.string.presentation_title)
     val cards = fixture.request.questions.map { pendingCard(it) }.toMutableList()
     var presentation =
-      PresentationUi(title, KevRecords.render(fixture.request.state), cards.toList(), footerLines(loaded, null))
+      PresentationUi(title, KevRecords.render(fixture.request.state), cards.toList(), presentationFooter(loaded, null))
     mutableState.update { it.copy(presentation = presentation, status = KevStatus.Running(0, cards.size)) }
     val questions = ArrayList<KevDemoQuestion>()
     var lastAnswerNanos = requestStart
@@ -377,7 +377,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
     }
     // From the start of tokenizing to the last answer, without the presentation waits.
     val requestTotalMs = KevAnswerView.wholeMillis(KevPipeline.millis(lastAnswerNanos - requestStart - waitedNanos))
-    val footer = footerLines(loaded, requestTotalMs)
+    val footer = presentationFooter(loaded, requestTotalMs)
     presentation = presentation.copy(footerLines = footer)
     mutableState.update { it.copy(presentation = presentation, status = KevStatus.Done(requestTotalMs, questions.size)) }
     // Let the final frame reach the screen before the layout is recorded.
@@ -389,7 +389,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
           fixturePath = file.path,
           deviceModel = Build.MODEL,
           deviceManufacturer = Build.MANUFACTURER,
-          deviceShownAs = deviceLine(),
+          deviceShownAs = KevDevice.marketName(),
+          deviceAndroidRelease = Build.VERSION.RELEASE,
           litert = KevDecider.LITERT_VERSION,
           accelerator = backendName(loaded.backend),
           graphFile = loaded.decider.file.name,
@@ -468,7 +469,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
         guarded(onFailure = ::diagnosticsFailed) {
           val summary =
             KevTimingRunner(context).run(
-              KevTimingRunner.Args(rows, launch.backend, launch.report, launch.window, launch.clearCache),
+              KevTimingRunner.Args(rows, launch.backend, launch.report, launch.window, launch.clearCache, launch.sets, launch.requestPath),
               loadEngine = { diagnosticEngine(launch.window, launch.backend) },
               progress = { step -> mutableState.update { it.copy(diagnostics = string(R.string.timing_progress, step)) } },
             )
@@ -579,7 +580,19 @@ class MainViewModel(private val context: Context) : ViewModel() {
       if (totalMs == null) string(R.string.footer_graph, loaded.window) else string(R.string.footer_graph_total, loaded.window, totalMs),
     )
 
-  private fun deviceLine(): String = string(R.string.footer_device, Build.MODEL, Build.VERSION.RELEASE)
+  /**
+   * The presentation footer: three short lines that fit a 360 dp wide screen (device name, LiteRT
+   * and backend; graph; the request total, empty until the end). Model code and Android version are
+   * in the run JSON only.
+   */
+  private fun presentationFooter(loaded: KevEngine, totalMs: Long?): List<String> =
+    listOf(
+      string(R.string.footer_runtime, KevDevice.marketName(), KevDecider.LITERT_VERSION, backendName(loaded.backend)),
+      string(R.string.footer_graph, loaded.window),
+      if (totalMs == null) "" else string(R.string.presentation_total, totalMs),
+    )
+
+  private fun deviceLine(): String = string(R.string.footer_device, KevDevice.displayName(), Build.VERSION.RELEASE)
 
   private fun backendName(backend: KevDecider.Backend): String =
     string(if (backend == KevDecider.Backend.GPU) R.string.backend_gpu else R.string.backend_cpu)

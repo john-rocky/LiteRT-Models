@@ -48,6 +48,7 @@
   <string name="answer_score">score %1$s</string>
   <string name="answer_confidence">confidence %1$s</string>
   <string name="presentation_noul">p(true)</string>
+  <string name="presentation_total">total %1$d ms</string>
   <string name="response_show">Show the response JSON</string>
   <string name="response_hide">Hide the response JSON</string>
   <string name="footer_device">%1$s · Android %2$s</string>

@@ -112,7 +112,8 @@ adb exec-out run-as com.kev cat files/app_gate_gpu.json > app_gate_gpu.json
 adb push timing_rows.json /data/local/tmp/kev_timing_rows.json
 adb shell run-as com.kev cp /data/local/tmp/kev_timing_rows.json files/timing_rows.json
 adb shell am start -n com.kev/.MainActivity --ez timing true --es rows timing_rows.json \
-  --es backend gpu --es report app_timing_gpu_L512.json [--ei window 512] [--ez clear_cache true]
+  --es backend gpu --es report app_timing_gpu_L512.json [--ei window 512] [--ez clear_cache true] \
+  [--es sets T300] [--ez request_path false]
 ```
 
 The gate report (`files/<report>`, `files/<report>.partial` while running) holds the tokenizer
@@ -125,10 +126,14 @@ temperature at both ends; per row its key, `row_len`, `ids_sha256`, status (`run
 with `needs L2048`, `limit` or `stopped`), probabilities and times. PASS needs every probe and row
 identical, no NaN, the argmax outside near-ties, max |Δp| ≤ 0.02 and mean |Δp| ≤ 0.002.
 
-The timing report holds, for every set of `timing_rows.json` whose L is the resident window,
-5 warm-up calls and 20 timed calls (a `request` set: 20 requests of its rows back to back) with
-median (numpy's), min and max, then `request_path`: the bundled `own_fiveq_09` request from its
-text (tokenize, five graph calls, head, answers), 5 warm-up and 20 timed requests. A call is input
+The timing report holds, for every set of `timing_rows.json` whose L is the resident window (or
+only the sets named by `--es sets`, comma-separated; `none` times no set), 5 warm-up calls and 20 timed calls (a `request` set: 20 requests of its rows back to back) with
+median (numpy's), min and max, then (unless `--ez request_path false`) `request_path`: the bundled
+`own_fiveq_09` request from its text (tokenize, five graph calls, head, answers), 5 warm-up and 20
+timed requests. The sets run back to back in one launch, so the phone warms up from the first set to
+the last; to start every set at the same temperature, give each set a launch of its own (`--es sets
+fiveq --ez request_path false`, then `--es sets T300 --ez request_path false`, then `--es sets none`).
+The report records `sets_requested` and `request_path_requested`. A call is input
 writes + `run()` + read-back. With `clear_cache` the app's cache directory is emptied before the
 graph compiles, so the compile time is a cold one.
 

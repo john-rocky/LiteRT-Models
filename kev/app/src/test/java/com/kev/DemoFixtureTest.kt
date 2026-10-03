@@ -104,8 +104,8 @@ class DemoFixtureTest {
         KevDemoRun.build(
           KevDemoRunInput(
             "demo_ticket_01", "/data/user/0/com.kev/files/demo_ticket_01.json", "SM-S942Q", "samsung",
-            "SM-S942Q · Android 16", "2.2.0", "GPU FP32", "kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite", 512,
-            1_264_068_368L, 16_200, 700, "Kev Decide", listOf("line 1", "line 2"), 1500, 800, 9, 1950,
+            "Galaxy S26", "16", "2.2.0", "GPU FP32", "kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite", 512,
+            1_264_068_368L, 16_200, 700, "Kev Decide", listOf("line 1", "line 2", "line 3"), 1500, 800, 9, 1950,
             questions, true, "6:cpuset:/top-app", "6:cpuset:/top-app", layout,
           )
         )
@@ -113,8 +113,9 @@ class DemoFixtureTest {
       val parsed = KevJson.parse(KevJson.write(run)) as Map<*, *>
       assertEquals(KevDemoRun.KEYS, parsed.keys.toList())
       assertEquals("demo_ticket_01", (parsed["fixture"] as Map<*, *>)["id"])
-      assertEquals("SM-S942Q · Android 16", (parsed["device"] as Map<*, *>)["shown_as"])
-      assertEquals(listOf("line 1", "line 2"), parsed["footer_lines"])
+      assertEquals(listOf("model", "manufacturer", "shown_as", "android_release"), (parsed["device"] as Map<*, *>).keys.toList())
+      assertEquals("Galaxy S26", (parsed["device"] as Map<*, *>)["shown_as"])
+      assertEquals(listOf("line 1", "line 2", "line 3"), parsed["footer_lines"])
       for (question in parsed["questions"] as List<*>) {
         val entry = question as Map<*, *>
         assertEquals(KevDemoRun.QUESTION_KEYS, entry.keys.toList())
