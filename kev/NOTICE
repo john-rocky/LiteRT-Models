@@ -1,0 +1,33 @@
+Kev Decide Android sample
+
+Model: Kev-0.8B by Jared Palmer (huggingface.co/jaredpalmer/kev-0.8b, tag v1.0 = commit
+bf75a6a8848ea6960ff2ed108d9ed44c2941174f), licensed under Apache License 2.0
+(licenses/Kev-APACHE-2.0.txt): a rank-16 LoRA and a pointer head on Qwen/Qwen3.5-0.8B-Base
+(revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68), licensed under Apache License 2.0
+(licenses/Qwen3.5-APACHE-2.0.txt). The LiteRT graphs, the pointer head file and the tokenizer.json
+the app loads are converted or copied from these checkpoints and are installed on the device, not
+kept in this source tree.
+
+The request handling, the rows and the answers are Kotlin ports of the author's code
+(github.com/jaredpalmer/kev, tag kev-1.0 = commit 6b719c3c3f367295f6ef336f4f751cf5ff970abc, Apache
+License 2.0): kev/api.py render, option_text, question_keys, to_record, _normalize,
+choice_confidence, score_confidence, round_prob and to_answers, and the request validation of
+SystemOneRequest; kev/model.py user_tokens, encode and rows_of (one causal row per question) and
+PointerHead in eval mode with the calibration temperature. Changes include float arithmetic that
+reproduces CPython's sum and round, graph windows of 512, 1024 and 2048 tokens with rejection of
+longer rows instead of truncation, and the head computed on the host from the graph's hidden
+states.
+
+The tokenizer follows the published tokenizer.json contract of Hugging Face tokenizers and
+transformers (Apache License 2.0; licenses/Tokenizers-APACHE-2.0.txt and
+licenses/Transformers-APACHE-2.0.txt): added-token extraction, NFC, the Split pre-tokenizer
+regex, the ByteLevel mapping and byte-level BPE.
+
+The debug gate asset app/src/debug/assets/gate_fixtures.json holds the 144 items of SemIf
+benchmarks/data/authored144.jsonl (github.com/TheoLeeCJ/SemIf, commit
+ca3ba65f142967030ecb453346e94d6f476a69df), Copyright (c) 2026 TheoLeeCJ, licensed under the MIT
+License (licenses/SemIf-MIT.txt), together with 12 invented requests. The three example requests
+in app/src/main/res/raw/ are invented requests of the same set.
+
+Gradle wrapper files retain their upstream Apache License 2.0 headers.
+Retained model, library and fixture licenses are under licenses/.

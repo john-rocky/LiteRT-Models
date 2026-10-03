@@ -1,0 +1,41 @@
+{
+ "id": "own_review_05",
+ "state": "Review of the Quillo K7 electric kettle, by a verified buyer.\n\nThe kettle looks great on the counter and the 1.7 litre size is right for our family. But the lid hinge snapped after three weeks of normal use, and now the lid won't stay closed, so the kettle doesn't switch itself off when the water boils. Customer service took nine days to reply. Heating speed is fine and it's quiet. I wouldn't buy it again.",
+ "questions": {
+  "stars": {
+   "type": "score",
+   "instructions": "What star rating best fits this review?",
+   "criteria": [
+    "1 star",
+    "2 stars",
+    "3 stars",
+    "4 stars",
+    "5 stars"
+   ]
+  },
+  "main_issue": {
+   "type": "choice",
+   "instructions": "What is the reviewer's main complaint?",
+   "criteria": {
+    "price": "Too expensive",
+    "durability": "A part broke or wore out",
+    "noise": "Too loud",
+    "speed": "Too slow",
+    "size": "Wrong size",
+    "design": "Looks or style",
+    "delivery": "Shipping or packaging",
+    "manual": "Instructions or setup",
+    "support": "Customer service",
+    "taste": "Taste or smell of the water"
+   }
+  },
+  "would_rebuy": {
+   "type": "noul",
+   "instructions": "Would the reviewer buy this product again?",
+   "criteria": {
+    "true": "They say they would buy it again or recommend it",
+    "false": "They say they would not"
+   }
+  }
+ }
+}

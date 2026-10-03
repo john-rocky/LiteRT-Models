@@ -21,7 +21,10 @@ class JsonNumber(val literal: String) {
   /** The value of an integer literal; fails for floats and for values outside Int. */
   fun toInt(): Int {
     require(isInteger) { "Not an integer: $literal" }
-    return BigInteger(literal).intValueExact()
+    // BigInteger.intValueExact() needs API 31; an Int holds at most 31 value bits.
+    val value = BigInteger(literal)
+    require(value.bitLength() < Int.SIZE_BITS) { "Outside Int: $literal" }
+    return value.toInt()
   }
 
   /** Python's `str()` of the value `json.loads` makes of this literal. */
@@ -411,6 +414,49 @@ object KevJson {
    * separators=(",", ":"))`: floats print as `repr`, non-ASCII characters stay as they are.
    */
   fun write(value: Any?): String = StringBuilder().also { append(it, value) }.toString()
+
+  /**
+   * [write] laid out like Python's `json.dumps(value, indent=indent, ensure_ascii=False)`: one
+   * member per line, `": "` after keys, empty objects and arrays as `{}` and `[]`.
+   */
+  fun writeIndented(value: Any?, indent: Int = 2): String =
+    StringBuilder().also { appendIndented(it, value, indent, 0) }.toString()
+
+  private fun appendIndented(out: StringBuilder, value: Any?, indent: Int, level: Int) {
+    val items: List<*>? =
+      when (value) {
+        is IntArray -> value.asList()
+        is FloatArray -> value.asList()
+        is DoubleArray -> value.asList()
+        is Iterable<*> -> value.toList()
+        else -> null
+      }
+    when {
+      value is Map<*, *> && value.isNotEmpty() -> {
+        out.append('{')
+        var first = true
+        for ((key, member) in value) {
+          out.append(if (first) "\n" else ",\n").append(" ".repeat(indent * (level + 1)))
+          first = false
+          appendString(out, key as String)
+          out.append(": ")
+          appendIndented(out, member, indent, level + 1)
+        }
+        out.append('\n').append(" ".repeat(indent * level)).append('}')
+      }
+      items != null && items.isNotEmpty() -> {
+        out.append('[')
+        var first = true
+        for (item in items) {
+          out.append(if (first) "\n" else ",\n").append(" ".repeat(indent * (level + 1)))
+          first = false
+          appendIndented(out, item, indent, level + 1)
+        }
+        out.append('\n').append(" ".repeat(indent * level)).append(']')
+      }
+      else -> append(out, value)
+    }
+  }
 
   private fun append(out: StringBuilder, value: Any?) {
     when (value) {

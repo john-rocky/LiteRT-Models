@@ -5,8 +5,8 @@ import java.math.RoundingMode
 import kotlin.math.abs
 
 /**
- * Port of the author's `to_answers` (`kev/api.py`) with the confidence formulas of TypeSafe's
- * reference adapter. Every number is a Python float computed in the same order: probabilities in
+ * Port of the author's `to_answers` (`kev/api.py`) with the author's `choice_confidence` and
+ * `score_confidence`. Every number is a Python float computed in the same order: probabilities in
  * are the float32 softmax outputs widened exactly to double, sums follow CPython 3.12's built-in
  * `sum` (Neumaier-compensated), and outputs are rounded to 4 decimals with `round(x, 4)`.
  */

@@ -1,25 +1,160 @@
 package com.kev
 
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.Text
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kev.view.ApplicationTheme
+import com.kev.view.KevScreen
+import com.kev.view.PresentationScreen
 
-/** Placeholder screen; the decision UI replaces it in the next round. */
+/**
+ * Hosts the Compose screen (`launchMode="singleTop"`: a demo intent reaches the running activity
+ * through [onNewIntent], without a new process). Extras:
+ * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800 [--ei window 512]`
+ * - debug build: `--ez gate true --es backend gpu|cpu --es report <name.json> [--ei window 512] [--ei limit n]`
+ * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|cpu
+ *   --es report <name.json> [--ei window 512] [--ez clear_cache true]`
+ */
 class MainActivity : ComponentActivity() {
+  private val viewModel: MainViewModel by viewModels { MainViewModel.getFactory(this) }
+
   override fun onCreate(savedInstanceState: Bundle?) {
+    enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+    val launch = parse(intent)
+    keepVisible(launch)
+    viewModel.start(launch)
     setContent {
-      Text(
-        text = stringResource(R.string.placeholder_message),
-        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp),
-      )
+      val state by viewModel.uiState.collectAsStateWithLifecycle()
+      LaunchedEffect(state.presentation != null) { showNavigationBar(state.presentation == null) }
+      ApplicationTheme {
+        val presentation = state.presentation
+        if (presentation != null) {
+          PresentationScreen(presentation, viewModel::onPresentationLayout, viewModel::leavePresentation)
+        } else {
+          KevScreen(
+            state,
+            onExample = viewModel::selectExample,
+            onState = viewModel::setState,
+            onQuestionId = viewModel::setQuestionId,
+            onQuestionType = viewModel::setQuestionType,
+            onInstructions = viewModel::setInstructions,
+            onOptions = viewModel::setOptions,
+            onAddQuestion = viewModel::addQuestion,
+            onRemoveQuestion = viewModel::removeQuestion,
+            onBackend = viewModel::selectBackend,
+            onDecide = viewModel::decide,
+            onToggleResponse = viewModel::toggleResponse,
+          )
+        }
+      }
     }
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    val launch = parse(intent)
+    keepVisible(launch)
+    viewModel.newIntent(launch)
+  }
+
+  /**
+   * On a locked test phone the measured process must stay in the foreground (top-app): in the
+   * debug build, and for every autoplay, gate and timing launch, show above the keyguard, turn the
+   * screen on and keep it on. A normal launch of the other builds is unchanged.
+   */
+  private fun keepVisible(launch: KevLaunch) {
+    val debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    if (!debuggable && launch == KevLaunch.Normal) return
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      setShowWhenLocked(true)
+      setTurnScreenOn(true)
+    }
+    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+  }
+
+  /** The presentation layout hides the navigation bar; the status bar stays visible. */
+  private fun showNavigationBar(show: Boolean) {
+    val controller = WindowCompat.getInsetsController(window, window.decorView)
+    controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    if (show) {
+      controller.show(WindowInsetsCompat.Type.navigationBars())
+    } else {
+      controller.hide(WindowInsetsCompat.Type.navigationBars())
+    }
+  }
+
+  private fun parse(intent: Intent): KevLaunch {
+    val window = intent.getIntExtra(EXTRA_WINDOW, KevFiles.DEFAULT_WINDOW)
+    val diagnostics = BuildConfig.DEBUG || BuildConfig.BUILD_TYPE == "benchmark"
+    return when {
+      intent.getBooleanExtra(EXTRA_AUTOPLAY, false) -> {
+        val fixture = intent.getStringExtra(EXTRA_FIXTURE)
+        when {
+          fixture.isNullOrEmpty() -> KevLaunch.Invalid("no fixture extra", autoplay = true)
+          !KevLaunch.windowValid(window) -> KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = true)
+          else ->
+            KevLaunch.Autoplay(
+              fixture,
+              intent.getIntExtra(EXTRA_DELAY_MS, DEFAULT_DELAY_MS).toLong(),
+              intent.getIntExtra(EXTRA_GAP_MS, DEFAULT_GAP_MS).toLong(),
+              window,
+            )
+        }
+      }
+      BuildConfig.DEBUG && intent.getBooleanExtra(EXTRA_GATE, false) -> {
+        val backend = KevLaunch.backend(intent.getStringExtra(EXTRA_BACKEND))
+        val report = intent.getStringExtra(EXTRA_REPORT) ?: "app_gate_${backend?.name?.lowercase()}_L$window.json"
+        when {
+          backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
+          !KevLaunch.windowValid(window) -> KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
+          !KevLaunch.reportNameValid(report) -> KevLaunch.Invalid("invalid report name $report", autoplay = false)
+          else -> KevLaunch.Gate(backend, report, window, intent.getIntExtra(EXTRA_LIMIT, 0))
+        }
+      }
+      diagnostics && intent.getBooleanExtra(EXTRA_TIMING, false) -> {
+        val backend = KevLaunch.backend(intent.getStringExtra(EXTRA_BACKEND))
+        val rows = intent.getStringExtra(EXTRA_ROWS)
+        val report = intent.getStringExtra(EXTRA_REPORT) ?: "app_timing_${backend?.name?.lowercase()}_L$window.json"
+        when {
+          backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
+          rows.isNullOrEmpty() -> KevLaunch.Invalid("no rows extra", autoplay = false)
+          !KevLaunch.windowValid(window) -> KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
+          !KevLaunch.reportNameValid(report) -> KevLaunch.Invalid("invalid report name $report", autoplay = false)
+          else -> KevLaunch.Timing(rows, backend, report, window, intent.getBooleanExtra(EXTRA_CLEAR_CACHE, false))
+        }
+      }
+      else -> KevLaunch.Normal
+    }
+  }
+
+  private companion object {
+    const val EXTRA_AUTOPLAY = "autoplay"
+    const val EXTRA_FIXTURE = "fixture"
+    const val EXTRA_DELAY_MS = "delay_ms"
+    const val EXTRA_GAP_MS = "gap_ms"
+    const val EXTRA_WINDOW = "window"
+    const val EXTRA_GATE = "gate"
+    const val EXTRA_TIMING = "timing"
+    const val EXTRA_BACKEND = "backend"
+    const val EXTRA_REPORT = "report"
+    const val EXTRA_LIMIT = "limit"
+    const val EXTRA_ROWS = "rows"
+    const val EXTRA_CLEAR_CACHE = "clear_cache"
+    const val DEFAULT_DELAY_MS = 1500
+    const val DEFAULT_GAP_MS = 800
   }
 }

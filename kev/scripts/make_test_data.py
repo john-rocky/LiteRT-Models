@@ -6,11 +6,13 @@ what may be redistributed: the SemIf records (MIT) and the invented "own" record
 the transfer-v4 rows (tv4, tv4x, tv4s) into the module.
 
     python3 scripts/make_test_data.py --kev-work /path/to/kev_work
-        app/src/debug/assets/gate_fixtures.json and app/src/test/resources/head_fixture.{json,f32}
-        (standard library + numpy)
+        app/src/debug/assets/gate_fixtures.json, app/src/test/resources/head_fixture.{json,f32} and
+        the app's three example requests app/src/main/res/raw/example_*.json (standard library +
+        numpy)
 
     /path/to/venv/bin/python scripts/make_test_data.py --kev-work /path/to/kev_work --probes
-        also app/src/test/resources/tokenizer_probes.json, render_cases.json and
+        also app/src/test/resources/tokenizer_probes.json (and the same file as
+        app/src/debug/assets/tokenizer_probes.json for the on-device gate), render_cases.json and
         python_numbers.json. Needs Python 3.12, transformers 5.17, tokenizers, pydantic and the
         author's kev package (kev_work/kev, added to sys.path here).
 
@@ -40,6 +42,12 @@ GATE_ASSET = MODULE / "app/src/debug/assets/gate_fixtures.json"
 HEAD_JSON = MODULE / "app/src/test/resources/head_fixture.json"
 HEAD_BIN = MODULE / "app/src/test/resources/head_fixture.f32"
 PROBES = MODULE / "app/src/test/resources/tokenizer_probes.json"
+PROBES_ASSET = MODULE / "app/src/debug/assets/tokenizer_probes.json"
+EXAMPLES = {
+    "own_ticket_01": MODULE / "app/src/main/res/raw/example_ticket.json",
+    "own_incident_02": MODULE / "app/src/main/res/raw/example_incident.json",
+    "own_review_05": MODULE / "app/src/main/res/raw/example_review.json",
+}
 RENDER_CASES = MODULE / "app/src/test/resources/render_cases.json"
 PYTHON_NUMBERS = MODULE / "app/src/test/resources/python_numbers.json"
 
@@ -145,6 +153,19 @@ def write_gate_asset(kev_work, records, oracle):
     GATE_ASSET.write_text(text, encoding="utf-8")
     print(f"{GATE_ASSET.relative_to(MODULE)}: {size} bytes, {doc['records']} records, "
           f"{doc['questions']} questions, windows {windows}")
+
+
+def write_examples(records):
+    """The app's example requests: three invented records, verbatim, as {id, state, questions}."""
+    by_id = {record["id"]: record for record in records}
+    for record_id, path in EXAMPLES.items():
+        record = by_id[record_id]
+        if record["source"] != "own":
+            sys.exit(f"{record_id} is not an invented record")
+        example = {"id": record_id, **record["request"]}
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(example, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        print(f"{path.relative_to(MODULE)}: {len(record['request']['questions'])} questions")
 
 
 def write_head_fixture(kev_work, oracle):
@@ -276,8 +297,11 @@ def write_probes(kev_work):
         "tokenizers": tokenizers.__version__,
         "cases": cases,
     }
-    PROBES.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"{PROBES.relative_to(MODULE)}: {len(cases)} probes, AutoTokenizer == published tokenizer.json")
+    text = json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
+    for path in (PROBES, PROBES_ASSET):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    print(f"{PROBES.relative_to(MODULE)} (+ debug asset): {len(cases)} probes, AutoTokenizer == published tokenizer.json")
 
 
 RENDER_VALUES = [
@@ -403,6 +427,7 @@ def main():
     oracle = json.loads((kev_work / ORACLE).read_text(encoding="utf-8"))
     write_gate_asset(kev_work, records, oracle)
     write_head_fixture(kev_work, oracle)
+    write_examples(records)
     if args.probes:
         write_probes(kev_work)
         write_render_cases(kev_work)

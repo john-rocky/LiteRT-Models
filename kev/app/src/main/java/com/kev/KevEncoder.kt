@@ -23,16 +23,21 @@ class KevRow(val ids: IntArray, val decideIndex: Int, val optionIndices: IntArra
       )
 
   /** The graph inputs for [window]: IDs right-padded with the pad ID and the 1/0 valid mask. */
-  fun padded(window: Int): KevPaddedRow {
-    require(length <= window) { "$length tokens > L=$window" }
-    val paddedIds = IntArray(window) { KevEncoder.PAD_ID }
-    ids.copyInto(paddedIds)
-    return KevPaddedRow(paddedIds, FloatArray(window) { if (it < length) 1f else 0f })
-  }
+  fun padded(window: Int): KevPaddedRow = KevPaddedRow.of(ids, window)
 }
 
 /** Graph inputs of one row: `ids` int32 `[1, L]` and `valid` float32 `[1, L]`. */
-class KevPaddedRow(val ids: IntArray, val valid: FloatArray)
+class KevPaddedRow(val ids: IntArray, val valid: FloatArray) {
+  companion object {
+    /** [ids] right-padded with the pad ID to [window], and 1.0 on real tokens / 0.0 on pads. */
+    fun of(ids: IntArray, window: Int): KevPaddedRow {
+      require(ids.size <= window) { "${ids.size} tokens > L=$window" }
+      val paddedIds = IntArray(window) { KevEncoder.PAD_ID }
+      ids.copyInto(paddedIds)
+      return KevPaddedRow(paddedIds, FloatArray(window) { if (it < ids.size) 1f else 0f })
+    }
+  }
+}
 
 /** One question's branch, with readout offsets inside the branch (`rows_of`). */
 class KevBranch(val ids: IntArray, val decide: Int, val options: IntArray)
@@ -83,24 +88,26 @@ class KevEncoder(private val tokenizer: KevTokenizer) {
     tokenizer.encode(SPECIAL_TOKEN_PATTERN.replace(text) { "<¦${it.groupValues[1]}¦>" })
 
   /** `encode` followed by `rows_of`, without truncation. */
-  fun encode(record: KevRecord): KevEncoded {
-    val stateIds = intArrayOf(STATE_ID) + userTokens(record.state)
-    val branches =
-      record.questions.map { question ->
-        val ids = ArrayList<Int>()
-        ids.add(QUESTION_ID)
-        userTokens(question.instructions).forEach { ids.add(it) }
-        val options = IntArray(question.options.size)
-        for ((index, option) in question.options.withIndex()) {
-          ids.add(OPTION_START_ID)
-          userTokens(option).forEach { ids.add(it) }
-          ids.add(OPTION_END_ID)
-          options[index] = ids.size - 1
-        }
-        ids.add(DECIDE_ID)
-        KevBranch(ids.toIntArray(), ids.size - 1, options)
-      }
-    return KevEncoded(stateIds, branches)
+  fun encode(record: KevRecord): KevEncoded =
+    KevEncoded(stateIds(record.state), record.questions.map { branch(it) })
+
+  /** The state part every row starts with: `[state] + state tokens`. */
+  fun stateIds(state: String): IntArray = intArrayOf(STATE_ID) + userTokens(state)
+
+  /** One question's branch: `[question] + instructions + ([option] + option + [/option])… + [decide]`. */
+  fun branch(question: KevRecordQuestion): KevBranch {
+    val ids = ArrayList<Int>()
+    ids.add(QUESTION_ID)
+    userTokens(question.instructions).forEach { ids.add(it) }
+    val options = IntArray(question.options.size)
+    for ((index, option) in question.options.withIndex()) {
+      ids.add(OPTION_START_ID)
+      userTokens(option).forEach { ids.add(it) }
+      ids.add(OPTION_END_ID)
+      options[index] = ids.size - 1
+    }
+    ids.add(DECIDE_ID)
+    return KevBranch(ids.toIntArray(), ids.size - 1, options)
   }
 
   companion object {

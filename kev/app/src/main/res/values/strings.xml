@@ -1,5 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="app_name">Kev Decide</string>
-  <string name="placeholder_message">The decision screen arrives in the next round.</string>
+  <string name="presentation_title">Kev Decide</string>
+
+  <!-- Status line -->
+  <string name="status_missing">Missing %1$s. Run scripts/install_to_device.sh, then reopen the app.</string>
+  <string name="status_tokenizer">Loading the tokenizer… %1$d s</string>
+  <string name="status_head">Loading the pointer head… %1$d s</string>
+  <string name="status_graph">Compiling the L%1$d graph… %2$d s</string>
+  <string name="status_switching">Compiling the L%1$d graph (about 30 s on a phone)… %2$d s</string>
+  <string name="status_ready">Ready</string>
+  <string name="status_running">Question %1$d of %2$d…</string>
+  <string name="status_done">%1$d answers in %2$d ms (tokenize to last answer)</string>
+  <string name="status_error">%1$s</string>
+  <string name="engine_line">%1$s · L%2$d graph · loaded in %3$.1f s (graph compile %4$.1f s)</string>
+  <string name="gpu_fallback">GPU failed, running on CPU: %1$s</string>
+  <string name="backend_gpu">GPU FP32</string>
+  <string name="backend_cpu">CPU 4 threads</string>
+
+  <!-- Editor -->
+  <string name="backend_title">Run on</string>
+  <string name="examples_title">Example requests</string>
+  <string name="example_ticket">Ticket</string>
+  <string name="example_incident">Incident</string>
+  <string name="example_review">Review</string>
+  <string name="state_label">State (text, or a JSON object or array)</string>
+  <string name="state_json">Read as JSON: the model sees it as key: value lines.</string>
+  <string name="state_text">Read as plain text.</string>
+  <string name="state_invalid_json">Not valid JSON, so it is read as plain text.</string>
+  <string name="question_title">Question %1$d</string>
+  <string name="remove_question">Remove</string>
+  <string name="add_question">Add a question</string>
+  <string name="question_id_label">Question id</string>
+  <string name="instructions_label">Instructions</string>
+  <string name="options_label">Options, one per line</string>
+  <string name="options_help_choice">One option per line: key: description, or just key.</string>
+  <string name="options_help_noul">Optional: true: what yes means, and false: what no means.</string>
+  <string name="options_help_score">One level per line, from the lowest.</string>
+  <string name="decide">Decide</string>
+
+  <!-- Answers -->
+  <string name="card_header">%1$s · %2$s</string>
+  <string name="card_pending">Waiting</string>
+  <string name="card_ms">%1$d ms</string>
+  <string name="answer_choice">%1$s</string>
+  <string name="answer_noul">p(true) %1$s</string>
+  <string name="answer_score">score %1$s</string>
+  <string name="answer_confidence">confidence %1$s</string>
+  <string name="presentation_noul">p(true)</string>
+  <string name="response_show">Show the response JSON</string>
+  <string name="response_hide">Hide the response JSON</string>
+  <string name="footer_device">%1$s · Android %2$s</string>
+  <string name="footer_runtime">%1$s · LiteRT %2$s · %3$s</string>
+  <string name="footer_graph">Kev-0.8B fp16 FC + int8 emb, L%1$d</string>
+  <string name="footer_graph_total">Kev-0.8B fp16 FC + int8 emb, L%1$d · total %2$d ms</string>
+
+  <!-- Request errors -->
+  <string name="error_over_largest">The longest question row is %1$d tokens; the largest graph takes %2$d. Shorten the state or the question.</string>
+  <string name="error_needs_window">This request needs the L%1$d graph (%2$s). Install it with scripts/install_to_device.sh, then retry.</string>
+  <string name="error_nonfinite">The graph returned non-finite values for question %1$s (%2$d values), so it has no answer.</string>
+  <string name="draft_no_questions">Add at least one question.</string>
+  <string name="draft_empty_id">Question %1$d has no id.</string>
+  <string name="draft_duplicate_id">Question %1$d repeats the id %2$s.</string>
+  <string name="draft_no_options">Question %1$d has no options.</string>
+  <string name="draft_too_many_options">Question %1$d has too many options; at most %2$d.</string>
+  <string name="draft_empty_option_name">Question %1$d: an option line has no name: %2$s</string>
+  <string name="draft_duplicate_option">Question %1$d repeats the option %2$s.</string>
+  <string name="draft_bad_noul_option">Question %1$d: noul options are true: … and false: …, not %2$s.</string>
+
+  <!-- Debug gate and timing -->
+  <string name="diagnostics_description">Diagnostic run. The report is saved in the app’s files directory.</string>
+  <string name="gate_running">Running the fixture gate…</string>
+  <string name="gate_progress">Fixture gate: %1$s</string>
+  <string name="timing_running">Running the timing protocol…</string>
+  <string name="timing_progress">Timing: %1$s</string>
+  <string name="diagnostics_failed">Cannot read %1$s: it must be a file in the app’s files directory.</string>
+  <string name="diagnostics_done">%1$s · %2$s</string>
 </resources>
