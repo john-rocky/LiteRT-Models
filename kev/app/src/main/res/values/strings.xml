@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Kev Decide</string>
+  <string name="placeholder_message">The decision screen arrives in the next round.</string>
+</resources>

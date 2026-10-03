@@ -1,0 +1,12 @@
+.gradle/
+.kotlin/
+.local/
+build/
+app/build/
+local.properties
+.gradle-user-home/
+# Model, head and tokenizer files are installed on the device, never committed.
+*.tflite
+*.safetensors
+tokenizer.json
+app/src/main/assets/
