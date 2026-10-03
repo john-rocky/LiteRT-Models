@@ -1548,14 +1548,14 @@ Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-
 ## 2026-10-04 追記 — Kev-0.8B (Qwen3.5 hybrid + pointer head, typed decisions) on the S26 GPU: one graph call per question under explicit FP32, the checkpoint's own tokenizer.json, and a Kotlin host that reproduces CPython's float sum and round
 
 Model repo: `litert-community/Kev-0.8B-LiteRT` (row-prefill graphs L128 / L256 / L512 / L1024 / L2048, pointer head, tokenizer);
-Android sample `kev/`. Evidence: `~/code/standup/handoffs/assets/2026-10-03-kev-sample-app/` (`ROUND1.md`–`ROUND4.md`;
-`readme.facts.md` names the source of every number; device reports under `device/`). Reference = the author's code
+Android sample `kev/`. Evidence: `~/code/standup/handoffs/assets/2026-10-03-kev-sample-app/` (`ROUND1.md`–`ROUND5.md`;
+`readme.facts.md` and `r5.facts.md` name the source of every number; device reports under `device/`). Reference = the author's code
 (`kev.api`, `kev.model`, transformers 5.17.0) on CPU fp32: 402 questions of 377 requests. On a desktop JVM the Kotlin
 host equals it on 402/402 rows and readout indices (`usage.input_tokens` 377/377), the head stays within max |Δp|
 2.98e-7, and `to_answers` gives the oracle's answers on 402/402. On the S26 (LiteRT 2.2.0, debug build, GPU explicit
 FP32) all 181 bundled gate questions get identical row IDs. The 172 L512 rows keep the oracle's argmax on 166/166
-rows outside near-ties (max |Δp| 0.0078), the 9 L2048 rows match 9/9, and both graphs run whole on the GPU delegate
-in one partition.
+rows outside near-ties (max |Δp| 0.0078), L256 gives the same on the same rows, L128 matches 147/147 on the rows of
+up to 128 tokens, the 9 L2048 rows match 9/9, and each graph runs whole on the GPU delegate in one partition.
 
 **Graph cut: a state-free row prefill.** The conversion run exports one graph per window: `ids` int32 `[1,L]` +
 `valid` float32 `[1,L]` → `hidden` float32 `[1,L,d]` (every position after the final RMSNorm, d = 1024 for 0.8B
@@ -1647,12 +1647,27 @@ Evidence: `KevAnswersTest`, `kev/app/src/test/resources/python_numbers.json`, `R
 
 **Time to the read-back, and pick the smallest window.** `CompiledModel.run()` returns before the GPU finishes, so
 the app times each question from the input writes through `run()` to `readFloat()` of `hidden`; every ms on the
-cards and in the README is that span. The graph computes every position of its window: from thermal status 0 a
-300-token row at L512 takes a median 615.1 ms, and the five-question rows of 128–142 tokens took 617–630 ms at the
-start of their leg. A 1,000-token row at L1024 takes a median 1,333.4 ms. The sample therefore asks, per question, for
-the smallest installed window that holds its row: L128 and L256 may stay compiled side by side, and a request that
-needs L512 or more runs on that one graph. Evidence: `device/r3_timing_gpu_T300.json`,
-`device/r3_timing_gpu_L512.json`, `device/r3b_timing_gpu_T1000.json`.
+cards and in the README is that span. The graph computes every position of its window, so the time follows the
+window, not the row. From thermal status 0, three rows of 73–97 tokens take a median 175.8 ms at L128 and 323.3 ms
+at L256, a 300-token row 615.1 ms at L512, and a 1,000-token row 1,333.4 ms at L1024; the five-question rows of
+128–142 tokens took 617–630 ms at L512 and 317–325 ms at L256 at the start of their legs. The sample therefore asks,
+per question, for the smallest installed window that holds its row. The bundled ticket (rows of 131, 101 and 93
+tokens) runs on L256 in 1,046 ms with the default install, against 1,967 ms on L512 before. Evidence:
+`device/r3_timing_gpu_T300.json`, `device/r3_timing_gpu_L512.json`, `device/r3b_timing_gpu_T1000.json`,
+`device/r5_timing_gpu_L128_S80.json`, `device/r5_timing_gpu_L256_S80.json`, `device/r5_timing_gpu_L256_fiveq.json`,
+`device/r5_autoplay_ticket_kev-demo-1791058996833.json`.
+
+**Two graphs in memory only for the small windows.** Running short questions on L128 and longer ones on L256 in the
+same request means two compiled graphs, and three runs on the 12 GB S26 measured what that costs. Compiling L256
+next to the resident L128 left the app running twice: MemAvailable fell from 4,762,332 to 883,380 kB in one run
+(the ticket took 756 ms) and from 5,025,996 to 638,280 kB in the other. Compiling L2048 next to L128 took it from
+4,770,840 kB to 623,824 kB, and Android's low-memory killer stopped the app. The sample therefore compiles a second
+graph only for L128 + L256 and only with at least 4,500,000 kB available (`ActivityManager.MemoryInfo.availMem`),
+and runs L512 and larger windows alone, after closing the others. On the phone, a long request after the ticket
+closed L256 and compiled L2048 alone (low point 2,217,164 kB, no kill), and the next short request compiled L256
+again; its answers started about 12 s after the request. Evidence: `device/r5_autoplay_ticket_l128.mem.txt`,
+`device/r5_autoplay_long.logcat_all_grep.txt`, `device/r5_autoplay_long.mem.txt`, `device/s30_mem.txt`,
+`device/s30_smoke.log`.
 
 **A 360 dp screen sets the demo layout.** The S26 reports density 3.0, a 360 × 780 dp screen; a layout planned at
 density 2.625 cut the ticket's last line even at its 16 sp floor. Compose Material 1 `Text` inherits body1's 24 sp
@@ -1669,13 +1684,19 @@ now gets a launch of its own (`--es sets`, `--ez request_path`). Two cooling tra
 foreground the screen dozes, and a watcher that sends `KEYCODE_WAKEUP` every 17 s starts face unlock; that held the
 phone at status 1 for 11 minutes. Cool with the screen off and the watcher idle, then wake the screen 5 s before the
 leg. And `am force-stop` right after a leg briefly caps the prime cluster during the keyguard transition, so read
-the caps when the next leg starts. Evidence: `ROUND3.md` §1–3, `device/wake_keeper.log`, `device/legs_status.txt`,
-`device/r3b_chain.sh`.
+the caps when the next leg starts. Thermal status 0 does not hold the GPU clock either: in a five-question leg at
+L256 that started and ended at status 0, the GPU clock ceiling fell from 1,300 to 646 MHz, and the requests went
+from 1,596–1,626 ms to 2,390–2,412 ms. Record the ceiling (`/sys/class/kgsl/kgsl-3d0/max_clock_mhz`) before and
+after each leg. Evidence: `ROUND3.md` §1–3, `device/wake_keeper.log`, `device/legs_status.txt`,
+`device/r3b_chain.sh`, `device/r5_timing_gpu_L256_fiveq.state_after.txt`.
 
 **Process traps.** (1) The repository's root `.gitignore` has `*.bin`, which silently dropped `head_fixture.bin`
 from `git add kev/`; the fixture is `.f32` now. Check new data with `git status --short --ignored <dir>`, and give
 `git check-ignore -v` the path from the repository root. (2) Lint `NewApi` caught `BigInteger.intValueExact()` (API
 31) in the JSON reader, which would throw `NoSuchMethodError` on API 26–30; the JVM tests pass because the desktop
 JVM has the method, so run `:app:lintDebug` after host changes. (3) Gradle reports the test task of a docs-only
-change as UP-TO-DATE and prints no results; evidence logs need `--rerun` or `--rerun-tasks`. Evidence: `ROUND1.md`
-§2, `ROUND2.md` §1–2.
+change as UP-TO-DATE and prints no results; evidence logs need `--rerun` or `--rerun-tasks`. (4) Samsung's lmkd
+writes a kill as `Reclaim '<package>' (<pid>) … oom_score_adj …`, followed by ActivityManager's `Process <package>
+(pid N) has died`; a check that looks only for `lowmemorykiller` or `Kill '<package>'` misses it and reports a
+timeout instead. Evidence: `ROUND1.md` §2, `ROUND2.md` §1–2, `ROUND5.md`,
+`device/r5_autoplay_long.logcat_all_grep.txt`.
