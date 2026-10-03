@@ -91,7 +91,10 @@ class KevGateCore(
         rows.add(entry)
         when {
           prepared.rows[index].length > runner.length ->
-            skip(entry, "needs L${prepared.rows[index].window ?: "> ${KevEncoder.WINDOWS.last()}"}")
+            skip(
+              entry,
+              "needs L${prepared.rows[index].window(KevFiles.WINDOWS) ?: "> ${KevFiles.WINDOWS.last()}"}",
+            )
           stoppedEarly || (limit > 0 && run >= limit) ->
             skip(entry, if (stoppedEarly) "stopped" else "limit")
           else -> {

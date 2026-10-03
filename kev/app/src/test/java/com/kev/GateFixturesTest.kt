@@ -72,7 +72,7 @@ class GateFixturesTest {
         assertArrayEquals("${item["id"]}/${expected.qid}", expected.rowIds, row.ids)
         assertEquals(expected.decideIndex, row.decideIndex)
         assertArrayEquals(expected.optionIndices, row.optionIndices)
-        val window = row.requireWindow()
+        val window = row.requireWindow(DECLARED_WINDOWS)
         windows[window] = windows.getValue(window) + 1
         rows++
       }
@@ -112,5 +112,10 @@ class GateFixturesTest {
       }
     }
     assertEquals(181, compared)
+  }
+
+  private companion object {
+    /** The windows the asset's declared `windows` counts were made with. */
+    val DECLARED_WINDOWS = listOf(512, 1024, 2048)
   }
 }

@@ -14,9 +14,9 @@ License 2.0): kev/api.py render, option_text, question_keys, to_record, _normali
 choice_confidence, score_confidence, round_prob and to_answers, and the request validation of
 SystemOneRequest; kev/model.py user_tokens, encode and rows_of (one causal row per question) and
 PointerHead in eval mode with the calibration temperature. Changes include float arithmetic that
-reproduces CPython's sum and round, graph windows of 512, 1024 and 2048 tokens with rejection of
-longer rows instead of truncation, and the head computed on the host from the graph's hidden
-states.
+reproduces CPython's sum and round, graph windows of 128, 256, 512, 1024 and 2048 tokens with
+rejection of longer rows instead of truncation, and the head computed on the host from the graph's
+hidden states.
 
 The tokenizer follows the published tokenizer.json contract of Hugging Face tokenizers and
 transformers (Apache License 2.0; licenses/Tokenizers-APACHE-2.0.txt and

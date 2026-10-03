@@ -42,6 +42,9 @@ class KevDemoLayout(
   )
 }
 
+/** A graph file in `files/`: its name, window and size. */
+class KevGraphFile(val file: String, val window: Int, val bytes: Long)
+
 /** Everything a demo run JSON records. */
 class KevDemoRunInput(
   val fixtureId: String,
@@ -54,9 +57,20 @@ class KevDemoRunInput(
   val litert: String,
   /** "GPU FP32" or "CPU 4 threads". */
   val accelerator: String,
-  val graphFile: String,
-  val window: Int,
-  val graphBytes: Long,
+  /** The largest window the questions ran on: the graph that holds the longest row. */
+  val graph: KevGraphFile,
+  /** The windows the questions ran on, in ascending order. */
+  val windowsUsed: List<Int>,
+  /** The graphs compiled when the run ended, by ascending window. */
+  val resident: List<KevGraphFile>,
+  /** The windows compiled for this run's request, in order. */
+  val compiled: List<Int>,
+  /** `ActivityManager.MemoryInfo.availMem` right before each of those compiles, in bytes. */
+  val availableBytesBeforeCompile: List<Long>,
+  /** The windows closed for this run's request. */
+  val closed: List<Int>,
+  /** A second graph was wanted but the available memory was below the limit. */
+  val secondRefused: Boolean,
   /** Tokenizer + head + graph compile when the engine became ready. */
   val engineLoadMs: Long,
   /** The untimed full pass after loading. */
@@ -77,9 +91,12 @@ class KevDemoRunInput(
 )
 
 /**
- * The demo run JSON (`files/kev-demo-<epoch ms>.json`): device and runtime, the shown strings and
- * timings of every question, its row (IDs, readout indices, sha256 of the int32 IDs) and where the
- * screen drew the cards. Key names follow the demo recording scripts.
+ * The demo run JSON (`files/kev-demo-<epoch ms>.json`): device and runtime, the graphs, the shown
+ * strings and timings of every question, its row (IDs, readout indices, sha256 of the int32 IDs,
+ * the window it ran on) and where the screen drew the cards. Key names follow the demo recording
+ * scripts; `graph` keeps the `file` / `L` / `bytes` of the largest window used and adds `windows`
+ * (every window the questions ran on), `resident` (the compiled graphs), `compiled` (each compile
+ * for this request with the available memory right before it), `closed` and `second_refused`.
  */
 object KevDemoRun {
   /** Card indicator colours: pending grey, running blue, done green. */
@@ -148,7 +165,22 @@ object KevDemoRun {
         ),
       "runtime" to linkedMapOf("litert" to input.litert, "accelerator" to input.accelerator),
       "graph" to
-        linkedMapOf("file" to input.graphFile, "L" to input.window, "bytes" to input.graphBytes),
+        linkedMapOf(
+          "file" to input.graph.file,
+          "L" to input.graph.window,
+          "bytes" to input.graph.bytes,
+          "windows" to input.windowsUsed,
+          "resident" to input.resident.map { graph(it) },
+          "compiled" to
+            input.compiled.mapIndexed { index, window ->
+              linkedMapOf(
+                "L" to window,
+                "avail_mem_bytes" to input.availableBytesBeforeCompile.getOrNull(index),
+              )
+            },
+          "closed" to input.closed,
+          "second_refused" to input.secondRefused,
+        ),
       "engine_load_ms" to input.engineLoadMs,
       "warmup_ms" to input.warmupMs,
       "title" to input.title,
@@ -163,6 +195,9 @@ object KevDemoRun {
       "cgroup_end" to input.cgroupEnd,
       "layout" to layout(input.layout),
     )
+
+  private fun graph(graph: KevGraphFile): LinkedHashMap<String, Any?> =
+    linkedMapOf("file" to graph.file, "L" to graph.window, "bytes" to graph.bytes)
 
   private fun question(question: KevDemoQuestion): LinkedHashMap<String, Any?> {
     val result = question.result

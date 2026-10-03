@@ -59,8 +59,10 @@ class KevGateRunner(private val context: Context) {
       report["accelerator_used"] = engine.backend.name.lowercase()
       report["tokenizer_load_ms"] = engine.tokenizerMs
       report["head_load_ms"] = engine.headMs
-      report["compile_ms"] = engine.decider.compileMs
-      val gate = KevGateCore(engine.pipeline, engine.decider, args.limit, { stop.exists() }, ::log)
+      report["compile_ms"] = engine.primary.compileMs
+      report["avail_mem_bytes_before_compile"] = engine.loadAvailableBytes
+      report["resident_windows"] = engine.windows
+      val gate = KevGateCore(engine.pipeline, engine.primary, args.limit, { stop.exists() }, ::log)
       core = gate
       report["tokenizer_probes"] =
         gate.probes(KevGateChecks.parseProbes(asset(KevGateChecks.PROBES_NAME)))

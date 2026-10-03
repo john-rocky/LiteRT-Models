@@ -63,13 +63,16 @@ class KevPrepared(
   val tokenizeMs: Double
     get() = stateMs + branchMs.sum()
 
+  /** Real tokens of every row, in question order. */
+  val rowLengths: List<Int>
+    get() = rows.map { it.length }
+
   /** Real tokens of the longest row. */
   val longestRow: Int
     get() = rows.maxOf { it.length }
 
-  /** The smallest graph window that holds every row, or null when a row is over the largest. */
-  val window: Int?
-    get() = KevEncoder.WINDOWS.firstOrNull { longestRow <= it }
+  /** The smallest of [windows] that holds every row, or null when a row is over the largest. */
+  fun window(windows: List<Int>): Int? = KevWindows.smallestHolding(windows, longestRow)
 
   /** `usage.input_tokens`. */
   val inputTokens: Int

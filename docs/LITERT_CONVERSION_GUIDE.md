@@ -1547,7 +1547,7 @@ Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-
 
 ## 2026-10-04 追記 — Kev-0.8B (Qwen3.5 hybrid + pointer head, typed decisions) on the S26 GPU: one graph call per question under explicit FP32, the checkpoint's own tokenizer.json, and a Kotlin host that reproduces CPython's float sum and round
 
-Model repo: `litert-community/Kev-0.8B-LiteRT` (row-prefill graphs L512 / L1024 / L2048, pointer head, tokenizer);
+Model repo: `litert-community/Kev-0.8B-LiteRT` (row-prefill graphs L128 / L256 / L512 / L1024 / L2048, pointer head, tokenizer);
 Android sample `kev/`. Evidence: `~/code/standup/handoffs/assets/2026-10-03-kev-sample-app/` (`ROUND1.md`–`ROUND4.md`;
 `readme.facts.md` names the source of every number; device reports under `device/`). Reference = the author's code
 (`kev.api`, `kev.model`, transformers 5.17.0) on CPU fp32: 402 questions of 377 requests. On a desktop JVM the Kotlin
@@ -1649,7 +1649,9 @@ Evidence: `KevAnswersTest`, `kev/app/src/test/resources/python_numbers.json`, `R
 the app times each question from the input writes through `run()` to `readFloat()` of `hidden`; every ms on the
 cards and in the README is that span. The graph computes every position of its window: from thermal status 0 a
 300-token row at L512 takes a median 615.1 ms, and the five-question rows of 128–142 tokens took 617–630 ms at the
-start of their leg. A 1,000-token row at L1024 takes a median 1,333.4 ms. Evidence: `device/r3_timing_gpu_T300.json`,
+start of their leg. A 1,000-token row at L1024 takes a median 1,333.4 ms. The sample therefore asks, per question, for
+the smallest installed window that holds its row: L128 and L256 may stay compiled side by side, and a request that
+needs L512 or more runs on that one graph. Evidence: `device/r3_timing_gpu_T300.json`,
 `device/r3_timing_gpu_L512.json`, `device/r3b_timing_gpu_T1000.json`.
 
 **A 360 dp screen sets the demo layout.** The S26 reports density 3.0, a 360 × 780 dp screen; a layout planned at

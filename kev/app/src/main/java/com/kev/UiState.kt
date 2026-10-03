@@ -7,7 +7,10 @@ sealed interface KevStatus {
   /** Files `scripts/install_to_device.sh` puts in `files/` are missing. */
   data class MissingFiles(val files: List<String>) : KevStatus
 
-  /** Loading [stage]; [switching] = replacing the resident graph with the [window] graph. */
+  /**
+   * Loading [stage]; [window] is the graph being compiled (0 before the graph stage), [switching] =
+   * compiling it for a request whose rows the resident graphs do not hold.
+   */
   data class Loading(
     val stage: LoadStage,
     val window: Int,
@@ -16,9 +19,10 @@ sealed interface KevStatus {
     val elapsedSeconds: Int = 0,
   ) : KevStatus
 
+  /** Idle with the resident [windows] compiled, in ascending order. */
   data class Ready(
     val backend: KevDecider.Backend,
-    val window: Int,
+    val windows: List<Int>,
     val loadMs: Long,
     val compileMs: Long,
   ) : KevStatus
@@ -34,11 +38,11 @@ sealed interface KevStatus {
   data class Error(val text: String) : KevStatus
 }
 
-/** The resident engine as the status line shows it. */
+/** The engine as the status line shows it: backend, resident windows (ascending), times. */
 @Immutable
 data class EngineUi(
   val backend: KevDecider.Backend,
-  val window: Int,
+  val windows: List<Int>,
   val loadMs: Long,
   val compileMs: Long,
   /** GPU's error when the app fell back to CPU. */
@@ -52,7 +56,7 @@ enum class CardState {
   FAILED,
 }
 
-/** One question's answer card. [view] and [msText] exist once it is done. */
+/** One question's answer card. [view], [msText] and [window] exist once it is done. */
 @Immutable
 data class AnswerCardUi(
   val qid: String,
@@ -62,6 +66,8 @@ data class AnswerCardUi(
   val view: KevAnswerView? = null,
   /** The card's time: input writes + `run()` + read-back, whole milliseconds. */
   val msText: String? = null,
+  /** The graph window the question ran on, shown next to [msText]. */
+  val window: Int? = null,
   val error: String? = null,
 )
 
@@ -87,8 +93,7 @@ enum class LaunchMode {
 data class UiState(
   val draft: RequestDraft,
   val example: Int? = 0,
-  val status: KevStatus =
-    KevStatus.Loading(LoadStage.TOKENIZER, KevFiles.DEFAULT_WINDOW, false, 0L),
+  val status: KevStatus = KevStatus.Loading(LoadStage.TOKENIZER, 0, false, 0L),
   val engine: EngineUi? = null,
   val backendChoice: KevDecider.Backend = KevDecider.Backend.GPU,
   val cards: List<AnswerCardUi> = emptyList(),

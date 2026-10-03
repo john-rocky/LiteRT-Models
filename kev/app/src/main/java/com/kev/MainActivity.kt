@@ -23,13 +23,15 @@ import com.kev.view.PresentationScreen
  * Hosts the Compose screen (`launchMode="singleTop"`: a demo intent reaches the running activity
  * through [onNewIntent], without a new process). Extras:
  * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800
- *   [--ei window 512]`
+ *   [--ei window 512]` (without `window`, each question runs on the window a Decide would use)
  * - debug build: `--ez gate true --es backend gpu|cpu --es report <name.json> [--ei window 512]
  *   [--ei limit n]`
  * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|cpu --es
  *   report <name.json> [--ei window 512] [--ez clear_cache true] [--es sets <name[,name…]>|none]
  *   [--ez request_path false]` (one set per launch keeps every set at the same starting
  *   temperature)
+ *
+ * Gate and timing runs compile the one `window` they name; without it, the smallest installed one.
  */
 class MainActivity : ComponentActivity() {
   private val viewModel: MainViewModel by viewModels { MainViewModel.getFactory(this) }
@@ -107,21 +109,24 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun parse(intent: Intent): KevLaunch {
-    val window = intent.getIntExtra(EXTRA_WINDOW, KevFiles.DEFAULT_WINDOW)
+    val named = if (intent.hasExtra(EXTRA_WINDOW)) intent.getIntExtra(EXTRA_WINDOW, 0) else null
+    // Gate and timing runs compile one window: the named one, else the smallest installed one.
+    val window =
+      named ?: KevFiles.installedWindows(filesDir).firstOrNull() ?: KevFiles.DEFAULT_INSTALL.first()
     val diagnostics = BuildConfig.DEBUG || BuildConfig.BUILD_TYPE == "benchmark"
     return when {
       intent.getBooleanExtra(EXTRA_AUTOPLAY, false) -> {
         val fixture = intent.getStringExtra(EXTRA_FIXTURE)
         when {
           fixture.isNullOrEmpty() -> KevLaunch.Invalid("no fixture extra", autoplay = true)
-          !KevLaunch.windowValid(window) ->
-            KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = true)
+          named != null && !KevLaunch.windowValid(named) ->
+            KevLaunch.Invalid(KevLaunch.windowInvalid(named), autoplay = true)
           else ->
             KevLaunch.Autoplay(
               fixture,
               intent.getIntExtra(EXTRA_DELAY_MS, DEFAULT_DELAY_MS).toLong(),
               intent.getIntExtra(EXTRA_GAP_MS, DEFAULT_GAP_MS).toLong(),
-              window,
+              named,
             )
         }
       }
@@ -133,7 +138,7 @@ class MainActivity : ComponentActivity() {
         when {
           backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
           !KevLaunch.windowValid(window) ->
-            KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
+            KevLaunch.Invalid(KevLaunch.windowInvalid(window), autoplay = false)
           !KevLaunch.reportNameValid(report) ->
             KevLaunch.Invalid("invalid report name $report", autoplay = false)
           else -> KevLaunch.Gate(backend, report, window, intent.getIntExtra(EXTRA_LIMIT, 0))
@@ -149,7 +154,7 @@ class MainActivity : ComponentActivity() {
           backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
           rows.isNullOrEmpty() -> KevLaunch.Invalid("no rows extra", autoplay = false)
           !KevLaunch.windowValid(window) ->
-            KevLaunch.Invalid("window $window is not 512, 1024 or 2048", autoplay = false)
+            KevLaunch.Invalid(KevLaunch.windowInvalid(window), autoplay = false)
           !KevLaunch.reportNameValid(report) ->
             KevLaunch.Invalid("invalid report name $report", autoplay = false)
           else ->

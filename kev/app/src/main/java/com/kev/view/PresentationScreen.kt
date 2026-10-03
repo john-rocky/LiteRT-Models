@@ -162,7 +162,7 @@ fun PresentationScreen(ui: PresentationUi, onLayout: (KevDemoLayout) -> Unit, on
 /**
  * A card whose height does not change between states: the question (up to two lines), the answer
  * line (the answer's word, shrunk only when it is too long for the line, and its 4-decimal value),
- * then the bar with the card's ms.
+ * then the bar with the card's ms and graph window.
  */
 @Composable
 private fun PresentationCard(card: AnswerCardUi, onIndicator: (IntArray) -> Unit) {
@@ -209,7 +209,7 @@ private fun PresentationCard(card: AnswerCardUi, onIndicator: (IntArray) -> Unit
         }
         Spacer(Modifier.width(12.dp))
         Text(
-          card.msText.orEmpty(),
+          cardTime(card).orEmpty(),
           fontSize = MS_SP.sp,
           lineHeight = (MS_SP * LINE_HEIGHT).sp,
           maxLines = 1,

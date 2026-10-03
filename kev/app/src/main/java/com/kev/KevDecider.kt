@@ -13,7 +13,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 
 /**
- * One resident Kev-0.8B row-prefill graph on LiteRT `CompiledModel`: `ids` int32 `[1, L]` and
+ * One compiled Kev-0.8B row-prefill graph on LiteRT `CompiledModel`: `ids` int32 `[1, L]` and
  * `valid` float32 `[1, L]` in, `hidden` float32 `[1, L, 1024]` (after the final RMSNorm) out,
  * signature `serving_default`. The three buffers are created once and reused for every row.
  *
@@ -28,6 +28,8 @@ private constructor(
   val file: File,
   /** Wall time of `CompiledModel.create` (graph load and compilation), in milliseconds. */
   val compileMs: Double,
+  /** GPU's error when GPU was requested and this graph was compiled on CPU instead. */
+  val gpuFailure: String?,
   private val model: CompiledModel,
   private val ids: TensorBuffer,
   private val valid: TensorBuffer,
@@ -71,9 +73,6 @@ private constructor(
     }
   }
 
-  /** A created graph and, when GPU failed and CPU took over, GPU's error. */
-  class Created(val decider: KevDecider, val gpuFailure: String?)
-
   companion object {
     /** LiteRT version this sample is built and measured with. */
     const val LITERT_VERSION = "2.2.0"
@@ -88,27 +87,32 @@ private constructor(
 
     /**
      * Compiles the [window] graph from `files/` on [backend]. With [cpuFallback], a GPU failure is
-     * kept as [Created.gpuFailure] and the graph is compiled on CPU instead.
+     * kept as [gpuFailure] and the graph is compiled on CPU instead.
      */
-    fun create(context: Context, window: Int, backend: Backend, cpuFallback: Boolean): Created {
+    fun create(context: Context, window: Int, backend: Backend, cpuFallback: Boolean): KevDecider {
       val file = File(context.filesDir, KevFiles.graph(window))
       check(file.isFile) { "Missing ${file.name}" }
-      if (backend == Backend.CPU || !cpuFallback) {
-        return Created(compile(context, file, window, backend), null)
-      }
+      if (backend == Backend.CPU || !cpuFallback)
+        return compile(context, file, window, backend, null)
       return try {
-        Created(compile(context, file, window, Backend.GPU), null)
+        compile(context, file, window, Backend.GPU, null)
       } catch (failure: Exception) {
-        Created(compile(context, file, window, Backend.CPU), describe(failure))
+        compile(context, file, window, Backend.CPU, describe(failure))
       } catch (failure: LinkageError) {
-        Created(compile(context, file, window, Backend.CPU), describe(failure))
+        compile(context, file, window, Backend.CPU, describe(failure))
       }
     }
 
     fun describe(failure: Throwable): String =
       "${failure.javaClass.simpleName}: ${failure.message.orEmpty()}"
 
-    private fun compile(context: Context, file: File, window: Int, backend: Backend): KevDecider {
+    private fun compile(
+      context: Context,
+      file: File,
+      window: Int,
+      backend: Backend,
+      gpuFailure: String?,
+    ): KevDecider {
       val options =
         CompiledModel.Options(backend.accelerator).apply {
           when (backend) {
@@ -144,7 +148,7 @@ private constructor(
         val ids = model.createInputBuffer(IDS, SIGNATURE).also { buffers.add(it) }
         val valid = model.createInputBuffer(VALID, SIGNATURE).also { buffers.add(it) }
         val hidden = model.createOutputBuffer(HIDDEN, SIGNATURE).also { buffers.add(it) }
-        return KevDecider(backend, window, file, compileMs, model, ids, valid, hidden)
+        return KevDecider(backend, window, file, compileMs, gpuFailure, model, ids, valid, hidden)
       } catch (failure: Throwable) {
         buffers.forEach { it.close() }
         model.close()

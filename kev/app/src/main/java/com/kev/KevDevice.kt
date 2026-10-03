@@ -1,5 +1,6 @@
 package com.kev
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -56,6 +57,13 @@ object KevDevice {
 
   private fun marketNameOrNull(model: String): String? =
     MARKET_NAMES.entries.firstOrNull { model.startsWith(it.key) }?.value
+
+  /** `ActivityManager.MemoryInfo.availMem`: the memory available to apps, in bytes. */
+  fun availableMemoryBytes(context: Context): Long {
+    val info = ActivityManager.MemoryInfo()
+    context.getSystemService(ActivityManager::class.java).getMemoryInfo(info)
+    return info.availMem
+  }
 
   fun airplaneMode(context: Context): Boolean =
     Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0

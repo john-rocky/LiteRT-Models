@@ -172,7 +172,7 @@ private fun StatusLine(state: UiState) {
         stringResource(
           R.string.engine_line,
           backendTitle(engine.backend),
-          engine.window,
+          windowsText(engine.windows),
           engine.loadMs / MILLIS_PER_SECOND,
           engine.compileMs / MILLIS_PER_SECOND,
         ),
@@ -345,7 +345,7 @@ private fun AnswerCard(card: AnswerCardUi) {
           style = MaterialTheme.typography.subtitle2,
         )
         Spacer(Modifier.weight(1f))
-        card.msText?.let { Text(it, style = MaterialTheme.typography.caption) }
+        cardTime(card)?.let { Text(it, style = MaterialTheme.typography.caption) }
       }
       Text(card.question, style = MaterialTheme.typography.body2)
       when (card.state) {
@@ -398,6 +398,19 @@ private fun Choice(title: String, selected: Boolean, enabled: Boolean, onSelect:
   }
 }
 
+/** "656 ms · L256": the card's time and the graph window it ran on, once the card is done. */
+@Composable
+internal fun cardTime(card: AnswerCardUi): String? {
+  val ms = card.msText ?: return null
+  val window = card.window ?: return ms
+  return stringResource(R.string.card_ms_window, ms, stringResource(R.string.window_name, window))
+}
+
+/** "L256 + L512": the resident [windows] in ascending order. */
+@Composable
+private fun windowsText(windows: List<Int>): String =
+  windows.map { stringResource(R.string.window_name, it) }.joinToString(WINDOW_SEPARATOR)
+
 @Composable
 private fun backendTitle(backend: KevDecider.Backend): String =
   stringResource(
@@ -415,4 +428,5 @@ private val EXAMPLE_TITLES =
   listOf(R.string.example_ticket, R.string.example_incident, R.string.example_review)
 private const val MILLIS_PER_SECOND = 1000f
 private const val ITEM_SEPARATOR = " · "
+private const val WINDOW_SEPARATOR = " + "
 private const val NO_BREAK_SPACE = '\u00A0'

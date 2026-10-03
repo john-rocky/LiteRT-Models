@@ -29,8 +29,11 @@ sealed interface KevLaunch {
     val requestPath: Boolean,
   ) : KevLaunch
 
-  /** The demo recording: answer the request in [fixture] on the presentation layout. */
-  data class Autoplay(val fixture: String, val delayMs: Long, val gapMs: Long, val window: Int) :
+  /**
+   * The demo recording: answer the request in [fixture] on the presentation layout, every question
+   * on [window] when it is set, otherwise on the windows a Decide would use.
+   */
+  data class Autoplay(val fixture: String, val delayMs: Long, val gapMs: Long, val window: Int?) :
     KevLaunch
 
   /** Extras that cannot be followed; [autoplay] says which log tag reports it. */
@@ -46,7 +49,11 @@ sealed interface KevLaunch {
     fun reportNameValid(name: String): Boolean =
       name.matches(REPORT_NAME) && !name.endsWith(".partial")
 
-    fun windowValid(window: Int): Boolean = window in KevEncoder.WINDOWS
+    fun windowValid(window: Int): Boolean = window in KevFiles.WINDOWS
+
+    /** Why a `window` extra cannot be followed. */
+    fun windowInvalid(window: Int): String =
+      "window $window is not one of ${KevFiles.WINDOWS.joinToString(", ")}"
 
     /**
      * The `sets` extra: comma-separated set names, or `none` for no set (the request path only).

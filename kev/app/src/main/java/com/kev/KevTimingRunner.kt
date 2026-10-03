@@ -70,17 +70,19 @@ class KevTimingRunner(private val context: Context) {
       val engine = loadEngine()
       report["cache_dir_after_load"] = KevDevice.directoryUsage(context.cacheDir)
       report["accelerator_used"] = engine.backend.name.lowercase()
-      report["compile_ms"] = engine.decider.compileMs
+      report["compile_ms"] = engine.primary.compileMs
+      report["avail_mem_bytes_before_compile"] = engine.loadAvailableBytes
+      report["resident_windows"] = engine.windows
       report["tokenizer_load_ms"] = engine.tokenizerMs
       report["head_load_ms"] = engine.headMs
-      val timing = KevTimingCore(engine.pipeline, engine.decider) { stop.exists() }
+      val timing = KevTimingCore(engine.pipeline, engine.primary) { stop.exists() }
       core = timing
       val sets = LinkedHashMap<String, Any?>()
       val skipped = ArrayList<Any?>()
       report["sets"] = sets
       report["skipped_sets"] = skipped
       write(partial, report)
-      val selection = timingRows.select(args.sets, engine.window)
+      val selection = timingRows.select(args.sets, engine.primaryWindow)
       selection.skipped.forEach {
         skipped.add(linkedMapOf("name" to it.name, "L" to it.window, "reason" to it.reason))
       }

@@ -24,6 +24,24 @@ object KevDemo {
 
   fun autoplayDone(json: String) = Log.i(LOG_TAG, "AUTOPLAY_DONE json=$json")
 
+  /**
+   * The windows of a request: each question's window, the windows compiled (with the available
+   * memory read right before each compile, bytes) and closed for it, and the graphs left resident.
+   */
+  fun windows(
+    windows: List<Int>,
+    compiled: List<Int>,
+    availableBytes: List<Long>,
+    closed: List<Int>,
+    resident: List<Int>,
+  ) =
+    Log.i(
+      LOG_TAG,
+      "WINDOWS questions=${windows.joinToString(",")} compiled=${compiled.joinToString(",")} " +
+        "avail_mem_bytes=${availableBytes.joinToString(",")} closed=${closed.joinToString(",")} " +
+        "resident=${resident.joinToString(",")}",
+    )
+
   fun failed(reason: String) = Log.i(LOG_TAG, "failed ${oneLine(reason)}")
 
   /** Writes [run] to `files/kev-demo-<epoch ms>.json` (through a temporary file) and returns it. */

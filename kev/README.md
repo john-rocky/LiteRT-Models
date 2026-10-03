@@ -30,11 +30,12 @@ When the GPU graph cannot be compiled, the app runs on CPU and shows the GPU err
 ## Download, build and install
 
 Use JDK 17, Android SDK platform 35 / build-tools 35.0.0, Android platform-tools (`adb`) and the
-Hugging Face CLI (`hf`). The app needs three files of the model repository; the 1,024- and
-2,048-token graphs are optional:
+Hugging Face CLI (`hf`). The app needs four files of the model repository: the 256- and 512-token
+graphs, the head and the tokenizer. The 128-, 1,024- and 2,048-token graphs are optional:
 
 ```bash
 hf download litert-community/Kev-0.8B-LiteRT \
+  kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite \
   kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite \
   head/kev_0.8b_pointer_head.safetensors tokenizer/tokenizer.json \
   --local-dir "$HOME/Downloads/Kev-0.8B-LiteRT"
@@ -46,11 +47,11 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n com.kev/.MainActivity
 ```
 
-The install script's argument defaults to the download directory above. It checks the size of
-every file before it touches the device, and it also installs the L1024 and L2048 graphs when they
-are in the directory (`WINDOWS="512"` installs only the 512-token graph). Each file goes through
-`/data/local/tmp/kev/` into the app's private `files/` with `run-as com.kev`; the script then
-removes the temporary copy and checks the copied size. Install the debug APK before the files:
+The install script's argument defaults to the download directory above. It installs the L256 and
+L512 graphs; `WINDOWS="128 256 512 1024 2048"` installs all five (download the extra graphs beforehand;
+each graph it names must be in the directory). It checks the size of every file before it touches
+the device. Each file goes through `/data/local/tmp/kev/` into the app's private `files/` with
+`run-as com.kev`; the script then removes the temporary copy and checks the copied size. Install the debug APK before the files:
 `run-as` needs a debuggable package. A launch before the install script ran shows "Missing
 <file>. Run scripts/install_to_device.sh, then reopen the app."
 
@@ -58,7 +59,9 @@ removes the temporary copy and checks the copied size. Install the debug APK bef
 
 | File | Bytes | Purpose |
 |---|---:|---|
-| `kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite` | 1,264,068,368 | Rows up to 512 tokens (required) |
+| `kev-0.8b_rowprefill_L128_fp16fc_i8emb.tflite` | 1,261,728,400 (to be confirmed at upload) | Rows up to 128 tokens (optional) |
+| `kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite` | 1,262,377,184 (to be confirmed at upload) | Rows up to 256 tokens (installed by default) |
+| `kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite` | 1,264,068,368 | Rows up to 512 tokens (installed by default) |
 | `kev-0.8b_rowprefill_L1024_fp16fc_i8emb.tflite` | 1,269,023,216 | Rows up to 1,024 tokens (optional) |
 | `kev-0.8b_rowprefill_L2048_fp16fc_i8emb.tflite` | 1,285,227,888 | Rows up to 2,048 tokens (optional) |
 | `head/kev_0.8b_pointer_head.safetensors` | 2,099,632 | Pointer head: q and k projections, float32 |
@@ -66,8 +69,9 @@ removes the temporary copy and checks the copied size. Install the debug APK bef
 
 Each graph takes `ids` int32 `[1,L]` (right-padded with `<|endoftext|>` 248044) and `valid`
 float32 `[1,L]` (1 on real tokens, 0 on pads) and returns `hidden` float32 `[1,L,1024]` after the
-final RMSNorm, signature `serving_default`. The three graphs have the same weights (float16
-fully connected layers, int8 embedding).
+final RMSNorm, signature `serving_default`. The five graphs have the same weights (float16
+fully connected layers, int8 embedding); a graph computes all L positions, so a smaller window
+takes less time for the same row.
 
 ## App architecture
 
@@ -75,20 +79,28 @@ fully connected layers, int8 embedding).
 State + typed questions → to_record (rendered state, option texts) → Kotlin byte-level BPE
   → one causal row per question:
     [state] state [question] instructions ([option] option [/option])… [decide]
-  → padded to the smallest window that holds the longest row (512 / 1024 / 2048) + valid mask
+  → padded to the smallest installed window that holds the row (128 / 256 / 512 / 1024 / 2048)
+    + valid mask
   → LiteRT graph (GPU FP32 or CPU 4 threads) → hidden [L,1024]
   → hidden at the decide token and at each option's closing token
   → pointer head on the host (float32, z / T, softmax) → to_answers
 ```
 
 `MainActivity` observes immutable `UiState`. `MainViewModel` owns the engine (tokenizer, head and
-one resident graph) and runs every model call on one worker thread with one LiteRT Environment
-per process, because LiteRT reuses its native input and output buffers; `onCleared()` closes the
-graph. The L512 graph compiles at startup, and one untimed call on question 1 of the ticket
-example warms it up. A request whose longest row needs another window closes the resident graph
-and compiles that window when its file is installed; otherwise the app names the missing file.
-Rows over 2,048 tokens are rejected, never truncated. A graph output with NaN or infinity on a
-question's real positions gives that question no answer.
+at most two compiled graphs) and runs every model call on one worker thread with one LiteRT
+Environment per process, because LiteRT reuses its native input and output buffers;
+`onCleared()` closes the graphs. At startup the app compiles the smallest installed window (L256
+with the default install) and warms it up with one untimed call on a ticket question whose row it
+holds. Each question asks for the smallest installed window that holds its row. When a request
+asks for L512 or a larger window, that window is the only compiled graph and every question of
+the request runs on it. When it asks only for L128 and L256, both can stay compiled side by side,
+so short and long questions of one request run on different windows; the second graph compiles
+only when Android reports at least 4.5 GB of available memory (`ActivityManager.MemoryInfo`),
+otherwise L256 alone takes every question. Graphs a request does not ask for are closed before a
+missing one compiles, and a request the compiled graphs already cover compiles nothing. A request
+that needs a window that is not installed names the missing file. Rows over 2,048 tokens are
+rejected, never truncated. A graph output with NaN or infinity on a question's real positions
+gives that question no answer.
 
 The state is plain text unless the whole text parses as a JSON object or array; JSON is rendered
 the author's way (`key: value` lines, `- item` lines, two spaces per level). Options go one per
@@ -96,8 +108,9 @@ line: choice `key: description` or `key`, noul `true: …` and `false: …` (bot
 level per line. Text that contains `<|name|>` is rewritten to `<¦name¦>` before tokenizing, as the
 author's `user_tokens` does.
 
-Each card shows the time of its graph call: input writes + `run()` + output read-back, in whole
-milliseconds. `run()` alone returns before the GPU work ends. The total under the cards adds the
+Each card shows the time of its graph call (input writes + `run()` + output read-back, in whole
+milliseconds) and the window it ran on, for example `656 ms · L256`. `run()` alone returns before
+the GPU work ends. The status line names the compiled windows (`L256 + L512`). The total under the cards adds the
 tokenizer time and every question's graph call, head and answer.
 
 ## Files
@@ -105,11 +118,12 @@ tokenizer time and every question's graph call, head and answer.
 | Path | Role |
 |---|---|
 | `app/src/main/java/com/kev/MainActivity.kt` | Compose host (`singleTop`); reads the launch extras |
-| `app/src/main/java/com/kev/MainViewModel.kt` | Engine on the worker thread: load, Decide, window switch, autoplay, gate and timing runs |
+| `app/src/main/java/com/kev/MainViewModel.kt` | Engine on the worker thread: load, Decide, second graph, autoplay, gate and timing runs |
 | `app/src/main/java/com/kev/UiState.kt` | Immutable screen state: status, cards, presentation |
 | `app/src/main/java/com/kev/view/KevScreen.kt` | The editable screen; `view/PresentationScreen.kt` the read-only demo layout; `view/Theme.kt`, `view/Color.kt` |
 | `app/src/main/java/com/kev/KevDecider.kt` | LiteRT `CompiledModel` (GPU FP32 or CPU), its buffers and the process Environment |
-| `app/src/main/java/com/kev/KevEngine.kt` | Tokenizer, head and the resident graph |
+| `app/src/main/java/com/kev/KevEngine.kt` | Tokenizer, head and the compiled graphs |
+| `app/src/main/java/com/kev/KevWindows.kt` | Window choice per question and the compiled graphs, Android-free (`KevResidentGraphs`) |
 | `app/src/main/java/com/kev/KevPipeline.kt` | Request → rows → graph → head → answers, Android-free (`RowRunner`) |
 | `app/src/main/java/com/kev/KevTokenizer.kt` | Byte-level BPE tokenizer read from `tokenizer.json` |
 | `app/src/main/java/com/kev/KevRequest.kt`, `KevEncoder.kt` | Request validation, `render` / `to_record`, rows, windows, padding |
@@ -198,8 +212,8 @@ the head stays within max |Δp| 2.98e-7 of it, and `to_answers` gives the oracle
 ```
 
 The debug APK also runs a fixture gate on the device: the tokenizer on 54 probe strings, the rows
-of all 181 bundled questions, and the graph and head on the rows that fit the resident window,
-against the oracle. Gate, timing and demo launches are described in
+of all 181 bundled questions, and the graph and head on the rows that fit the window it compiles
+(`--ei window`; without it, the smallest installed one), against the oracle. Gate, timing and demo launches are described in
 [scripts/TEST_DATA.md](scripts/TEST_DATA.md).
 
 ```bash

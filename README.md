@@ -2315,9 +2315,9 @@ pointer head on Qwen3.5-0.8B-Base, Apache-2.0) answers typed questions about a s
 expected level), with calibrated probabilities. Every question is one causal row,
 `[state] state [question] instructions ([option] option [/option])… [decide]`, and the pointer head scores each
 option from the hidden states at the decide token and at that option's closing token. The graphs take `ids`
-int32 `[1,L]` + `valid` float32 `[1,L]` and return `hidden` float32 `[1,L,1024]` for L = 512, 1024 or 2048. The
-host tokenizes, builds the rows, applies the pointer head (float32, temperature 2.3510958125672174) and the
-author's `to_answers`.
+int32 `[1,L]` + `valid` float32 `[1,L]` and return `hidden` float32 `[1,L,1024]` for L = 128, 256, 512, 1024 or
+2048. The host tokenizes, builds the rows, runs each row on the smallest installed window that holds it, applies
+the pointer head (float32, temperature 2.3510958125672174) and the author's `to_answers`.
 
 **Conversion:** each graph is a state-free row prefill. One call computes one row, the state plus one question,
 from scratch: positions are constants, the mask is a constant causal mask plus `(1 − valid) × (−1e4)`, and no KV or
@@ -2343,9 +2343,9 @@ read-back. GPU default precision was not measured in the app.
 
 | Model | Download | Size | Input → Output | Delegate |
 |---|---|---|---|---|
-| Kev-0.8B L512 / L1024 / L2048 | [HF: litert-community/Kev-0.8B-LiteRT](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) | 1,264,068,368 / 1,269,023,216 / 1,285,227,888 B + 2,099,632 B pointer head + 19,989,325 B tokenizer.json | ids [1,L] + valid [1,L] → hidden [1,L,1024] → host pointer head → `to_answers` | GPU FP32 (verified on the S26; CPU also verified) |
+| Kev-0.8B L128 / L256 / L512 / L1024 / L2048 | [HF: litert-community/Kev-0.8B-LiteRT](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) | 1,261,728,400 / 1,262,377,184 (L128 / L256 to be confirmed at upload) / 1,264,068,368 / 1,269,023,216 / 1,285,227,888 B + 2,099,632 B pointer head + 19,989,325 B tokenizer.json | ids [1,L] + valid [1,L] → hidden [1,L,1024] → host pointer head → `to_answers` | GPU FP32 (verified on the S26; CPU also verified) |
 
-**Sample app**: [kev/](kev/) — pure-Kotlin host (byte-level BPE tokenizer read from the checkpoint's `tokenizer.json`, the author's request rendering and rows, the pointer head read from safetensors, `to_answers` with CPython's float `sum` and `round`) in a Compose app: a state + typed questions → an answer card per question with every option's probability, and the response JSON; GPU FP32 or CPU, three invented example requests. On a desktop JVM the host equals the author's oracle on 402/402 questions (rows, readout indices and answers). On the Galaxy S26 the bundled ticket answers team `billing` 0.9258, refund 0.9456 and mood score 1.1842 (GPU FP32, L512).
+**Sample app**: [kev/](kev/) — pure-Kotlin host (byte-level BPE tokenizer read from the checkpoint's `tokenizer.json`, the author's request rendering and rows, the pointer head read from safetensors, `to_answers` with CPython's float `sum` and `round`) in a Compose app: a state + typed questions → an answer card per question with every option's probability and the window it ran on, and the response JSON; GPU FP32 or CPU, three invented example requests. The default install is the L256 and L512 graphs; each question asks for the smallest installed window that holds its row, L128 and L256 can stay compiled side by side, and a request that needs L512 or more runs on that one graph. On a desktop JVM the host equals the author's oracle on 402/402 questions (rows, readout indices and answers). On the Galaxy S26 the bundled ticket answers team `billing` 0.9258, refund 0.9456 and mood score 1.1842 (GPU FP32, L512).
 Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-04 Kev-0.8B section).
 
 **Original project**: [jaredpalmer/kev](https://github.com/jaredpalmer/kev) (Apache-2.0); base model Qwen3.5-0.8B-Base (Apache-2.0)

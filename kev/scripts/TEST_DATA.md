@@ -71,17 +71,18 @@ and the other 9 tokens that only `tokenizer_config.json` lists.
 
 | Test | Needs | Checks |
 |---|---|---|
-| `KevEncoderTest` | tokenizer, requests, oracle | 377 requests → rows: IDs, decide and option indices of all 402 questions; `usage.input_tokens` of all 377; windows 393 / 0 / 9; padding, `valid` mask and the rejection over 2,048 tokens |
+| `KevEncoderTest` | tokenizer, requests, oracle | 377 requests → rows: IDs, decide and option indices of all 402 questions; `usage.input_tokens` of all 377; windows 393 / 0 / 9 over L512 / L1024 / L2048 and 322 / 64 / 7 / 0 / 9 over the five published windows; padding, `valid` mask and the rejection over 2,048 tokens |
 | `KevTokenizerTest` | tokenizer, probes | the tokenizer.json contract (regex, 33 added tokens, vocabulary size), the Java spelling of the regex, the `<\|name\|>` rewrite, the 54 probes |
 | `KevPointerHeadTest` | head, oracle, hidden states | the 402 oracle questions within 1e-5 (probabilities) and 1e-4 (logits); the 12 bundled questions; the head constants |
 | `KevAnswersTest` | oracle, requests, numbers | `to_answers` on the oracle's probabilities equals the oracle's answers (402 questions, 377 requests), CPython's `sum`, `round` and the confidence formulas |
 | `KevRecordsTest` | render cases | `render`, `option_text`, `to_record`, request validation |
 | `KevJsonTest` | numbers | key order, integer vs float literals, escapes, rejection of malformed JSON, Python's float `repr` |
 | `GateFixturesTest` | debug asset, tokenizer, oracle | declared counts (156 requests, 181 questions), rows and indices of every asset question, answers from the asset's probabilities, asset = oracle |
-| `KevPipelineTest` | tokenizer, head, requests, oracle, hidden states | the app's decision path with a stand-in graph that checks the padded inputs and returns the oracle's hidden states at the readout positions: answers of all 402 questions, `usage.input_tokens` of all 377 requests, windows 393 / 0 / 9; rows over the window and NaN outputs are rejected; the IDs' sha256 |
+| `KevPipelineTest` | tokenizer, head, requests, oracle, hidden states | the app's decision path with stand-in graphs that check the padded inputs and return the oracle's hidden states at the readout positions, with the graphs `KevResidentGraphs` compiles: L512 / L1024 / L2048 installed (windows 393 / 0 / 9), all five with memory for a second graph (322 / 64 / 7 / 0 / 9, every row on its smallest installed window) and without (319 / 67 / 7 / 0 / 9); answers of all 402 questions and `usage.input_tokens` of all 377 requests in all three; rows over the window and NaN outputs are rejected; the IDs' sha256 |
+| `KevWindowsTest` | nothing external | the smallest installed window per row length for the installed sets {256, 512}, {128, 256, 512}, {512} and {512, 2048}; L128 + L256 side by side with enough available memory, L256 alone below the limit, L512 or more alone, the return from L2048 to the small windows, the bundled examples on L256 with the default install, a named window for every row, another backend reopening the primary only; never more than two graphs open |
 | `DemoFixtureTest` | tokenizer, demo fixtures | every demo fixture parses and encodes to the row lengths of `token_lengths.json` (`demo_ticket_01`: 131 / 101 / 93) and the demo oracle's row IDs; without the demo files, the bundled ticket example against `examples_oracle.json`; the demo run JSON has every key the recording scripts read |
 | `KevDraftsTest` | `examples_oracle.json`, tokenizer | the three examples are the demo requests byte for byte (sha256) and encode to the demo oracle's rows (9/9) and `usage.input_tokens`; `to_answers` on the oracle's and on the shipped graph's probabilities gives their answers (18/18); the editor round trip keeps the record; editor errors; Python's `indent=2` JSON; 4-decimal strings |
-| `KevDeviceRunsTest` | debug assets, tokenizer, head, hidden states, timing rows | the on-device gate's checks with a stand-in graph that returns the oracle's hidden states: PASS with probes 54/54, rows 181/181, 172 rows run and 9 skipped as `needs L2048`; `limit`, the stop file and a NaN graph cut or fail the run; the timing protocol's numbers of calls (5 + 20, request sets 20 × rows, the request path) |
+| `KevDeviceRunsTest` | debug assets, tokenizer, head, hidden states, timing rows | the on-device gate's checks with a stand-in graph that returns the oracle's hidden states: PASS with probes 54/54, rows 181/181, 172 rows run and 9 skipped as `needs L2048` at L512 and L256, 147 run at L128 (25 skipped as `needs L256`); `limit`, the stop file and a NaN graph cut or fail the run; the timing sets of the launch's window; the timing protocol's numbers of calls (5 + 20, request sets 20 × rows, the request path) |
 | `KevGateChecksTest` | debug assets, tokenizer, oracle, timing rows | the gate's assets parse, the device probes equal the test probes, the near-tie gap equals the oracle's float32 gap (15 near-ties), numpy's median, the timing rows (`fiveq` = `own_fiveq_09`'s rows) |
 
 The bundled head fixture still needs the head weights from the external directory; they are
@@ -104,10 +105,15 @@ start and at the end (`…:cpuset:/top-app` in the foreground). A file `files/ST
 timing run after the current graph call (`stopped_early: true`); a stale one is removed at the
 start. Progress and results go to logcat under `KevGate`.
 
+Gate and timing runs compile the one window `--ei window` names, or the smallest installed one;
+their reports record `avail_mem_bytes_before_compile` and `resident_windows`. The app logs each
+request's windows under `KevDemo` (`WINDOWS questions=… compiled=… avail_mem_bytes=… closed=…
+resident=…`).
+
 ```bash
 # Fixture gate: probes, all 181 rows, graph + head on the rows that fit the window.
 adb shell am start -n com.kev/.MainActivity --ez gate true --es backend gpu \
-  --es report app_gate_gpu.json [--ei window 512] [--ei limit 40]
+  --es report app_gate_gpu.json [--ei window 256] [--ei limit 40]
 adb exec-out run-as com.kev cat files/app_gate_gpu.json > app_gate_gpu.json
 
 # Timing protocol (also in the benchmark build): the conversion run's timing_rows.json in files/.
@@ -116,6 +122,7 @@ adb shell run-as com.kev cp /data/local/tmp/kev_timing_rows.json files/timing_ro
 adb shell am start -n com.kev/.MainActivity --ez timing true --es rows timing_rows.json \
   --es backend gpu --es report app_timing_gpu_L512.json [--ei window 512] [--ez clear_cache true] \
   [--es sets T300] [--ez request_path false]
+# A rows file may name a set once per window (fiveq at L256 and at L512); a launch times the sets of its window.
 ```
 
 The gate report (`files/<report>`, `files/<report>.partial` while running) holds the tokenizer
@@ -147,13 +154,19 @@ adb shell am start -n com.kev/.MainActivity --ez autoplay true \
   --es fixture /data/user/0/com.kev/files/demo_ticket_01.json --ei delay_ms 1500 --ei gap_ms 800
 ```
 
-`delay_ms` runs from the intent to the request on screen, `gap_ms` before each question. The app
+`delay_ms` runs from the intent to the request on screen, `gap_ms` before each question. Without
+`--ei window` each question runs on the window a Decide would use; `--ei window 2048` runs every
+question on that graph (it becomes the second compiled graph). The app
 logs under `KevDemo`: `ENGINE_READY load_ms=<tokenizer + head + compile>`, `AUTOPLAY_START
 fixture=<path>`, `Q_DONE qid=<id> ms=<the card's ms>`, `AUTOPLAY_DONE json=<path>`, or
 `failed <reason>`; `GPU_FALLBACK <error>` when the GPU graph could not be compiled and the app
 runs on CPU. The run JSON `files/kev-demo-<epoch ms>.json` records the device, the runtime,
-the graph, the title and footer lines as shown, every question's probabilities, the strings on
-its card (`shown`, `shown_ms`), its answer, row IDs, readout indices, `ids_sha256` and times
-(`infer_ms` = the card's ms), `request_total_ms` (tokenize to the last answer, without the demo's
-waits), airplane mode, the cgroup line and where the screen drew the title, the cards' state
-indicators and the footer (`layout`).
+the graphs (`graph`: `file`, `L` and `bytes` of the largest window the questions ran on, `windows`
+= every window they ran on, `resident` = the compiled graphs at the end, `compiled` = each compile
+for the request with `avail_mem_bytes` read right before it, `closed`, and `second_refused` when
+the memory was too low for a second graph), the title and footer
+lines as shown, every question's probabilities, the strings on its card (`shown`, `shown_ms` = the
+ms only; the card also shows the window), its answer, row IDs, readout indices, `window`,
+`ids_sha256` and times (`infer_ms` = the card's ms), `request_total_ms` (tokenize to the last
+answer, without the demo's waits and without a graph compile), airplane mode, the cgroup line and
+where the screen drew the title, the cards' state indicators and the footer (`layout`).

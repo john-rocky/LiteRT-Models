@@ -10,15 +10,14 @@ class KevRow(val ids: IntArray, val decideIndex: Int, val optionIndices: IntArra
   val length: Int
     get() = ids.size
 
-  /** The smallest graph window that holds the row, or null when it is over the largest one. */
-  val window: Int?
-    get() = KevEncoder.WINDOWS.firstOrNull { length <= it }
+  /** The smallest of [windows] that holds the row, or null when it is over the largest one. */
+  fun window(windows: List<Int>): Int? = KevWindows.smallestHolding(windows, length)
 
   /** [window], or a rejection that says how long the row is. */
-  fun requireWindow(): Int =
-    window
+  fun requireWindow(windows: List<Int>): Int =
+    window(windows)
       ?: throw IllegalArgumentException(
-        "The question row is $length tokens; the largest graph takes ${KevEncoder.WINDOWS.last()}. " +
+        "The question row is $length tokens; the largest graph takes ${windows.max()}. " +
           "Shorten the state or the question."
       )
 
@@ -78,7 +77,7 @@ class KevEncoded(val stateIds: IntArray, val branches: List<KevBranch>) {
  * Port of the author's `user_tokens`, `encode` and `rows_of` (`kev/model.py`) in the serving form
  * the graph runs: one causal row per question, `[state] + state tokens` then `[question] +
  * instructions + ([option] + option + [/option])… + [decide]`. Nothing is truncated: a row is
- * matched to the smallest graph window (512 / 1024 / 2048) or rejected.
+ * matched to the smallest installed graph window (128 / 256 / 512 / 1024 / 2048) or rejected.
  */
 class KevEncoder(private val tokenizer: KevTokenizer) {
   init {
@@ -140,9 +139,6 @@ class KevEncoder(private val tokenizer: KevTokenizer) {
 
     /** `<|endoftext|>` right-pads rows (pad = eos; there is no BOS). */
     const val PAD_ID = 248044
-
-    /** Graph windows (sequence lengths), smallest first. */
-    val WINDOWS = listOf(512, 1024, 2048)
 
     private val DELIMITERS =
       listOf(

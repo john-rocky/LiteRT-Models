@@ -86,7 +86,7 @@ class DemoFixtureTest {
           assertArrayEquals("${fixture.id}/${question.id}", it, row.ids)
           idsCompared++
         }
-        assertEquals(512, row.window)
+        assertEquals(256, row.window(KevFiles.DEFAULT_INSTALL))
       }
       report[fixture.id] =
         linkedMapOf(
@@ -141,7 +141,7 @@ class DemoFixtureTest {
             FloatArray(probs.size) { probs[it].toFloat() },
           )
         val result =
-          KevQuestionResult(index, meta[index], row, 512, scores, probs, 640.4 + index, 0.6)
+          KevQuestionResult(index, meta[index], row, 256, scores, probs, 640.4 + index, 0.6)
         val answer = answers.getValue(meta[index].id) as Map<*, *>
         val view = KevAnswerView.of(answer, meta[index], probs)
         val inferMs = KevAnswerView.wholeMillis(result.inferMs)
@@ -181,9 +181,15 @@ class DemoFixtureTest {
             "16",
             "2.2.0",
             "GPU FP32",
-            "kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite",
-            512,
-            1_264_068_368L,
+            KevGraphFile("kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite", 256, 1_262_377_184L),
+            listOf(256),
+            listOf(
+              KevGraphFile("kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite", 256, 1_262_377_184L)
+            ),
+            listOf(256),
+            listOf(4_876_628_000L),
+            listOf(512),
+            false,
             16_200,
             700,
             "Kev Decide",
@@ -208,6 +214,17 @@ class DemoFixtureTest {
         (parsed["device"] as Map<*, *>).keys.toList(),
       )
       assertEquals("Galaxy S26", (parsed["device"] as Map<*, *>)["shown_as"])
+      // `graph` stays an object with file / L / bytes (the recording scripts read graph.file).
+      val graph = parsed["graph"] as Map<*, *>
+      assertEquals(
+        listOf("file", "L", "bytes", "windows", "resident", "compiled", "closed", "second_refused"),
+        graph.keys.toList(),
+      )
+      assertEquals("kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite", graph["file"])
+      val compiled = (graph["compiled"] as List<*>).single() as Map<*, *>
+      assertEquals(256, (compiled["L"] as JsonNumber).toInt())
+      assertEquals("4876628000", (compiled["avail_mem_bytes"] as JsonNumber).literal)
+      assertEquals(listOf(512), (graph["closed"] as List<*>).map { (it as JsonNumber).toInt() })
       assertEquals(listOf("line 1", "line 2", "line 3"), parsed["footer_lines"])
       for (question in parsed["questions"] as List<*>) {
         val entry = question as Map<*, *>

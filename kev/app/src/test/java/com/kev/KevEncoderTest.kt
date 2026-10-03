@@ -28,6 +28,7 @@ class KevEncoderTest {
     val failures = ArrayList<Map<String, Any?>>()
     val usageFailures = ArrayList<Map<String, Any?>>()
     val windows = linkedMapOf(512 to 0, 1024 to 0, 2048 to 0)
+    val published = linkedMapOf(*KevFiles.WINDOWS.map { it to 0 }.toTypedArray())
     // Every row and usage this port builds, for counting matches independently of this test.
     val ourRows = LinkedHashMap<String, Any?>()
     val ourUsage = LinkedHashMap<String, Any?>()
@@ -59,14 +60,17 @@ class KevEncoderTest {
         assertEquals(expected.keys, question.keys)
         assertEquals(expected.type, question.type.wireName)
         val row = encoded.row(index)
-        val window = row.requireWindow()
+        val window = row.requireWindow(THREE_WINDOWS)
         windows[window] = windows.getValue(window) + 1
+        val smallest = row.requireWindow(KevFiles.WINDOWS)
+        published[smallest] = published.getValue(smallest) + 1
         ourRows["${record.id}/${question.id}"] =
           linkedMapOf(
             "row_ids" to row.ids,
             "decide_idx" to row.decideIndex,
             "opt_idx" to row.optionIndices,
             "window" to window,
+            "smallest_published_window" to smallest,
           )
         val same =
           row.ids.contentEquals(expected.rowIds) &&
@@ -93,6 +97,7 @@ class KevEncoderTest {
         "rows_identical" to matched,
         "input_tokens_identical" to records.size - usageFailures.size,
         "windows" to windows.mapKeys { it.key.toString() },
+        "published_windows" to published.mapKeys { it.key.toString() },
         "seconds" to seconds,
         "tokenizer_load_ms" to ExternalTestData.tokenizerLoadMillis(),
         "first_failures" to failures.take(3),
@@ -101,7 +106,7 @@ class KevEncoderTest {
       ),
     )
     println(
-      "KEV_ENCODER rows=$matched/$questions input_tokens=${records.size - usageFailures.size}/${records.size} windows=$windows"
+      "KEV_ENCODER rows=$matched/$questions input_tokens=${records.size - usageFailures.size}/${records.size} windows=$windows published=$published"
     )
     assertEquals("rows with differences: ${KevJson.write(failures.take(3))}", 402, matched)
     assertEquals(402, questions)
@@ -111,24 +116,29 @@ class KevEncoderTest {
       usageFailures.size,
     )
     assertEquals(linkedMapOf(512 to 393, 1024 to 0, 2048 to 9), windows)
+    assertEquals(
+      linkedMapOf(128 to 322, 256 to 64, 512 to 7, 1024 to 0, 2048 to 9),
+      published,
+    )
   }
 
   @Test
   fun paddingAndWindowRules() {
     val row = KevRow(intArrayOf(248060, 11, 248061, 248049, 12, 248050, 248062), 6, intArrayOf(5))
-    assertEquals(512, row.window)
+    assertEquals(512, row.window(THREE_WINDOWS))
+    assertEquals(128, row.window(KevFiles.WINDOWS))
     val padded = row.padded(512)
     assertEquals(512, padded.ids.size)
     assertArrayEquals(row.ids, padded.ids.copyOf(row.length))
     assertTrue(padded.ids.drop(row.length).all { it == KevEncoder.PAD_ID })
     assertTrue(padded.valid.take(row.length).all { it == 1f })
     assertTrue(padded.valid.drop(row.length).all { it == 0f })
-    assertEquals(1024, KevRow(IntArray(513), 512, intArrayOf()).window)
-    assertEquals(2048, KevRow(IntArray(2048), 2047, intArrayOf()).window)
+    assertEquals(1024, KevRow(IntArray(513), 512, intArrayOf()).window(KevFiles.WINDOWS))
+    assertEquals(2048, KevRow(IntArray(2048), 2047, intArrayOf()).window(KevFiles.WINDOWS))
     val tooLong = KevRow(IntArray(2049), 2048, intArrayOf())
-    assertNull(tooLong.window)
+    assertNull(tooLong.window(KevFiles.WINDOWS))
     try {
-      tooLong.requireWindow()
+      tooLong.requireWindow(KevFiles.WINDOWS)
       fail("a 2,049-token row was accepted")
     } catch (expected: IllegalArgumentException) {
       assertTrue(
@@ -180,5 +190,8 @@ class KevEncoderTest {
 
   private companion object {
     const val CONTEXT = 8
+
+    /** The three windows the oracle's counts were made with. */
+    val THREE_WINDOWS = listOf(512, 1024, 2048)
   }
 }

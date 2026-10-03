@@ -106,6 +106,32 @@ class KevDeviceRunsTest {
   }
 
   @Test
+  fun gateRunsTheRowsTheWindowHolds() {
+    // L256 holds every row L512 holds (the longest of them is 142 tokens); L128 the 147 rows of
+    // 128 tokens or fewer. Longer rows are skipped with the window that would hold them.
+    for ((window, run, skipped) in
+      listOf(
+        Triple(256, 172, mapOf("needs L2048" to 9)),
+        Triple(128, 147, mapOf("needs L256" to 25, "needs L2048" to 9)),
+      )) {
+      val graph = oracleGraph(window)
+      val gate = KevGateCore(pipeline(), graph, 0, { false }, {})
+      gate.probes(probes())
+      gate.run(asset) {}
+      val summary = gate.summary()
+      assertEquals("L$window", run, summary["rows_run"])
+      assertEquals("L$window", run, graph.calls)
+      assertEquals(
+        "L$window",
+        skipped,
+        (summary["skipped_rows"] as List<*>).groupingBy { (it as Map<*, *>)["reason"] }.eachCount(),
+      )
+      assertEquals(run, summary["argmax_equal"])
+      assertTrue("L$window", gate.passed())
+    }
+  }
+
+  @Test
   fun gateLimitAndStopCutTheRun() {
     val limited = KevGateCore(pipeline(), oracleGraph(512), 20, { false }, {})
     limited.run(asset) {}
@@ -163,6 +189,26 @@ class KevDeviceRunsTest {
       unknown.skipped.last().reason,
     )
     assertNull(unknown.skipped.last().window)
+  }
+
+  @Test
+  fun timingSelectsTheSetOfTheWindow() {
+    // One rows file can carry a set name for several windows; a launch times the one of its window.
+    val rows =
+      KevTimingRows.parse(
+        ("""{"pad_id": 248044, "sets": [""" +
+            """{"name": "fiveq", "kind": "request", "L": 256, "rows": [{"key": "a", "ids": [1, 2]}]},""" +
+            """{"name": "fiveq", "kind": "request", "L": 512, "rows": [{"key": "a", "ids": [1, 2]}]},""" +
+            """{"name": "S80", "kind": "single", "L": 128, "rows": [{"key": "b", "ids": [3]}]}]}""")
+          .toByteArray()
+      )
+    val l256 = rows.select(KevLaunch.setNames("fiveq"), 256)
+    assertEquals(listOf(256), l256.run.map { it.window })
+    assertEquals(
+      listOf("fiveq" to "the resident graph is L256", "S80" to "not requested"),
+      l256.skipped.map { it.name to it.reason },
+    )
+    assertEquals(listOf("S80"), rows.select(null, 128).run.map { it.name })
   }
 
   @Test

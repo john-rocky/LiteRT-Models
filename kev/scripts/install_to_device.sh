@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# Download the files (the L512 graph, the head and the tokenizer; the L1024 / L2048 graphs are optional):
-# hf download litert-community/Kev-0.8B-LiteRT kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite \
+# Download the files (the L256 and L512 graphs, the head and the tokenizer; the L128, L1024 and L2048
+# graphs are optional):
+# hf download litert-community/Kev-0.8B-LiteRT kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite \
+#   kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite \
 #   head/kev_0.8b_pointer_head.safetensors tokenizer/tokenizer.json \
 #   --local-dir "$HOME/Downloads/Kev-0.8B-LiteRT"
 # Usage: ./scripts/install_to_device.sh [dir-with-downloaded-HF-repo]
 # The directory holds the graphs at its top level, head/ and tokenizer/. A directory without
-# head/ and tokenizer/ is read flat (all files side by side). The L1024 and L2048 graphs are
-# installed when present; WINDOWS="512" (or "512 1024") limits the graphs to those windows. Every
-# file must have the published size; nothing is copied otherwise.
+# head/ and tokenizer/ is read flat (all files side by side). WINDOWS selects the graphs: "256 512"
+# by default; WINDOWS="128 256 512 1024 2048" installs all five. Every file must be in the
+# directory with the published size; nothing is copied otherwise. Graphs already on the device
+# that WINDOWS does not name stay there.
 # Install the debug APK before running this script: run-as needs a debuggable package.
 # Set ANDROID_SERIAL to select a device when more than one is connected.
 set -euo pipefail
@@ -23,11 +26,13 @@ TOKENIZER=tokenizer.json
 HEAD=kev_0.8b_pointer_head.safetensors
 graph() { printf 'kev-0.8b_rowprefill_L%s_fp16fc_i8emb.tflite\n' "$1"; }
 
-# Published sizes in bytes.
+# Published sizes in bytes (the L128 and L256 sizes are to be confirmed at upload).
 size_of() {
     case "$1" in
         "$TOKENIZER") echo 19989325 ;;
         "$HEAD") echo 2099632 ;;
+        "$(graph 128)") echo 1261728400 ;;
+        "$(graph 256)") echo 1262377184 ;;
         "$(graph 512)") echo 1264068368 ;;
         "$(graph 1024)") echo 1269023216 ;;
         "$(graph 2048)") echo 1285227888 ;;
@@ -47,21 +52,20 @@ source_file() {
     fi
 }
 
-FILES=("$TOKENIZER" "$HEAD" "$(graph 512)")
-for window in ${WINDOWS:-512 1024 2048}; do
+FILES=("$TOKENIZER" "$HEAD")
+for window in ${WINDOWS:-256 512}; do
     case "$window" in
-        512) ;;
-        1024 | 2048)
-            if [[ -f "$(source_file "$(graph "$window")")" ]]; then
-                FILES+=("$(graph "$window")")
-            fi
-            ;;
+        128 | 256 | 512 | 1024 | 2048) FILES+=("$(graph "$window")") ;;
         *)
-            printf 'WINDOWS holds %s; the graphs are 512, 1024 and 2048\n' "$window" >&2
+            printf 'WINDOWS holds %s; the graphs are 128, 256, 512, 1024 and 2048\n' "$window" >&2
             exit 2
             ;;
     esac
 done
+if [[ ${#FILES[@]} -eq 2 ]]; then
+    printf 'WINDOWS names no graph\n' >&2
+    exit 2
+fi
 
 # Check every source before any device command to avoid a partial installation.
 for name in "${FILES[@]}"; do
