@@ -8,9 +8,11 @@
 # Usage: ./scripts/install_to_device.sh [dir-with-downloaded-HF-repo]
 # The directory holds the graphs at its top level, head/ and tokenizer/. A directory without
 # head/ and tokenizer/ is read flat (all files side by side). WINDOWS selects the graphs: "256 512"
-# by default; WINDOWS="128 256 512 1024 2048" installs all five. Every file must be in the
-# directory with the published size; nothing is copied otherwise. Graphs already on the device
-# that WINDOWS does not name stay there.
+# by default; WINDOWS="128 256 512 1024 2048" installs all five. PAIR=1 adds the shared-state pair
+# (kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite). Every file must be in the directory with
+# the published size; nothing is copied otherwise. CHECK_SIZES=0 skips the published sizes (files
+# you converted yourself) and checks each copy against its source instead. Graphs already on the
+# device that WINDOWS does not name stay there.
 # Install the debug APK before running this script: run-as needs a debuggable package.
 # Set ANDROID_SERIAL to select a device when more than one is connected.
 set -euo pipefail
@@ -25,8 +27,9 @@ TEMP_DIR=/data/local/tmp/kev
 TOKENIZER=tokenizer.json
 HEAD=kev_0.8b_pointer_head.safetensors
 graph() { printf 'kev-0.8b_rowprefill_L%s_fp16fc_i8emb.tflite\n' "$1"; }
+PAIR_FILE=kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite
 
-# Published sizes in bytes (the L128 and L256 sizes are to be confirmed at upload).
+# Published sizes in bytes (the L128, L256 and pair sizes are to be confirmed at upload).
 size_of() {
     case "$1" in
         "$TOKENIZER") echo 19989325 ;;
@@ -36,6 +39,7 @@ size_of() {
         "$(graph 512)") echo 1264068368 ;;
         "$(graph 1024)") echo 1269023216 ;;
         "$(graph 2048)") echo 1285227888 ;;
+        "$PAIR_FILE") echo 1264544720 ;;
     esac
 }
 
@@ -62,10 +66,34 @@ for window in ${WINDOWS:-256 512}; do
             ;;
     esac
 done
+case "${PAIR:-0}" in
+    1) FILES+=("$PAIR_FILE") ;;
+    0) ;;
+    *)
+        printf 'PAIR is %s; use PAIR=1 to add the shared-state pair\n' "$PAIR" >&2
+        exit 2
+        ;;
+esac
+case "${CHECK_SIZES:-1}" in
+    0 | 1) ;;
+    *)
+        printf 'CHECK_SIZES is %s; use CHECK_SIZES=0 to skip the published sizes\n' "$CHECK_SIZES" >&2
+        exit 2
+        ;;
+esac
 if [[ ${#FILES[@]} -eq 2 ]]; then
     printf 'WINDOWS names no graph\n' >&2
     exit 2
 fi
+
+# The size a file must have: the published one, or the source's own with CHECK_SIZES=0.
+expected_size() {
+    if [[ "${CHECK_SIZES:-1}" == 0 ]]; then
+        wc -c < "$(source_file "$1")" | tr -d ' '
+    else
+        size_of "$1"
+    fi
+}
 
 # Check every source before any device command to avoid a partial installation.
 for name in "${FILES[@]}"; do
@@ -75,8 +103,8 @@ for name in "${FILES[@]}"; do
         exit 1
     fi
     actual="$(wc -c < "$source" | tr -d ' ')"
-    if [[ "$actual" != "$(size_of "$name")" ]]; then
-        printf '%s is %s bytes, expected %s: %s\n' "$name" "$actual" "$(size_of "$name")" "$source" >&2
+    if [[ "$actual" != "$(expected_size "$name")" ]]; then
+        printf '%s is %s bytes, expected %s: %s\n' "$name" "$actual" "$(expected_size "$name")" "$source" >&2
         exit 1
     fi
 done
@@ -99,8 +127,8 @@ for name in "${FILES[@]}"; do
     adb shell rm "$pending"
     pending=''
     copied="$(adb shell run-as "$PACKAGE" stat -c %s "files/$name" | tr -d '\r')"
-    if [[ "$copied" != "$(size_of "$name")" ]]; then
-        printf 'files/%s on the device is %s bytes, expected %s\n' "$name" "$copied" "$(size_of "$name")" >&2
+    if [[ "$copied" != "$(expected_size "$name")" ]]; then
+        printf 'files/%s on the device is %s bytes, expected %s\n' "$name" "$copied" "$(expected_size "$name")" >&2
         exit 1
     fi
 done

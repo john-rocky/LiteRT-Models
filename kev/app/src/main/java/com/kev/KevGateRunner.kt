@@ -6,23 +6,35 @@ import java.io.File
 
 /**
  * The debug gate on the device (debug build only), run on [KevRuntime.dispatcher]: loads the engine
- * on the requested window and backend, then runs [KevGateCore] over the bundled assets
- * (`tokenizer_probes.json`, `gate_fixtures.json`) with the device facts around it (cgroup, thermal
- * status, battery temperature, cache directory, load and compile times). Android's ICU regex and
+ * and compiles the requested graph (a row window or the shared-state pair) on the requested backend
+ * and precision, then runs [KevGateCore] over the bundled assets (`tokenizer_probes.json`,
+ * `gate_fixtures.json`) with the device facts around it (cgroup, thermal status, battery
+ * temperature, cache directory, available memory, load and compile times). Android's ICU regex and
  * NFC follow other Unicode versions than the desktop JVM, so the probes run on the device too.
  *
  * The report is `files/<report>.partial` while running and `files/<report>` at the end. A file
  * `files/STOP` ends the run after the current row with `stopped_early: true`.
  */
 class KevGateRunner(private val context: Context) {
-  class Args(val backend: KevDecider.Backend, val report: String, val window: Int, val limit: Int)
+  class Args(
+    val backend: KevDecider.Backend,
+    val precision: KevPrecision,
+    val report: String,
+    val graph: KevGraphKey,
+    val limit: Int,
+  )
 
   /** Final status (PASS, FAIL or STOPPED), the report path and the error that ended the run. */
   class Summary(val status: String, val path: String, val error: String?)
 
   private val files = context.filesDir
 
-  fun run(args: Args, loadEngine: () -> KevEngine, progress: (String) -> Unit): Summary {
+  fun run(
+    args: Args,
+    loadEngine: () -> KevEngine,
+    prepare: (KevEngine, KevGraphKey) -> KevRequestGraphs,
+    progress: (String) -> Unit,
+  ): Summary {
     val destination = File(files, args.report)
     val partial = File(files, "${args.report}.partial")
     val stop = File(files, STOP_FILE)
@@ -34,9 +46,16 @@ class KevGateRunner(private val context: Context) {
         "set" to "kev_app_gate",
         "status" to "RUNNING",
         "backend" to args.backend.name.lowercase(),
-        "window" to args.window,
-        "graph_file" to KevFiles.graph(args.window),
-        "graph_bytes" to File(files, KevFiles.graph(args.window)).length(),
+        "precision" to args.precision.wireName,
+        "graph" to args.graph.label,
+        "form" to (if (args.graph is KevGraphKey.Pair) KevForm.PAIR else KevForm.ROW).wireName,
+        "window" to (args.graph as? KevGraphKey.Window)?.window,
+        "pair" to
+          (args.graph as? KevGraphKey.Pair)?.let {
+            linkedMapOf("Ls" to it.shape.stateLength, "Lq" to it.shape.questionLength)
+          },
+        "graph_file" to args.graph.file,
+        "graph_bytes" to File(files, args.graph.file).length(),
         "limit" to args.limit,
         "cgroup_start" to KevDevice.cgroup(),
         "thermal_status_start" to KevDevice.thermalStatus(context),
@@ -55,14 +74,20 @@ class KevGateRunner(private val context: Context) {
       report["cache_dir_before_load"] = KevDevice.directoryUsage(context.cacheDir)
       progress("loading")
       val engine = loadEngine()
+      val graphs = prepare(engine, args.graph)
       report["cache_dir_after_load"] = KevDevice.directoryUsage(context.cacheDir)
       report["accelerator_used"] = engine.backend.name.lowercase()
       report["tokenizer_load_ms"] = engine.tokenizerMs
       report["head_load_ms"] = engine.headMs
-      report["compile_ms"] = engine.primary.compileMs
-      report["avail_mem_bytes_before_compile"] = engine.loadAvailableBytes
-      report["resident_windows"] = engine.windows
-      val gate = KevGateCore(engine.pipeline, engine.primary, args.limit, { stop.exists() }, ::log)
+      report["compile_ms"] = engine.compileMs
+      report["avail_mem_bytes_before_compile"] = graphs.availableBytes.firstOrNull()
+      report["resident_graphs"] = engine.resident.map { it.label }
+      val gateGraph =
+        when (val runners = graphs.runners) {
+          is KevRunners.Pair -> KevGateGraph.Pair(runners.graph)
+          is KevRunners.Rows -> KevGateGraph.Row(runners.graphs.single())
+        }
+      val gate = KevGateCore(engine.pipeline, gateGraph, args.limit, { stop.exists() }, ::log)
       core = gate
       report["tokenizer_probes"] =
         gate.probes(KevGateChecks.parseProbes(asset(KevGateChecks.PROBES_NAME)))
@@ -72,7 +97,7 @@ class KevGateRunner(private val context: Context) {
       report["rows"] = gate.rows
       write(partial, report)
       log(
-        "GATE_START backend=${args.backend.name.lowercase()} window=${args.window} limit=${args.limit} records=${items.size}"
+        "GATE_START backend=${args.backend.name.lowercase()} precision=${args.precision.wireName} graph=${args.graph.label} limit=${args.limit} records=${items.size}"
       )
       gate.run(items) { rowsRun ->
         progress("row $rowsRun")

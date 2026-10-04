@@ -11,10 +11,39 @@ enum class LoadStage {
   GRAPH,
 }
 
+/** What a plan was made with: the available memory in bytes and the resident graphs. */
+class KevPlanInputs(val availableBytes: Long, val resident: List<KevGraphKey>)
+
 /**
- * The tokenizer, the pointer head and the compiled graphs ([KevResidentGraphs]): the smallest
- * installed window compiled at load, then the windows each request asks for, at most two and only
- * L128 / L256 side by side. Use only on [KevRuntime.dispatcher].
+ * The graphs of one request after [KevEngine.prepare]: each question's row graph or the pair, and
+ * what the engine compiled and closed for the request.
+ */
+class KevRequestGraphs(
+  val plan: KevPlan.Ready,
+  val runners: KevRunners,
+  /** Each question's window: L of its row graph, or the pair's Lq. */
+  val windows: List<Int>,
+  /** The graphs the questions run on: the distinct row windows ascending, or the pair. */
+  val used: List<KevGraphKey>,
+  /** The graphs compiled for this request, in order. */
+  val compiled: List<KevGraphKey>,
+  /** The available memory read right before each compile, in bytes, in the order of [compiled]. */
+  val availableBytes: List<Long>,
+  /** The graphs closed for this request. */
+  val closed: List<KevGraphKey>,
+  /** The row plan wanted a second window but the available memory was below the limit. */
+  val secondRefused: Boolean,
+) {
+  /** The pair, for a pair plan. */
+  val pair: PairRunner?
+    get() = (runners as? KevRunners.Pair)?.graph
+}
+
+/**
+ * The tokenizer, the pointer head and the compiled graphs ([KevResidentGraphs]). Loading reads only
+ * the tokenizer and the head; each request's plan ([KevPlanner]) then compiles what it needs: row
+ * windows (at most two, and only L128 / L256 side by side) or the shared-state pair alone. Use only
+ * on [KevRuntime.dispatcher].
  */
 class KevEngine
 private constructor(
@@ -24,84 +53,156 @@ private constructor(
   val tokenizerMs: Double,
   /** Wall time of loading the head weights, in milliseconds. */
   val headMs: Double,
-  private val graphs: KevResidentGraphs<KevDecider>,
   backend: KevDecider.Backend,
+  /** The GPU precision every graph of this engine is compiled with. */
+  val precision: KevPrecision,
   private val cpuFallback: Boolean,
-  /** `ActivityManager.MemoryInfo.availMem` right before the load compiled its graph, in bytes. */
-  val loadAvailableBytes: Long,
 ) : Closeable {
+  private val graphs = KevResidentGraphs<KevDecider, KevPairDecider>()
+
   /** The backend graphs are compiled on (GPU may still fall back to CPU, see [gpuFailure]). */
   var requestedBackend: KevDecider.Backend = backend
     private set
 
-  /** Tokenizer + head + primary graph compile of the load: the `ENGINE_READY` figure. */
-  val loadMs: Double = tokenizerMs + headMs + graphs.graph(graphs.primary).compileMs
+  /**
+   * Tokenizer + head + the compiles of the request prepared at startup: the `ENGINE_READY` figure,
+   * null until [markLoaded].
+   */
+  var loadMs: Double? = null
+    private set
 
-  /** Compile time of the resident primary graph (0 when it is not resident), in milliseconds. */
-  val primaryCompileMs: Double
-    get() = graphs.all.firstOrNull { it.length == graphs.primary }?.compileMs ?: 0.0
-
-  /** The window compiled at load: the smallest installed one, or the one a diagnostic run names. */
-  val primaryWindow: Int
-    get() = graphs.primary
-
-  /** The primary graph; gate and timing runs use only this one. */
-  val primary: KevDecider
-    get() = graphs.graph(graphs.primary)
+  /** The resident graphs: windows in ascending order, then the pair. */
+  val resident: List<KevGraphKey>
+    get() = graphs.resident
 
   /** The resident windows, in ascending order. */
   val windows: List<Int>
     get() = graphs.windows
 
-  /** The backend the primary graph runs on. */
+  /** Compile time of the resident graphs together, in milliseconds. */
+  val compileMs: Double
+    get() = graphs.all.sumOf { it.compileMs } + (graphs.pairRunner?.compileMs ?: 0.0)
+
+  /** The backend the resident graphs run on. */
   val backend: KevDecider.Backend
-    get() = graphs.all.firstOrNull()?.backend ?: requestedBackend
+    get() = graphs.all.firstOrNull()?.backend ?: graphs.pairRunner?.backend ?: requestedBackend
 
   /** GPU's error when GPU was requested and a resident graph runs on CPU instead. */
   val gpuFailure: String?
-    get() = graphs.all.firstNotNullOfOrNull { it.gpuFailure }
+    get() = graphs.all.firstNotNullOfOrNull { it.gpuFailure } ?: graphs.pairRunner?.gpuFailure
 
-  /** The graphs a request with rows of [rows] tokens needs (see [KevResidentGraphs.plan]). */
-  fun plan(rows: List<Int>): KevWindowPlan =
-    graphs.plan(rows, KevFiles.installedWindows(context.filesDir))
-
-  /** Every row on the one [window] (see [KevResidentGraphs.planFixed]). */
-  fun planFixed(rows: List<Int>, window: Int): KevWindowPlan =
-    graphs.planFixed(rows, window, KevFiles.installedWindows(context.filesDir))
+  /** The available memory (bytes) and the resident graphs the last [plan] saw. */
+  var lastPlanInputs: KevPlanInputs? = null
+    private set
 
   /**
-   * Closes and compiles what [plan] needs (see [KevResidentGraphs.prepare]), calling [onCompile]
-   * before each compile, and returns the graph of each question.
+   * How [prepared] runs ([KevPlanner]) with the installed files: [mode], and every row on
+   * [fixedWindow] when it is set.
    */
-  fun prepare(plan: KevWindowPlan.Ready, onCompile: (Int) -> Unit): KevWindowRun<KevDecider> =
-    graphs.prepare(plan, { KevDevice.availableMemoryBytes(context) }) { window ->
-      onCompile(window)
-      open(window)
+  fun plan(
+    prepared: KevPrepared,
+    mode: KevGraphMode = KevGraphMode.AUTO,
+    fixedWindow: Int? = null,
+  ): KevPlan {
+    val available = KevDevice.availableMemoryBytes(context)
+    lastPlanInputs = KevPlanInputs(available, graphs.resident)
+    return KevPlanner.plan(
+      prepared.encoded.stateIds.size,
+      prepared.encoded.branches.map { it.ids.size },
+      KevFiles.installedWindows(context.filesDir),
+      KevFiles.installedPairs(context.filesDir),
+      graphs.windows,
+      available,
+      mode,
+      fixedWindow,
+    )
+  }
+
+  /**
+   * Closes and compiles what [plan] needs (see [KevResidentGraphs]), calling [onCompile] before
+   * each compile, and returns the graphs of the request.
+   */
+  fun prepare(plan: KevPlan.Ready, onCompile: (KevGraphKey) -> Unit): KevRequestGraphs =
+    when (plan) {
+      is KevPlan.Rows -> {
+        val run =
+          graphs.prepare(plan.windows, { KevDevice.availableMemoryBytes(context) }) { window ->
+            onCompile(KevGraphKey.Window(window))
+            KevDecider.create(context, window, requestedBackend, precision, cpuFallback)
+          }
+        KevRequestGraphs(
+          plan,
+          KevRunners.Rows(run.graphs),
+          run.windows,
+          run.windows.distinct().sorted().map { KevGraphKey.Window(it) },
+          run.compiled.map { KevGraphKey.Window(it) },
+          run.availableBytes,
+          listOfNotNull(run.closedPair?.let { KevGraphKey.Pair(it) }) +
+            run.closed.map { KevGraphKey.Window(it) },
+          run.secondRefused,
+        )
+      }
+      is KevPlan.Pair -> {
+        val run =
+          graphs.preparePair(plan.shape, { KevDevice.availableMemoryBytes(context) }) { shape ->
+            onCompile(KevGraphKey.Pair(shape))
+            KevPairDecider.create(context, shape, requestedBackend, precision, cpuFallback)
+          }
+        val key = KevGraphKey.Pair(run.shape)
+        KevRequestGraphs(
+          plan,
+          KevRunners.Pair(run.graph),
+          List(plan.questions) { run.shape.questionLength },
+          listOf(key),
+          if (run.compiled) listOf(key) else emptyList(),
+          listOfNotNull(run.availableBytes),
+          run.closedWindows.map { KevGraphKey.Window(it) } +
+            listOfNotNull(run.closedPair?.let { KevGraphKey.Pair(it) }),
+          false,
+        )
+      }
     }
 
-  /**
-   * Closes the compiled graphs and compiles the primary window on [backend] (another window
-   * compiles again when a request needs it). GPU falls back to CPU when this engine allows it.
-   */
+  /** The one row [window] resident (a gate or timing run on that window). */
+  fun prepareWindow(window: Int): KevRequestGraphs {
+    val plan = KevWindowPlan.Ready(listOf(window))
+    return prepare(KevPlan.Rows(plan, KevPrediction(null, null))) {}
+  }
+
+  /** The pair [shape] resident alone (a gate or timing run on the pair). */
+  fun preparePair(shape: KevPairShape): KevRequestGraphs =
+    prepare(KevPlan.Pair(shape, 0, KevPrediction(null, null))) {}
+
+  /** The resident row graph of [window]. */
+  fun window(window: Int): KevDecider = graphs.graph(window)
+
+  /** The resident pair, or null. */
+  val pair: KevPairDecider?
+    get() = graphs.pairRunner
+
+  /** Records [loadMs] once: tokenizer + head + the resident graphs' compile times. */
+  fun markLoaded() {
+    if (loadMs == null) loadMs = tokenizerMs + headMs + compileMs
+  }
+
+  /** Closes the compiled graphs; the next [prepare] compiles on [backend]. */
   fun switchBackend(backend: KevDecider.Backend) {
     requestedBackend = backend
-    graphs.reopen(::open)
+    graphs.close()
   }
 
   override fun close() = graphs.close()
 
-  private fun open(window: Int): KevDecider =
-    KevDecider.create(context, window, requestedBackend, cpuFallback)
-
   companion object {
     /**
-     * Loads tokenizer, head and the [window] graph from `files/`, reporting each stage as it
-     * starts. With [cpuFallback], a graph that does not compile on the GPU runs on CPU.
+     * Loads tokenizer and head from `files/`, reporting each stage as it starts; graphs compile
+     * when a request needs them. With [cpuFallback], a graph that does not compile on the GPU runs
+     * on CPU.
      */
     fun load(
       context: Context,
-      window: Int,
       backend: KevDecider.Backend,
+      precision: KevPrecision,
       cpuFallback: Boolean,
       onStage: (LoadStage) -> Unit,
     ): KevEngine {
@@ -114,18 +215,14 @@ private constructor(
       val headStart = System.nanoTime()
       val head = KevPointerHead(File(files, KevFiles.HEAD))
       val headMs = KevPipeline.millis(System.nanoTime() - headStart)
-      onStage(LoadStage.GRAPH)
-      val available = KevDevice.availableMemoryBytes(context)
-      val primary = KevDecider.create(context, window, backend, cpuFallback)
       return KevEngine(
         context.applicationContext,
         KevPipeline(tokenizer, head),
         tokenizerMs,
         headMs,
-        KevResidentGraphs(window, primary),
         backend,
+        precision,
         cpuFallback,
-        available,
       )
     }
   }

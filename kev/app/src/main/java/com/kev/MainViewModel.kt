@@ -39,6 +39,12 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private var nextKey = FIRST_ADDED_KEY
   private var lastWarmupMs = 0.0
 
+  /** How Decide plans a request (the `graph` extra of the launch that started the app). */
+  private var interactiveGraph = KevGraphMode.AUTO
+
+  /** The GPU precision of every graph of this process (the `precision` extra). */
+  private var precision = KevPrecision.FP32
+
   /** The bundled requests (`res/raw`): invented support ticket, incident report and review. */
   private val examples: List<KevFixture> = EXAMPLES.map { id ->
     KevFixture.parse(context.resources.openRawResource(id).use { it.readBytes() }.decodeToString())
@@ -58,15 +64,26 @@ class MainViewModel(private val context: Context) : ViewModel() {
       is KevLaunch.Gate -> runGate(launch)
       is KevLaunch.Timing -> runTiming(launch)
       is KevLaunch.Autoplay -> {
-        loadInteractive()
+        usePrecision(launch.precision)
+        // The graphs compiled at startup are the ones the fixture's request runs on.
+        loadInteractive { autoplayStartup(launch) }
         autoplay(launch, SystemClock.elapsedRealtimeNanos())
       }
       is KevLaunch.Invalid -> {
         reportInvalid(launch)
-        loadInteractive()
+        loadInteractive { editorStartup() }
       }
-      KevLaunch.Normal -> loadInteractive()
+      is KevLaunch.Normal -> {
+        interactiveGraph = launch.graph
+        usePrecision(launch.precision)
+        loadInteractive { editorStartup() }
+      }
     }
+  }
+
+  private fun usePrecision(value: KevPrecision) {
+    precision = value
+    mutableState.update { it.copy(precision = value) }
   }
 
   /** A launch intent delivered to the running activity (`singleTop`). */
@@ -79,7 +96,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
       is KevLaunch.Gate,
       is KevLaunch.Timing ->
         Log.i(KevGateRunner.LOG_TAG, "failed the app is running; force-stop it and launch again")
-      KevLaunch.Normal -> Unit
+      is KevLaunch.Normal -> Unit
     }
   }
 
@@ -137,34 +154,62 @@ class MainViewModel(private val context: Context) : ViewModel() {
   // ---- Engine ----
 
   /**
-   * Recompiles the primary window on [backend] (the other graph compiles again when a request needs
-   * it); GPU falls back to CPU if it fails.
+   * Closes the compiled graphs and compiles the plan of the request in the editor on [backend]
+   * (nothing when the editor does not hold a valid request); GPU falls back to CPU if it fails.
    */
   fun selectBackend(backend: KevDecider.Backend) {
     val state = uiState.value
     if (!state.canDecide || backend == state.backendChoice) return
     mutableState.update { it.copy(backendChoice = backend) }
     val loaded = engine ?: return
+    val request = runCatching { KevDrafts.toRequest(state.draft) }.getOrNull()
     worker.launch {
       engineLock.withLock {
         guarded(onFailure = ::showError) {
-          setLoading(LoadStage.GRAPH, loaded.primaryWindow, switching = false)
           loaded.switchBackend(backend)
+          mutableState.update { it.copy(engine = engineUi(loaded)) }
+          if (request != null) {
+            val plan = loaded.plan(loaded.pipeline.prepare(request), interactiveGraph)
+            if (plan is KevPlan.Ready) prepareGraphs(loaded, plan, switching = false)
+          }
           setReady(loaded)
         }
       }
     }
   }
 
-  /** Loads the engine with the smallest installed window as the primary graph. */
-  private fun loadInteractive() {
+  /** The startup request of a normal launch: the bundled example the editor opens with. */
+  private fun editorStartup() = StartupRequest(examples[0].request, interactiveGraph, null)
+
+  /**
+   * The startup request of an autoplay launch: the fixture's, on the autoplay's plan, or the
+   * editor's when the fixture cannot be read (the autoplay then fails with its own reason).
+   */
+  private fun autoplayStartup(launch: KevLaunch.Autoplay): StartupRequest {
+    val fixture =
+      filesPath(launch.fixture)
+        ?.takeIf { it.isFile }
+        ?.let { file ->
+          runCatching { KevFixture.parse(file.readText()) }.getOrNull()
+        } ?: return editorStartup()
+    val mode = if (launch.window != null) KevGraphMode.ROWS else launch.graph
+    return StartupRequest(fixture.request, mode, launch.window)
+  }
+
+  /** A request whose plan the engine compiles while it loads. */
+  private class StartupRequest(val request: KevRequest, val mode: KevGraphMode, val window: Int?)
+
+  /**
+   * Loads tokenizer and head, then compiles the graphs of the [startup] request's plan and warms
+   * them up: `ENGINE_READY` comes after that compile.
+   */
+  private fun loadInteractive(startup: () -> StartupRequest) {
     val missing = KevFiles.missing(context.filesDir)
     if (missing.isNotEmpty()) {
       mutableState.update { it.copy(status = KevStatus.MissingFiles(missing)) }
       KevDemo.failed("missing ${missing.joinToString(" ")}")
       return
     }
-    val window = KevFiles.installedWindows(context.filesDir).first()
     worker.launch {
       engineLock.withLock {
         guarded(
@@ -174,35 +219,59 @@ class MainViewModel(private val context: Context) : ViewModel() {
           }
         ) {
           val loaded =
-            KevEngine.load(context, window, uiState.value.backendChoice, cpuFallback = true) { stage
-              ->
-              setLoading(stage, window, switching = false)
+            KevEngine.load(context, uiState.value.backendChoice, precision, cpuFallback = true) {
+              stage ->
+              setLoading(stage, null, switching = false)
             }
           engine = loaded
+          val warmupMs = compileAtStartup(loaded, startup())
+          loaded.markLoaded()
           loaded.gpuFailure?.let { KevDemo.gpuFallback(it) }
-          val warmupMs = warmUp(loaded)
           setReady(loaded, warmupMs)
-          KevDemo.engineReady(KevAnswerView.wholeMillis(loaded.loadMs))
+          KevDemo.engineReady(KevAnswerView.wholeMillis(loaded.loadMs ?: 0.0))
         }
       }
     }
   }
 
   /**
-   * One untimed pass of the earliest question of the bundled ticket whose row the primary graph
-   * holds, so a request does not pay the graph's start-up costs.
+   * Compiles the plan of [startup] and makes one untimed call on each graph (rows: the earliest
+   * question of each window; pair: the state and question 1), so that a request does not pay the
+   * graphs' start-up costs. Returns the warm-up wall time; nothing compiles when no form takes the
+   * request.
    */
-  private fun warmUp(loaded: KevEngine): Double {
+  private fun compileAtStartup(loaded: KevEngine, startup: StartupRequest): Double {
+    val prepared = loaded.pipeline.prepare(startup.request)
+    val plan = loaded.plan(prepared, startup.mode, startup.window)
+    KevDemo.plan(plan, loaded.lastPlanInputs)
+    if (plan !is KevPlan.Ready) return 0.0
+    val graphs = prepareGraphs(loaded, plan, switching = false)
     val start = System.nanoTime()
-    val prepared = loaded.pipeline.prepare(examples[0].request)
-    val index = prepared.rows.indexOfFirst { it.length <= loaded.primaryWindow }
-    if (index >= 0) loaded.pipeline.run(prepared, index, loaded.primary)
+    // A warm-up call that returns non-finite values only warms up: the request reports them.
+    runCatching {
+      when (val runners = graphs.runners) {
+        is KevRunners.Rows ->
+          for (window in graphs.windows.distinct()) {
+            val index = graphs.windows.indexOf(window)
+            loaded.pipeline.run(prepared, index, runners.graphs[index])
+          }
+        is KevRunners.Pair -> {
+          loaded.pipeline.runState(prepared, runners.graph)
+          loaded.pipeline.runBranch(prepared, 0, runners.graph)
+        }
+      }
+    }
+      .exceptionOrNull()
+      ?.let { if (it !is KevNonFiniteException) throw it }
     return KevPipeline.millis(System.nanoTime() - start)
   }
 
   // ---- Decide ----
 
-  /** Answers the edited request: tokenize once, then one graph call and the head per question. */
+  /**
+   * Answers the edited request: tokenize once, then per question one row graph call and the head,
+   * or (pair plan) the state call once and per question one branch call and the head.
+   */
   fun decide() {
     val state = uiState.value
     if (!state.canDecide) return
@@ -229,12 +298,23 @@ class MainViewModel(private val context: Context) : ViewModel() {
       engineLock.withLock {
         guarded(onFailure = { message -> requestFailed(loaded, message) }) {
           val prepared = loaded.pipeline.prepare(request)
-          val plan = readyPlan(loaded.plan(prepared.rowLengths)) ?: return@guarded
-          val run = prepareGraphs(loaded, plan)
+          val plan = readyPlan(loaded, loaded.plan(prepared, interactiveGraph)) ?: return@guarded
+          val graphs = prepareGraphs(loaded, plan, switching = true)
           val cards = request.questions.map { pendingCard(it) }.toMutableList()
-          mutableState.update { it.copy(cards = cards.toList(), footerLines = emptyList()) }
+          val pair = graphs.pair
+          var stateLine = pair?.let { StateLineUi(prepared.encoded.stateIds.size) }
+          mutableState.update {
+            it.copy(cards = cards.toList(), stateLine = stateLine, footerLines = emptyList())
+          }
           val results = ArrayList<KevQuestionResult>()
           var workMs = prepared.tokenizeMs
+          if (pair != null) {
+            val start = System.nanoTime()
+            val stateResult = loaded.pipeline.runState(prepared, pair)
+            workMs += KevPipeline.millis(System.nanoTime() - start)
+            stateLine = StateLineUi(stateResult.tokens, KevAnswerView.wholeMillis(stateResult.ms))
+            mutableState.update { it.copy(stateLine = stateLine) }
+          }
           for (index in request.questions.indices) {
             mutableState.update {
               it.copy(status = KevStatus.Running(index, request.questions.size))
@@ -242,7 +322,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
             cards[index] = cards[index].copy(state = CardState.RUNNING)
             mutableState.update { it.copy(cards = cards.toList()) }
             val start = System.nanoTime()
-            val outcome = answerQuestion(loaded, prepared, index, run.graphs[index])
+            val outcome = answerQuestion(loaded, prepared, index, graphs)
             cards[index] = outcome.card
             workMs += KevPipeline.millis(System.nanoTime() - start)
             mutableState.update { it.copy(cards = cards.toList()) }
@@ -255,7 +335,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
             it.copy(
               status = KevStatus.Done(totalMs, results.size),
               engine = engineUi(loaded),
-              footerLines = footerLines(loaded, run.windows, totalMs),
+              footerLines = footerLines(loaded, graphs.used, totalMs),
               responseJson = KevJson.writeIndented(loaded.pipeline.response(prepared, answers)),
             )
           }
@@ -265,57 +345,94 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   /**
-   * [plan] when every row has an installed graph, or null after showing why the request cannot run.
+   * [plan] when a form takes the request, or null after showing why it cannot run; logs the plan
+   * (`PLAN` under [KevDemo.LOG_TAG]).
    */
-  private fun readyPlan(plan: KevWindowPlan): KevWindowPlan.Ready? =
-    when (plan) {
-      is KevWindowPlan.Ready -> plan
-      is KevWindowPlan.Missing -> {
-        val window = plan.window
-        requestRejected(
-          if (window == null) {
-            string(R.string.error_over_largest, plan.rowTokens, KevFiles.WINDOWS.last())
-          } else {
-            string(R.string.error_needs_window, window, KevFiles.graph(window))
-          }
-        )
+  private fun readyPlan(loaded: KevEngine, plan: KevPlan): KevPlan.Ready? {
+    KevDemo.plan(plan, loaded.lastPlanInputs)
+    return when (plan) {
+      is KevPlan.Ready -> plan
+      is KevPlan.NoWindow,
+      is KevPlan.NoPair -> {
+        requestRejected(planMessage(plan))
         null
       }
+    }
+  }
+
+  /** Why [plan] cannot run, as the screen says it. */
+  private fun planMessage(plan: KevPlan): String =
+    when (plan) {
+      is KevPlan.Ready -> ""
+      is KevPlan.NoWindow -> {
+        val window = plan.missing.window
+        if (window == null) {
+          string(R.string.error_over_largest, plan.missing.rowTokens, KevFiles.WINDOWS.last())
+        } else {
+          string(R.string.error_needs_window, window, KevFiles.graph(window))
+        }
+      }
+      is KevPlan.NoPair ->
+        when (val miss = plan.miss) {
+          KevPairMiss.NotInstalled -> string(R.string.error_no_pair)
+          is KevPairMiss.StateTooLong -> string(R.string.error_pair_state, miss.tokens, miss.window)
+          is KevPairMiss.QuestionTooLong -> {
+            val draft = uiState.value.draft.questions.getOrNull(miss.index)
+            string(
+              R.string.error_pair_question,
+              draft?.id ?: (miss.index + 1).toString(),
+              miss.tokens,
+              miss.window,
+            )
+          }
+        }
     }
 
   /**
    * Closes and compiles what [plan] needs, the status line counting the seconds of each compile,
-   * and logs what was done (`WINDOWS` under [KevDemo.LOG_TAG]); returns the graph of each question.
+   * and logs what was done (`WINDOWS` under [KevDemo.LOG_TAG]); returns the request's graphs.
    */
   private fun prepareGraphs(
     loaded: KevEngine,
-    plan: KevWindowPlan.Ready,
-  ): KevWindowRun<KevDecider> {
-    val run = loaded.prepare(plan) { setLoading(LoadStage.GRAPH, it, switching = true) }
-    if (run.compiled.isNotEmpty() || run.closed.isNotEmpty()) {
+    plan: KevPlan.Ready,
+    switching: Boolean,
+  ): KevRequestGraphs {
+    val graphs = loaded.prepare(plan) { setLoading(LoadStage.GRAPH, it, switching) }
+    if (graphs.compiled.isNotEmpty() || graphs.closed.isNotEmpty()) {
       mutableState.update { it.copy(engine = engineUi(loaded)) }
     }
-    KevDemo.windows(run.windows, run.compiled, run.availableBytes, run.closed, loaded.windows)
-    return run
+    KevDemo.windows(graphs, loaded.resident)
+    return graphs
   }
 
   private class QuestionOutcome(val card: AnswerCardUi, val result: KevQuestionResult?)
 
+  /** Question [index] on its row graph, or its branch on the pair after the state call. */
   private fun answerQuestion(
     loaded: KevEngine,
     prepared: KevPrepared,
     index: Int,
-    runner: RowRunner,
+    graphs: KevRequestGraphs,
   ): QuestionOutcome {
     val question = prepared.request.questions[index]
     val card = pendingCard(question)
     return try {
-      val result = loaded.pipeline.run(prepared, index, runner)
+      val result =
+        when (val runners = graphs.runners) {
+          is KevRunners.Rows -> loaded.pipeline.run(prepared, index, runners.graphs[index])
+          is KevRunners.Pair -> loaded.pipeline.runBranch(prepared, index, runners.graph)
+        }
       val answer = singleAnswer(result)
       val view = KevAnswerView.of(answer, result.meta, result.probabilities)
       val ms = string(R.string.card_ms, KevAnswerView.wholeMillis(result.inferMs))
       QuestionOutcome(
-        card.copy(state = CardState.DONE, view = view, msText = ms, window = result.window),
+        card.copy(
+          state = CardState.DONE,
+          view = view,
+          msText = ms,
+          form = result.form,
+          window = result.window,
+        ),
         result,
       )
     } catch (failure: KevNonFiniteException) {
@@ -393,9 +510,10 @@ class MainViewModel(private val context: Context) : ViewModel() {
     val loaded =
       engine ?: throw AutoplayFailure("engine not ready: ${statusText(uiState.value.status)}")
     // The plan tokenizes once; the timed request below tokenizes again, as from its text.
-    val plan = autoplayPlan(loaded, loaded.pipeline.prepare(fixture.request), launch.window)
-    val windowRun = prepareGraphs(loaded, plan)
-    if (windowRun.compiled.isNotEmpty()) setReady(loaded)
+    val plan = autoplayPlan(loaded, loaded.pipeline.prepare(fixture.request), launch)
+    val planInputs = loaded.lastPlanInputs
+    val graphs = prepareGraphs(loaded, plan, switching = true)
+    if (graphs.compiled.isNotEmpty()) setReady(loaded)
     demoLayout = null
     val requestStart = System.nanoTime()
     val prepared = loaded.pipeline.prepare(fixture.request)
@@ -410,18 +528,31 @@ class MainViewModel(private val context: Context) : ViewModel() {
     waitFor(launch.delayMs - (SystemClock.elapsedRealtimeNanos() - receivedNanos) / NANOS_PER_MILLI)
     val title = string(R.string.presentation_title)
     val cards = fixture.request.questions.map { pendingCard(it) }.toMutableList()
+    val pair = graphs.pair
     var presentation =
       PresentationUi(
         title,
         KevRecords.render(fixture.request.state),
         cards.toList(),
-        presentationFooter(loaded, windowRun.windows, null),
+        presentationFooter(loaded, graphs.used, null),
+        state = pair?.let { StateLineUi(prepared.encoded.stateIds.size) },
       )
     mutableState.update {
       it.copy(presentation = presentation, status = KevStatus.Running(0, cards.size))
     }
-    val questions = ArrayList<KevDemoQuestion>()
+    var stateResult: KevStateResult? = null
     var lastAnswerNanos = requestStart
+    if (pair != null) {
+      waitFor(launch.gapMs)
+      val state = loaded.pipeline.runState(prepared, pair)
+      lastAnswerNanos = System.nanoTime()
+      stateResult = state
+      presentation =
+        presentation.copy(state = StateLineUi(state.tokens, KevAnswerView.wholeMillis(state.ms)))
+      mutableState.update { it.copy(presentation = presentation) }
+      KevDemo.stateDone(state.tokens, KevAnswerView.wholeMillis(state.ms))
+    }
+    val questions = ArrayList<KevDemoQuestion>()
     for (index in cards.indices) {
       waitFor(launch.gapMs)
       cards[index] = cards[index].copy(state = CardState.RUNNING)
@@ -430,7 +561,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
         it.copy(presentation = presentation, status = KevStatus.Running(index, cards.size))
       }
       val start = System.nanoTime()
-      val outcome = answerQuestion(loaded, prepared, index, windowRun.graphs[index])
+      val outcome = answerQuestion(loaded, prepared, index, graphs)
       lastAnswerNanos = System.nanoTime()
       val totalNanos = lastAnswerNanos - start
       cards[index] = outcome.card
@@ -455,7 +586,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
     // From the start of tokenizing to the last answer, without the presentation waits.
     val requestTotalMs =
       KevAnswerView.wholeMillis(KevPipeline.millis(lastAnswerNanos - requestStart - waitedNanos))
-    val footer = presentationFooter(loaded, windowRun.windows, requestTotalMs)
+    val footer = presentationFooter(loaded, graphs.used, requestTotalMs)
     presentation = presentation.copy(footerLines = footer)
     mutableState.update {
       it.copy(presentation = presentation, status = KevStatus.Done(requestTotalMs, questions.size))
@@ -473,14 +604,18 @@ class MainViewModel(private val context: Context) : ViewModel() {
           deviceAndroidRelease = Build.VERSION.RELEASE,
           litert = KevDecider.LITERT_VERSION,
           accelerator = backendName(loaded.backend),
-          graph = graphFile(windowRun.windows.max()),
-          windowsUsed = windowRun.windows.distinct().sorted(),
-          resident = loaded.windows.map { graphFile(it) },
-          compiled = windowRun.compiled,
-          availableBytesBeforeCompile = windowRun.availableBytes,
-          closed = windowRun.closed,
-          secondRefused = windowRun.secondRefused,
-          engineLoadMs = KevAnswerView.wholeMillis(loaded.loadMs),
+          precision = precision.wireName,
+          graph = graphFile(graphs.used.last()),
+          form = plan.form,
+          windowsUsed = graphs.used.filterIsInstance<KevGraphKey.Window>().map { it.window },
+          resident = loaded.resident.map { graphFile(it) },
+          compiled = graphs.compiled,
+          availableBytesBeforeCompile = graphs.availableBytes,
+          closed = graphs.closed,
+          secondRefused = graphs.secondRefused,
+          plan = KevDemoPlan(launch.graphRequested(), plan.form, plan.prediction, planInputs),
+          state = stateResult,
+          engineLoadMs = KevAnswerView.wholeMillis(loaded.loadMs ?: 0.0),
           warmupMs = KevAnswerView.wholeMillis(lastWarmupMs),
           title = title,
           footerLines = footer,
@@ -498,6 +633,10 @@ class MainViewModel(private val context: Context) : ViewModel() {
     val written = KevDemo.writeRun(context, run)
     KevDemo.autoplayDone(written.path)
   }
+
+  /** The plan mode an autoplay asked for: `rows` when it names a window. */
+  private fun KevLaunch.Autoplay.graphRequested(): KevGraphMode =
+    if (window != null) KevGraphMode.ROWS else graph
 
   private fun autoplayFailed(reason: String) {
     KevDemo.failed(reason)
@@ -519,14 +658,15 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   /**
-   * The windows of an autoplay run: every question on the named [window], or the windows a Decide
-   * would use.
+   * The plan of an autoplay run: every question on the named window, or the plan of the launch's
+   * graph mode (the plan a Decide would use for `auto`).
    */
   private fun autoplayPlan(
     loaded: KevEngine,
     prepared: KevPrepared,
-    window: Int?,
-  ): KevWindowPlan.Ready {
+    launch: KevLaunch.Autoplay,
+  ): KevPlan.Ready {
+    val window = launch.window
     if (window != null) {
       if (!File(context.filesDir, KevFiles.graph(window)).isFile) {
         throw AutoplayFailure("missing ${KevFiles.graph(window)}")
@@ -538,23 +678,30 @@ class MainViewModel(private val context: Context) : ViewModel() {
         )
       }
     }
-    return when (
-      val plan =
-        if (window != null) loaded.planFixed(prepared.rowLengths, window)
-        else loaded.plan(prepared.rowLengths)
-    ) {
-      is KevWindowPlan.Ready -> plan
-      is KevWindowPlan.Missing ->
+    val plan = loaded.plan(prepared, launch.graphRequested(), window)
+    KevDemo.plan(plan, loaded.lastPlanInputs)
+    return when (plan) {
+      is KevPlan.Ready -> plan
+      is KevPlan.NoWindow ->
         throw AutoplayFailure(
-          plan.window?.let { "missing ${KevFiles.graph(it)}" }
-            ?: "a row is ${plan.rowTokens} tokens > L${KevFiles.WINDOWS.last()}"
+          plan.missing.window?.let { "missing ${KevFiles.graph(it)}" }
+            ?: "a row is ${plan.missing.rowTokens} tokens > L${KevFiles.WINDOWS.last()}"
+        )
+      is KevPlan.NoPair ->
+        throw AutoplayFailure(
+          when (val miss = plan.miss) {
+            KevPairMiss.NotInstalled -> "no shared-state pair installed"
+            is KevPairMiss.StateTooLong -> "the state is ${miss.tokens} tokens > Ls ${miss.window}"
+            is KevPairMiss.QuestionTooLong ->
+              "question ${prepared.meta[miss.index].id} is ${miss.tokens} tokens > Lq ${miss.window}"
+          }
         )
     }
   }
 
-  private fun graphFile(window: Int): KevGraphFile {
-    val file = File(context.filesDir, KevFiles.graph(window))
-    return KevGraphFile(file.name, window, file.length())
+  private fun graphFile(graph: KevGraphKey): KevGraphFile {
+    val file = File(context.filesDir, graph.file)
+    return KevGraphFile(graph, file.length())
   }
 
   /** The presentation screen reports where it drew the cards. */
@@ -571,6 +718,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
   // ---- Gate and timing (debug) ----
 
   private fun runGate(launch: KevLaunch.Gate) {
+    usePrecision(launch.precision)
     mutableState.update {
       it.copy(
         mode = LaunchMode.GATE,
@@ -584,8 +732,15 @@ class MainViewModel(private val context: Context) : ViewModel() {
           val summary =
             KevGateRunner(context)
               .run(
-                KevGateRunner.Args(launch.backend, launch.report, launch.window, launch.limit),
-                loadEngine = { diagnosticEngine(launch.window, launch.backend) },
+                KevGateRunner.Args(
+                  launch.backend,
+                  launch.precision,
+                  launch.report,
+                  launch.graph,
+                  launch.limit,
+                ),
+                loadEngine = { diagnosticEngine(launch.graph, launch.backend) },
+                prepare = { loaded, graph -> diagnosticGraph(loaded, graph) },
                 progress = { step ->
                   mutableState.update {
                     it.copy(diagnostics = string(R.string.gate_progress, step))
@@ -599,6 +754,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
   }
 
   private fun runTiming(launch: KevLaunch.Timing) {
+    usePrecision(launch.precision)
     mutableState.update {
       it.copy(
         mode = LaunchMode.TIMING,
@@ -614,6 +770,14 @@ class MainViewModel(private val context: Context) : ViewModel() {
       }
       return
     }
+    val setGraph =
+      if (launch.graph == KevGraphMode.PAIR) {
+        KevGraphKey.Pair(
+          KevFiles.installedPairs(context.filesDir).firstOrNull() ?: KevFiles.PAIRS.first()
+        )
+      } else {
+        KevGraphKey.Window(launch.window)
+      }
     worker.launch {
       engineLock.withLock {
         guarded(onFailure = ::diagnosticsFailed) {
@@ -623,13 +787,18 @@ class MainViewModel(private val context: Context) : ViewModel() {
                 KevTimingRunner.Args(
                   rows,
                   launch.backend,
+                  launch.precision,
                   launch.report,
+                  setGraph,
+                  launch.graph,
                   launch.window,
                   launch.clearCache,
                   launch.sets,
                   launch.requestPath,
                 ),
-                loadEngine = { diagnosticEngine(launch.window, launch.backend) },
+                loadEngine = { diagnosticEngine(setGraph, launch.backend) },
+                prepare = { loaded, graph -> diagnosticGraph(loaded, graph) },
+                preparePlan = { loaded, plan -> diagnosticPlan(loaded, plan) },
                 progress = { step ->
                   mutableState.update {
                     it.copy(diagnostics = string(R.string.timing_progress, step))
@@ -642,20 +811,49 @@ class MainViewModel(private val context: Context) : ViewModel() {
     }
   }
 
-  /** The engine for a gate or timing run: the requested window and backend, no CPU fallback. */
-  private fun diagnosticEngine(window: Int, backend: KevDecider.Backend): KevEngine {
-    val missing = KevFiles.missing(context.filesDir, window)
+  /**
+   * The engine of a gate or timing run: tokenizer and head of [backend] at this launch's precision,
+   * no CPU fallback; the run compiles its graphs with [diagnosticGraph] and [diagnosticPlan].
+   */
+  private fun diagnosticEngine(graph: KevGraphKey, backend: KevDecider.Backend): KevEngine {
+    val missing = KevFiles.missing(context.filesDir, graph)
     check(missing.isEmpty()) { "missing ${missing.joinToString(" ")}" }
     engine?.close()
     engine = null
-    return KevEngine.load(context, window, backend, cpuFallback = false) { stage ->
-        setLoading(stage, window, false)
+    return KevEngine.load(context, backend, precision, cpuFallback = false) { stage ->
+        setLoading(stage, null, false)
       }
-      .also {
-        engine = it
-        setReady(it)
-        KevDemo.engineReady(KevAnswerView.wholeMillis(it.loadMs))
+      .also { engine = it }
+  }
+
+  /**
+   * The one [graph] of a gate or timing run resident (`ENGINE_READY` after the initial compile).
+   */
+  private fun diagnosticGraph(loaded: KevEngine, graph: KevGraphKey): KevRequestGraphs {
+    setLoading(LoadStage.GRAPH, graph, false)
+    val graphs =
+      when (graph) {
+        is KevGraphKey.Window -> loaded.prepareWindow(graph.window)
+        is KevGraphKey.Pair -> loaded.preparePair(graph.shape)
       }
+    KevDemo.windows(graphs, loaded.resident)
+    diagnosticReady(loaded)
+    return graphs
+  }
+
+  /** The graphs of [plan] resident (the timing request path). */
+  private fun diagnosticPlan(loaded: KevEngine, plan: KevPlan.Ready): KevRequestGraphs {
+    val graphs = prepareGraphs(loaded, plan, switching = false)
+    diagnosticReady(loaded)
+    return graphs
+  }
+
+  /** Ready after a diagnostic compile; `ENGINE_READY` after the initial one. */
+  private fun diagnosticReady(loaded: KevEngine) {
+    val initial = loaded.loadMs == null
+    loaded.markLoaded()
+    setReady(loaded)
+    if (initial) KevDemo.engineReady(KevAnswerView.wholeMillis(loaded.loadMs ?: 0.0))
   }
 
   private fun diagnosticsDone(summary: KevGateRunner.Summary) {
@@ -682,9 +880,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
 
   // ---- State helpers ----
 
-  private fun setLoading(stage: LoadStage, window: Int, switching: Boolean) {
+  private fun setLoading(stage: LoadStage, graph: KevGraphKey?, switching: Boolean) {
     mutableState.update {
-      it.copy(status = KevStatus.Loading(stage, window, switching, SystemClock.elapsedRealtime()))
+      it.copy(status = KevStatus.Loading(stage, graph, switching, SystemClock.elapsedRealtime()))
     }
     startTicker()
   }
@@ -715,17 +913,18 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private fun readyStatus(loaded: KevEngine) =
     KevStatus.Ready(
       loaded.backend,
-      loaded.windows,
-      KevAnswerView.wholeMillis(loaded.loadMs),
-      KevAnswerView.wholeMillis(loaded.primaryCompileMs),
+      loaded.resident,
+      KevAnswerView.wholeMillis(loaded.loadMs ?: 0.0),
+      KevAnswerView.wholeMillis(loaded.compileMs),
     )
 
   private fun engineUi(loaded: KevEngine) =
     EngineUi(
       loaded.backend,
-      loaded.windows,
-      KevAnswerView.wholeMillis(loaded.loadMs),
-      KevAnswerView.wholeMillis(loaded.primaryCompileMs),
+      loaded.precision,
+      loaded.resident,
+      KevAnswerView.wholeMillis(loaded.loadMs ?: (loaded.tokenizerMs + loaded.headMs)),
+      KevAnswerView.wholeMillis(loaded.compileMs),
       loaded.gpuFailure,
     )
 
@@ -748,24 +947,28 @@ class MainViewModel(private val context: Context) : ViewModel() {
 
   /**
    * The footer under the answers, one line per group so that a 360 dp wide screen does not wrap
-   * them: device and Android version; LiteRT and backend; the graph windows the questions ran on
-   * and the request total.
+   * them: device and Android version; LiteRT and backend; the graphs the questions ran on and the
+   * request total.
    */
-  private fun footerLines(loaded: KevEngine, windows: List<Int>, totalMs: Long): List<String> =
+  private fun footerLines(
+    loaded: KevEngine,
+    graphs: List<KevGraphKey>,
+    totalMs: Long,
+  ): List<String> =
     listOf(
       string(R.string.footer_device, KevDevice.displayName(), Build.VERSION.RELEASE),
       string(R.string.footer_litert, KevDecider.LITERT_VERSION, backendName(loaded.backend)),
-      string(R.string.footer_graph_total, windowsText(windows), totalMs),
+      string(R.string.footer_graph_total, graphsText(graphs), totalMs),
     )
 
   /**
    * The presentation footer: three short lines that fit a 360 dp wide screen (device name, LiteRT
-   * and backend; the graph windows of the questions; the request total, empty until the end). Model
-   * code and Android version are in the run JSON only.
+   * and backend; the graphs of the questions; the request total, empty until the end). Model code
+   * and Android version are in the run JSON only.
    */
   private fun presentationFooter(
     loaded: KevEngine,
-    windows: List<Int>,
+    graphs: List<KevGraphKey>,
     totalMs: Long?,
   ): List<String> =
     listOf(
@@ -775,16 +978,29 @@ class MainViewModel(private val context: Context) : ViewModel() {
         KevDecider.LITERT_VERSION,
         backendName(loaded.backend),
       ),
-      string(R.string.footer_graph, windowsText(windows)),
+      string(R.string.footer_graph, graphsText(graphs)),
       if (totalMs == null) "" else string(R.string.presentation_total, totalMs),
     )
 
-  /** "L256 + L512": the distinct [windows] in ascending order. */
-  private fun windowsText(windows: List<Int>): String =
-    windows.distinct().sorted().joinToString(WINDOW_SEPARATOR) { string(R.string.window_name, it) }
+  /** "L256 + L512" or "S128+Q64": [graphs] by their names on screen. */
+  private fun graphsText(graphs: List<KevGraphKey>): String =
+    graphs.joinToString(WINDOW_SEPARATOR) {
+      when (it) {
+        is KevGraphKey.Window -> string(R.string.window_name, it.window)
+        is KevGraphKey.Pair ->
+          string(R.string.pair_name, it.shape.stateLength, it.shape.questionLength)
+      }
+    }
 
+  /** "GPU FP32", "GPU FP16 (FP32 accum)" or "CPU 4 threads". */
   private fun backendName(backend: KevDecider.Backend): String =
-    string(if (backend == KevDecider.Backend.GPU) R.string.backend_gpu else R.string.backend_cpu)
+    string(
+      when {
+        backend == KevDecider.Backend.CPU -> R.string.backend_cpu
+        precision == KevPrecision.FP16_FP32_ACCUM -> R.string.backend_gpu_fp16acc
+        else -> R.string.backend_gpu
+      }
+    )
 
   private fun statusText(status: KevStatus): String = status.javaClass.simpleName
 

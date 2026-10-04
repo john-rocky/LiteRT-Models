@@ -8,21 +8,21 @@ sealed interface KevStatus {
   data class MissingFiles(val files: List<String>) : KevStatus
 
   /**
-   * Loading [stage]; [window] is the graph being compiled (0 before the graph stage), [switching] =
-   * compiling it for a request whose rows the resident graphs do not hold.
+   * Loading [stage]; [graph] is the graph being compiled (null before the graph stage), [switching]
+   * = compiling it for a request the resident graphs do not take.
    */
   data class Loading(
     val stage: LoadStage,
-    val window: Int,
+    val graph: KevGraphKey?,
     val switching: Boolean,
     val startedAt: Long,
     val elapsedSeconds: Int = 0,
   ) : KevStatus
 
-  /** Idle with the resident [windows] compiled, in ascending order. */
+  /** Idle with the [resident] graphs compiled (windows ascending, then the pair). */
   data class Ready(
     val backend: KevDecider.Backend,
-    val windows: List<Int>,
+    val resident: List<KevGraphKey>,
     val loadMs: Long,
     val compileMs: Long,
   ) : KevStatus
@@ -38,11 +38,15 @@ sealed interface KevStatus {
   data class Error(val text: String) : KevStatus
 }
 
-/** The engine as the status line shows it: backend, resident windows (ascending), times. */
+/**
+ * The engine as the status line shows it: backend and GPU precision, the resident graphs (windows
+ * ascending, then the pair), the load time and the resident graphs' compile time.
+ */
 @Immutable
 data class EngineUi(
   val backend: KevDecider.Backend,
-  val windows: List<Int>,
+  val precision: KevPrecision,
+  val resident: List<KevGraphKey>,
   val loadMs: Long,
   val compileMs: Long,
   /** GPU's error when the app fell back to CPU. */
@@ -56,7 +60,7 @@ enum class CardState {
   FAILED,
 }
 
-/** One question's answer card. [view], [msText] and [window] exist once it is done. */
+/** One question's answer card. [view], [msText], [form] and [window] exist once it is done. */
 @Immutable
 data class AnswerCardUi(
   val qid: String,
@@ -66,10 +70,18 @@ data class AnswerCardUi(
   val view: KevAnswerView? = null,
   /** The card's time: input writes + `run()` + read-back, whole milliseconds. */
   val msText: String? = null,
-  /** The graph window the question ran on, shown next to [msText]. */
+  /** How the question ran: its own row graph, or its branch on the pair. */
+  val form: KevForm? = null,
+  /** The window the question ran in (L of its row graph, or the pair's Lq), next to [msText]. */
   val window: Int? = null,
   val error: String? = null,
 )
+
+/**
+ * The pair's state call of a request: `[state] + state tokens` ([tokens]) and its time once it ran
+ * ([ms], whole milliseconds; null while it is pending).
+ */
+@Immutable data class StateLineUi(val tokens: Int, val ms: Long? = null)
 
 /** The read-only demo layout shown while an autoplay intent runs. */
 @Immutable
@@ -79,6 +91,8 @@ data class PresentationUi(
   val cards: List<AnswerCardUi>,
   val footerLines: List<String>,
   val failure: String? = null,
+  /** The state line above the cards when the request runs on the pair. */
+  val state: StateLineUi? = null,
 )
 
 /** How the app was launched: the editable sample, or a debug gate / timing run. */
@@ -93,9 +107,13 @@ enum class LaunchMode {
 data class UiState(
   val draft: RequestDraft,
   val example: Int? = 0,
-  val status: KevStatus = KevStatus.Loading(LoadStage.TOKENIZER, 0, false, 0L),
+  val status: KevStatus = KevStatus.Loading(LoadStage.TOKENIZER, null, false, 0L),
   val engine: EngineUi? = null,
   val backendChoice: KevDecider.Backend = KevDecider.Backend.GPU,
+  /** The GPU precision of this launch (the `precision` extra; there is no control on screen). */
+  val precision: KevPrecision = KevPrecision.FP32,
+  /** The state line above the cards when the last request ran on the pair. */
+  val stateLine: StateLineUi? = null,
   val cards: List<AnswerCardUi> = emptyList(),
   val footerLines: List<String> = emptyList(),
   val responseJson: String? = null,

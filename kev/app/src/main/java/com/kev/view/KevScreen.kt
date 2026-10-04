@@ -34,12 +34,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kev.AnswerCardUi
 import com.kev.CardState
 import com.kev.KevAnswerView
 import com.kev.KevDecider
 import com.kev.KevDrafts
+import com.kev.KevForm
+import com.kev.KevGraphKey
+import com.kev.KevPrecision
 import com.kev.KevStatus
 import com.kev.LaunchMode
 import com.kev.LoadStage
@@ -47,12 +51,13 @@ import com.kev.QuestionDraft
 import com.kev.QuestionType
 import com.kev.R
 import com.kev.StateFormat
+import com.kev.StateLineUi
 import com.kev.UiState
 
 /**
  * The editable sample: backend, one of three bundled requests, the state, typed questions, Decide,
- * then one answer card per question, the footer and the response JSON. Gate and timing launches
- * show their progress instead.
+ * then the state line (a request on the shared-state pair), one answer card per question, the
+ * footer and the response JSON. Gate and timing launches show their progress instead.
  */
 @Composable
 fun KevScreen(
@@ -104,6 +109,14 @@ fun KevScreen(
           Text(stringResource(R.string.decide))
         }
         state.requestError?.let { Text(it, color = MaterialTheme.colors.error) }
+        state.stateLine?.let {
+          Text(
+            stateLineText(it),
+            style = MaterialTheme.typography.body2,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        }
         state.cards.forEach { AnswerCard(it) }
         if (state.footerLines.isNotEmpty()) {
           Column {
@@ -145,12 +158,17 @@ private fun StatusLine(state: UiState) {
       is KevStatus.Loading ->
         when {
           status.switching ->
-            stringResource(R.string.status_switching, status.window, status.elapsedSeconds)
+            stringResource(
+              R.string.status_switching,
+              graphName(status.graph),
+              status.elapsedSeconds,
+            )
           status.stage == LoadStage.TOKENIZER ->
             stringResource(R.string.status_tokenizer, status.elapsedSeconds)
           status.stage == LoadStage.HEAD ->
             stringResource(R.string.status_head, status.elapsedSeconds)
-          else -> stringResource(R.string.status_graph, status.window, status.elapsedSeconds)
+          else ->
+            stringResource(R.string.status_graph, graphName(status.graph), status.elapsedSeconds)
         }
       is KevStatus.Ready -> stringResource(R.string.status_ready)
       is KevStatus.Running ->
@@ -171,8 +189,8 @@ private fun StatusLine(state: UiState) {
       Text(
         stringResource(
           R.string.engine_line,
-          backendTitle(engine.backend),
-          windowsText(engine.windows),
+          backendTitle(engine.backend, engine.precision),
+          residentText(engine.resident),
           engine.loadMs / MILLIS_PER_SECOND,
           engine.compileMs / MILLIS_PER_SECOND,
         ),
@@ -208,7 +226,11 @@ private fun Editor(
   Text(stringResource(R.string.backend_title), style = MaterialTheme.typography.subtitle2)
   Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
     KevDecider.Backend.entries.forEach { backend ->
-      Choice(backendTitle(backend), state.backendChoice == backend, state.canDecide) {
+      Choice(
+        backendTitle(backend, state.precision),
+        state.backendChoice == backend,
+        state.canDecide,
+      ) {
         onBackend(backend)
       }
     }
@@ -398,23 +420,49 @@ private fun Choice(title: String, selected: Boolean, enabled: Boolean, onSelect:
   }
 }
 
-/** "656 ms · L256": the card's time and the graph window it ran on, once the card is done. */
+/**
+ * "656 ms · L256" (a row graph) or "187 ms · Q64" (a branch on the pair): the card's time and the
+ * window it ran in, once the card is done.
+ */
 @Composable
 internal fun cardTime(card: AnswerCardUi): String? {
   val ms = card.msText ?: return null
   val window = card.window ?: return ms
-  return stringResource(R.string.card_ms_window, ms, stringResource(R.string.window_name, window))
+  val name = if (card.form == KevForm.PAIR) R.string.question_window_name else R.string.window_name
+  return stringResource(R.string.card_ms_window, ms, stringResource(name, window))
 }
 
-/** "L256 + L512": the resident [windows] in ascending order. */
+/** "State · 72 tokens · 266 ms": the pair's state call, without the ms while it runs. */
 @Composable
-private fun windowsText(windows: List<Int>): String =
-  windows.map { stringResource(R.string.window_name, it) }.joinToString(WINDOW_SEPARATOR)
+internal fun stateLineText(line: StateLineUi): String =
+  line.ms?.let { stringResource(R.string.state_line, line.tokens, it) }
+    ?: stringResource(R.string.state_line_pending, line.tokens)
 
+/** "L256" or "S128+Q64". */
 @Composable
-private fun backendTitle(backend: KevDecider.Backend): String =
+private fun graphName(graph: KevGraphKey?): String =
+  when (graph) {
+    is KevGraphKey.Window -> stringResource(R.string.window_name, graph.window)
+    is KevGraphKey.Pair ->
+      stringResource(R.string.pair_name, graph.shape.stateLength, graph.shape.questionLength)
+    null -> ""
+  }
+
+/** "L128 + L256" or "S128+Q64": the [resident] graphs (windows ascending, then the pair). */
+@Composable
+private fun residentText(resident: List<KevGraphKey>): String =
+  if (resident.isEmpty()) stringResource(R.string.no_graph)
+  else resident.map { graphName(it) }.joinToString(WINDOW_SEPARATOR)
+
+/** "GPU FP32", "GPU FP16 (FP32 accum)" or "CPU 4 threads". */
+@Composable
+private fun backendTitle(backend: KevDecider.Backend, precision: KevPrecision): String =
   stringResource(
-    if (backend == KevDecider.Backend.GPU) R.string.backend_gpu else R.string.backend_cpu
+    when {
+      backend == KevDecider.Backend.CPU -> R.string.backend_cpu
+      precision == KevPrecision.FP16_FP32_ACCUM -> R.string.backend_gpu_fp16acc
+      else -> R.string.backend_gpu
+    }
   )
 
 /**

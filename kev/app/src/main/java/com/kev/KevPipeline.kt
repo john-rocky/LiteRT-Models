@@ -35,7 +35,10 @@ class KevFixture(val id: String, val request: KevRequest) {
   }
 }
 
-/** A question row that the resident graph window cannot take. */
+/**
+ * A question row that the resident graph window cannot take (for the pair: a branch over Lq, or the
+ * state over Ls with the question ID `state`).
+ */
 class KevWindowException(val questionId: String, val rowTokens: Int, val window: Int) :
   IllegalArgumentException(
     "Question $questionId: the row is $rowTokens tokens, the graph takes $window"
@@ -86,9 +89,14 @@ class KevPrepared(
 class KevQuestionResult(
   val index: Int,
   val meta: QuestionMeta,
+  /** The question's causal row (state + branch); its indices are row positions in both forms. */
   val row: KevRow,
-  /** The graph window the row ran in. */
+  /** How the question ran: its own row, or its branch after the pair's state call. */
+  val form: KevForm,
+  /** The graph window the question ran in: L of its row graph, or the pair's Lq. */
   val window: Int,
+  /** Tokens of the question's branch (`[question]` … `[decide]`). */
+  val branchLength: Int,
   val scores: KevScores,
   /** The float32 softmax widened exactly to double, as `to_answers` receives it. */
   val probabilities: DoubleArray,
@@ -101,9 +109,25 @@ class KevQuestionResult(
   val headMs: Double,
 )
 
+/** The state call of a pair request: its real tokens, the pair's Ls and the wall time. */
+class KevStateResult(val tokens: Int, val window: Int, val ms: Double)
+
+/** The graphs one request runs on: each question's row graph, or the pair for all of them. */
+sealed interface KevRunners {
+  class Rows(val graphs: List<RowRunner>) : KevRunners
+
+  class Pair(val graph: PairRunner) : KevRunners
+}
+
+/**
+ * One request through [KevPipeline.runRequest]: the pair's state call (or null) and the answers.
+ */
+class KevRequestResult(val state: KevStateResult?, val questions: List<KevQuestionResult>)
+
 /**
  * The Android-free decision path: request → `to_record` → rows (tokenizer) → one graph call per
- * question ([RowRunner]) → the decide and option rows of `hidden` → pointer head → `to_answers`.
+ * question ([RowRunner]), or the state once and one call per branch ([PairRunner]) → the decide and
+ * option rows of `hidden` → pointer head → `to_answers`.
  */
 class KevPipeline(val tokenizer: KevTokenizer, val head: KevPointerHead) {
   val encoder = KevEncoder(tokenizer)
@@ -147,22 +171,113 @@ class KevPipeline(val tokenizer: KevTokenizer, val head: KevPointerHead) {
     }
     val nonFinite = nonFiniteCount(hidden, 0, row.length * HIDDEN)
     if (nonFinite > 0) throw KevNonFiniteException(meta.id, nonFinite)
-    val scores =
-      head.score(
-        hiddenRow(hidden, row.decideIndex),
-        row.optionIndices.map { hiddenRow(hidden, it) },
-      )
+    return result(
+      prepared,
+      index,
+      KevForm.ROW,
+      window,
+      hidden,
+      row.decideIndex,
+      row.optionIndices,
+      inferEnd - inferStart,
+      inferEnd,
+    )
+  }
+
+  /**
+   * Runs the state part of [prepared] (`[state] + state tokens`, padded to Ls) on the pair; the
+   * branches of the request follow with [runBranch].
+   */
+  fun runState(prepared: KevPrepared, runner: PairRunner): KevStateResult {
+    val state = prepared.encoded.stateIds
+    if (state.size > runner.stateLength) {
+      throw KevWindowException(STATE_ID, state.size, runner.stateLength)
+    }
+    val padded = KevPaddedRow.of(state, runner.stateLength)
+    val start = System.nanoTime()
+    runner.runState(padded.ids, padded.valid)
+    return KevStateResult(state.size, runner.stateLength, millis(System.nanoTime() - start))
+  }
+
+  /**
+   * Runs question [index] of [prepared] on the pair after [runState]: pads its branch to Lq, reads
+   * `hidden` at the branch's decide token and at each option's closing token, and applies the head.
+   */
+  fun runBranch(prepared: KevPrepared, index: Int, runner: PairRunner): KevQuestionResult {
+    val branch = prepared.encoded.branches[index]
+    val meta = prepared.meta[index]
+    val window = runner.questionLength
+    if (branch.ids.size > window) throw KevWindowException(meta.id, branch.ids.size, window)
+    val padded = KevPaddedRow.of(branch.ids, window)
+    val inferStart = System.nanoTime()
+    val hidden = runner.runQuestion(padded.ids, padded.valid)
+    val inferEnd = System.nanoTime()
+    check(hidden.size == window * HIDDEN) {
+      "hidden has ${hidden.size} values, expected ${window * HIDDEN}"
+    }
+    val nonFinite = nonFiniteCount(hidden, 0, branch.ids.size * HIDDEN)
+    if (nonFinite > 0) throw KevNonFiniteException(meta.id, nonFinite)
+    return result(
+      prepared,
+      index,
+      KevForm.PAIR,
+      window,
+      hidden,
+      branch.decide,
+      branch.options,
+      inferEnd - inferStart,
+      inferEnd,
+    )
+  }
+
+  /**
+   * Every question of [prepared] on [runners] in order: the row graph of each question, or the
+   * pair's state call and then each branch.
+   */
+  fun runRequest(prepared: KevPrepared, runners: KevRunners): KevRequestResult =
+    when (runners) {
+      is KevRunners.Rows -> {
+        require(runners.graphs.size == prepared.rows.size) { "One graph per question" }
+        KevRequestResult(null, prepared.rows.indices.map { run(prepared, it, runners.graphs[it]) })
+      }
+      is KevRunners.Pair -> {
+        val state = runState(prepared, runners.graph)
+        KevRequestResult(
+          state,
+          prepared.rows.indices.map { runBranch(prepared, it, runners.graph) },
+        )
+      }
+    }
+
+  /**
+   * The head on [hidden] read at [decide] and [options] (positions in its rows); the head time runs
+   * from [inferEnd] to the softmax.
+   */
+  private fun result(
+    prepared: KevPrepared,
+    index: Int,
+    form: KevForm,
+    window: Int,
+    hidden: FloatArray,
+    decide: Int,
+    options: IntArray,
+    inferNanos: Long,
+    inferEnd: Long,
+  ): KevQuestionResult {
+    val scores = head.score(hiddenRow(hidden, decide), options.map { hiddenRow(hidden, it) })
     val probabilities =
       DoubleArray(scores.probabilities.size) { scores.probabilities[it].toDouble() }
     val headEnd = System.nanoTime()
     return KevQuestionResult(
       index,
-      meta,
-      row,
+      prepared.meta[index],
+      prepared.rows[index],
+      form,
       window,
+      prepared.encoded.branches[index].ids.size,
       scores,
       probabilities,
-      millis(inferEnd - inferStart),
+      millis(inferNanos),
       millis(headEnd - inferEnd),
     )
   }
@@ -180,6 +295,9 @@ class KevPipeline(val tokenizer: KevTokenizer, val head: KevPointerHead) {
 
   companion object {
     private const val HIDDEN = KevPointerHead.HIDDEN_SIZE
+
+    /** The question ID a state over the pair's Ls is reported with. */
+    const val STATE_ID = "state"
 
     /** One position of a row-major [L, 1024] `hidden`. */
     fun hiddenRow(hidden: FloatArray, position: Int): FloatArray =

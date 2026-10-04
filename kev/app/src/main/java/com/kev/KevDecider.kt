@@ -17,13 +17,15 @@ import kotlinx.coroutines.asCoroutineDispatcher
  * `valid` float32 `[1, L]` in, `hidden` float32 `[1, L, 1024]` (after the final RMSNorm) out,
  * signature `serving_default`. The three buffers are created once and reused for every row.
  *
- * GPU always requests FP32 precision: the default GPU precision runs the graph in float16, which
- * gives non-finite hidden states on part of the rows. CPU runs four threads. Create, run and close
- * only on [KevRuntime.dispatcher].
+ * GPU always requests an explicit precision ([KevPrecision], FP32 by default): the default GPU
+ * precision runs the graph in float16, which gives non-finite hidden states on part of the rows.
+ * CPU runs four threads. Create, run and close only on [KevRuntime.dispatcher].
  */
 class KevDecider
 private constructor(
   val backend: Backend,
+  /** The GPU precision the graph was compiled with (CPU ignores it). */
+  val precision: KevPrecision,
   override val length: Int,
   val file: File,
   /** Wall time of `CompiledModel.create` (graph load and compilation), in milliseconds. */
@@ -86,42 +88,81 @@ private constructor(
     private const val HIDDEN = "hidden"
 
     /**
-     * Compiles the [window] graph from `files/` on [backend]. With [cpuFallback], a GPU failure is
-     * kept as [gpuFailure] and the graph is compiled on CPU instead.
+     * Compiles the [window] graph from `files/` on [backend] ([precision] on GPU). With
+     * [cpuFallback], a GPU failure is kept as [gpuFailure] and the graph is compiled on CPU
+     * instead.
      */
-    fun create(context: Context, window: Int, backend: Backend, cpuFallback: Boolean): KevDecider {
+    fun create(
+      context: Context,
+      window: Int,
+      backend: Backend,
+      precision: KevPrecision,
+      cpuFallback: Boolean,
+    ): KevDecider {
       val file = File(context.filesDir, KevFiles.graph(window))
       check(file.isFile) { "Missing ${file.name}" }
       if (backend == Backend.CPU || !cpuFallback)
-        return compile(context, file, window, backend, null)
+        return compile(context, file, window, backend, precision, null)
       return try {
-        compile(context, file, window, Backend.GPU, null)
+        compile(context, file, window, Backend.GPU, precision, null)
       } catch (failure: Exception) {
-        compile(context, file, window, Backend.CPU, describe(failure))
+        compile(context, file, window, Backend.CPU, precision, describe(failure))
       } catch (failure: LinkageError) {
-        compile(context, file, window, Backend.CPU, describe(failure))
+        compile(context, file, window, Backend.CPU, precision, describe(failure))
       }
     }
 
     fun describe(failure: Throwable): String =
       "${failure.javaClass.simpleName}: ${failure.message.orEmpty()}"
 
+    /**
+     * The options of one graph: GPU with [precision] (and the weights held once for all signatures
+     * when [shareConstants]), or CPU with [CPU_THREADS] threads.
+     */
+    fun options(
+      backend: Backend,
+      precision: KevPrecision,
+      shareConstants: Boolean = false,
+    ): CompiledModel.Options =
+      CompiledModel.Options(backend.accelerator).apply {
+        when (backend) {
+          Backend.GPU ->
+            gpuOptions =
+              CompiledModel.GpuOptions(
+                constantTensorSharing = if (shareConstants) true else null,
+                precision =
+                  when (precision) {
+                    KevPrecision.FP32 -> CompiledModel.GpuOptions.Precision.FP32
+                    KevPrecision.FP16_FP32_ACCUM ->
+                      CompiledModel.GpuOptions.Precision.FP16_WITH_FP32_ACCUM
+                  },
+              )
+          Backend.CPU -> cpuOptions = CompiledModel.CpuOptions(numThreads = CPU_THREADS)
+        }
+      }
+
+    /** Throws when a graph tensor is not [element] with [shape]. */
+    fun checkTensor(
+      type: TensorType,
+      element: TensorType.ElementType,
+      shape: List<Int>,
+      name: String,
+    ) {
+      val dimensions = type.layout?.dimensions.orEmpty()
+      check(type.elementType == element && dimensions == shape) {
+        "Graph tensor $name is ${type.elementType} $dimensions, expected $element $shape"
+      }
+    }
+
     private fun compile(
       context: Context,
       file: File,
       window: Int,
       backend: Backend,
+      precision: KevPrecision,
       gpuFailure: String?,
     ): KevDecider {
-      val options =
-        CompiledModel.Options(backend.accelerator).apply {
-          when (backend) {
-            Backend.GPU ->
-              gpuOptions =
-                CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)
-            Backend.CPU -> cpuOptions = CompiledModel.CpuOptions(numThreads = CPU_THREADS)
-          }
-        }
+      val options = options(backend, precision)
       val start = System.nanoTime()
       val model = CompiledModel.create(file.absolutePath, options, KevRuntime.environment(context))
       val compileMs = KevPipeline.millis(System.nanoTime() - start)
@@ -148,26 +189,37 @@ private constructor(
         val ids = model.createInputBuffer(IDS, SIGNATURE).also { buffers.add(it) }
         val valid = model.createInputBuffer(VALID, SIGNATURE).also { buffers.add(it) }
         val hidden = model.createOutputBuffer(HIDDEN, SIGNATURE).also { buffers.add(it) }
-        return KevDecider(backend, window, file, compileMs, gpuFailure, model, ids, valid, hidden)
+        return KevDecider(
+          backend,
+          precision,
+          window,
+          file,
+          compileMs,
+          gpuFailure,
+          model,
+          ids,
+          valid,
+          hidden,
+        )
       } catch (failure: Throwable) {
         buffers.forEach { it.close() }
         model.close()
         throw failure
       }
     }
-
-    private fun checkTensor(
-      type: TensorType,
-      element: TensorType.ElementType,
-      shape: List<Int>,
-      name: String,
-    ) {
-      val dimensions = type.layout?.dimensions.orEmpty()
-      check(type.elementType == element && dimensions == shape) {
-        "Graph tensor $name is ${type.elementType} $dimensions, expected $element $shape"
-      }
-    }
   }
+}
+
+/**
+ * The GPU precision of the graphs ([KevDecider], [KevPairDecider]); CPU ignores it. [wireName] is
+ * the launch extra's value.
+ */
+enum class KevPrecision(val wireName: String) {
+  /** float32 storage and arithmetic: the precision the shipped graphs are measured with. */
+  FP32("fp32"),
+
+  /** float16 storage with float32 accumulation (LiteRT `FP16_WITH_FP32_ACCUM`). */
+  FP16_FP32_ACCUM("fp16acc"),
 }
 
 /**

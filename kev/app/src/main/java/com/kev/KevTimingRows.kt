@@ -56,6 +56,47 @@ class KevTimingRows(
     return KevTimingSelection(run, skipped)
   }
 
+  /**
+   * The sets to time on the pair [shape] (their L is not used): the [requested] names (every set
+   * when null, none when empty) whose rows split into requests the pair takes — each row's state
+   * part (before its `[question]` token) at most Ls, its branch at most Lq, and one state for all
+   * rows of a `request` set.
+   */
+  fun selectPair(requested: List<String>?, shape: KevPairShape): KevTimingSelection {
+    val run = ArrayList<KevTimingSet>()
+    val skipped = ArrayList<KevTimingSkip>()
+    for (set in sets) {
+      if (requested != null && set.name !in requested) {
+        skipped.add(KevTimingSkip(set.name, set.window, "not requested"))
+        continue
+      }
+      val reason = pairMiss(set, shape)
+      if (reason == null) run.add(set) else skipped.add(KevTimingSkip(set.name, set.window, reason))
+    }
+    requested
+      .orEmpty()
+      .filter { name -> sets.none { it.name == name } }
+      .forEach { skipped.add(KevTimingSkip(it, null, "not in the rows file")) }
+    return KevTimingSelection(run, skipped)
+  }
+
+  /** Why the pair [shape] cannot run [set], or null. */
+  private fun pairMiss(set: KevTimingSet, shape: KevPairShape): String? {
+    val states = ArrayList<List<Int>>()
+    for (row in set.rows) {
+      val cut = row.ids.indexOf(KevEncoder.QUESTION_ID)
+      if (cut <= 0) return "row ${row.key} has no question token"
+      if (cut > shape.stateLength) return "row ${row.key}: state $cut > Ls ${shape.stateLength}"
+      val branch = row.ids.size - cut
+      if (branch > shape.questionLength) {
+        return "row ${row.key}: branch $branch > Lq ${shape.questionLength}"
+      }
+      states.add(row.ids.copyOf(cut).toList())
+    }
+    if (set.kind == "request" && states.distinct().size > 1) return "the rows differ in their state"
+    return null
+  }
+
   companion object {
     fun parse(bytes: ByteArray): KevTimingRows {
       val json = KevJson.parse(bytes) as Map<*, *>

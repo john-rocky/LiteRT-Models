@@ -25,22 +25,42 @@ object KevDemo {
   fun autoplayDone(json: String) = Log.i(LOG_TAG, "AUTOPLAY_DONE json=$json")
 
   /**
-   * The windows of a request: each question's window, the windows compiled (with the available
-   * memory read right before each compile, bytes) and closed for it, and the graphs left resident.
+   * How a request runs: the form of [plan] and the predicted ms of both forms ("-" when a form
+   * cannot take the request), or `none` with the reason; then what the plan saw ([inputs]: the
+   * available memory in bytes and the resident graphs).
    */
-  fun windows(
-    windows: List<Int>,
-    compiled: List<Int>,
-    availableBytes: List<Long>,
-    closed: List<Int>,
-    resident: List<Int>,
-  ) =
+  fun plan(plan: KevPlan, inputs: KevPlanInputs?) =
     Log.i(
       LOG_TAG,
-      "WINDOWS questions=${windows.joinToString(",")} compiled=${compiled.joinToString(",")} " +
-        "avail_mem_bytes=${availableBytes.joinToString(",")} closed=${closed.joinToString(",")} " +
-        "resident=${resident.joinToString(",")}",
+      when (plan) {
+        is KevPlan.Ready ->
+          "PLAN form=${plan.form.wireName} rows=${ms(plan.prediction.rowsMs)} " +
+            "pair=${ms(plan.prediction.pairMs)}"
+        is KevPlan.NoWindow ->
+          "PLAN form=none row=${plan.missing.rowTokens} window=${plan.missing.window ?: "-"}"
+        is KevPlan.NoPair -> "PLAN form=none pair=${plan.miss}"
+      } +
+        " avail_mem_bytes=${inputs?.availableBytes ?: "-"} " +
+        "resident=${inputs?.resident?.joinToString(",") { it.label } ?: "-"}",
     )
+
+  /**
+   * The graphs of a request: each question's window (L, or the pair's Lq), the graphs compiled
+   * (with the available memory read right before each compile, bytes) and closed for it, and the
+   * graphs left [resident].
+   */
+  fun windows(graphs: KevRequestGraphs, resident: List<KevGraphKey>) =
+    Log.i(
+      LOG_TAG,
+      "WINDOWS form=${graphs.plan.form.wireName} questions=${graphs.windows.joinToString(",")} " +
+        "compiled=${graphs.compiled.joinToString(",") { it.label }} " +
+        "avail_mem_bytes=${graphs.availableBytes.joinToString(",")} " +
+        "closed=${graphs.closed.joinToString(",") { it.label }} " +
+        "resident=${resident.joinToString(",") { it.label }}",
+    )
+
+  /** The pair's state call of an autoplay request: its tokens and its ms. */
+  fun stateDone(tokens: Int, ms: Long) = Log.i(LOG_TAG, "STATE_DONE tokens=$tokens ms=$ms")
 
   fun failed(reason: String) = Log.i(LOG_TAG, "failed ${oneLine(reason)}")
 
@@ -54,4 +74,6 @@ object KevDemo {
   }
 
   private fun oneLine(text: String) = text.replace('\n', ' ').replace('\r', ' ')
+
+  private fun ms(value: Double?) = value?.let { "${Math.round(it)}ms" } ?: "-"
 }

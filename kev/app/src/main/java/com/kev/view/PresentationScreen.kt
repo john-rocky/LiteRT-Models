@@ -51,12 +51,13 @@ import com.kev.R
 
 /**
  * The read-only demo layout of an autoplay run, inside the centred 9:16 band of the screen (y from
- * 210 to 2130 on a 1080 × 2340 screen): title, the ticket (state), one card per question that turns
- * grey → blue → green, and the footer. Card heights do not change between states. Every text that
- * has to fit is measured before it is drawn: the ticket gets the largest size from [TICKET_SP] down
- * that fits the space left (at [MIN_TICKET_SP] it ends with an ellipsis on its last complete line),
- * so the presentation opens on its final layout and nothing moves while the questions run. Where
- * things were drawn goes to [onLayout] for the run JSON.
+ * 210 to 2130 on a 1080 × 2340 screen): title, the ticket (state), the state line when the request
+ * runs on the shared-state pair, one card per question that turns grey → blue → green, and the
+ * footer. Card heights do not change between states, nor does the state line's when its ms arrives.
+ * Every text that has to fit is measured before it is drawn: the ticket gets the largest size from
+ * [TICKET_SP] down that fits the space left (at [MIN_TICKET_SP] it ends with an ellipsis on its
+ * last complete line), so the presentation opens on its final layout and nothing moves while the
+ * questions run. Where things were drawn goes to [onLayout] for the run JSON.
  */
 @Composable
 fun PresentationScreen(ui: PresentationUi, onLayout: (KevDemoLayout) -> Unit, onLeave: () -> Unit) {
@@ -126,6 +127,21 @@ fun PresentationScreen(ui: PresentationUi, onLayout: (KevDemoLayout) -> Unit, on
         )
       }
       ui.failure?.let { Text(it, fontSize = QUESTION_SP.sp, color = MaterialTheme.colors.error) }
+      // One line from the start, so the ms arriving moves nothing; it shrinks instead of wrapping.
+      ui.state?.let { line ->
+        Box(
+          Modifier.fillMaxWidth()
+            .heightIn(min = with(density) { (STATE_SP * LINE_HEIGHT).sp.toDp() })
+        ) {
+          FittedText(
+            stateLineText(line),
+            STATE_SP,
+            MIN_STATE_SP,
+            color = Color.DarkGray,
+            lineHeight = (STATE_SP * LINE_HEIGHT).sp,
+          )
+        }
+      }
       ui.cards.forEach { card ->
         PresentationCard(card) { indicator ->
           store.indicators[card.qid] = indicator
@@ -361,6 +377,8 @@ private const val MIN_QUESTION_SP = 16f
 private const val ANSWER_SP = 26f
 private const val MIN_ANSWER_SP = 14f
 private const val MS_SP = 15f
+private const val STATE_SP = 15f
+private const val MIN_STATE_SP = 11f
 private const val FOOTER_SP = 15f
 private const val MIN_FOOTER_SP = 11f
 private const val FOOTER_LINES = 3

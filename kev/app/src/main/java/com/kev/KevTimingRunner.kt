@@ -7,20 +7,28 @@ import java.security.MessageDigest
 
 /**
  * Timing mode on the device (debug and benchmark builds), run on [KevRuntime.dispatcher] with the
- * model card's protocol ([KevTimingCore]): every set of the conversion run's `timing_rows.json`
- * whose L is the resident window, then the request path of the bundled five-question request. The
- * engine load (cold compile with `clear_cache`) is timed too, and the report records the device
- * facts around the run. `files/STOP` ends the run after the current call.
+ * model card's protocol ([KevTimingCore]): the requested sets of the timing rows file on the set
+ * graph (a row window: the sets whose L is that window; the shared-state pair: the sets it takes),
+ * then the request path of the bundled five-question request on the plan of the launch's graph mode
+ * ([KevPlanner]; the report says which form it took). Each compile (cold with `clear_cache`) is
+ * timed too, and the report records the device facts around the run. `files/STOP` ends the run
+ * after the current call.
  */
 class KevTimingRunner(private val context: Context) {
   class Args(
     val rows: File,
     val backend: KevDecider.Backend,
+    val precision: KevPrecision,
     val report: String,
+    /** The graph the sets run on. */
+    val setGraph: KevGraphKey,
+    /** How the request path is planned. */
+    val mode: KevGraphMode,
+    /** The row window of the launch: every request-path row on it in [KevGraphMode.ROWS]. */
     val window: Int,
     /** Empty the app's cache directory before compiling, so that the compile is cold. */
     val clearCache: Boolean,
-    /** The set names to time (null: every set for the window; empty: none). */
+    /** The set names to time (null: every set for the set graph; empty: none). */
     val sets: List<String>?,
     /** Whether to time the request path after the sets. */
     val requestPath: Boolean,
@@ -31,6 +39,8 @@ class KevTimingRunner(private val context: Context) {
   fun run(
     args: Args,
     loadEngine: () -> KevEngine,
+    prepare: (KevEngine, KevGraphKey) -> KevRequestGraphs,
+    preparePlan: (KevEngine, KevPlan.Ready) -> KevRequestGraphs,
     progress: (String) -> Unit,
   ): KevGateRunner.Summary {
     val destination = File(files, args.report)
@@ -44,10 +54,15 @@ class KevTimingRunner(private val context: Context) {
         "set" to "kev_app_timing",
         "status" to "RUNNING",
         "backend" to args.backend.name.lowercase(),
-        "window" to args.window,
-        "graph_file" to KevFiles.graph(args.window),
-        "graph_bytes" to File(files, KevFiles.graph(args.window)).length(),
-        "protocol" to KevTimingCore.PROTOCOL,
+        "precision" to args.precision.wireName,
+        "graph" to args.setGraph.label,
+        "graph_mode" to args.mode.wireName,
+        "window" to (args.setGraph as? KevGraphKey.Window)?.window,
+        "graph_file" to args.setGraph.file,
+        "graph_bytes" to File(files, args.setGraph.file).length(),
+        "protocol" to
+          if (args.setGraph is KevGraphKey.Pair) KevTimingCore.PAIR_PROTOCOL
+          else KevTimingCore.PROTOCOL,
         "rows_file" to args.rows.name,
         "cgroup_start" to KevDevice.cgroup(),
         "thermal_status_start" to KevDevice.thermalStatus(context),
@@ -68,31 +83,47 @@ class KevTimingRunner(private val context: Context) {
       report["cache_dir_before_load"] = KevDevice.directoryUsage(context.cacheDir)
       progress("loading")
       val engine = loadEngine()
-      report["cache_dir_after_load"] = KevDevice.directoryUsage(context.cacheDir)
-      report["accelerator_used"] = engine.backend.name.lowercase()
-      report["compile_ms"] = engine.primary.compileMs
-      report["avail_mem_bytes_before_compile"] = engine.loadAvailableBytes
-      report["resident_windows"] = engine.windows
       report["tokenizer_load_ms"] = engine.tokenizerMs
       report["head_load_ms"] = engine.headMs
-      val timing = KevTimingCore(engine.pipeline, engine.primary) { stop.exists() }
-      core = timing
       val sets = LinkedHashMap<String, Any?>()
       val skipped = ArrayList<Any?>()
       report["sets"] = sets
       report["skipped_sets"] = skipped
-      write(partial, report)
-      val selection = timingRows.select(args.sets, engine.primaryWindow)
+      val selection =
+        when (val graph = args.setGraph) {
+          is KevGraphKey.Window -> timingRows.select(args.sets, graph.window)
+          is KevGraphKey.Pair -> timingRows.selectPair(args.sets, graph.shape)
+        }
       selection.skipped.forEach {
         skipped.add(linkedMapOf("name" to it.name, "L" to it.window, "reason" to it.reason))
       }
-      for (set in selection.run) {
-        if (timing.stoppedEarly) break
-        progress(set.name)
-        Log.i(KevGateRunner.LOG_TAG, "TIMING_SET ${set.name} rows=${set.rows.size} L=${set.window}")
-        sets[set.name] = timing.timeSet(set)
+      var timing = KevTimingCore(engine.pipeline, null) { stop.exists() }
+      if (selection.run.isNotEmpty()) {
+        val graphs = prepare(engine, args.setGraph)
+        report["cache_dir_after_load"] = KevDevice.directoryUsage(context.cacheDir)
+        report["accelerator_used"] = engine.backend.name.lowercase()
+        report["compile_ms"] = engine.compileMs
+        report["avail_mem_bytes_before_compile"] = graphs.availableBytes.firstOrNull()
+        report["resident_graphs"] = engine.resident.map { it.label }
+        val row = (graphs.runners as? KevRunners.Rows)?.graphs?.single()
+        timing = KevTimingCore(engine.pipeline, row) { stop.exists() }
         write(partial, report)
+        for (set in selection.run) {
+          if (timing.stoppedEarly) break
+          progress(set.name)
+          Log.i(
+            KevGateRunner.LOG_TAG,
+            "TIMING_SET ${set.name} rows=${set.rows.size} graph=${args.setGraph.label}",
+          )
+          sets[set.name] =
+            when (val runners = graphs.runners) {
+              is KevRunners.Rows -> timing.timeSet(set)
+              is KevRunners.Pair -> timing.timePairSet(set, runners.graph)
+            }
+          write(partial, report)
+        }
       }
+      core = timing
       if (!timing.stoppedEarly && args.requestPath) {
         progress("request path")
         val items =
@@ -100,7 +131,45 @@ class KevTimingRunner(private val context: Context) {
             context.assets.open(KevGateChecks.ASSET_NAME).use { it.readBytes() }
           )
         val item = items.first { it.id == KevTimingCore.REQUEST_PATH_RECORD }
-        report["request_path"] = timing.timeRequestPath(item.id, KevRequest.fromJson(item.request))
+        val request = KevRequest.fromJson(item.request)
+        val prepared = engine.pipeline.prepare(request)
+        val fixed = if (args.mode == KevGraphMode.ROWS) args.window else null
+        val plan = engine.plan(prepared, args.mode, fixed)
+        KevDemo.plan(plan, engine.lastPlanInputs)
+        val planReport =
+          linkedMapOf<String, Any?>(
+            "requested" to args.mode.wireName,
+            "fixed_window" to fixed,
+            "avail_mem_bytes" to engine.lastPlanInputs?.availableBytes,
+            "resident" to engine.lastPlanInputs?.resident?.map { it.label },
+            "form" to (plan as? KevPlan.Ready)?.form?.wireName,
+            "predicted_ms" to
+              (plan as? KevPlan.Ready)?.prediction?.let {
+                linkedMapOf("rows" to it.rowsMs, "pair" to it.pairMs)
+              },
+          )
+        if (plan is KevPlan.Ready) {
+          val graphs = preparePlan(engine, plan)
+          planReport["graphs"] = graphs.used.map { it.label }
+          planReport["windows"] = graphs.windows
+          planReport["compiled"] = graphs.compiled.map { it.label }
+          planReport["closed"] = graphs.closed.map { it.label }
+          planReport["avail_mem_bytes_before_compile"] = graphs.availableBytes
+          planReport["compile_ms"] = engine.compileMs
+          report["request_path"] =
+            timing.timeRequestPath(item.id, request, graphs.runners).apply {
+              put("plan", planReport)
+            }
+        } else {
+          planReport["error"] =
+            when (plan) {
+              is KevPlan.NoWindow -> "a row of ${plan.missing.rowTokens} tokens has no window"
+              is KevPlan.NoPair -> plan.miss.toString()
+              is KevPlan.Ready -> ""
+            }
+          report["request_path"] = linkedMapOf("record" to item.id, "plan" to planReport)
+          throw IllegalStateException("No plan for ${item.id}: $plan")
+        }
       }
     } catch (failure: Exception) {
       error = KevDecider.describe(failure)

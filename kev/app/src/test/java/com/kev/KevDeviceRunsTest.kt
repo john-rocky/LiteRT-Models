@@ -43,6 +43,49 @@ class KevDeviceRunsTest {
     }
   }
 
+  /**
+   * A pair stand-in that returns the oracle's hidden states at the branch's readout positions of
+   * whichever asset request (state + branch) it gets; counts the state and question calls.
+   */
+  private class OraclePair(private val rows: Map<String, Pair<IntArray, FloatArray>>) : PairRunner {
+    override val stateLength = 128
+    override val questionLength = 64
+    var stateCalls = 0
+    var questionCalls = 0
+    private var state = IntArray(0)
+
+    override fun runState(ids: IntArray, valid: FloatArray) {
+      stateCalls++
+      state = ids.copyOf(valid.count { it == 1f })
+    }
+
+    override fun runQuestion(ids: IntArray, valid: FloatArray): FloatArray {
+      questionCalls++
+      val branch = ids.copyOf(valid.count { it == 1f })
+      val (positions, values) =
+        requireNotNull(rows[KevPipeline.idsSha256(state + branch)]) { "unknown row" }
+      val hidden = FloatArray(questionLength * HIDDEN)
+      for ((row, position) in positions.withIndex()) {
+        System.arraycopy(values, row * HIDDEN, hidden, (position - state.size) * HIDDEN, HIDDEN)
+      }
+      return hidden
+    }
+  }
+
+  private fun oracleRows(): Map<String, Pair<IntArray, FloatArray>> {
+    val rows = HashMap<String, Pair<IntArray, FloatArray>>()
+    OracleFixtures.Npz(ExternalTestData.file(ExternalTestData.HIDDEN)).use { npz ->
+      for (item in asset) {
+        for (question in item.questions) {
+          rows[KevPipeline.idsSha256(question.rowIds)] =
+            (intArrayOf(question.decideIndex) + question.optionIndices) to
+              npz.floats("${item.id}/${question.qid}").second
+        }
+      }
+    }
+    return rows
+  }
+
   private fun oracleGraph(window: Int): OracleGraph {
     val rows = HashMap<String, Pair<IntArray, FloatArray>>()
     OracleFixtures.Npz(ExternalTestData.file(ExternalTestData.HIDDEN)).use { npz ->
@@ -156,6 +199,108 @@ class KevDeviceRunsTest {
     broken.run(asset) {}
     assertEquals(3, broken.summary()["nonfinite_rows"])
     assertFalse(broken.passed())
+  }
+
+  @Test
+  fun pairGateRunsTheRequestsThePairTakes() {
+    // The pair takes 124 of the asset's 156 requests (132 questions): 24 have a branch over 64
+    // tokens, 8 a state over 128. Each request runs its state once.
+    val pair = OraclePair(oracleRows())
+    val gate = KevGateCore(pipeline(), KevGateGraph.Pair(pair), 0, { false }, {})
+    val probes = gate.probes(probes())
+    gate.run(asset) {}
+    val summary = gate.summary()
+    ExternalTestData.writeReport("gate_core_pair.json", summary + ("tokenizer_probes" to probes))
+    println(
+      "KEV_GATE_CORE_PAIR ${KevJson.write(summary.filterKeys { it !in setOf("skipped_rows", "not_fitting", "infer_ms", "head_ms", "state_ms") })}"
+    )
+    assertEquals("pair", summary["form"])
+    assertEquals(181, summary["ids_identical"])
+    assertEquals(132, summary["rows_run"])
+    assertEquals(49, summary["rows_skipped"])
+    assertEquals(124, summary["requests_run"])
+    assertEquals(32, summary["requests_not_fitting"])
+    val reasons =
+      (summary["not_fitting"] as List<*>)
+        .map { ((it as Map<*, *>)["reason"] as String).substringBefore(" ") }
+        .groupingBy { it }
+        .eachCount()
+    assertEquals(mapOf("branch" to 24, "state" to 8), reasons)
+    assertEquals(124, pair.stateCalls)
+    assertEquals(132, pair.questionCalls)
+    assertEquals(132, summary["argmax_equal"])
+    assertEquals(132, summary["answers_equal_oracle"])
+    assertTrue(summary["max_abs_dp"] as Double <= 1e-5)
+    assertTrue(gate.passed())
+    val run = gate.rows.map { it as Map<*, *> }.filter { it["status"] == "run" }
+    assertTrue(run.all { it["form"] == "pair" && it["window"] == 64 && it.containsKey("state_ms") })
+    // A limit counts questions; the request it ends in keeps its state call.
+    val limitedPair = OraclePair(oracleRows())
+    val limited = KevGateCore(pipeline(), KevGateGraph.Pair(limitedPair), 40, { false }, {})
+    limited.probes(probes())
+    limited.run(asset) {}
+    assertEquals(40, limited.summary()["rows_run"])
+    assertEquals(40, limitedPair.questionCalls)
+    assertTrue(limited.passed())
+  }
+
+  @Test
+  fun pairTimingMakesTheProtocolsCalls() {
+    var states = 0
+    var questions = 0
+    val zeros =
+      object : PairRunner {
+        override val stateLength = 128
+        override val questionLength = 64
+
+        override fun runState(ids: IntArray, valid: FloatArray) {
+          assertEquals(stateLength, ids.size)
+          states++
+        }
+
+        override fun runQuestion(ids: IntArray, valid: FloatArray): FloatArray {
+          assertEquals(questionLength, ids.size)
+          questions++
+          return FloatArray(questionLength * HIDDEN)
+        }
+      }
+    val rows = KevTimingRows.parse(ExternalTestData.file("device/timing_rows.json").readBytes())
+    val shape = KevPairShape(128, 64)
+    // The cut T300 / T1000 rows have no question token; fiveq is one request of five branches.
+    val selection = rows.selectPair(null, shape)
+    assertEquals(listOf("fiveq"), selection.run.map { it.name })
+    assertEquals(
+      listOf("T300", "T1000"),
+      selection.skipped.map { it.name },
+    )
+    assertEquals(
+      listOf("fiveq"),
+      rows.selectPair(KevLaunch.setNames("fiveq"), shape).run.map { it.name },
+    )
+    val timing = KevTimingCore(pipeline(), null) { false }
+    val fiveq = timing.timePairSet(rows.sets[0], zeros)
+    assertEquals(5, (fiveq["warmup_request_ms"] as List<*>).size)
+    assertEquals(20, (fiveq["request_ms"] as Map<*, *>)["n"])
+    assertEquals(20, (fiveq["state_ms"] as Map<*, *>)["n"])
+    assertEquals(100, (fiveq["question_ms"] as Map<*, *>)["n"])
+    assertEquals(
+      listOf(linkedMapOf("state_len" to 99, "branch_lens" to listOf(33, 43, 33, 29, 29))),
+      fiveq["requests"],
+    )
+    assertEquals(true, fiveq["finite"])
+    assertEquals(25, states)
+    assertEquals(125, questions)
+    // The request path on the pair: the state once per request.
+    val item = asset.first { it.id == KevTimingCore.REQUEST_PATH_RECORD }
+    val path =
+      timing.timeRequestPath(item.id, KevRequest.fromJson(item.request), KevRunners.Pair(zeros))
+    assertEquals("pair", path["form"])
+    assertEquals(20, (path["request_ms"] as Map<*, *>)["n"])
+    assertEquals(20, (path["state_ms"] as Map<*, *>)["n"])
+    assertEquals(100, (path["infer_ms_per_call"] as Map<*, *>)["n"])
+    assertEquals(99, path["state_len"])
+    assertEquals(50, states)
+    assertEquals(250, questions)
   }
 
   @Test

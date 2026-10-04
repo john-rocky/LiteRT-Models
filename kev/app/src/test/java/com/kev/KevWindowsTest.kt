@@ -35,20 +35,54 @@ class KevWindowsTest {
     }
   }
 
+  /** A stand-in pair of [shape]; it is in [open] from creation until [close]. */
+  private class FakePair(val shape: KevPairShape, private val open: MutableList<Any>) :
+    PairRunner, Closeable {
+    override val stateLength = shape.stateLength
+    override val questionLength = shape.questionLength
+    var closed = false
+      private set
+
+    init {
+      open.add(this)
+    }
+
+    override fun runState(ids: IntArray, valid: FloatArray) = Unit
+
+    override fun runQuestion(ids: IntArray, valid: FloatArray) =
+      FloatArray(questionLength * KevPointerHead.HIDDEN_SIZE)
+
+    override fun close() {
+      check(!closed) { "$shape closed twice" }
+      closed = true
+      open.remove(this)
+    }
+  }
+
   /**
-   * Graphs with a primary of [primary] and [available] bytes of free memory; records the windows
-   * compiled and the most graphs ever open.
+   * Graphs with [primary] compiled at the start (by a request that asks for it alone) and
+   * [available] bytes of free memory; records the windows compiled after that and the most graphs
+   * ever open.
    */
   private class Harness(primary: Int, var available: Long = PLENTY) {
     val open = ArrayList<FakeGraph>()
+    val pairsOpen = ArrayList<Any>()
     val compiled = ArrayList<Int>()
     var maxOpen = 0
-    val graphs = KevResidentGraphs(primary, FakeGraph(primary, open))
+    val graphs = KevResidentGraphs<FakeGraph, FakePair>()
+
+    init {
+      graphs.prepare(KevWindowPlan.Ready(listOf(primary)), { available }, ::open)
+      compiled.clear()
+    }
 
     fun open(window: Int): FakeGraph {
       compiled.add(window)
-      return FakeGraph(window, open).also { maxOpen = maxOf(maxOpen, open.size) }
+      return FakeGraph(window, open).also { maxOpen = maxOf(maxOpen, open.size + pairsOpen.size) }
     }
+
+    fun openPair(shape: KevPairShape): FakePair =
+      FakePair(shape, pairsOpen).also { maxOpen = maxOf(maxOpen, open.size + pairsOpen.size) }
 
     /** Plans and prepares a request with rows of [rows] tokens over [installed]. */
     fun request(installed: List<Int>, vararg rows: Int): KevWindowRun<FakeGraph> {
@@ -217,19 +251,86 @@ class KevWindowsTest {
   }
 
   @Test
-  fun anotherBackendReopensThePrimaryOnly() {
+  fun anotherBackendClosesEveryGraphAndThePlanCompilesAgain() {
+    // A backend switch closes every graph; the request's plan then compiles what it asks for.
     val harness = Harness(128)
     harness.request(KevFiles.WINDOWS, 131, 101)
     val before = harness.open.toList()
-    harness.graphs.reopen(harness::open)
-    assertTrue(before.all { it.closed })
-    assertEquals(listOf(128), harness.graphs.windows)
     harness.graphs.close()
+    assertTrue(before.all { it.closed })
     assertTrue(harness.open.isEmpty())
-    // After close, the next request compiles what it asks for.
-    val run = harness.request(KevFiles.WINDOWS, 100)
-    assertEquals(listOf(128), run.compiled)
+    assertTrue(harness.graphs.resident.isEmpty())
+    val run = harness.request(KevFiles.WINDOWS, 131, 101)
+    assertEquals(listOf(256, 128), run.compiled)
+    assertEquals(listOf(128, 256), harness.graphs.windows)
+    harness.graphs.close()
+    val single = harness.request(KevFiles.WINDOWS, 100)
+    assertEquals(listOf(128), single.compiled)
     assertEquals(listOf(128), harness.graphs.windows)
+  }
+
+  @Test
+  fun thePairIsAloneAndRowsCloseIt() {
+    val pair = KevPairShape(128, 64)
+    // L128 and L256 resident; a pair plan closes both before the pair compiles.
+    val harness = Harness(128)
+    harness.request(KevFiles.WINDOWS, 131, 101)
+    assertEquals(listOf(128, 256), harness.graphs.windows)
+    val run = harness.graphs.preparePair(pair, { harness.available }, harness::openPair)
+    assertTrue(run.compiled)
+    assertEquals(PLENTY, run.availableBytes)
+    assertEquals(listOf(128, 256), run.closedWindows)
+    assertNull(run.closedPair)
+    assertTrue(harness.open.isEmpty())
+    assertEquals(listOf(KevGraphKey.Pair(pair)), harness.graphs.resident)
+    assertEquals(1, harness.pairsOpen.size)
+    // The pair already resident: nothing compiles or closes.
+    val again = harness.graphs.preparePair(pair, { harness.available }, harness::openPair)
+    assertFalse(again.compiled)
+    assertNull(again.availableBytes)
+    assertTrue(again.closedWindows.isEmpty())
+    assertTrue(again.graph === run.graph)
+    // A row plan closes the pair before it compiles; the second-graph rule is unchanged.
+    val rows = harness.request(KevFiles.WINDOWS, 131, 101, 93)
+    assertEquals(pair, rows.closedPair)
+    assertTrue(run.graph.closed)
+    assertTrue(harness.pairsOpen.isEmpty())
+    assertEquals(listOf(256, 128), rows.compiled)
+    assertEquals(listOf(256, 128, 128), rows.windows)
+    assertEquals(listOf(128, 256), harness.graphs.windows)
+    // The same with too little memory for a second window: L256 alone after the pair.
+    harness.graphs.preparePair(pair, { harness.available }, harness::openPair)
+    harness.available = KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1
+    val low = harness.request(KevFiles.WINDOWS, 131, 101, 93)
+    assertEquals(pair, low.closedPair)
+    assertTrue(low.secondRefused)
+    assertEquals(listOf(256, 256, 256), low.windows)
+    assertEquals(listOf(256), harness.graphs.windows)
+    assertEquals(2, harness.maxOpen)
+  }
+
+  @Test
+  fun assignGivesTheWindowsPrepareRuns() {
+    // The planner's prediction uses assign; prepare must end on the same windows.
+    for ((rows, available) in
+      listOf(
+        intArrayOf(131, 101, 93) to PLENTY,
+        intArrayOf(131, 101, 93) to KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1,
+        intArrayOf(124, 106, 94) to KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1,
+        intArrayOf(100, 300) to PLENTY,
+        intArrayOf(1500, 100) to KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1,
+      )) {
+      val harness = Harness(512, available)
+      val plan = harness.graphs.plan(rows.toList(), KevFiles.WINDOWS) as KevWindowPlan.Ready
+      val second = harness.graphs.secondAllowed(plan, available)
+      val run = harness.graphs.prepare(plan, { available }, harness::open)
+      assertEquals(rows.toList().toString(), KevResidentGraphs.assign(plan, second), run.windows)
+    }
+    val ticket = KevWindowPlan.Ready(listOf(256, 128, 128))
+    assertEquals(listOf(256, 128, 128), KevResidentGraphs.assign(ticket, secondAllowed = true))
+    assertEquals(listOf(256, 256, 256), KevResidentGraphs.assign(ticket, secondAllowed = false))
+    val long = KevWindowPlan.Ready(listOf(128, 512))
+    assertEquals(listOf(512, 512), KevResidentGraphs.assign(long, secondAllowed = true))
   }
 
   private companion object {

@@ -1,22 +1,25 @@
 package com.kev
 
 /**
- * The Android-free part of the timing protocol on [runner]: [WARMUP_CALLS] untimed calls, then
+ * The Android-free part of the timing protocol: on a row graph, [WARMUP_CALLS] untimed calls, then
  * [TIMED_REPEATS] timed calls (a `request` set: that many requests of its rows back to back), where
- * a call is input writes + `run()` + read-back of `hidden`; and the request path of one request
- * from its text (tokenize, one call per question, head, `to_answers`). [shouldStop] is asked after
- * every call; once it says yes, the remaining calls are left out.
+ * a call is input writes + `run()` + read-back of `hidden`; on the shared-state pair, the same
+ * counts of requests (the state call once, then one question step per row); and the request path of
+ * one request from its text (tokenize, the plan's graph calls, head, `to_answers`). [shouldStop] is
+ * asked after every call; once it says yes, the remaining calls are left out.
  */
 class KevTimingCore(
   private val pipeline: KevPipeline,
-  private val runner: RowRunner,
+  /** The row graph the row sets run on (null when the run times the pair). */
+  private val runner: RowRunner?,
   private val shouldStop: () -> Boolean,
 ) {
   var stoppedEarly = false
     private set
 
-  /** One set of `timing_rows.json` (its L must be [runner]'s window). */
+  /** One set of `timing_rows.json` (its L must be the row graph's window). */
   fun timeSet(set: KevTimingSet): LinkedHashMap<String, Any?> {
+    val runner = requireNotNull(runner) { "No row graph" }
     require(set.window == runner.length) {
       "Set ${set.name} is for L${set.window}, the graph is L${runner.length}"
     }
@@ -68,14 +71,158 @@ class KevTimingCore(
     )
   }
 
-  /** [request] from its text: tokenize, one call and the head per question, `to_answers`. */
+  /**
+   * One set of `timing_rows.json` on the pair (its L is not used): a `request` set is one request
+   * whose rows share their state part (the row before its `[question]` token), a `single` set is
+   * one request per row. [WARMUP_CALLS] untimed requests, then [TIMED_REPEATS] passes over the
+   * set's requests; a request = the state call, then one question step per row.
+   */
+  fun timePairSet(set: KevTimingSet, pair: PairRunner): LinkedHashMap<String, Any?> {
+    val requests = pairRequests(set, pair)
+    val warmup = ArrayList<Double>()
+    var finite = true
+    for (call in 0 until WARMUP_CALLS) {
+      if (stoppedEarly) break
+      val request = pairRequest(requests[call % requests.size], pair)
+      warmup.add(request.totalMs)
+      finite = finite && request.finite
+    }
+    val perRequest = ArrayList<Double>()
+    val perState = ArrayList<Double>()
+    val perQuestion = ArrayList<Double>()
+    for (repeat in 0 until TIMED_REPEATS) {
+      for (split in requests) {
+        if (stoppedEarly) break
+        val request = pairRequest(split, pair)
+        finite = finite && request.finite
+        if (request.complete) {
+          perRequest.add(request.totalMs)
+          perState.add(request.stateMs)
+        }
+        perQuestion.addAll(request.questionMs)
+      }
+    }
+    return linkedMapOf(
+      "kind" to set.kind,
+      "form" to KevForm.PAIR.wireName,
+      "Ls" to pair.stateLength,
+      "Lq" to pair.questionLength,
+      "synthetic" to set.synthetic,
+      "rows" to
+        set.rows.map {
+          linkedMapOf(
+            "key" to it.key,
+            "row_len" to it.ids.size,
+            "ids_sha256" to KevPipeline.idsSha256(it.ids),
+          )
+        },
+      "requests" to
+        requests.map { linkedMapOf("state_len" to it.state.size, "branch_lens" to it.lengths) },
+      "warmup_request_ms" to warmup,
+      "request_ms" to KevStats.of(perRequest)?.toJson(),
+      "state_ms" to KevStats.of(perState)?.toJson(),
+      "question_ms" to KevStats.of(perQuestion)?.toJson(),
+      "request_calls_ms" to perRequest,
+      "state_calls_ms" to perState,
+      "question_calls_ms" to perQuestion,
+      "finite" to finite,
+    )
+  }
+
+  /** A timing set's request split for the pair: the state part and each row's branch. */
+  private class PairSplit(val state: IntArray, val branches: List<IntArray>) {
+    val lengths: List<Int>
+      get() = branches.map { it.size }
+  }
+
+  private fun pairRequests(set: KevTimingSet, pair: PairRunner): List<PairSplit> {
+    val splits =
+      set.rows.map { row ->
+        val cut = row.ids.indexOf(KevEncoder.QUESTION_ID)
+        require(cut > 0) { "Row ${row.key} has no question token" }
+        row.ids.copyOf(cut) to row.ids.copyOfRange(cut, row.ids.size)
+      }
+    val requests =
+      if (set.kind == "request") {
+        require(splits.all { it.first.contentEquals(splits[0].first) }) {
+          "Set ${set.name}: the rows do not share one state"
+        }
+        listOf(PairSplit(splits[0].first, splits.map { it.second }))
+      } else {
+        splits.map { PairSplit(it.first, listOf(it.second)) }
+      }
+    for (request in requests) {
+      require(request.state.size <= pair.stateLength) {
+        "Set ${set.name}: a state is ${request.state.size} tokens > Ls ${pair.stateLength}"
+      }
+      require(request.branches.all { it.size <= pair.questionLength }) {
+        "Set ${set.name}: a branch is over Lq ${pair.questionLength}"
+      }
+    }
+    return requests
+  }
+
+  /** One timed pair request: the state call, then each question step. */
+  private class PairCall(
+    val totalMs: Double,
+    val stateMs: Double,
+    val questionMs: List<Double>,
+    val finite: Boolean,
+    val complete: Boolean,
+  )
+
+  private fun pairRequest(split: PairSplit, pair: PairRunner): PairCall {
+    val state = KevPaddedRow.of(split.state, pair.stateLength)
+    val start = System.nanoTime()
+    pair.runState(state.ids, state.valid)
+    val stateEnd = System.nanoTime()
+    val questionMs = ArrayList<Double>()
+    val outputs = ArrayList<Pair<FloatArray, Int>>()
+    var complete = true
+    for (branch in split.branches) {
+      if (stoppedEarly) {
+        complete = false
+        break
+      }
+      val inputs = KevPaddedRow.of(branch, pair.questionLength)
+      val questionStart = System.nanoTime()
+      val hidden = pair.runQuestion(inputs.ids, inputs.valid)
+      questionMs.add(KevPipeline.millis(System.nanoTime() - questionStart))
+      outputs.add(hidden to branch.size)
+      if (shouldStop()) stoppedEarly = true
+    }
+    val totalMs = KevPipeline.millis(System.nanoTime() - start)
+    // Finiteness on the real positions, after the clock stops.
+    val finite = outputs.all { (hidden, length) ->
+      KevPipeline.nonFiniteCount(hidden, 0, length * KevPointerHead.HIDDEN_SIZE) == 0
+    }
+    return PairCall(totalMs, KevPipeline.millis(stateEnd - start), questionMs, finite, complete)
+  }
+
+  /** [request] from its text with every question on the row graph. */
   fun timeRequestPath(id: String, request: KevRequest): LinkedHashMap<String, Any?> {
-    val rowLengths = pipeline.prepare(request).rows.map { it.length }
-    if (rowLengths.max() > runner.length)
+    val runner = requireNotNull(runner) { "No row graph" }
+    val rows = pipeline.prepare(request).rows
+    if (rows.maxOf { it.length } > runner.length)
       return linkedMapOf("record" to id, "skipped" to "a row is over L${runner.length}")
+    return timeRequestPath(id, request, KevRunners.Rows(List(rows.size) { runner }))
+  }
+
+  /**
+   * [request] from its text on [runners] (the graphs its plan compiled): tokenize, the state call
+   * for the pair, one call and the head per question, `to_answers`.
+   */
+  fun timeRequestPath(
+    id: String,
+    request: KevRequest,
+    runners: KevRunners,
+  ): LinkedHashMap<String, Any?> {
+    val prepared0 = pipeline.prepare(request)
+    val rowLengths = prepared0.rows.map { it.length }
     val warmup = ArrayList<Double>()
     val total = ArrayList<Double>()
     val tokenize = ArrayList<Double>()
+    val state = ArrayList<Double>()
     val infer = ArrayList<Double>()
     val head = ArrayList<Double>()
     var lastAnswers: Map<String, Any?>? = null
@@ -83,8 +230,8 @@ class KevTimingCore(
       if (stoppedEarly) break
       val start = System.nanoTime()
       val prepared = pipeline.prepare(request)
-      val results = prepared.rows.indices.map { pipeline.run(prepared, it, runner) }
-      val answers = pipeline.answers(prepared, results)
+      val result = pipeline.runRequest(prepared, runners)
+      val answers = pipeline.answers(prepared, result.questions)
       val ms = KevPipeline.millis(System.nanoTime() - start)
       if (shouldStop()) stoppedEarly = true
       if (iteration < WARMUP_CALLS) {
@@ -93,18 +240,30 @@ class KevTimingCore(
       }
       total.add(ms)
       tokenize.add(prepared.tokenizeMs)
-      infer.addAll(results.map { it.inferMs })
-      head.addAll(results.map { it.headMs })
+      result.state?.let { state.add(it.ms) }
+      infer.addAll(result.questions.map { it.inferMs })
+      head.addAll(result.questions.map { it.headMs })
       lastAnswers = answers
     }
+    val pair = runners is KevRunners.Pair
     return linkedMapOf(
       "record" to id,
       "questions" to request.questions.size,
+      "form" to (if (pair) KevForm.PAIR else KevForm.ROW).wireName,
       "row_lens" to rowLengths,
-      "steps" to "tokenize the request, then per question: pad, graph call, head; then to_answers",
+      "state_len" to prepared0.encoded.stateIds.size,
+      "branch_lens" to prepared0.encoded.branches.map { it.ids.size },
+      "steps" to
+        if (pair) {
+          "tokenize the request, the state call, then per question: pad, question step, head; " +
+            "then to_answers"
+        } else {
+          "tokenize the request, then per question: pad, graph call, head; then to_answers"
+        },
       "warmup_ms" to warmup,
       "request_ms" to KevStats.of(total)?.toJson(),
       "tokenize_ms" to KevStats.of(tokenize)?.toJson(),
+      "state_ms" to KevStats.of(state)?.toJson(),
       "infer_ms_per_call" to KevStats.of(infer)?.toJson(),
       "head_ms_per_question" to KevStats.of(head)?.toJson(),
       "last_answers" to lastAnswers,
@@ -113,6 +272,7 @@ class KevTimingCore(
 
   /** One timed call; finiteness is checked on the real positions after the clock stops. */
   private fun call(inputs: KevPaddedRow, length: Int): Pair<Double, Boolean> {
+    val runner = requireNotNull(runner) { "No row graph" }
     val start = System.nanoTime()
     val hidden = runner.run(inputs.ids, inputs.valid)
     val ms = KevPipeline.millis(System.nanoTime() - start)
@@ -135,5 +295,11 @@ class KevTimingCore(
     const val PROTOCOL =
       "$WARMUP_CALLS warm-up calls, then $TIMED_REPEATS timed calls (a request set: $TIMED_REPEATS requests " +
         "of its rows back to back); ms = input writes + run() + read-back of hidden; median as numpy"
+
+    /** How the report describes the pair's protocol. */
+    const val PAIR_PROTOCOL =
+      "$WARMUP_CALLS warm-up requests, then $TIMED_REPEATS timed passes over the set's requests; a request = " +
+        "the state call (input writes + run() + the write of state_valid, which waits for the state on the " +
+        "GPU) and one question step per row (input writes + run() + read-back of hidden); median as numpy"
   }
 }

@@ -2,20 +2,39 @@ package com.kev
 
 import kotlin.math.abs
 
+/** The graph a gate runs on: one row window, or the shared-state pair. */
+sealed interface KevGateGraph {
+  class Row(val runner: RowRunner) : KevGateGraph
+
+  class Pair(val runner: PairRunner) : KevGateGraph
+}
+
 /**
  * The Android-free part of the debug gate: the tokenizer on the probes, then every request of the
- * gate asset through `to_record` and the encoder (rows against the oracle), and the rows that fit
- * [runner]'s window (at most [limit] of them when it is above 0) through the graph and the head
- * (probabilities against the oracle). [shouldStop] is asked after every graph call. [rows] grows as
- * the run goes, so a partial report can be written at any time.
+ * gate asset through `to_record` and the encoder (rows against the oracle), and the questions the
+ * [graph] takes (at most [limit] of them when it is above 0) through the graph and the head
+ * (probabilities against the oracle). A row window takes the rows that fit it; the pair takes the
+ * requests whose state fits Ls and whose branches all fit Lq, running each request's state once
+ * (the state part = the row before its `[question]` token). [shouldStop] is asked after every
+ * question's graph call. [rows] grows as the run goes, so a partial report can be written at any
+ * time.
  */
 class KevGateCore(
   private val pipeline: KevPipeline,
-  private val runner: RowRunner,
+  private val graph: KevGateGraph,
   private val limit: Int,
   private val shouldStop: () -> Boolean,
   private val log: (String) -> Unit,
 ) {
+  /** The gate on one row window. */
+  constructor(
+    pipeline: KevPipeline,
+    runner: RowRunner,
+    limit: Int,
+    shouldStop: () -> Boolean,
+    log: (String) -> Unit,
+  ) : this(pipeline, KevGateGraph.Row(runner), limit, shouldStop, log)
+
   /** One entry per asset question, in asset order. */
   val rows = ArrayList<Any?>()
 
@@ -44,6 +63,9 @@ class KevGateCore(
   private var probeCases = 0
   private var probesRawEqual = 0
   private var probesUserEqual = 0
+  private var requestsRun = 0
+  private val notFitting = ArrayList<Any?>()
+  private val stateMs = ArrayList<Double>()
 
   /**
    * The device tokenizer against the IDs transformers gives each probe, raw and via `user_tokens`.
@@ -86,30 +108,93 @@ class KevGateCore(
       val prepared = pipeline.prepare(KevRequest.fromJson(item.request))
       requests++
       if (prepared.inputTokens == item.inputTokens) inputTokensIdentical++
-      for ((index, question) in item.questions.withIndex()) {
-        val entry = compareRow(item, prepared.rows[index], question)
-        rows.add(entry)
-        when {
-          prepared.rows[index].length > runner.length ->
-            skip(
-              entry,
-              "needs L${prepared.rows[index].window(KevFiles.WINDOWS) ?: "> ${KevFiles.WINDOWS.last()}"}",
-            )
-          stoppedEarly || (limit > 0 && run >= limit) ->
-            skip(entry, if (stoppedEarly) "stopped" else "limit")
-          else -> {
-            runRow(prepared, index, question, entry)
-            if (run % PROGRESS_EVERY == 0) {
-              log("GATE_ROW run=$run key=${entry["key"]} infer_ms=${entry["infer_ms"]}")
-              onProgress(run)
-            }
-            if (shouldStop()) {
-              stoppedEarly = true
-              log("GATE_STOP after $run rows")
+      val entries =
+        item.questions.mapIndexed { index, question ->
+          compareRow(item, prepared.rows[index], question).also { rows.add(it) }
+        }
+      when (val graph = graph) {
+        is KevGateGraph.Row ->
+          for ((index, question) in item.questions.withIndex()) {
+            val entry = entries[index]
+            val row = prepared.rows[index]
+            when {
+              row.length > graph.runner.length ->
+                skip(
+                  entry,
+                  "needs L${row.window(KevFiles.WINDOWS) ?: "> ${KevFiles.WINDOWS.last()}"}",
+                )
+              stoppedEarly || (limit > 0 && run >= limit) ->
+                skip(entry, if (stoppedEarly) "stopped" else "limit")
+              else ->
+                runQuestion(entry, question, onProgress) {
+                  pipeline.run(prepared, index, graph.runner)
+                }
             }
           }
-        }
+        is KevGateGraph.Pair -> runPair(item, prepared, entries, graph.runner, onProgress)
       }
+    }
+  }
+
+  /** One request on the pair: the state once, then each question the limit leaves. */
+  private fun runPair(
+    item: KevGateItem,
+    prepared: KevPrepared,
+    entries: List<LinkedHashMap<String, Any?>>,
+    pair: PairRunner,
+    onProgress: (Int) -> Unit,
+  ) {
+    val miss = pairMiss(prepared, pair)
+    if (miss != null) {
+      notFitting.add(linkedMapOf("record" to item.id, "reason" to miss))
+      entries.forEach { skip(it, miss) }
+      return
+    }
+    var state: KevStateResult? = null
+    for ((index, question) in item.questions.withIndex()) {
+      val entry = entries[index]
+      if (stoppedEarly || (limit > 0 && run >= limit)) {
+        skip(entry, if (stoppedEarly) "stopped" else "limit")
+        continue
+      }
+      val ran =
+        state
+          ?: pipeline.runState(prepared, pair).also {
+            state = it
+            stateMs.add(it.ms)
+            requestsRun++
+          }
+      entry["state_tokens"] = ran.tokens
+      entry["state_ms"] = ran.ms
+      runQuestion(entry, question, onProgress) { pipeline.runBranch(prepared, index, pair) }
+    }
+  }
+
+  /** Why [pair] cannot take [prepared] (its state over Ls or a branch over Lq), or null. */
+  private fun pairMiss(prepared: KevPrepared, pair: PairRunner): String? {
+    val state = prepared.encoded.stateIds.size
+    if (state > pair.stateLength) return "state $state > Ls ${pair.stateLength}"
+    val index = prepared.encoded.branches.indexOfFirst { it.ids.size > pair.questionLength }
+    if (index < 0) return null
+    val branch = prepared.encoded.branches[index].ids.size
+    return "branch ${prepared.meta[index].id} $branch > Lq ${pair.questionLength}"
+  }
+
+  /** One question through [infer], then the progress line and the stop file. */
+  private fun runQuestion(
+    entry: LinkedHashMap<String, Any?>,
+    question: KevGateQuestion,
+    onProgress: (Int) -> Unit,
+    infer: () -> KevQuestionResult,
+  ) {
+    runRow(question, entry, infer)
+    if (run % PROGRESS_EVERY == 0) {
+      log("GATE_ROW run=$run key=${entry["key"]} infer_ms=${entry["infer_ms"]}")
+      onProgress(run)
+    }
+    if (shouldStop()) {
+      stoppedEarly = true
+      log("GATE_STOP after $run rows")
     }
   }
 
@@ -150,25 +235,30 @@ class KevGateCore(
   }
 
   private fun runRow(
-    prepared: KevPrepared,
-    index: Int,
     question: KevGateQuestion,
     entry: LinkedHashMap<String, Any?>,
+    infer: () -> KevQuestionResult,
   ) {
     run++
     entry["status"] = "run"
-    entry["window"] = runner.length
+    entry["form"] = formName
+    entry["window"] =
+      when (val graph = graph) {
+        is KevGateGraph.Row -> graph.runner.length
+        is KevGateGraph.Pair -> graph.runner.questionLength
+      }
     entry["near_tie"] = question.nearTie
     entry["oracle_top2_gap"] = question.top2Gap
     val result =
       try {
-        pipeline.run(prepared, index, runner)
+        infer()
       } catch (failure: KevNonFiniteException) {
         nonFiniteRows++
         entry["finite"] = false
         entry["nonfinite_values"] = failure.count
         return
       }
+    entry["branch_len"] = result.branchLength
     val device = result.probabilities
     val argmaxSame =
       KevAnswers.firstArgmax(device) == KevAnswers.firstArgmax(question.probabilities)
@@ -186,8 +276,7 @@ class KevGateCore(
     options += device.size
     inferMs.add(result.inferMs)
     headMs.add(result.headMs)
-    val answer =
-      KevAnswers.toAnswers(listOf(device), listOf(prepared.meta[index])).getValue(question.qid)
+    val answer = KevAnswers.toAnswers(listOf(device), listOf(result.meta)).getValue(question.qid)
     if (KevJson.write(answer) == KevJson.write(question.answer)) answersEqual++
     entry.putAll(
       linkedMapOf(
@@ -226,30 +315,46 @@ class KevGateCore(
   /** The counts so far, for the report. */
   fun summary(): LinkedHashMap<String, Any?> {
     val warm = if (inferMs.size > WARMUP_ROWS) inferMs.drop(WARMUP_ROWS) else inferMs
-    return linkedMapOf(
-      "requests" to requests,
-      "input_tokens_identical" to inputTokensIdentical,
-      "questions" to questions,
-      "ids_identical" to idsIdentical,
-      "indices_identical" to indicesIdentical,
-      "rows_run" to run,
-      "rows_skipped" to skippedRows.size,
-      "skipped_rows" to skippedRows,
-      "nonfinite_rows" to nonFiniteRows,
-      "argmax_equal" to argmaxEqual,
-      "near_tie_rows" to nearTieRows,
-      "near_tie_argmax_flips" to nearTieFlips,
-      "argmax_equal_outside_near_ties" to argmaxEqualOutsideNearTies,
-      "rows_outside_near_ties" to rowsOutsideNearTies,
-      "max_abs_dp" to maxAbsDp,
-      "mean_abs_dp_all_options" to meanAbsDp(),
-      "answers_equal_oracle" to answersEqual,
-      "warmup_rows_excluded" to minOf(WARMUP_ROWS, inferMs.size),
-      "infer_ms" to KevStats.of(warm)?.toJson(),
-      "infer_ms_row_1" to inferMs.firstOrNull(),
-      "head_ms" to KevStats.of(headMs)?.toJson(),
-    )
+    val pairCounts: Map<String, Any?> =
+      if (graph is KevGateGraph.Pair) {
+        linkedMapOf(
+          "requests_run" to requestsRun,
+          "requests_not_fitting" to notFitting.size,
+          "not_fitting" to notFitting,
+          "state_ms" to KevStats.of(stateMs)?.toJson(),
+        )
+      } else {
+        emptyMap()
+      }
+    return linkedMapOf<String, Any?>(
+        "form" to formName,
+        "requests" to requests,
+        "input_tokens_identical" to inputTokensIdentical,
+        "questions" to questions,
+        "ids_identical" to idsIdentical,
+        "indices_identical" to indicesIdentical,
+        "rows_run" to run,
+        "rows_skipped" to skippedRows.size,
+        "skipped_rows" to skippedRows,
+        "nonfinite_rows" to nonFiniteRows,
+        "argmax_equal" to argmaxEqual,
+        "near_tie_rows" to nearTieRows,
+        "near_tie_argmax_flips" to nearTieFlips,
+        "argmax_equal_outside_near_ties" to argmaxEqualOutsideNearTies,
+        "rows_outside_near_ties" to rowsOutsideNearTies,
+        "max_abs_dp" to maxAbsDp,
+        "mean_abs_dp_all_options" to meanAbsDp(),
+        "answers_equal_oracle" to answersEqual,
+        "warmup_rows_excluded" to minOf(WARMUP_ROWS, inferMs.size),
+        "infer_ms" to KevStats.of(warm)?.toJson(),
+        "infer_ms_row_1" to inferMs.firstOrNull(),
+        "head_ms" to KevStats.of(headMs)?.toJson(),
+      )
+      .apply { putAll(pairCounts) }
   }
+
+  private val formName: String
+    get() = if (graph is KevGateGraph.Pair) KevForm.PAIR.wireName else KevForm.ROW.wireName
 
   companion object {
     /** Rows run before the infer-time median starts. */

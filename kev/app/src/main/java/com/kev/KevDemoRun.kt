@@ -42,8 +42,19 @@ class KevDemoLayout(
   )
 }
 
-/** A graph file in `files/`: its name, window and size. */
-class KevGraphFile(val file: String, val window: Int, val bytes: Long)
+/** A graph file in `files/`: the graph and its size. */
+class KevGraphFile(val graph: KevGraphKey, val bytes: Long)
+
+/**
+ * How a demo request ran: the `graph` mode asked for, the form taken, both predictions and what the
+ * plan saw (the available memory and the resident graphs).
+ */
+class KevDemoPlan(
+  val requested: KevGraphMode,
+  val form: KevForm,
+  val prediction: KevPrediction,
+  val inputs: KevPlanInputs?,
+)
 
 /** Everything a demo run JSON records. */
 class KevDemoRunInput(
@@ -55,22 +66,30 @@ class KevDemoRunInput(
   val deviceShownAs: String,
   val deviceAndroidRelease: String,
   val litert: String,
-  /** "GPU FP32" or "CPU 4 threads". */
+  /** "GPU FP32", "GPU FP16 (FP32 accum)" or "CPU 4 threads". */
   val accelerator: String,
-  /** The largest window the questions ran on: the graph that holds the longest row. */
+  /** The GPU precision's launch name: `fp32` or `fp16acc`. */
+  val precision: String,
+  /**
+   * The largest window the questions ran on (the graph that holds the longest row), or the pair.
+   */
   val graph: KevGraphFile,
-  /** The windows the questions ran on, in ascending order. */
+  val form: KevForm,
+  /** The row windows the questions ran on, in ascending order (empty for the pair). */
   val windowsUsed: List<Int>,
-  /** The graphs compiled when the run ended, by ascending window. */
+  /** The graphs compiled when the run ended: windows ascending, then the pair. */
   val resident: List<KevGraphFile>,
-  /** The windows compiled for this run's request, in order. */
-  val compiled: List<Int>,
+  /** The graphs compiled for this run's request, in order. */
+  val compiled: List<KevGraphKey>,
   /** `ActivityManager.MemoryInfo.availMem` right before each of those compiles, in bytes. */
   val availableBytesBeforeCompile: List<Long>,
-  /** The windows closed for this run's request. */
-  val closed: List<Int>,
+  /** The graphs closed for this run's request. */
+  val closed: List<KevGraphKey>,
   /** A second graph was wanted but the available memory was below the limit. */
   val secondRefused: Boolean,
+  val plan: KevDemoPlan,
+  /** The pair's state call (null for rows). */
+  val state: KevStateResult?,
   /** Tokenizer + head + graph compile when the engine became ready. */
   val engineLoadMs: Long,
   /** The untimed full pass after loading. */
@@ -91,12 +110,15 @@ class KevDemoRunInput(
 )
 
 /**
- * The demo run JSON (`files/kev-demo-<epoch ms>.json`): device and runtime, the graphs, the shown
- * strings and timings of every question, its row (IDs, readout indices, sha256 of the int32 IDs,
- * the window it ran on) and where the screen drew the cards. Key names follow the demo recording
- * scripts; `graph` keeps the `file` / `L` / `bytes` of the largest window used and adds `windows`
+ * The demo run JSON (`files/kev-demo-<epoch ms>.json`): device and runtime, the graphs, the plan,
+ * the shown strings and timings of every question, its row (IDs, readout indices, sha256 of the
+ * int32 IDs, the window it ran on) and where the screen drew the cards. Key names follow the demo
+ * recording scripts; `graph` keeps the `file` / `L` / `bytes` of the largest window used (`L` is
+ * null for the pair, whose `Ls` / `Lq` are under `pair`) and adds `form`, `precision`, `windows`
  * (every window the questions ran on), `resident` (the compiled graphs), `compiled` (each compile
- * for this request with the available memory right before it), `closed` and `second_refused`.
+ * for this request with the available memory right before it), `closed` and `second_refused`. The
+ * row IDs and indices are the causal row's (state + branch) in both forms; a pair run adds `state`
+ * (`tokens`, `window` = Ls, `ms`) and each question's `branch_len`.
  */
 object KevDemoRun {
   /** Card indicator colours: pending grey, running blue, done green. */
@@ -111,6 +133,8 @@ object KevDemoRun {
       "device",
       "runtime",
       "graph",
+      "plan",
+      "state",
       "engine_load_ms",
       "warmup_ms",
       "title",
@@ -140,7 +164,9 @@ object KevDemoRun {
       "row_len",
       "decide_idx",
       "opt_idx",
+      "form",
       "window",
+      "branch_len",
       "ids_sha256",
       "tokenize_ms",
       "infer_ms",
@@ -163,24 +189,47 @@ object KevDemoRun {
           "shown_as" to input.deviceShownAs,
           "android_release" to input.deviceAndroidRelease,
         ),
-      "runtime" to linkedMapOf("litert" to input.litert, "accelerator" to input.accelerator),
+      "runtime" to
+        linkedMapOf(
+          "litert" to input.litert,
+          "accelerator" to input.accelerator,
+          "precision" to input.precision,
+        ),
       "graph" to
         linkedMapOf(
-          "file" to input.graph.file,
-          "L" to input.graph.window,
+          "file" to input.graph.graph.file,
+          "L" to (input.graph.graph as? KevGraphKey.Window)?.window,
           "bytes" to input.graph.bytes,
+          "form" to input.form.wireName,
+          "precision" to input.precision,
+          "pair" to (input.graph.graph as? KevGraphKey.Pair)?.let { shape(it) },
           "windows" to input.windowsUsed,
           "resident" to input.resident.map { graph(it) },
           "compiled" to
-            input.compiled.mapIndexed { index, window ->
-              linkedMapOf(
-                "L" to window,
-                "avail_mem_bytes" to input.availableBytesBeforeCompile.getOrNull(index),
-              )
+            input.compiled.mapIndexed { index, graph ->
+              key(graph).apply {
+                put("avail_mem_bytes", input.availableBytesBeforeCompile.getOrNull(index))
+              }
             },
-          "closed" to input.closed,
+          "closed" to input.closed.map { key(it) },
           "second_refused" to input.secondRefused,
         ),
+      "plan" to
+        linkedMapOf(
+          "requested" to input.plan.requested.wireName,
+          "form" to input.plan.form.wireName,
+          "predicted_ms" to
+            linkedMapOf(
+              "rows" to input.plan.prediction.rowsMs,
+              "pair" to input.plan.prediction.pairMs,
+            ),
+          "avail_mem_bytes" to input.plan.inputs?.availableBytes,
+          "resident" to input.plan.inputs?.resident?.map { it.label },
+        ),
+      "state" to
+        input.state?.let {
+          linkedMapOf("tokens" to it.tokens, "window" to it.window, "ms" to Math.round(it.ms))
+        },
       "engine_load_ms" to input.engineLoadMs,
       "warmup_ms" to input.warmupMs,
       "title" to input.title,
@@ -197,7 +246,19 @@ object KevDemoRun {
     )
 
   private fun graph(graph: KevGraphFile): LinkedHashMap<String, Any?> =
-    linkedMapOf("file" to graph.file, "L" to graph.window, "bytes" to graph.bytes)
+    linkedMapOf<String, Any?>("file" to graph.graph.file)
+      .apply { putAll(key(graph.graph)) }
+      .apply { put("bytes", graph.bytes) }
+
+  /** A graph as `{"L"}` (window) or `{"Ls", "Lq"}` (pair). */
+  private fun key(graph: KevGraphKey): LinkedHashMap<String, Any?> =
+    when (graph) {
+      is KevGraphKey.Window -> linkedMapOf("L" to graph.window)
+      is KevGraphKey.Pair -> shape(graph)
+    }
+
+  private fun shape(pair: KevGraphKey.Pair): LinkedHashMap<String, Any?> =
+    linkedMapOf("Ls" to pair.shape.stateLength, "Lq" to pair.shape.questionLength)
 
   private fun question(question: KevDemoQuestion): LinkedHashMap<String, Any?> {
     val result = question.result
@@ -214,7 +275,9 @@ object KevDemoRun {
       "row_len" to row.length,
       "decide_idx" to row.decideIndex,
       "opt_idx" to row.optionIndices,
+      "form" to result.form.wireName,
       "window" to result.window,
+      "branch_len" to result.branchLength,
       "ids_sha256" to KevPipeline.idsSha256(row.ids),
       "tokenize_ms" to question.tokenizeMs,
       "infer_ms" to question.inferMs,
