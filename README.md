@@ -183,6 +183,12 @@ zero-stuff ConvTranspose, zero-pad MaxPool, GELU rewrites, …) are packaged in
 [`litert_gpu_toolkit/`](docs/LITERT_CONVERSION_GUIDE.md#litert_gpu_toolkit--canonical-patch-catalog)
 — import them instead of re-implementing per script.
 
+# Projects using these models and recipes
+
+- [PocketTTS-LiteRT](https://github.com/geneing/PocketTTS-LiteRT) — Pocket TTS (Kyutai) on Android with LiteRT. It was extracted from its author's fork of this repository and builds on the [`pockettts/`](pockettts/) module, the shared Kotlin helpers under [`common/`](common/README.md), and the conversion recipes ([README](https://github.com/geneing/PocketTTS-LiteRT/blob/2dba83888706fb52339767670a36ef22348aecd4/README.md#acknowledgements)). Its author added an int8 flow-LM, an NPU path for the Mimi decoder transformer on Tensor G5, and their own Pixel 10 measurements on CPU, GPU, and NPU ([results](https://github.com/geneing/PocketTTS-LiteRT/blob/2dba83888706fb52339767670a36ef22348aecd4/docs/RESULTS.md)).
+- [dpm](https://github.com/OliverHenrichs/dpm) — a tool for dancers to map the patterns they know. Its video-anonymization module adapts this repository's EdgeTAM video tracker ([`edgetam-video/`](edgetam-video/)) and its conversion script to track several objects ([source](https://github.com/OliverHenrichs/dpm/blob/e7f800b0efe02b909ef2ca3f74179c6ff746625a/modules/video-anonymize/android/src/main/java/expo/modules/videoanonymize/EdgeTamTracker.kt)).
+- [ImageSplitter](https://github.com/mozico-565/ImageSplitter) — an Android app that splits a photo into numbered parts for large prints. Its build downloads `real_esrgan_x4v3.tflite` from this repository's `v1` release, and its `AiUpscaler` runs the model to upscale images ([source](https://github.com/mozico-565/ImageSplitter/blob/98325b1b03788d0b102932336c181a7a9e4f4a13/app/build.gradle#L35-L50)).
+
 # Object Detection
 
 ### YOLO11n
