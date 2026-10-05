@@ -473,6 +473,59 @@ class KevWindowsTest {
     }
   }
 
+  @Test
+  fun aFirstNpuCompileRunsAlone() {
+    // L256 resident (compiled before, its NPU compilation cached); the ticket wants L256 + L128 and
+    // L128 has never been compiled on the NPU: L256 closes, L128 compiles alone, L256 opens again.
+    val open = ArrayList<FakeGraph>()
+    val compiled = ArrayList<Int>()
+    // How many graphs were open when each first compile started.
+    val openAtFirst = ArrayList<Int>()
+    val first = mutableSetOf(128)
+    val graphs = KevResidentGraphs<FakeGraph, FakePair>()
+    fun openGraph(window: Int): FakeGraph {
+      compiled.add(window)
+      if (first.remove(window)) openAtFirst.add(open.size)
+      return FakeGraph(window, open)
+    }
+    graphs.prepare(KevWindowPlan.Ready(listOf(256)), { PLENTY }, ::openGraph)
+    compiled.clear()
+    val plan = graphs.plan(listOf(131, 101, 93), KevFiles.WINDOWS) as KevWindowPlan.Ready
+    val run = graphs.prepare(plan, { PLENTY }, ::openGraph) { it in first }
+    assertEquals(listOf(128, 256), run.compiled)
+    assertEquals(listOf(256), run.closed)
+    assertEquals(listOf(256, 128, 128), run.windows)
+    assertEquals(listOf(0), openAtFirst)
+    assertEquals(listOf(128, 256), graphs.windows)
+    // Both first: each compiles alone, the smaller first, then the smaller opens again next to
+    // the larger one.
+    graphs.close()
+    compiled.clear()
+    openAtFirst.clear()
+    first.addAll(listOf(128, 256))
+    val both = graphs.prepare(plan, { PLENTY }, ::openGraph) { it in first }
+    assertEquals(listOf(128, 256, 128), both.compiled)
+    assertEquals(listOf(128), both.closed)
+    assertEquals(listOf(0, 0), openAtFirst)
+    assertEquals(listOf(128, 256), graphs.windows)
+    // Under the second-window limit after the first compiles: the larger window takes every row.
+    graphs.close()
+    compiled.clear()
+    first.addAll(listOf(128, 256))
+    val low = KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1
+    val refused = graphs.prepare(plan, { low }, ::openGraph) { it in first }
+    assertTrue(refused.secondRefused)
+    assertEquals(listOf(128, 256), refused.compiled)
+    assertEquals(listOf(256, 256, 256), refused.windows)
+    assertEquals(listOf(256), graphs.windows)
+    // Nothing first: the order of before (largest first), nothing closed.
+    graphs.close()
+    compiled.clear()
+    val cached = graphs.prepare(plan, { PLENTY }, ::openGraph) { false }
+    assertEquals(listOf(256, 128), cached.compiled)
+    assertTrue(cached.closed.isEmpty())
+  }
+
   private companion object {
     /** More available memory than any limit. */
     const val PLENTY = 8_000_000L * 1024

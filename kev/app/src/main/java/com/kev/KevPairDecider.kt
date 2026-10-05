@@ -11,12 +11,15 @@ import java.io.File
  * One compiled shared-state pair on LiteRT `CompiledModel` (see [KevPairContract]): one file, two
  * signatures. The buffers are created once: the state call's two inputs and 48 outputs, the
  * question call's `ids`, `valid`, `state_valid` and `hidden`. The state reaches the question call
- * without a copy: its input map holds the state call's output buffers themselves.
+ * without a copy: its input map holds the state call's output buffers themselves ([stateCopy]
+ * false; a debug run can instead read each state tensor back and write it into an input buffer of
+ * the question call's own).
  *
  * GPU compiles with an explicit [precision] and, when [shareConstants], with constant tensor
  * sharing: both signatures use one copy of the weights; without it the GPU holds the weights once
  * per signature, which is faster and takes more memory ([KevPairShare] decides). CPU runs four
- * threads. Create, run and close only on [KevRuntime.dispatcher].
+ * threads. The pair file is not in the form the NPU takes; only a debug run compiles it there.
+ * Create, run and close only on [KevRuntime.dispatcher].
  */
 class KevPairDecider
 private constructor(
@@ -31,6 +34,10 @@ private constructor(
   val compileMs: Double,
   /** GPU's error when GPU was requested and this pair was compiled on CPU instead. */
   val gpuFailure: String?,
+  /** What the NPU compile did (a debug run on the NPU only). */
+  val npu: KevNpuCompile?,
+  /** The state goes to the question call through the host (read back, written again). */
+  val stateCopy: Boolean,
   private val model: CompiledModel,
   private val buffers: List<TensorBuffer>,
   private val stateInputs: Map<String, TensorBuffer>,
@@ -38,6 +45,15 @@ private constructor(
   private val questionInputs: Map<String, TensorBuffer>,
   private val questionOutputs: Map<String, TensorBuffer>,
 ) : PairRunner, Closeable {
+  /** Where the pair ran: [backend], or the CPU when the log shows the HTP did not take it. */
+  val ranOn: KevDecider.Backend
+    get() =
+      if (backend == KevDecider.Backend.NPU && npu?.evidence?.applied == false) {
+        KevDecider.Backend.CPU
+      } else {
+        backend
+      }
+
   private val stateSignature = KevPairContract.stateSignature(shape)
   private val questionSignature = KevPairContract.questionSignature(shape)
   private var stateReady = false
@@ -62,6 +78,11 @@ private constructor(
     stateInputs.getValue(KevPairContract.IDS).writeInt(ids)
     stateInputs.getValue(KevPairContract.VALID).writeFloat(valid)
     model.run(stateInputs, stateOutputs, stateSignature)
+    if (stateCopy) {
+      for (name in KevPairContract.stateNames) {
+        questionInputs.getValue(name).writeFloat(stateOutputs.getValue(name).readFloat())
+      }
+    }
     questionInputs.getValue(KevPairContract.STATE_VALID).writeFloat(valid)
     stateReady = true
   }
@@ -97,8 +118,8 @@ private constructor(
   companion object {
     /**
      * Compiles the [shape] pair from `files/` on [backend] ([precision] and [shareConstants] on
-     * GPU). With [cpuFallback], a GPU failure is kept as [gpuFailure] and the pair is compiled on
-     * CPU instead.
+     * GPU; [npuOptions] when the APK carries the NPU libraries). With [cpuFallback], a GPU failure
+     * is kept as [gpuFailure] and the pair is compiled on CPU instead.
      */
     fun create(
       context: Context,
@@ -107,12 +128,24 @@ private constructor(
       precision: KevPrecision,
       shareConstants: Boolean,
       cpuFallback: Boolean,
+      npuOptions: KevNpuOptions?,
+      stateCopy: Boolean = false,
     ): KevPairDecider {
       val file = File(context.filesDir, KevFiles.pair(shape))
       check(file.isFile) { "Missing ${file.name}" }
       fun on(target: KevDecider.Backend, gpuFailure: String?) =
-        compile(context, file, shape, target, precision, shareConstants, gpuFailure)
-      if (backend == KevDecider.Backend.CPU || !cpuFallback) return on(backend, null)
+        compile(
+          context,
+          file,
+          shape,
+          target,
+          precision,
+          shareConstants,
+          gpuFailure,
+          npuOptions,
+          stateCopy,
+        )
+      if (backend != KevDecider.Backend.GPU || !cpuFallback) return on(backend, null)
       return try {
         on(KevDecider.Backend.GPU, null)
       } catch (failure: Exception) {
@@ -130,11 +163,17 @@ private constructor(
       precision: KevPrecision,
       shareConstants: Boolean,
       gpuFailure: String?,
+      npuOptions: KevNpuOptions?,
+      stateCopy: Boolean,
     ): KevPairDecider {
-      val options = KevDecider.options(backend, precision, shareConstants)
+      val options = KevDecider.options(backend, precision, shareConstants, npuOptions)
+      val npuStart =
+        if (backend == KevDecider.Backend.NPU) KevNpuCompiler.before(context, file, npuOptions)
+        else null
       val start = System.nanoTime()
       val model = CompiledModel.create(file.absolutePath, options, KevRuntime.environment(context))
       val compileMs = KevPipeline.millis(System.nanoTime() - start)
+      val npu = npuStart?.let { KevNpuCompiler.after(context, it, compileMs) }
       val buffers = ArrayList<TensorBuffer>()
       try {
         checkContract(model, shape)
@@ -148,10 +187,13 @@ private constructor(
           KevPairContract.stateNames.associateWith {
             model.createOutputBuffer(it, state).also { buffer -> buffers.add(buffer) }
           }
-        // The question call reads the state call's outputs directly: no input buffers of its own.
+        // The question call reads the state call's outputs directly: no input buffers of its own
+        // (with stateCopy, its own buffers that runState fills from the outputs).
         val questionInputs =
           listOf(KevPairContract.IDS, KevPairContract.VALID, KevPairContract.STATE_VALID)
-            .associateWith { input(it, question) } + stateOutputs
+            .associateWith { input(it, question) } +
+            if (stateCopy) KevPairContract.stateNames.associateWith { input(it, question) }
+            else stateOutputs
         val hidden =
           model.createOutputBuffer(KevPairContract.HIDDEN, question).also { buffers.add(it) }
         return KevPairDecider(
@@ -162,6 +204,8 @@ private constructor(
           file,
           compileMs,
           gpuFailure,
+          npu,
+          stateCopy,
           model,
           buffers,
           stateInputs,

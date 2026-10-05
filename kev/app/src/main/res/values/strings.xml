@@ -9,26 +9,33 @@
   <string name="status_head">Loading the pointer head… %1$d s</string>
   <string name="status_graph">Compiling the %1$s graph… %2$d s</string>
   <string name="status_switching">Compiling the %1$s graph for this request… %2$d s</string>
+  <string name="status_npu_first">Compiling %1$s for the NPU (takes minutes once; cached after)… %2$d s</string>
+  <string name="status_npu_cached">Loading %1$s for the NPU from its compile cache… %2$d s</string>
   <string name="status_ready">Ready</string>
   <string name="status_running">Question %1$d of %2$d…</string>
   <string name="status_done">%1$d answers in %2$d ms (tokenize to last answer)</string>
   <string name="status_error">%1$s</string>
   <string name="engine_line">%1$s · %2$s · loaded in %3$.1f s (graph compile %4$.1f s)</string>
+  <string name="engine_line_no_graph">%1$s · no graph compiled</string>
   <string name="window_name">L%1$d</string>
   <string name="pair_name">S%1$d+Q%2$d</string>
   <string name="question_window_name">Q%1$d</string>
-  <string name="no_graph">no graph compiled</string>
   <string name="gpu_fallback">GPU failed, running on CPU: %1$s</string>
+  <string name="npu_fallback">NPU failed, running on GPU: %1$s</string>
   <string name="backend_gpu">GPU FP32</string>
   <string name="backend_gpu_fp16acc">GPU FP16 (FP32 accum)</string>
   <string name="backend_gpu_any">GPU</string>
   <string name="backend_cpu">CPU 4 threads</string>
+  <string name="backend_npu">NPU</string>
+  <string name="run_on_gpu">GPU</string>
+  <string name="run_on_npu">NPU</string>
+  <string name="run_on_cpu">CPU</string>
   <string name="precision_fp32">FP32</string>
   <string name="precision_fp16acc">FP16 (FP32 accum)</string>
-  <string name="graph_precision">%1$s %2$s</string>
 
   <!-- Editor -->
   <string name="backend_title">Run on</string>
+  <string name="npu_unavailable">NPU: this APK has no NPU libraries (README).</string>
   <string name="examples_title">Example requests</string>
   <string name="example_ticket">Ticket</string>
   <string name="example_incident">Incident</string>
@@ -53,6 +60,7 @@
   <string name="card_pending">Waiting</string>
   <string name="card_ms">%1$d ms</string>
   <string name="card_ms_window">%1$s · %2$s</string>
+  <string name="card_ms_window_backend">%1$s · %2$s · %3$s</string>
   <string name="state_line">State · %1$d tokens · %2$d ms</string>
   <string name="state_line_pending">State · %1$d tokens</string>
   <string name="answer_choice">%1$s</string>

@@ -111,7 +111,9 @@ start. Progress and results go to logcat under `KevGate`.
 
 Gate and timing runs compile the one graph they name: the pair with `--es graph pair` (`--ei ls
 128` or `256` names it by its state length; without it, Ls128 when it is installed, else Ls256),
-the window `--ei window` names, or the smallest installed window. `--es precision fp32|fp16acc` sets the GPU precision of
+the window `--ei window` names, or the smallest installed window. `--es backend gpu|npu|cpu` picks the
+backend (`npu` needs an APK built with the NPU libraries and runs the row windows L64 / L128 / L256 there);
+the debug extras `--es npu_opt` and `--es npu_perf` are in the README's launch extras table. `--es precision fp32|fp16acc` sets the GPU precision of
 every graph (without it each graph runs at its own default) and `--es share auto|on|off` the
 pair's weight sharing, as for a normal launch. The reports record `precision` (as compiled),
 `precision_requested`, `pair_share` and `pair_share_mode` for a pair, `avail_mem_bytes_before_compile`

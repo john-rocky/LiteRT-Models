@@ -17,8 +17,10 @@ class KevDemoQuestion(
   val headMs: Long,
   /** From the card turning to running until its answer. */
   val totalMs: Long,
-  /** The GPU precision of the graph the question ran on. */
-  val precision: KevPrecision,
+  /** The GPU precision of the graph the question ran on (null: not on the GPU). */
+  val precision: KevPrecision?,
+  /** Where the question's graph ran. */
+  val backend: KevDecider.Backend = KevDecider.Backend.GPU,
 )
 
 /** Where the presentation screen drew things, in screen pixels (filled on the device). */
@@ -45,13 +47,14 @@ class KevDemoLayout(
 }
 
 /**
- * A graph file in `files/`: the graph, its size, the GPU precision it is compiled with and, for a
- * pair, whether it holds one copy of the weights (constant tensor sharing).
+ * A graph file in `files/`: the graph, its size, the GPU precision it is compiled with (null when
+ * it runs on the NPU or the CPU) and, for a pair, whether it holds one copy of the weights
+ * (constant tensor sharing).
  */
 class KevGraphFile(
   val graph: KevGraphKey,
   val bytes: Long,
-  val precision: KevPrecision,
+  val precision: KevPrecision?,
   val share: Boolean? = null,
 )
 
@@ -77,11 +80,15 @@ class KevDemoRunInput(
   val deviceAndroidRelease: String,
   val litert: String,
   /**
-   * "GPU FP32", "GPU FP16 (FP32 accum)", "GPU" (graphs at different precisions) or "CPU 4 threads".
+   * "GPU FP32", "GPU FP16 (FP32 accum)", "GPU" (graphs at different precisions), "NPU" or "CPU 4
+   * threads"; graphs on different backends joined by " + ".
    */
   val accelerator: String,
-  /** The questions' GPU precision by its launch name, `fp32` or `fp16acc`, or `mixed`. */
-  val precision: String,
+  /**
+   * The GPU graphs' precision by its launch name, `fp32` or `fp16acc`, or `mixed`; null when no
+   * graph ran on the GPU.
+   */
+  val precision: String?,
   /** The `precision` extra of the launch, or null when each graph ran at its own default. */
   val precisionRequested: String?,
   /**
@@ -121,6 +128,11 @@ class KevDemoRunInput(
   val cgroup: String,
   val cgroupEnd: String,
   val layout: KevDemoLayout?,
+  /**
+   * Where the graphs ran: the backend chosen, the NPU libraries, each graph of the request and of
+   * the resident set, this request's compiles and the resident NPU graphs' compile records.
+   */
+  val accelerators: Map<String, Any?> = emptyMap(),
 )
 
 /**
@@ -133,7 +145,9 @@ class KevDemoRunInput(
  * their precision), `compiled` (each compile for this request with the available memory right
  * before it), `closed` and `second_refused`. The row IDs and indices are the causal row's (state +
  * branch) in both forms; a pair run adds `state` (`tokens`, `window` = Ls, `ms`) and each
- * question's `branch_len`. Each question has the `precision` of its graph.
+ * question's `branch_len`. Each question has the `precision` of its graph (null off the GPU) and
+ * the `accelerator` it ran on; `accelerators` says where every graph ran and holds the NPU compile
+ * records.
  */
 object KevDemoRun {
   /** Card indicator colours: pending grey, running blue, done green. */
@@ -163,6 +177,7 @@ object KevDemoRun {
       "cgroup",
       "cgroup_end",
       "layout",
+      "accelerators",
     )
 
   /** Keys of every `questions[]` entry. */
@@ -182,6 +197,7 @@ object KevDemoRun {
       "form",
       "window",
       "precision",
+      "accelerator",
       "branch_len",
       "ids_sha256",
       "tokenize_ms",
@@ -218,7 +234,7 @@ object KevDemoRun {
           "L" to (input.graph.graph as? KevGraphKey.Window)?.window,
           "bytes" to input.graph.bytes,
           "form" to input.form.wireName,
-          "precision" to input.graph.precision.wireName,
+          "precision" to input.graph.precision?.wireName,
           "share" to input.graph.share,
           "pair" to (input.graph.graph as? KevGraphKey.Pair)?.let { shape(it) },
           "windows" to input.windowsUsed,
@@ -242,6 +258,7 @@ object KevDemoRun {
               "pair" to input.plan.prediction.pairMs,
             ),
           "avail_mem_bytes" to input.plan.inputs?.availableBytes,
+          "proc_mem_available_kb" to input.plan.inputs?.procAvailableKb,
           "resident" to input.plan.inputs?.resident?.map { it.label },
           "share_mode" to input.plan.inputs?.pairShare?.wireName,
           "pair_shared_predicted" to input.plan.prediction.pairShared,
@@ -263,6 +280,7 @@ object KevDemoRun {
       "cgroup" to input.cgroup,
       "cgroup_end" to input.cgroupEnd,
       "layout" to layout(input.layout),
+      "accelerators" to input.accelerators,
     )
 
   private fun graph(graph: KevGraphFile): LinkedHashMap<String, Any?> =
@@ -270,7 +288,7 @@ object KevDemoRun {
       .apply { putAll(key(graph.graph)) }
       .apply {
         put("bytes", graph.bytes)
-        put("precision", graph.precision.wireName)
+        put("precision", graph.precision?.wireName)
         if (graph.graph is KevGraphKey.Pair) put("share", graph.share)
       }
 
@@ -301,7 +319,8 @@ object KevDemoRun {
       "opt_idx" to row.optionIndices,
       "form" to result.form.wireName,
       "window" to result.window,
-      "precision" to question.precision.wireName,
+      "precision" to question.precision?.wireName,
+      "accelerator" to question.backend.wireName,
       "branch_len" to result.branchLength,
       "ids_sha256" to KevPipeline.idsSha256(row.ids),
       "tokenize_ms" to question.tokenizeMs,

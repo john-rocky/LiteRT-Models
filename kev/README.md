@@ -5,8 +5,8 @@ answered as p(true)), **choice** (one of named options) and **score** (ordered l
 the expected level). Tap **Decide** and every question gets its answer with calibrated
 probabilities, computed as the author's `to_answers` computes them (four decimals). Three invented
 requests are bundled: a support ticket, an incident note and a product review. Everything runs on
-the phone: a Kotlin tokenizer, LiteRT graphs on the GPU and the pointer head on the host. A request
-runs in one of two forms, whichever this app predicts to be quicker: one graph call per question
+the phone: a Kotlin tokenizer, LiteRT graphs on the GPU (the rows of up to 256 tokens can run on a
+Snapdragon NPU instead) and the pointer head on the host. A request runs in one of two forms, whichever this app predicts to be quicker: one graph call per question
 on the smallest installed window that holds its row (64 to 2,048 tokens), or a shared-state pair
 that reads the state once and then each question on its own.
 
@@ -34,10 +34,11 @@ repository published before that rewrite (L512 1,264,068,368 B, L1024 1,269,023,
 1,285,227,888 B) runs at FP32. The default GPU precision (float16 activations) is never used: with
 the conversion run's original kernel it gave non-finite outputs on the S26 GPU and on desktop
 Metal, and the published graphs stay finite at it but miss the parity bar on desktop Metal (L128:
-max |Δp| 0.0332, mean 3.59e-3; conversion run). CPU (four
-threads) is a second backend you can choose in the app. When a GPU graph cannot be compiled, the
-app runs on CPU and shows the GPU error. NPU is not supported: this sample runs on the GPU and the
-CPU.
+max |Δp| 0.0332, mean 3.59e-3; conversion run). **Run on** chooses the backend: GPU (the
+default), NPU (Qualcomm HTP, for the row graphs of up to 256 tokens; see [NPU](#npu-qualcomm-htp))
+or CPU (four threads). The app keeps that choice for the next launch. When a GPU graph cannot be
+compiled, the app runs on CPU and shows the GPU error; when a graph cannot be compiled for the NPU,
+it runs on the GPU and shows the NPU error.
 
 ## Download, build and install
 
@@ -59,6 +60,9 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 ./scripts/install_to_device.sh "$HOME/Downloads/Kev-0.8B-LiteRT"
 adb shell am start -n com.kev/.MainActivity
 ```
+
+This APK runs on the GPU and the CPU; for the NPU, copy the Qualcomm libraries into the build
+before `assembleDebug` (see [NPU](#npu-qualcomm-htp)).
 
 The install script's argument defaults to the download directory above. `WINDOWS` names the row
 graphs to copy (`"128 256"` by default; `WINDOWS="64 128 256 512 1024 2048"` copies all six,
@@ -136,6 +140,13 @@ already compiled and on the memory available when the request is planned: a seco
 unshared pair are only predicted when they could be compiled now, and a compiled pair is predicted
 as it was compiled.
 
+The table depends on the backend (`KevCosts.forBackend`). With the NPU chosen, the L64, L128 and
+L256 entries are this app's NPU times, 45.1 / 65.8 / 121.9 ms (the median of all calls of a leg),
+and every other entry stays the GPU's. The bundled ticket is then 253.5 ms for the rows against
+431 ms for the pair with sharing (6,019,043,328 B available with L128 and L256 compiled), so it runs
+on the NPU; a five-question request is 497.3 ms for the rows against 426 ms for the pair without
+sharing, so it runs on the GPU pair.
+
 **Graphs in memory.** A row plan keeps its two largest windows compiled when both are L256 or
 smaller and Android reports at least 4,500,000 kB available (`ActivityManager.MemoryInfo`), or
 when both are already compiled; otherwise its largest window takes every question. L512 and larger
@@ -156,10 +167,21 @@ kB available right before the compile, with sharing below that; a compiled pair 
 | without sharing | 429.6 ms | 116.0 ms | 62.0 ms | 2.51 GB | 6.81 GB |
 | with sharing | 623.3 ms | 152.3 ms | 92.9 ms | 5.44 GB | 3.01 GB |
 
-**Launch options.** `--es graph auto|rows|pair` (auto by default; `pair` fails with the reason
-when the pair cannot take the request), `--es precision fp32|fp16acc` and `--es share
-auto|on|off` apply to a normal launch, an autoplay, the gate and the timing runs; see
-[scripts/TEST_DATA.md](scripts/TEST_DATA.md).
+Other apps' memory counts: in one demo take with background apps left open, Android reported less
+than 6,500,000 kB at startup, and the bundled ticket ran on the GPU rows (L256 + L128) in 475 ms
+instead of on the unshared pair.
+
+**Launch options.** These extras apply to a normal launch, an autoplay, the gate and the timing
+runs; see [scripts/TEST_DATA.md](scripts/TEST_DATA.md).
+
+| Extra | Values | Effect |
+|---|---|---|
+| `--es backend` | `gpu`, `npu`, `cpu` | The backend for this launch; the choice under **Run on** is kept, this one is not. `npu` needs an APK with the NPU libraries. |
+| `--es graph` | `auto` (default), `rows`, `pair` | The form; `pair` fails with the reason when the pair cannot take the request. |
+| `--es precision` | `fp16acc`, `fp32` | The GPU precision of every graph (default: each graph's own). |
+| `--es share` | `auto` (default), `on`, `off` | Weight sharing in the pair. |
+| `--es npu_opt` (debug) | `default`, `inference`, `o3`, `prepare` | The HTP optimization level of the NPU compiles. |
+| `--es npu_perf` (debug) | `burst` (default), `none`, or another HTP performance mode in lower case | The HTP performance mode in every graph's options. |
 
 The state is plain text unless the whole text parses as a JSON object or array; JSON is rendered
 the author's way (`key: value` lines, `- item` lines, two spaces per level). Options go one per
@@ -169,11 +191,98 @@ author's `user_tokens` does. Rows over 2,048 tokens are rejected, never truncate
 with NaN or infinity on a question's real positions gives that question no answer.
 
 Each card shows the time of its graph call (input writes + `run()` + output read-back, in whole
-milliseconds) and the graph it ran on: `105 ms · L128` for a row, `62 ms · Q64` for a pair step.
-`run()` alone returns before the GPU work ends. A pair request also shows the state call, for
-example `State · 95 tokens · 115 ms`. The engine line names the precision and the compiled graphs
-(`GPU FP16 (FP32 accum) · S128+Q64`); the status line gives the request's time from tokenizing to
-the last answer.
+milliseconds), the graph and where it ran: `105 ms · L128 · GPU` for a row, `62 ms · Q64 · GPU` for
+a pair step, `71 ms · L128 · NPU` on the NPU. `run()` alone returns before the GPU work ends. A pair
+request also shows the state call, for example `State · 95 tokens · 115 ms`. The engine line names
+the backend (with the GPU precision, `GPU FP16 (FP32 accum)`) and the compiled graphs, then the load
+time (tokenizer + head + these graphs' compiles) and their compile time, for example `NPU · L128 +
+L256 · loaded in 6.0 s (graph compile 5.0 s)` right after a switch from the GPU; while the switch
+compiles, it shows only `NPU · no graph compiled`. The status line gives the request's time from
+tokenizing to the last answer, and the footer the backend (`LiteRT 2.2.0 · NPU`).
+
+## NPU (Qualcomm HTP)
+
+**What runs where.** Choose NPU under **Run on**, or launch with `--es backend npu`, and the row
+graphs L64, L128 and L256 run on the Qualcomm HTP through LiteRT's NPU dispatch, compiled with
+`CompiledModel.Options(Accelerator.NPU, Accelerator.CPU)`. The HTP takes every op of these graphs
+but the int8 embedding lookup, which runs on the CPU: logcat shows `LiteRT Op #4 'EmbeddingLookup'
+(code=7) is not supported in Qualcomm Compiler`, then `Replacing 2 out of 3 node(s) with delegate
+(DispatchDelegate)`. L512 and larger windows and the shared-state pairs stay on the GPU when the NPU
+is chosen. The GPU is the default. With the libraries in the APK every graph of the process, the
+GPU's too, carries `QualcommOptions(htpPerformanceMode = BURST)`; logcat shows `HtpPerformanceMode
+: Burst(2)` for each NPU graph also when GPU graphs compiled before it in the same process.
+
+**Build with the NPU libraries.** The ten Qualcomm runtime files are not in this repository: the
+QAIRT libraries may be distributed only inside an app. Collect them in one directory from
+`litert_npu_runtime_libraries.zip` and `litert_npu_runtime_libraries_jit.zip` (LiteRT GitHub Release
+assets) and the QAIRT SDK (`lib/aarch64-android/`, and `lib/hexagon-v81/unsigned/` for the Galaxy
+S26's Hexagon v81), then:
+
+```bash
+scripts/fetch_npu_libs.sh /path/to/the/libraries   # copies them into app/src/main/jniLibs/arm64-v8a
+./gradlew :app:assembleDebug
+```
+
+The root README section [Running on the NPU](../README.md#running-on-the-npu) lists each file and
+where it comes from; this module already sets `useLegacyPackaging = true`, which the DSP needs to
+open its library. The APK grows from 14.6 MB to 61.6 MB. An APK built without the libraries runs on
+the GPU and the CPU: the NPU choice is disabled and the screen says "NPU: this APK has no NPU
+libraries (README)."
+
+**Compiled on the phone once, then loaded.** A graph that is not in LiteRT's cache is compiled on
+the phone (LiteRT's JIT through the Qualcomm compiler plugin). On the Galaxy S26 that took 81.6 s
+for L64, 150.1–179.0 s for L128 and 298.2 s for L256. The app runs such a compile alone, with the
+other graphs closed: MemAvailable fell to 2.08 GB (L64), 1.85 GB (L128) and 1.21 GB (L256), and
+Android's low-memory killer reclaimed 16–54 background processes of other apps per compile; the app
+kept running. The status line reads "Compiling L128 for the NPU (takes minutes once; cached after)…"
+and counts the seconds.
+
+**The compile cache.** `Environment.create(context, …)` puts LiteRT's compile cache in the app's
+`cacheDir`: one file per graph, `cacheDir/<graph file name without .tflite>/<hash of the file's
+content>/<hash of the compiler plugin, the build fingerprint, the accelerators and the API>.tflite`,
+1.27–1.28 GB each (3.57 GiB for the three windows). A later launch loads a graph from it in
+0.8–2.5 s; a normal launch with L128 and L256 is ready in 3.1–4.3 s. A graph file whose content
+changed is compiled again: with one byte changed and the size and modification time kept, the
+launch compiled for 63.4 s and LiteRT removed the old entry. The key also holds the Qualcomm options: the same L64 got a new entry for each
+performance mode and optimization level tried. The app records the level of each compile in
+`files/npu_marks/`, so its status line tells a compile from a load, and deletes the old entry when the
+level changes. Android may delete `cacheDir` when storage runs low; the next NPU launch then compiles
+again.
+
+**Measured on the NPU.** Galaxy S26, this app's debug build, the graphs loaded from the cache, each
+leg from thermal status 0 with no CPU frequency cap. NPU: the median of all calls of a leg (60
+calls; the CPU caps that set in during a leg do not slow the NPU call). GPU:
+`FP16_WITH_FP32_ACCUM`, the medians of [Measured](#measured).
+
+| | NPU | GPU |
+|---|---:|---:|
+| One question, L64 (rows of 51–64 tokens) | 45.1 ms | 56.6 ms |
+| One question, L128 (rows of 73–97 tokens) | 65.8 ms (68.5 ms in another launch) | 102.2 ms |
+| One question, L256 (the same rows) | 121.9 ms | 196.3 ms |
+| Bundled ticket, three questions | 298 ms on L256 + L128 (287 ms with a screen recording) | 355–367 ms on the pair without sharing (352 ms with a recording) |
+| Five-question request from its text | 522.5 ms on the rows (`--es graph rows`) | 464.3 ms on the pair without sharing, the plan's choice with the NPU chosen |
+| Three-question email (state 167 tokens), the graph calls | 368.4 ms, three calls on L256 | 409.1 ms on the Ls256 pair without sharing |
+| Ready after a normal launch | 3.1–4.3 s (L128 + L256 from the cache) | 16.9–21.2 s (the pair's compile) |
+| VmHWM with the request's graphs | 2.7–4.7 GB (L128 + L256) | 5.5–6.8 GB (the pair without sharing) |
+
+In the ticket's process, with L128 and L256 compiled for the NPU, the five-question request took
+547 ms on the rows. The gates are in [Measured](#measured).
+
+**Qualcomm options.** Every graph gets `htpPerformanceMode = BURST` and LiteRT's default optimization
+level, which is HTP_OPTIMIZE_FOR_INFERENCE_O3 (logcat `OptimizationLevel :
+HtpOptimizeForInferenceO3(2)` without any level set). On L64: with no performance mode a question took
+157.4 ms (122.5–240.8 over a leg) against 47.6 ms with BURST; at HTP_OPTIMIZE_FOR_PREPARE the compile
+took 19.1 s instead of 64–82 s and a question 122.3 ms; O3 and PREPARE gave the default level's
+probabilities on every gate row. The debug extras `--es npu_perf` and `--es npu_opt` set them; the
+app's marks record the level, not the mode, so after a mode change the status line says it loads
+while LiteRT compiles.
+
+**Limits.** Measured on the Galaxy S26 (SM8850, Hexagon v81) only. A shared-state pair does not go to
+the NPU: its JIT compile (two signatures in one file) was stopped twice on the 12 GB S26, Android's
+low-memory killer ending the app about 5 minutes in with MemAvailable at 0.60 and 1.22 GB, so the app
+compiles pairs for the GPU only. LiteRT reports no error when a graph lands on the CPU instead of the
+NPU; check logcat for `Replacing 2 out of 3 node(s) with delegate (DispatchDelegate)` (the app's gate
+and timing reports carry these lines for each NPU compile).
 
 ## Files
 
@@ -183,7 +292,8 @@ the last answer.
 | `app/src/main/java/com/kev/MainViewModel.kt` | Engine on the worker thread: load, Decide, the plan's graphs, autoplay, gate and timing runs |
 | `app/src/main/java/com/kev/UiState.kt` | Immutable screen state: status, engine line, cards, presentation |
 | `app/src/main/java/com/kev/view/KevScreen.kt` | The editable screen; `view/PresentationScreen.kt` the read-only demo layout; `view/Theme.kt`, `view/Color.kt` |
-| `app/src/main/java/com/kev/KevDecider.kt` | One row graph on LiteRT `CompiledModel` (GPU with an explicit precision, or CPU), its buffers, `KevPrecision` and the process Environment |
+| `app/src/main/java/com/kev/KevDecider.kt` | One row graph on LiteRT `CompiledModel` (GPU with an explicit precision, NPU + CPU, or CPU), its buffers, `KevPrecision` and the process Environment |
+| `app/src/main/java/com/kev/KevNpu.kt` | The NPU backend: the Qualcomm options (BURST, the optimization level), the compile-cache marks in `files/npu_marks/` and the logcat lines that show where a graph ran |
 | `app/src/main/java/com/kev/KevPairDecider.kt`, `KevPair.kt` | The shared-state pair: two signatures, the state handed to the question call as its own buffers; the pair's contract |
 | `app/src/main/java/com/kev/KevPlanner.kt` | Rows or pair by the predicted time (`KevCosts`), weight sharing (`KevPairShare`), Android-free |
 | `app/src/main/java/com/kev/KevEngine.kt` | Tokenizer, head and the compiled graphs of the plan |
@@ -201,6 +311,7 @@ the last answer.
 | `app/src/debug/assets/` | Gate fixtures (SemIf 144 + 12 invented requests) and tokenizer probes |
 | `app/src/test/java/com/kev/` | JVM parity tests against the author's oracle; planner, window and sharing rules |
 | `scripts/install_to_device.sh` | Copies the external files into the app's `files/` |
+| `scripts/fetch_npu_libs.sh` | Copies the ten Qualcomm libraries into `app/src/main/jniLibs/arm64-v8a` for an NPU build (ignored by git) |
 | `scripts/make_test_data.py`, `scripts/TEST_DATA.md` | Bundled test data and how to run the tests and the device runs |
 | `LICENSE`, `NOTICE`, `licenses/` | Apache-2.0 text, attribution and the retained upstream licenses |
 
@@ -271,13 +382,18 @@ MemAvailable and VmHWM the process's peak resident memory, in GB of 1,000,000 kB
   | L256 at FP32 | 172 | 166/166 | 5/6 | 0.00780 | 9.13e-4 |
   | Ls128 pair at FP32 | 132 questions | 130/130 | 2/2 | 0.00780 | 9.76e-4 |
   | L2048 at FP32 (the 9 long rows) | 9 | 9/9 | — | 0.0015 | 4.26e-4 |
+  | L64 on the NPU | 34 | 33/33 | 1/1 | 0.0105 | 1.20e-3 |
+  | L128 on the NPU | 147 | 144/144 | 3/3 | 0.0134 | 1.44e-3 |
+  | L256 on the NPU | 172 | 166/166 | 5/6 | 0.0134 | 1.35e-3 |
 
   The one near-tie that flips is `own_sensor_08/alert` (oracle gap 8e-5). The L64, L128 and L256
   gates give the same probabilities on every row as the conversion run's previous build of those
   graphs. Every graph runs whole on the GPU delegate in one partition (L64 3,912 nodes, L128 4,759,
   L256 6,019, L512 8,515, L1024 13,555, L2048 23,635; the Ls128 pair 4,975 + 3,965, the Ls256 pair
-  6,235 + 3,965). On the CPU (four threads) the Ls128 pair passes the gate on its opening 40
-  questions (40/40, max |Δp| 0.00525, mean 8.6e-4).
+  6,235 + 3,965). On the NPU the HTP takes 3,911 of L64's 3,912 ops, 4,758 of L128's 4,759 and
+  6,018 of L256's 6,019; the remaining op, the embedding lookup, runs on the CPU. On the CPU (four
+  threads) the Ls128 pair passes the gate on its opening 40 questions (40/40, max |Δp| 0.00525,
+  mean 8.6e-4).
 - **Graph compile** (cache cleared): L64 7.4 s, L128 6.8 s, L256 7.5 s, L512 9.0 s, L1024 10.6 s;
   the Ls128 pair 15.1 and 16.3 s without sharing, 13.7 s with it; the Ls256 pair 17.9 s without
   sharing (26.1 s in a gate launch at thermal status 2). A normal launch with the default install is ready in 21.2 s (the pair's compile 20.2 s);
@@ -287,8 +403,8 @@ MemAvailable and VmHWM the process's peak resident memory, in GB of 1,000,000 kB
   L128 compiled at startup: low point 2.71 GB, VmHWM 7.20 GB. The pair without sharing: low points
   2.21–3.04 GB, VmHWM 6.15–6.81 GB; with sharing: 5.29–5.88 GB, 3.01–3.05 GB. Android's
   low-memory killer stopped the app in none of these runs.
-- **Not measured:** Pixel phones and other devices; the CPU's time on these files; runs longer than
-  the legs above; a release (non-debuggable) build.
+- **Not measured:** Pixel phones and other devices, the NPU of other Snapdragon chips among them;
+  the CPU's time on these files; runs longer than the legs above; a release (non-debuggable) build.
 
 Rows over 1,024 tokens have the smallest margin at `FP16_WITH_FP32_ACCUM`: on the 9 long rows the
 largest probability change is 0.0093 and the mean 1.84e-3, against 0.0015 and 4.3e-4 at FP32, still

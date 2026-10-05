@@ -10,3 +10,5 @@ local.properties
 *.safetensors
 tokenizer.json
 app/src/main/assets/
+# The Qualcomm NPU libraries (scripts/fetch_npu_libs.sh) go into the APK only, never into git.
+app/src/main/jniLibs/

@@ -18,30 +18,36 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kev.view.ApplicationTheme
 import com.kev.view.KevScreen
 import com.kev.view.PresentationScreen
-import java.io.File
 
 /**
  * Hosts the Compose screen (`launchMode="singleTop"`: a demo intent reaches the running activity
- * through [onNewIntent], without a new process). Extras:
+ * through [onNewIntent], without a new process). Extras ([KevLaunch.parse]):
  * - every launch: `[--es graph auto|rows|pair]` (auto: the form with the smaller predicted time;
  *   rows: one row graph per question; pair: the shared-state pair, or a failure that says why),
- *   `[--es precision fp32|fp16acc]` (GPU precision of every graph of the process; without it each
- *   graph runs at its own default, `KevPrecision.defaultFor`) and `[--es share auto|on|off]`
- *   (whether a pair holds one copy of its weights for both signatures on the GPU; auto: without
- *   sharing when memory allows, `KevPairShare.AUTO`)
+ *   `[--es backend gpu|npu|cpu]` (npu: L64 / L128 / L256 on the Qualcomm HTP, the other graphs on
+ *   the GPU; it needs the NPU libraries in the APK; a normal or autoplay launch without it keeps
+ *   the choice made on screen), `[--es precision fp32|fp16acc]` (GPU precision of every graph of
+ *   the process; without it each graph runs at its own default, `KevPrecision.defaultFor`) and
+ *   `[--es share auto|on|off]` (whether a pair holds one copy of its weights for both signatures on
+ *   the GPU; auto: without sharing when memory allows, `KevPairShare.AUTO`)
  * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800
  *   [--ei window 512]` (without `window`, the questions run on the plan a Decide would use)
- * - debug build: `--ez gate true --es backend gpu|cpu --es report <name.json> [--ei window 512]
+ * - debug build: `--ez gate true --es backend gpu|npu|cpu --es report <name.json> [--ei window 512]
  *   [--ei limit n]` (with `--es graph pair`, the gate runs on the pair; `[--ei ls 128]` names the
  *   pair by its state length, else the first installed one)
- * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|cpu --es
- *   report <name.json> [--ei window 512] [--ez clear_cache true] [--es sets <name[,name…]>|none]
- *   [--ez request_path false] [--ei cool_ms 60000]` (one set per launch keeps every set at the same
- *   starting temperature; with `--es graph pair` the sets run on the pair, `[--ei ls 128]` as for
- *   the gate; `cool_ms` waits before each set for the GPU to cool after the compile)
+ * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|npu|cpu
+ *   --es report <name.json> [--ei window 512] [--ez clear_cache true]
+ *   [--es sets <name[,name…]>|none] [--ez request_path false] [--ei cool_ms 60000]` (one set per
+ *   launch keeps every set at the same starting temperature; with `--es graph pair` the sets run on
+ *   the pair, `[--ei ls 128]` as for the gate; `cool_ms` waits before each set for the GPU to cool
+ *   after the compile; `clear_cache` empties the cache directory, NPU compilations included)
+ * - gate and timing with the NPU libraries: `[--es npu_perf burst|none|<mode>]` (the HTP
+ *   performance mode of every graph, default burst), `[--es npu_opt default|o3|prepare]` (the
+ *   optimization level of the NPU graphs) and `[--es pair_state direct|copy]` (copy: the pair's
+ *   state goes through the host)
  *
- * Gate and timing sets compile the one graph they name: the pair, the `window`, or without it the
- * smallest installed window.
+ * Gate and timing sets compile the one graph they name, on the named backend as it is: the pair,
+ * the `window`, or without it the smallest installed window.
  */
 class MainActivity : ComponentActivity() {
   private val viewModel: MainViewModel by viewModels { MainViewModel.getFactory(this) }
@@ -118,139 +124,27 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-  private fun parse(intent: Intent): KevLaunch {
-    val named = if (intent.hasExtra(EXTRA_WINDOW)) intent.getIntExtra(EXTRA_WINDOW, 0) else null
-    // Gate and timing runs compile one window: the named one, else the smallest installed one.
-    val window =
-      named ?: KevFiles.installedWindows(filesDir).firstOrNull() ?: KevFiles.DEFAULT_INSTALL.first()
-    val diagnostics = BuildConfig.DEBUG || BuildConfig.BUILD_TYPE == "benchmark"
-    val autoplay = intent.getBooleanExtra(EXTRA_AUTOPLAY, false)
-    val graphName = intent.getStringExtra(EXTRA_GRAPH)
-    val graph =
-      KevGraphMode.of(graphName)
-        ?: return KevLaunch.Invalid(KevLaunch.graphInvalid(graphName.orEmpty()), autoplay)
-    val precisionName = intent.getStringExtra(EXTRA_PRECISION)
-    val precision = precisionName?.let {
-      KevLaunch.precision(it) ?: return KevLaunch.Invalid(KevLaunch.precisionInvalid(it), autoplay)
-    }
-    val shareName = intent.getStringExtra(EXTRA_SHARE)
-    val share =
-      shareName?.let {
-        KevLaunch.share(it)
-          ?: return KevLaunch.Invalid("share $it is not auto, on or off", autoplay)
-      } ?: KevPairShare.AUTO
-    // The pair of a gate or timing run: the one of the named state length, else an installed pair
-    // of PAIRS (in order).
-    val namedLs = if (intent.hasExtra(EXTRA_LS)) intent.getIntExtra(EXTRA_LS, 0) else null
-    val shapes =
-      if (namedLs == null) KevFiles.PAIRS else KevFiles.PAIRS.filter { it.stateLength == namedLs }
-    if (shapes.isEmpty()) {
-      val known = KevFiles.PAIRS.joinToString(", ") { it.stateLength.toString() }
-      return KevLaunch.Invalid("ls $namedLs is not one of $known", autoplay)
-    }
-    val pair = shapes.firstOrNull { File(filesDir, KevFiles.pair(it)).isFile } ?: shapes.first()
-    return when {
-      autoplay -> {
-        val fixture = intent.getStringExtra(EXTRA_FIXTURE)
-        when {
-          fixture.isNullOrEmpty() -> KevLaunch.Invalid("no fixture extra", autoplay = true)
-          named != null && !KevLaunch.windowValid(named) ->
-            KevLaunch.Invalid(KevLaunch.windowInvalid(named), autoplay = true)
-          named != null && graph == KevGraphMode.PAIR ->
-            KevLaunch.Invalid("window $named and graph pair exclude each other", autoplay = true)
-          else ->
-            KevLaunch.Autoplay(
-              fixture,
-              intent.getIntExtra(EXTRA_DELAY_MS, DEFAULT_DELAY_MS).toLong(),
-              intent.getIntExtra(EXTRA_GAP_MS, DEFAULT_GAP_MS).toLong(),
-              named,
-              graph,
-              precision,
-              share,
-            )
-        }
-      }
-      BuildConfig.DEBUG && intent.getBooleanExtra(EXTRA_GATE, false) -> {
-        val backend = KevLaunch.backend(intent.getStringExtra(EXTRA_BACKEND))
-        val gateGraph =
-          if (graph == KevGraphMode.PAIR) KevGraphKey.Pair(pair) else KevGraphKey.Window(window)
-        val report =
-          intent.getStringExtra(EXTRA_REPORT)
-            ?: "app_gate_${backend?.name?.lowercase()}_${KevLaunch.reportLabel(gateGraph)}.json"
-        when {
-          backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
-          !KevLaunch.windowValid(window) ->
-            KevLaunch.Invalid(KevLaunch.windowInvalid(window), autoplay = false)
-          !KevLaunch.reportNameValid(report) ->
-            KevLaunch.Invalid("invalid report name $report", autoplay = false)
-          else ->
-            KevLaunch.Gate(
-              backend,
-              precision,
-              report,
-              gateGraph,
-              intent.getIntExtra(EXTRA_LIMIT, 0),
-              share,
-            )
-        }
-      }
-      diagnostics && intent.getBooleanExtra(EXTRA_TIMING, false) -> {
-        val backend = KevLaunch.backend(intent.getStringExtra(EXTRA_BACKEND))
-        val rows = intent.getStringExtra(EXTRA_ROWS)
-        val setGraph =
-          if (graph == KevGraphMode.PAIR) KevGraphKey.Pair(pair) else KevGraphKey.Window(window)
-        val report =
-          intent.getStringExtra(EXTRA_REPORT)
-            ?: "app_timing_${backend?.name?.lowercase()}_${KevLaunch.reportLabel(setGraph)}.json"
-        when {
-          backend == null -> KevLaunch.Invalid("backend must be gpu or cpu", autoplay = false)
-          rows.isNullOrEmpty() -> KevLaunch.Invalid("no rows extra", autoplay = false)
-          !KevLaunch.windowValid(window) ->
-            KevLaunch.Invalid(KevLaunch.windowInvalid(window), autoplay = false)
-          !KevLaunch.reportNameValid(report) ->
-            KevLaunch.Invalid("invalid report name $report", autoplay = false)
-          else ->
-            KevLaunch.Timing(
-              rows,
-              backend,
-              precision,
-              report,
-              window,
-              pair,
-              graph,
-              intent.getBooleanExtra(EXTRA_CLEAR_CACHE, false),
-              intent.getStringExtra(EXTRA_SETS)?.let(KevLaunch::setNames),
-              intent.getBooleanExtra(EXTRA_REQUEST_PATH, true),
-              intent.getIntExtra(EXTRA_COOL_MS, 0).toLong(),
-              share,
-            )
-        }
-      }
-      else -> KevLaunch.Normal(graph, precision, share)
-    }
-  }
+  private fun parse(intent: Intent): KevLaunch =
+    KevLaunch.parse(
+      IntentExtras(intent),
+      KevLaunchContext(
+        debug = BuildConfig.DEBUG,
+        diagnostics = BuildConfig.DEBUG || BuildConfig.BUILD_TYPE == "benchmark",
+        installedWindows = KevFiles.installedWindows(filesDir),
+        installedPairs = KevFiles.installedPairs(filesDir),
+        npuAvailable = KevNpu.librariesInstalled(this),
+      ),
+    )
 
-  private companion object {
-    const val EXTRA_AUTOPLAY = "autoplay"
-    const val EXTRA_FIXTURE = "fixture"
-    const val EXTRA_DELAY_MS = "delay_ms"
-    const val EXTRA_GAP_MS = "gap_ms"
-    const val EXTRA_WINDOW = "window"
-    const val EXTRA_GATE = "gate"
-    const val EXTRA_TIMING = "timing"
-    const val EXTRA_BACKEND = "backend"
-    const val EXTRA_REPORT = "report"
-    const val EXTRA_LIMIT = "limit"
-    const val EXTRA_ROWS = "rows"
-    const val EXTRA_CLEAR_CACHE = "clear_cache"
-    const val EXTRA_SETS = "sets"
-    const val EXTRA_REQUEST_PATH = "request_path"
-    const val EXTRA_GRAPH = "graph"
-    const val EXTRA_PRECISION = "precision"
-    const val EXTRA_LS = "ls"
-    const val EXTRA_COOL_MS = "cool_ms"
-    const val EXTRA_SHARE = "share"
-    const val DEFAULT_DELAY_MS = 1500
-    const val DEFAULT_GAP_MS = 800
+  /** The extras of [intent] as [KevLaunch.parse] reads them. */
+  private class IntentExtras(private val intent: Intent) : KevExtras {
+    override fun has(name: String): Boolean = intent.hasExtra(name)
+
+    override fun string(name: String): String? = intent.getStringExtra(name)
+
+    override fun int(name: String, default: Int): Int = intent.getIntExtra(name, default)
+
+    override fun boolean(name: String, default: Boolean): Boolean =
+      intent.getBooleanExtra(name, default)
   }
 }

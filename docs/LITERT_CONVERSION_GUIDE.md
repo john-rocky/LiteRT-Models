@@ -1760,6 +1760,47 @@ from 1,596–1,626 ms to 2,390–2,412 ms. Record the ceiling (`/sys/class/kgsl/
 after each leg. Evidence: `ROUND3.md` §1–3, `device/wake_keeper.log`, `device/legs_status.txt`,
 `device/r3b_chain.sh`, `device/r5_timing_gpu_L256_fiveq.state_after.txt`.
 
+**The NPU backend: NPU + CPU, BURST on every graph, a compile cache keyed by the file's content (2026-10-05).**
+The row graphs L64, L128 and L256 run on the S26's Qualcomm HTP (V81) through LiteRT 2.2.0's JIT with
+`CompiledModel.Options(Accelerator.NPU, Accelerator.CPU)`. The Qualcomm compiler takes every op but the int8
+embedding lookup (`LiteRT Op #4 'EmbeddingLookup' (code=7) is not supported in Qualcomm Compiler`; L64 3,911 of
+3,912 ops, L128 4,758 of 4,759, L256 6,018 of 6,019), the DispatchDelegate replaces 2 of the 3 nodes, and the lookup
+runs on the CPU; with the NPU alone the compiled model is not created (`LiteRtCreateCompiledModel failed: 504`, the
+conversion run's round 11). The app sets `QualcommOptions(htpPerformanceMode = BURST)` on every graph of a process
+whose APK carries the libraries, the GPU and CPU graphs too; logcat shows `HtpPerformanceMode : Burst(2)` for each
+NPU graph also after GPU graphs compiled in the same process. `Environment.create(context, …)` makes
+`context.cacheDir` LiteRT's compile cache. LiteRT 2.2.0 keys an entry by the graph file's name, a hash of the whole
+file's content and a hash of the compiler plugin, the build fingerprint, the accelerator set and the API version
+(`litert/core/cache/compilation_cache.cc`), and the Qualcomm options set through the Kotlin API change that last
+hash too: on the S26 the same L64 content got four entries (BURST; BURST and O3; BURST and PREPARE; no Qualcomm
+options). One entry per file content is kept (other content directories of the same name are removed after a save),
+and a load touches the file. On the S26 each entry is 1.27–1.28 GB and loads in 0.8–2.5 s (`Flatbuffer model
+initialized from cached model.`); a file with one byte changed under the same name, size and modification time was
+compiled again (63.4 s) and the old entry removed. The app keeps its own marks (file name, size, modification
+time, LiteRT version, build fingerprint, optimization level) to tell its status line whether a compile takes
+minutes, and deletes the old entry when the optimization level changes. A graph that is not cached is compiled
+alone, with the other graphs closed, because of its memory: 81.6 s at L64, 179.0 s at L128 and 298.2 s at L256,
+MemAvailable down to 2.08 / 1.85 / 1.21 GB, VmHWM 4.86–5.66 GB, and Android's low-memory killer reclaimed 16–54
+background processes of other apps per compile. The two-signature pair (Ls128 + Lq64) does not compile for the NPU
+on the 12 GB S26: lmkd stopped the app in its JIT compile twice, about 5 minutes in (2,374,380 kB resident + 4,914,876
+kB swapped; 1,220,640 + 5,249,876 kB), after MemAvailable had held 2.69–2.79 GB for two minutes and fell to 0.60 /
+1.22 GB; no cache file was written, so the app keeps the pairs on the GPU. From the cache, one question takes 45.1
+ms at L64, 65.8 ms at L128 and 121.9 ms at L256 (the median of all 60 calls; the CPU frequency caps that set in
+during a leg do not slow the NPU call), next to 56.6 / 102.2 / 196.3 ms on the GPU at `FP16_WITH_FP32_ACCUM`, and the
+bundled ticket 298 ms (367 ms on the GPU pair). The gates pass at max |Δp| 0.0105 / 0.0134 / 0.0134. LiteRT's default
+optimization level for the plugin is already HTP_OPTIMIZE_FOR_INFERENCE_O3 (`OptimizationLevel :
+HtpOptimizeForInferenceO3(2)` with no level set, QNN `optimization_level=3`); HTP_OPTIMIZE_FOR_PREPARE compiles L64
+in 19.1 s instead of 64–82 s but takes 122.3 ms per question against 45.9 ms, with the same probabilities; with no
+performance mode L64 takes 157.4 ms (122.5–240.8) against 47.6 ms with BURST. Check every
+NPU number against logcat: `Partitioned subgraph<0>, selected N ops, from a total of M ops. resulted in 2
+partitions.` for a JIT compile, `Flatbuffer model initialized from cached model.` for a cache load, and `Replacing 2
+out of 3 node(s) with delegate (DispatchDelegate)` for the NPU; `with delegate (TfLiteXNNPackDelegate)` or `Failed to
+apply compiler plugins` mean the CPU, without an error. Evidence: `ROUND8.md`, `r8.facts.md`,
+`device/r8_N1_gate_L64_npu.json`, `device/r8_N2_gate_L128_npu.json`, `device/r8_N3_gate_L256_npu.json`,
+`device/r8_T1_timing_L64_npu.json`, `device/r8_T2_timing_L128_npu.json`, `device/r8_T3_timing_L256_npu.json`,
+`device/r8_M1.l64_modify.txt`, `device/r8_P1_gate_pair128_npu.logcat_all_grep.txt`,
+`device/r8_P1_gate_pair128_npu_again.logcat_all_grep.txt`, `device/r8_U1b_select_npu_first.npu_evidence.txt`.
+
 **Process traps.** (1) The repository's root `.gitignore` has `*.bin`, which silently dropped `head_fixture.bin`
 from `git add kev/`; the fixture is `.f32` now. Check new data with `git status --short --ignored <dir>`, and give
 `git check-ignore -v` the path from the repository root. (2) Lint `NewApi` caught `BigInteger.intValueExact()` (API

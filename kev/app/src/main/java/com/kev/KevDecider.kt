@@ -8,6 +8,7 @@ import com.google.ai.edge.litert.TensorBuffer
 import com.google.ai.edge.litert.TensorType
 import java.io.Closeable
 import java.io.File
+import java.util.Locale
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -19,13 +20,15 @@ import kotlinx.coroutines.asCoroutineDispatcher
  *
  * GPU always requests an explicit precision ([KevPrecision]): the default GPU precision computes in
  * float16, which gave non-finite hidden states on part of the rows with the earlier kernel and
- * missed the parity bar on a desktop GPU with the rewritten one. CPU runs four threads. Create, run
- * and close only on [KevRuntime.dispatcher].
+ * missed the parity bar on a desktop GPU with the rewritten one. NPU runs the graph on the Qualcomm
+ * HTP with the CPU for the one op the HTP does not take; CPU runs four threads. Create, run and
+ * close only on [KevRuntime.dispatcher].
  */
 class KevDecider
 private constructor(
+  /** Where the graph was compiled (after a fallback, the backend it fell back to). */
   val backend: Backend,
-  /** The GPU precision the graph was compiled with (CPU ignores it). */
+  /** The GPU precision the graph was compiled with (NPU and CPU ignore it). */
   val precision: KevPrecision,
   override val length: Int,
   val file: File,
@@ -33,16 +36,66 @@ private constructor(
   val compileMs: Double,
   /** GPU's error when GPU was requested and this graph was compiled on CPU instead. */
   val gpuFailure: String?,
+  /** NPU's error when NPU was requested and this graph was compiled on GPU instead. */
+  val npuFailure: String?,
+  /**
+   * What the NPU compile did (the NPU backend only): cache state, the log lines, the cache files.
+   */
+  val npu: KevNpuCompile?,
   private val model: CompiledModel,
   private val ids: TensorBuffer,
   private val valid: TensorBuffer,
   private val hidden: TensorBuffer,
 ) : RowRunner, Closeable {
-  /** The two execution policies; GPU never runs at default precision. */
-  enum class Backend(val accelerator: Accelerator) {
-    GPU(Accelerator.GPU),
-    CPU(Accelerator.CPU),
+  /**
+   * Where the graph runs. GPU never runs at its default precision; NPU is the Qualcomm HTP together
+   * with the CPU ([accelerators]).
+   */
+  enum class Backend(val wireName: String) {
+    GPU("gpu"),
+    NPU("npu"),
+    CPU("cpu");
+
+    /**
+     * The accelerators of the graph's options. On the NPU the int8 embedding lookup is the one op
+     * the HTP does not take, so it runs on the CPU; LiteRT 2.2.0 does not compile these graphs for
+     * the NPU alone.
+     */
+    val accelerators: List<Accelerator>
+      get() =
+        when (this) {
+          GPU -> listOf(Accelerator.GPU)
+          NPU -> listOf(Accelerator.NPU, Accelerator.CPU)
+          CPU -> listOf(Accelerator.CPU)
+        }
+
+    companion object {
+      /** The `backend` extra: `gpu`, `npu` or `cpu`; null for anything else. */
+      fun of(name: String): Backend? = entries.firstOrNull {
+        it.wireName == name.trim().lowercase(Locale.ROOT)
+      }
+
+      /**
+       * The backend [graph] compiles on when [requested] is chosen: with the NPU, the row windows
+       * of [KevFiles.NPU_WINDOWS] run on it and every other graph on the GPU.
+       */
+      fun forGraph(requested: Backend, graph: KevGraphKey): Backend =
+        if (
+          requested == NPU && !(graph is KevGraphKey.Window && graph.window in KevFiles.NPU_WINDOWS)
+        ) {
+          GPU
+        } else {
+          requested
+        }
+    }
   }
+
+  /**
+   * Where the graph ran: [backend], except an NPU graph whose log shows that the HTP did not take
+   * it (LiteRT then runs it on the CPU without an error).
+   */
+  val ranOn: Backend
+    get() = if (backend == Backend.NPU && npu?.evidence?.applied == false) Backend.CPU else backend
 
   private val inputs = mapOf(IDS to ids, VALID to valid)
   private val outputs = mapOf(HIDDEN to hidden)
@@ -89,27 +142,39 @@ private constructor(
     private const val HIDDEN = "hidden"
 
     /**
-     * Compiles the [window] graph from `files/` on [backend] ([precision] on GPU). With
-     * [cpuFallback], a GPU failure is kept as [gpuFailure] and the graph is compiled on CPU
-     * instead.
+     * Compiles the [window] graph from `files/` on [backend] ([precision] on GPU; [npuOptions] when
+     * the APK carries the NPU libraries). With [fallback], an NPU failure is kept as [npuFailure]
+     * and the graph compiled on GPU, a GPU failure as [gpuFailure] and the graph compiled on CPU.
      */
     fun create(
       context: Context,
       window: Int,
       backend: Backend,
       precision: KevPrecision,
-      cpuFallback: Boolean,
+      fallback: Boolean,
+      npuOptions: KevNpuOptions?,
     ): KevDecider {
       val file = File(context.filesDir, KevFiles.graph(window))
       check(file.isFile) { "Missing ${file.name}" }
-      if (backend == Backend.CPU || !cpuFallback)
-        return compile(context, file, window, backend, precision, null)
+      fun on(target: Backend, gpuFailure: String?, npuFailure: String?) =
+        compile(context, file, window, target, precision, gpuFailure, npuFailure, npuOptions)
+      if (backend == Backend.CPU || !fallback) return on(backend, null, null)
+      var npuFailure: String? = null
+      if (backend == Backend.NPU) {
+        try {
+          return on(Backend.NPU, null, null)
+        } catch (failure: Exception) {
+          npuFailure = describe(failure)
+        } catch (failure: LinkageError) {
+          npuFailure = describe(failure)
+        }
+      }
       return try {
-        compile(context, file, window, Backend.GPU, precision, null)
+        on(Backend.GPU, null, npuFailure)
       } catch (failure: Exception) {
-        compile(context, file, window, Backend.CPU, precision, describe(failure))
+        on(Backend.CPU, describe(failure), npuFailure)
       } catch (failure: LinkageError) {
-        compile(context, file, window, Backend.CPU, precision, describe(failure))
+        on(Backend.CPU, describe(failure), npuFailure)
       }
     }
 
@@ -118,15 +183,17 @@ private constructor(
 
     /**
      * The options of one graph: GPU with [precision] and, for a graph of several signatures,
-     * [shareConstants] (true: the weights held once for all signatures; null: LiteRT's default), or
-     * CPU with [CPU_THREADS] threads.
+     * [shareConstants] (true: the weights held once for all signatures; null: LiteRT's default),
+     * NPU with the CPU, or CPU with [CPU_THREADS] threads; with [npu] (the APK carries the NPU
+     * libraries) every graph also gets its Qualcomm options ([KevNpuOptions]).
      */
     fun options(
       backend: Backend,
       precision: KevPrecision,
       shareConstants: Boolean? = null,
+      npu: KevNpuOptions? = null,
     ): CompiledModel.Options =
-      CompiledModel.Options(backend.accelerator).apply {
+      CompiledModel.Options(*backend.accelerators.toTypedArray()).apply {
         when (backend) {
           Backend.GPU ->
             gpuOptions =
@@ -139,8 +206,11 @@ private constructor(
                       CompiledModel.GpuOptions.Precision.FP16_WITH_FP32_ACCUM
                   },
               )
+          // The HTP takes the Qualcomm options below; the CPU part runs one small op.
+          Backend.NPU -> Unit
           Backend.CPU -> cpuOptions = CompiledModel.CpuOptions(numThreads = CPU_THREADS)
         }
+        npu?.qualcommOptions(npuGraph = backend == Backend.NPU)?.let { qualcommOptions = it }
       }
 
     /** Throws when a graph tensor is not [element] with [shape]. */
@@ -163,11 +233,16 @@ private constructor(
       backend: Backend,
       precision: KevPrecision,
       gpuFailure: String?,
+      npuFailure: String?,
+      npuOptions: KevNpuOptions?,
     ): KevDecider {
-      val options = options(backend, precision)
+      val options = options(backend, precision, npu = npuOptions)
+      val npuStart =
+        if (backend == Backend.NPU) KevNpuCompiler.before(context, file, npuOptions) else null
       val start = System.nanoTime()
       val model = CompiledModel.create(file.absolutePath, options, KevRuntime.environment(context))
       val compileMs = KevPipeline.millis(System.nanoTime() - start)
+      val npu = npuStart?.let { KevNpuCompiler.after(context, it, compileMs) }
       val buffers = ArrayList<TensorBuffer>()
       try {
         checkTensor(
@@ -198,6 +273,8 @@ private constructor(
           file,
           compileMs,
           gpuFailure,
+          npuFailure,
+          npu,
           model,
           ids,
           valid,
@@ -269,8 +346,39 @@ object KevRuntime {
   private var environment: Environment? = null
 
   /**
-   * The process Environment; `Environment.create(context)` also gives it the app's cache directory.
+   * The process Environment. `Environment.create(context, …)` also gives it the app's cache
+   * directory, where LiteRT keeps the NPU graphs it compiled (the JIT cache); with the NPU
+   * libraries in the APK it also names their directory ([environmentOptions]).
    */
   fun environment(context: Context): Environment =
-    environment ?: Environment.create(context.applicationContext).also { environment = it }
+    environment
+      ?: context.applicationContext
+        .let { app ->
+          Environment.create(
+            app,
+            environmentOptions(
+              app.applicationInfo.nativeLibraryDir,
+              KevNpu.librariesInstalled(app),
+            ),
+          )
+        }
+        .also { environment = it }
+
+  /**
+   * The Environment options: with the NPU libraries ([npuLibraries]) the dispatch library and the
+   * JIT compiler plugin directories, both the APK's [nativeLibraryDir] (without the plugin a graph
+   * asked for on the NPU is not compiled for it); without them none, as before the NPU backend.
+   */
+  fun environmentOptions(
+    nativeLibraryDir: String,
+    npuLibraries: Boolean,
+  ): Map<Environment.Option, String> =
+    if (npuLibraries) {
+      mapOf(
+        Environment.Option.DispatchLibraryDir to nativeLibraryDir,
+        Environment.Option.CompilerPluginLibraryDir to nativeLibraryDir,
+      )
+    } else {
+      emptyMap()
+    }
 }

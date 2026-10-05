@@ -26,8 +26,11 @@ class KevTimingRunner(private val context: Context) {
     val setGraph: KevGraphKey,
     /** How the request path is planned. */
     val mode: KevGraphMode,
-    /** The row window of the launch: every request-path row on it in [KevGraphMode.ROWS]. */
-    val window: Int,
+    /**
+     * The row window of the launch: every request-path row on it in [KevGraphMode.ROWS], or null
+     * for each row on its own window.
+     */
+    val window: Int?,
     /** Empty the app's cache directory before compiling, so that the compile is cold. */
     val clearCache: Boolean,
     /** The set names to time (null: every set for the set graph; empty: none). */
@@ -57,7 +60,9 @@ class KevTimingRunner(private val context: Context) {
       linkedMapOf(
         "set" to "kev_app_timing",
         "status" to "RUNNING",
-        "backend" to args.backend.name.lowercase(),
+        "backend" to args.backend.wireName,
+        "npu_libraries" to KevNpu.librariesInstalled(context),
+        "memory_at_start" to KevDevice.memory(context),
         // The precision the set graph compiled with, set once it has.
         "precision" to null,
         "precision_requested" to args.precision?.wireName,
@@ -113,20 +118,27 @@ class KevTimingRunner(private val context: Context) {
         skipped.add(linkedMapOf("name" to it.name, "L" to it.window, "reason" to it.reason))
       }
       val gpuCeiling = { KevDevice.gpuState()?.maxClockMhz }
-      var timing = KevTimingCore(engine.pipeline, null, ceiling = gpuCeiling) { stop.exists() }
+      val caps = { KevDevice.caps(context) }
+      var timing =
+        KevTimingCore(engine.pipeline, null, ceiling = gpuCeiling, caps = caps) { stop.exists() }
       if (selection.run.isNotEmpty()) {
         readBase()
         val graphs = prepare(engine, args.setGraph)
-        report["precision"] = graphs.precisions.single().wireName
+        val ranOn = graphs.backends.single()
+        // The precision applies to a graph on the GPU only.
+        report["precision"] =
+          graphs.precisions.single().wireName.takeIf { ranOn == KevDecider.Backend.GPU }
         report["pair_share"] = graphs.pairShare
         report["pair_share_mode"] = engine.pairShare.wireName
         report["cache_dir_after_load"] = KevDevice.directoryUsage(context.cacheDir)
-        report["accelerator_used"] = engine.backend.name.lowercase()
+        report["accelerator_used"] = ranOn.wireName
+        report["compiles"] = graphs.compiles.map { it.toJson() }
         report["compile_ms"] = engine.compileMs
         report["avail_mem_bytes_before_compile"] = graphs.availableBytes.firstOrNull()
         report["resident_graphs"] = engine.resident.map { it.label }
         val row = (graphs.runners as? KevRunners.Rows)?.graphs?.single()
-        timing = KevTimingCore(engine.pipeline, row, ceiling = gpuCeiling) { stop.exists() }
+        timing =
+          KevTimingCore(engine.pipeline, row, ceiling = gpuCeiling, caps = caps) { stop.exists() }
         write(partial, report)
         for (set in selection.run) {
           if (timing.stoppedEarly) break
@@ -162,6 +174,7 @@ class KevTimingRunner(private val context: Context) {
             "requested" to args.mode.wireName,
             "fixed_window" to fixed,
             "avail_mem_bytes" to engine.lastPlanInputs?.availableBytes,
+            "proc_mem_available_kb" to engine.lastPlanInputs?.procAvailableKb,
             "resident" to engine.lastPlanInputs?.resident?.map { it.label },
             "form" to (plan as? KevPlan.Ready)?.form?.wireName,
             "predicted_ms" to
@@ -173,7 +186,12 @@ class KevTimingRunner(private val context: Context) {
           readBase()
           val graphs = preparePlan(engine, plan)
           planReport["graphs"] = graphs.used.map { it.label }
-          planReport["precisions"] = graphs.precisions.map { it.wireName }
+          planReport["ran_on"] = graphs.backends.map { it.wireName }
+          planReport["precisions"] =
+            graphs.precisions.mapIndexed { index, precision ->
+              precision.wireName.takeIf { graphs.backends[index] == KevDecider.Backend.GPU }
+            }
+          planReport["compiles"] = graphs.compiles.map { it.toJson() }
           planReport["pair_share"] = graphs.pairShare
           planReport["windows"] = graphs.windows
           planReport["compiled"] = graphs.compiled.map { it.label }

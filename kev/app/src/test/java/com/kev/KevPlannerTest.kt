@@ -248,6 +248,40 @@ class KevPlannerTest {
   }
 
   @Test
+  fun withTheNpuTheTicketRunsOnNpuRowsAndTheFiveQuestionsOnTheGpuPair() {
+    val costs = KevCosts.GALAXY_S26_NPU
+    val npu = costs.rowMs
+    val gpu = KevCosts.GALAXY_S26_GPU
+    // The NPU table: L64 / L128 / L256 on the HTP, every other graph at its GPU time.
+    for (window in listOf(512, 1024, 2048)) assertEquals(gpu.rowMs[window], npu[window])
+    assertEquals(KevFiles.WINDOWS.toSet(), npu.keys)
+    assertEquals(gpu.pairMs, costs.pairMs)
+    assertEquals(gpu.unsharedPairMs, costs.unsharedPairMs)
+    assertTrue(KevCosts.forBackend(KevDecider.Backend.NPU) === costs)
+    assertTrue(KevCosts.forBackend(KevDecider.Backend.GPU) === gpu)
+    assertTrue(KevCosts.forBackend(KevDecider.Backend.CPU) === gpu)
+    val default = KevFiles.DEFAULT_INSTALL
+    // The ticket (rows 131 / 101 / 93): L256 + 2 x L128 on the NPU against the GPU pair (302 ms).
+    val ticketRows = npu.getValue(256) + 2 * npu.getValue(128)
+    assertTrue(ticketRows < LS128_UNSHARED_3.ms)
+    Expect(KevForm.ROW, ticketRows, LS128_UNSHARED_3)
+      .check("ticket", plan(TICKET, default, LS128, PLENTY, costs = costs))
+    // The five-question request (rows 128-142: 3 x L256 + 2 x L128): the GPU pair (426 ms).
+    val fiveRows = 3 * npu.getValue(256) + 2 * npu.getValue(128)
+    assertTrue(fiveRows > LS128_UNSHARED_5.ms)
+    Expect(KevForm.PAIR, fiveRows, LS128_UNSHARED_5)
+      .check("five", plan(FIVE, default, LS128, PLENTY, costs = costs))
+    // A row of 300 tokens: L512, a GPU graph, at its GPU time.
+    Expect(KevForm.ROW, gpu.rowMs.getValue(512), null)
+      .check("L512", plan(Shape("long", 250, listOf(50)), KevFiles.WINDOWS, costs = costs))
+    // A named mode is followed with the NPU table too.
+    Expect(KevForm.ROW, fiveRows, LS128_UNSHARED_5)
+      .check("rows", plan(FIVE, default, LS128, mode = KevGraphMode.ROWS, costs = costs))
+    Expect(KevForm.PAIR, ticketRows, LS128_UNSHARED_3)
+      .check("pair", plan(TICKET, default, LS128, mode = KevGraphMode.PAIR, costs = costs))
+  }
+
+  @Test
   fun aTieGoesToTheRows() {
     val costs =
       KevCosts(

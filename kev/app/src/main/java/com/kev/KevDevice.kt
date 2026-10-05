@@ -65,6 +65,26 @@ object KevDevice {
     return info.availMem
   }
 
+  /** `MemAvailable` of `/proc/meminfo` in kB, or null when it cannot be read. */
+  fun procMemAvailableKb(): Long? = runCatching {
+    File("/proc/meminfo")
+      .readLines()
+      .first { it.startsWith("MemAvailable:") }
+      .split(Regex("\\s+"))[1]
+      .toLong()
+  }
+    .getOrNull()
+
+  /**
+   * Both readings of the free memory at one moment: the app's [availableMemoryBytes] (what the plan
+   * and the memory limits use) and the kernel's `MemAvailable`, which differ.
+   */
+  fun memory(context: Context): LinkedHashMap<String, Any?> =
+    linkedMapOf(
+      "avail_mem_bytes" to availableMemoryBytes(context),
+      "proc_mem_available_kb" to procMemAvailableKb(),
+    )
+
   fun airplaneMode(context: Context): Boolean =
     Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
 
@@ -79,6 +99,28 @@ object KevDevice {
     )
   }
     .getOrNull()
+
+  /**
+   * The CPU frequency policies whose ceiling is under the hardware maximum ("policy6:2668800/
+   * 4742400", scaling_max_freq / cpuinfo_max_freq in kHz), empty when none is capped, or null when
+   * the files cannot be read.
+   */
+  fun cpuCaps(): List<String>? = runCatching {
+    val policies =
+      requireNotNull(File(CPUFREQ_DIR).listFiles { file -> file.name.startsWith("policy") })
+    policies
+      .sortedBy { it.name }
+      .mapNotNull { policy ->
+        val ceiling = File(policy, "scaling_max_freq").readText().trim().toLong()
+        val hardware = File(policy, "cpuinfo_max_freq").readText().trim().toLong()
+        if (ceiling < hardware) "${policy.name}:$ceiling/$hardware" else null
+      }
+  }
+    .getOrNull()
+
+  /** The caps a timed call starts under: CPU policies capped or not, and the thermal status. */
+  fun caps(context: Context): KevCaps =
+    KevCaps(cpuCaps()?.isNotEmpty(), thermalStatus(context).takeIf { it >= 0 })
 
   /** Files and bytes under [directory] (LiteRT may keep compiled GPU programs in the cache dir). */
   fun directoryUsage(directory: File): LinkedHashMap<String, Any?> {
@@ -101,6 +143,7 @@ object KevDevice {
 
   private const val TENTHS = 10.0
   private const val KGSL_DIR = "/sys/class/kgsl/kgsl-3d0"
+  private const val CPUFREQ_DIR = "/sys/devices/system/cpu/cpufreq"
 
   /** Models this sample was measured on, shown by their market name (key: `Build.MODEL` prefix). */
   private val MARKET_NAMES = mapOf("SM-S942" to "Galaxy S26")

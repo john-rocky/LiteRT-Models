@@ -41,6 +41,7 @@ object KevDemo {
         is KevPlan.NoPair -> "PLAN form=none pair=${plan.miss}"
       } +
         " avail_mem_bytes=${inputs?.availableBytes ?: "-"} " +
+        "proc_mem_available_kb=${inputs?.procAvailableKb ?: "-"} " +
         "resident=${inputs?.resident?.joinToString(",") { it.label } ?: "-"} " +
         "share_mode=${inputs?.pairShare?.wireName ?: "-"}" +
         (if (plan is KevPlan.Ready) plan.prediction.pairShared else null).let {
@@ -57,11 +58,42 @@ object KevDemo {
     Log.i(
       LOG_TAG,
       "WINDOWS form=${graphs.plan.form.wireName} questions=${graphs.windows.joinToString(",")} " +
+        "ran_on=${graphs.backends.joinToString(",") { it.wireName }} " +
         "compiled=${graphs.compiled.joinToString(",") { it.label }} " +
         "avail_mem_bytes=${graphs.availableBytes.joinToString(",")} " +
         "closed=${graphs.closed.joinToString(",") { it.label }} " +
         "resident=${resident.joinToString(",") { it.label }}" +
         (graphs.pairShare?.let { " pair_share=${if (it) "on" else "off"}" } ?: ""),
+    )
+
+  /**
+   * A graph is about to compile on [KevCompileStep.backend]; for the NPU, whether the app expects a
+   * first compile (minutes) or a load from LiteRT's JIT cache.
+   */
+  fun compileStart(step: KevCompileStep) =
+    Log.i(
+      LOG_TAG,
+      "COMPILE_START graph=${step.graph.label} backend=${step.backend.wireName}" +
+        if (step.backend == KevDecider.Backend.NPU) " npu_first=${step.npuFirst}" else "",
+    )
+
+  /**
+   * A graph compiled: where, in how many ms and, for the NPU, the cache state the app saw, whether
+   * the HTP took the graph (LiteRT's DispatchDelegate line) and whether it came from the JIT cache.
+   */
+  fun compiled(compile: KevCompiled) =
+    Log.i(
+      LOG_TAG,
+      "COMPILED graph=${compile.graph.label} backend=${compile.backend.wireName} " +
+        "compiled_on=${compile.compiledOn.wireName} ran_on=${compile.ranOn.wireName} " +
+        "ms=${Math.round(compile.compileMs)}" +
+        (compile.npu?.let {
+          " npu_cache=${it.state.wireName} cache_cleared=${it.cacheCleared} " +
+            "npu_applied=${it.evidence.applied} npu_from_cache=${it.evidence.fromCache} " +
+            "dispatch=${it.evidence.dispatchNodes?.replace(' ', '_') ?: "-"} " +
+            "perf=${it.performance} opt=${it.optimization}"
+        } ?: "") +
+        (compile.failure?.let { " failure=${oneLine(it)}" } ?: ""),
     )
 
   /** The pair's state call of an autoplay request: its tokens and its ms. */

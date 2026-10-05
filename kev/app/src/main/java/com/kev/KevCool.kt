@@ -1,5 +1,11 @@
 package com.kev
 
+/**
+ * What a timed call starts under besides the GPU ceiling: whether any CPU frequency policy is
+ * capped ([cpuCapped]) and the thermal status (0 = none); null when it cannot be read.
+ */
+data class KevCaps(val cpuCapped: Boolean?, val thermalStatus: Int?)
+
 /** The GPU's clock ceiling (MHz) and temperature (milli °C) as kgsl reports them. */
 data class KevGpuState(val maxClockMhz: Int, val tempMilliC: Int) {
   fun toJson(): LinkedHashMap<String, Any?> =

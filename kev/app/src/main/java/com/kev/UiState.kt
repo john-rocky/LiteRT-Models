@@ -8,8 +8,9 @@ sealed interface KevStatus {
   data class MissingFiles(val files: List<String>) : KevStatus
 
   /**
-   * Loading [stage]; [graph] is the graph being compiled (null before the graph stage), [switching]
-   * = compiling it for a request the resident graphs do not take.
+   * Loading [stage]; [graph] is the graph being compiled (null before the graph stage) on
+   * [backend], [switching] = compiling it for a request the resident graphs do not take, [npuFirst]
+   * = a first NPU compile of its file (minutes), not a load from LiteRT's JIT cache.
    */
   data class Loading(
     val stage: LoadStage,
@@ -17,11 +18,13 @@ sealed interface KevStatus {
     val switching: Boolean,
     val startedAt: Long,
     val elapsedSeconds: Int = 0,
+    val backend: KevDecider.Backend? = null,
+    val npuFirst: Boolean = false,
   ) : KevStatus
 
-  /** Idle with the [resident] graphs compiled (windows ascending, then the pair). */
+  /** Idle with the [resident] graphs compiled (windows ascending, then the pair) on [backends]. */
   data class Ready(
-    val backend: KevDecider.Backend,
+    val backends: List<KevDecider.Backend>,
     val resident: List<KevGraphKey>,
     val loadMs: Long,
     val compileMs: Long,
@@ -39,23 +42,47 @@ sealed interface KevStatus {
 }
 
 /**
- * The engine as the status line shows it: backend and GPU precision, the resident graphs (windows
- * ascending, then the pair) with the precision of each, the load time and the resident graphs'
- * compile time.
+ * The engine as the status line shows it: where the resident graphs (windows ascending, then the
+ * pair) run and at which GPU precision, and their load and compile times.
  */
 @Immutable
 data class EngineUi(
-  val backend: KevDecider.Backend,
+  /** The backend chosen for the engine (the graphs it maps elsewhere run on the GPU). */
+  val requested: KevDecider.Backend,
   /** The launch's precision for every graph, or null when each graph runs at its own default. */
   val forcedPrecision: KevPrecision?,
   val resident: List<KevGraphKey>,
   /** The GPU precision of each [resident] graph, in that order. */
   val precisions: List<KevPrecision>,
-  val loadMs: Long,
-  val compileMs: Long,
+  /** Where each [resident] graph runs, in that order. */
+  val backends: List<KevDecider.Backend>,
+  /** The times of the [resident] graphs; null while no graph is compiled. */
+  val times: KevEngineTimes?,
   /** GPU's error when the app fell back to CPU. */
   val gpuFailure: String?,
+  /** NPU's error when the app fell back to GPU. */
+  val npuFailure: String? = null,
 )
+
+/**
+ * The times of the engine line: [loadMs] = tokenizer + head + the compiles of the resident graphs,
+ * [compileMs] = those compiles alone. Only the graphs compiled now count, so after a switch to
+ * another backend the line shows that backend's compiles, not the ones before the switch.
+ */
+@Immutable
+data class KevEngineTimes(val loadMs: Long, val compileMs: Long) {
+  companion object {
+    /** The times with graphs of [residentCompileMs] compiled, or null when no graph is. */
+    fun of(tokenizerMs: Double, headMs: Double, residentCompileMs: List<Double>): KevEngineTimes? {
+      if (residentCompileMs.isEmpty()) return null
+      val compileMs = residentCompileMs.sum()
+      return KevEngineTimes(
+        KevAnswerView.wholeMillis(tokenizerMs + headMs + compileMs),
+        KevAnswerView.wholeMillis(compileMs),
+      )
+    }
+  }
+}
 
 enum class CardState {
   PENDING,
@@ -78,6 +105,8 @@ data class AnswerCardUi(
   val form: KevForm? = null,
   /** The window the question ran in (L of its row graph, or the pair's Lq), next to [msText]. */
   val window: Int? = null,
+  /** Where the question's graph ran, after [window]. */
+  val backend: KevDecider.Backend? = null,
   val error: String? = null,
 )
 
@@ -114,6 +143,8 @@ data class UiState(
   val status: KevStatus = KevStatus.Loading(LoadStage.TOKENIZER, null, false, 0L),
   val engine: EngineUi? = null,
   val backendChoice: KevDecider.Backend = KevDecider.Backend.GPU,
+  /** The APK carries the NPU libraries: the NPU choice works. */
+  val npuAvailable: Boolean = false,
   /**
    * The GPU precision the launch set for every graph (the `precision` extra; there is no control on
    * screen), or null when each graph runs at its own default.

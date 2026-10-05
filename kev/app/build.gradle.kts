@@ -64,6 +64,12 @@ android {
 
     sourceSets.getByName("benchmark").assets.srcDir("src/debug/assets")
 
+    packaging {
+        // The Hexagon skel of the NPU libraries (scripts/fetch_npu_libs.sh) is opened by the DSP
+        // as a real file, so the native libraries are extracted from the APK.
+        jniLibs { useLegacyPackaging = true }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

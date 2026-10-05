@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -32,12 +34,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kev.AnswerCardUi
 import com.kev.CardState
+import com.kev.EngineUi
 import com.kev.KevAnswerView
 import com.kev.KevDecider
 import com.kev.KevDrafts
@@ -157,6 +161,18 @@ private fun StatusLine(state: UiState) {
         stringResource(R.string.status_missing, status.files.joinToString(", "))
       is KevStatus.Loading ->
         when {
+          status.backend == KevDecider.Backend.NPU && status.npuFirst ->
+            stringResource(
+              R.string.status_npu_first,
+              graphName(status.graph),
+              status.elapsedSeconds,
+            )
+          status.backend == KevDecider.Backend.NPU ->
+            stringResource(
+              R.string.status_npu_cached,
+              graphName(status.graph),
+              status.elapsedSeconds,
+            )
           status.switching ->
             stringResource(
               R.string.status_switching,
@@ -186,22 +202,14 @@ private fun StatusLine(state: UiState) {
         else MaterialTheme.colors.onSurface,
     )
     state.engine?.let { engine ->
-      val precision = KevPrecision.common(engine.precisions, engine.forcedPrecision)
-      // On GPU, graphs at different precisions name theirs one by one.
-      val each =
-        engine.precisions.takeIf {
-          precision == null && it.isNotEmpty() && engine.backend == KevDecider.Backend.GPU
-        }
-      Text(
-        stringResource(
-          R.string.engine_line,
-          backendTitle(engine.backend, precision),
-          residentText(engine.resident, each),
-          engine.loadMs / MILLIS_PER_SECOND,
-          engine.compileMs / MILLIS_PER_SECOND,
-        ),
-        style = MaterialTheme.typography.caption,
-      )
+      Text(engineLine(engine), style = MaterialTheme.typography.caption)
+      engine.npuFailure?.let {
+        Text(
+          stringResource(R.string.npu_fallback, it),
+          style = MaterialTheme.typography.caption,
+          color = MaterialTheme.colors.error,
+        )
+      }
       engine.gpuFailure?.let {
         Text(
           stringResource(R.string.gpu_fallback, it),
@@ -230,16 +238,25 @@ private fun Editor(
   onBackend: (KevDecider.Backend) -> Unit,
 ) {
   Text(stringResource(R.string.backend_title), style = MaterialTheme.typography.subtitle2)
+  // Short names that fit one row at 360 dp; the precision is on the engine line and the footer.
   Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
     KevDecider.Backend.entries.forEach { backend ->
       Choice(
-        backendTitle(backend, state.precision),
+        shortBackendName(backend),
         state.backendChoice == backend,
-        state.canDecide,
+        state.canDecide && (backend != KevDecider.Backend.NPU || state.npuAvailable),
       ) {
         onBackend(backend)
       }
     }
+  }
+  if (!state.npuAvailable) {
+    Text(
+      stringResource(R.string.npu_unavailable),
+      style = MaterialTheme.typography.caption,
+      maxLines = 1,
+      overflow = TextOverflow.Ellipsis,
+    )
   }
   Text(stringResource(R.string.examples_title), style = MaterialTheme.typography.subtitle2)
   Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -418,24 +435,43 @@ private fun AnswerContent(view: KevAnswerView) {
   }
 }
 
+/** A radio choice whose label selects it too (the whole row is one radio button). */
 @Composable
 private fun Choice(title: String, selected: Boolean, enabled: Boolean, onSelect: () -> Unit) {
-  Row(verticalAlignment = Alignment.CenterVertically) {
-    RadioButton(selected = selected, enabled = enabled, onClick = onSelect)
+  Row(
+    Modifier.heightIn(min = 48.dp)
+      .selectable(
+        selected = selected,
+        enabled = enabled,
+        role = Role.RadioButton,
+        onClick = onSelect,
+      )
+      .padding(end = 8.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    RadioButton(selected = selected, enabled = enabled, onClick = null)
+    Spacer(Modifier.width(8.dp))
     Text(title)
   }
 }
 
 /**
- * "656 ms · L256" (a row graph) or "187 ms · Q64" (a branch on the pair): the card's time and the
- * window it ran in, once the card is done.
+ * "68 ms · L128 · NPU" (a row graph) or "62 ms · Q64 · GPU" (a branch on the pair): the card's
+ * time, the window it ran in and where its graph ran, once the card is done.
  */
 @Composable
 internal fun cardTime(card: AnswerCardUi): String? {
   val ms = card.msText ?: return null
   val window = card.window ?: return ms
   val name = if (card.form == KevForm.PAIR) R.string.question_window_name else R.string.window_name
-  return stringResource(R.string.card_ms_window, ms, stringResource(name, window))
+  val backend =
+    card.backend ?: return stringResource(R.string.card_ms_window, ms, stringResource(name, window))
+  return stringResource(
+    R.string.card_ms_window_backend,
+    ms,
+    stringResource(name, window),
+    shortBackendName(backend),
+  )
 }
 
 /** "State · 72 tokens · 266 ms": the pair's state call, without the ms while it runs. */
@@ -455,33 +491,92 @@ private fun graphName(graph: KevGraphKey?): String =
   }
 
 /**
- * "L128 + L256" or "S128+Q64": the [resident] graphs (windows ascending, then the pair); with
- * [precisions] (one per graph) "L128 FP16 (FP32 accum) + L256 FP32".
+ * "NPU · L128 + L256 · loaded in 4.3 s (graph compile 3.4 s)" ([KevEngineTimes]); while no graph is
+ * compiled (a switch to another backend compiling) only "NPU · no graph compiled".
  */
 @Composable
-private fun residentText(resident: List<KevGraphKey>, precisions: List<KevPrecision>?): String =
-  if (resident.isEmpty()) stringResource(R.string.no_graph)
-  else
-    resident
-      .mapIndexed { index, graph ->
-        val precision = precisions?.getOrNull(index)
-        if (precision == null) graphName(graph)
-        else stringResource(R.string.graph_precision, graphName(graph), precisionName(precision))
-      }
-      .joinToString(WINDOW_SEPARATOR)
+private fun engineLine(engine: EngineUi): String {
+  val times =
+    engine.times ?: return stringResource(R.string.engine_line_no_graph, engineBackends(engine))
+  return stringResource(
+    R.string.engine_line,
+    engineBackends(engine),
+    residentText(engine),
+    times.loadMs / MILLIS_PER_SECOND,
+    times.compileMs / MILLIS_PER_SECOND,
+  )
+}
+
+/**
+ * "L128 + L256" or "S128+Q64": the resident graphs of [engine] (windows ascending, then the pair);
+ * graphs on different backends each with its own ("L128 NPU + L512 GPU"), GPU graphs at different
+ * precisions each with its own ("L128 FP16 (FP32 accum) + L256 FP32").
+ */
+@Composable
+private fun residentText(engine: EngineUi): String {
+  val eachBackend = engine.backends.distinct().size > 1
+  val gpu = gpuPrecisions(engine)
+  val eachPrecision = gpu.isNotEmpty() && KevPrecision.common(gpu, null) == null
+  return engine.resident
+    .mapIndexed { index, graph ->
+      val backend = engine.backends.getOrNull(index)
+      val precision = engine.precisions.getOrNull(index)
+      listOfNotNull(
+          graphName(graph),
+          backend?.let { shortBackendName(it) }?.takeIf { eachBackend },
+          precision
+            ?.takeIf { eachPrecision && backend == KevDecider.Backend.GPU }
+            ?.let { precisionName(it) },
+        )
+        .joinToString(" ")
+    }
+    .joinToString(WINDOW_SEPARATOR)
+}
+
+/**
+ * Where the resident graphs of [engine] run: one backend title, or the titles of different ones
+ * joined by " + "; with nothing resident, the chosen backend (and the launch's precision).
+ */
+@Composable
+private fun engineBackends(engine: EngineUi): String {
+  if (engine.backends.isEmpty()) return backendTitle(engine.requested, engine.forcedPrecision)
+  val gpu = KevPrecision.common(gpuPrecisions(engine), engine.forcedPrecision)
+  return engine.backends
+    .distinct()
+    .map { backendTitle(it, if (it == KevDecider.Backend.GPU) gpu else null) }
+    .joinToString(WINDOW_SEPARATOR)
+}
+
+/** The GPU precisions of the resident graphs of [engine] that run on the GPU. */
+private fun gpuPrecisions(engine: EngineUi): List<KevPrecision> =
+  engine.precisions.filterIndexed { index, _ ->
+    engine.backends.getOrNull(index) == KevDecider.Backend.GPU
+  }
 
 /**
  * "GPU FP32", "GPU FP16 (FP32 accum)", "GPU" (no single [precision]: graphs at different ones, or
- * each graph at its own default before any compiles) or "CPU 4 threads".
+ * each graph at its own default before any compiles), "NPU" or "CPU 4 threads".
  */
 @Composable
 private fun backendTitle(backend: KevDecider.Backend, precision: KevPrecision?): String =
   stringResource(
     when {
       backend == KevDecider.Backend.CPU -> R.string.backend_cpu
+      backend == KevDecider.Backend.NPU -> R.string.backend_npu
       precision == KevPrecision.FP16_FP32_ACCUM -> R.string.backend_gpu_fp16acc
       precision == KevPrecision.FP32 -> R.string.backend_gpu
       else -> R.string.backend_gpu_any
+    }
+  )
+
+/** "GPU", "NPU" or "CPU": the choices of "Run on" and the cards' last item. */
+@Composable
+internal fun shortBackendName(backend: KevDecider.Backend): String =
+  stringResource(
+    when (backend) {
+      KevDecider.Backend.GPU -> R.string.run_on_gpu
+      KevDecider.Backend.NPU -> R.string.run_on_npu
+      KevDecider.Backend.CPU -> R.string.run_on_cpu
     }
   )
 

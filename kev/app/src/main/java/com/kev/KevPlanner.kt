@@ -99,6 +99,24 @@ class KevCosts(
             KevPairShape(256, 64) to KevPairCost(stateMs = 216.5, questionMs = 62.5),
           ),
       )
+
+    /**
+     * The table of the NPU backend: L64 / L128 / L256 on the Qualcomm HTP, every other graph on the
+     * GPU with the numbers of [GALAXY_S26_GPU]. The NPU numbers are this app's Galaxy S26 calls
+     * (NPU + CPU, BURST, the graph loaded from LiteRT's JIT cache, input writes + run + read-back,
+     * cool starts): the median of 60 calls per window (L64 45.1 ms, L128 65.8, L256 121.9); the CPU
+     * frequency caps that set in a second or two into a run do not slow these calls.
+     */
+    val GALAXY_S26_NPU =
+      KevCosts(
+        rowMs = GALAXY_S26_GPU.rowMs + mapOf(64 to 45.1, 128 to 65.8, 256 to 121.9),
+        pairMs = GALAXY_S26_GPU.pairMs,
+        unsharedPairMs = GALAXY_S26_GPU.unsharedPairMs,
+      )
+
+    /** The table the planner uses for the backend chosen in the app. */
+    fun forBackend(backend: KevDecider.Backend): KevCosts =
+      if (backend == KevDecider.Backend.NPU) GALAXY_S26_NPU else GALAXY_S26_GPU
   }
 }
 

@@ -258,6 +258,7 @@ class DemoFixtureTest {
           "form",
           "predicted_ms",
           "avail_mem_bytes",
+          "proc_mem_available_kb",
           "resident",
           "share_mode",
           "pair_shared_predicted",
@@ -465,6 +466,105 @@ class DemoFixtureTest {
     assertEquals(listOf(5), OracleFixtures.ints(question["opt_idx"]).toList())
     assertEquals(187, (question["infer_ms"] as JsonNumber).toInt())
     assertEquals("187 ms", question["shown_ms"])
+  }
+
+  @Test
+  fun anNpuRunWritesNoGpuPrecision() {
+    val meta = QuestionMeta("refund", QuestionType.NOUL, listOf("false", "true"), null)
+    val probs = doubleArrayOf(0.054, 0.946)
+    val answer = KevAnswers.toAnswers(listOf(probs), listOf(meta)).getValue("refund") as Map<*, *>
+    val row = KevRow(intArrayOf(248060, 11, 248061, 248049, 12, 248050, 248062), 6, intArrayOf(5))
+    val result =
+      KevQuestionResult(
+        0,
+        meta,
+        row,
+        KevForm.ROW,
+        128,
+        5,
+        KevScores(FloatArray(2), FloatArray(2), FloatArray(2) { probs[it].toFloat() }),
+        probs,
+        62.4,
+        0.6,
+      )
+    val view = KevAnswerView.of(answer, meta, probs)
+    val l128 = KevGraphFile(KevGraphKey.Window(128), 1_258_444_912L, null)
+    val l256 = KevGraphFile(KevGraphKey.Window(256), 1_259_246_704L, null)
+    val run =
+      KevDemoRun.build(
+        KevDemoRunInput(
+          fixtureId = "demo_ticket_01",
+          fixturePath = "/data/user/0/com.kev/files/demo_ticket_01.json",
+          deviceModel = "SM-S942Q",
+          deviceManufacturer = "samsung",
+          deviceShownAs = "Galaxy S26",
+          deviceAndroidRelease = "16",
+          litert = "2.2.0",
+          accelerator = "NPU",
+          precision = null,
+          precisionRequested = null,
+          graph = l128,
+          form = KevForm.ROW,
+          windowsUsed = listOf(128),
+          resident = listOf(l128, l256),
+          compiled = emptyList(),
+          availableBytesBeforeCompile = emptyList(),
+          closed = emptyList(),
+          secondRefused = false,
+          plan =
+            KevDemoPlan(
+              KevGraphMode.AUTO,
+              KevForm.ROW,
+              KevPrediction(65.8, null),
+              KevPlanInputs(
+                6_000_000_000L,
+                listOf(KevGraphKey.Window(128), KevGraphKey.Window(256)),
+              ),
+            ),
+          state = null,
+          engineLoadMs = 4_200,
+          warmupMs = 240,
+          title = "Kev Decide",
+          footerLines = listOf("line 1", "line 2", "line 3"),
+          delayMs = 1500,
+          gapMs = 800,
+          tokenizeMs = 4,
+          requestTotalMs = 70,
+          questions =
+            listOf(
+              KevDemoQuestion(
+                result,
+                answer,
+                view.shownCompact(),
+                "62 ms",
+                3,
+                62,
+                1,
+                66,
+                null,
+                KevDecider.Backend.NPU,
+              )
+            ),
+          airplaneMode = false,
+          cgroup = "6:cpuset:/top-app",
+          cgroupEnd = "6:cpuset:/top-app",
+          layout = null,
+        )
+      )
+    val parsed = KevJson.parse(KevJson.write(run)) as Map<*, *>
+    val graph = parsed["graph"] as Map<*, *>
+    assertEquals(GRAPH_KEYS, graph.keys.toList())
+    // A graph on the NPU has no GPU precision, in the graph, the resident set and the question.
+    assertNull(graph["precision"])
+    for (resident in graph["resident"] as List<*>) {
+      assertNull((resident as Map<*, *>)["precision"])
+    }
+    val runtime = parsed["runtime"] as Map<*, *>
+    assertEquals("NPU", runtime["accelerator"])
+    assertNull(runtime["precision"])
+    val question = (parsed["questions"] as List<*>).single() as Map<*, *>
+    assertNull(question["precision"])
+    assertEquals("npu", question["accelerator"])
   }
 
   private companion object {

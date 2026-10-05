@@ -47,7 +47,9 @@ class KevGateRunner(private val context: Context) {
       linkedMapOf(
         "set" to "kev_app_gate",
         "status" to "RUNNING",
-        "backend" to args.backend.name.lowercase(),
+        "backend" to args.backend.wireName,
+        "npu_libraries" to KevNpu.librariesInstalled(context),
+        "memory_at_start" to KevDevice.memory(context),
         // The precision the graph compiled with, set once it has.
         "precision" to null,
         "precision_requested" to args.precision?.wireName,
@@ -79,12 +81,15 @@ class KevGateRunner(private val context: Context) {
       progress("loading")
       val engine = loadEngine()
       val graphs = prepare(engine, args.graph)
-      val precision = graphs.precisions.single().wireName
+      val ranOn = graphs.backends.single()
+      // The precision applies to a graph on the GPU only.
+      val precision = graphs.precisions.single().wireName.takeIf { ranOn == KevDecider.Backend.GPU }
       report["precision"] = precision
       report["pair_share"] = graphs.pairShare
       report["pair_share_mode"] = engine.pairShare.wireName
       report["cache_dir_after_load"] = KevDevice.directoryUsage(context.cacheDir)
-      report["accelerator_used"] = engine.backend.name.lowercase()
+      report["accelerator_used"] = ranOn.wireName
+      report["compiles"] = graphs.compiles.map { it.toJson() }
       report["tokenizer_load_ms"] = engine.tokenizerMs
       report["head_load_ms"] = engine.headMs
       report["compile_ms"] = engine.compileMs
@@ -105,7 +110,7 @@ class KevGateRunner(private val context: Context) {
       report["rows"] = gate.rows
       write(partial, report)
       log(
-        "GATE_START backend=${args.backend.name.lowercase()} precision=$precision graph=${args.graph.label} limit=${args.limit} records=${items.size}"
+        "GATE_START backend=${args.backend.wireName} ran_on=${ranOn.wireName} precision=$precision graph=${args.graph.label} limit=${args.limit} records=${items.size}"
       )
       gate.run(items) { rowsRun ->
         progress("row $rowsRun")

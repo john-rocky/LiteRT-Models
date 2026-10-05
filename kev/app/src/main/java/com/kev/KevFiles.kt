@@ -26,6 +26,12 @@ object KevFiles {
   val PAIRS = listOf(KevPairShape(128, 64), KevPairShape(256, 64))
 
   /**
+   * The row windows the NPU backend runs on the Qualcomm HTP. The other files (L512 and up, the
+   * pairs) are not in the form the HTP takes, so with the NPU chosen they run on the GPU.
+   */
+  val NPU_WINDOWS = listOf(64, 128, 256)
+
+  /**
    * File sizes of the graphs the model repository published before the fp16-safe kernel rewrite. A
    * file of one of these sizes runs at FP32 by default ([KevPrecision.defaultFor]).
    */

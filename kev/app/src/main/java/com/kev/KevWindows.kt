@@ -125,13 +125,16 @@ class KevResidentGraphs<R, P> : Closeable
 
   /**
    * Makes [plan]'s windows resident as described on the class: closes the pair and the windows the
-   * plan does not use, then opens the missing windows with [open] in descending order, reading
-   * [availableBytes] right before each compile. Returns the graph of each question.
+   * plan does not use, then opens the missing windows with [open], reading [availableBytes] right
+   * before each compile. A window whose compile must run [alone] (the first NPU compile of a file,
+   * minutes long and memory hungry) opens first, with every other graph closed; then the others
+   * open in descending order. Returns the graph of each question.
    */
   fun prepare(
     plan: KevWindowPlan.Ready,
     availableBytes: () -> Long,
     open: (Int) -> R,
+    alone: (Int) -> Boolean = { false },
   ): KevWindowRun<R> {
     val closedPair = closePair()
     var windows = assign(plan, secondAllowed = true)
@@ -154,6 +157,11 @@ class KevResidentGraphs<R, P> : Closeable
     }
     if (!graphs.keys.containsAll(wanted)) {
       closeAllBut(wanted)
+      // Ascending, so that the largest of them is the one left open.
+      for (window in wanted.sorted().filter { it !in graphs && alone(it) }) {
+        closeAllBut(emptySet())
+        compile(window, availableBytes())
+      }
       for (window in wanted.sortedDescending().filter { it !in graphs }) {
         val available = availableBytes()
         if (graphs.isEmpty() || available >= SECOND_RESIDENT_MIN_AVAILABLE_BYTES) {
@@ -167,6 +175,8 @@ class KevResidentGraphs<R, P> : Closeable
         if (top !in graphs) {
           closeAllBut(emptySet())
           compile(top, availableBytes())
+        } else {
+          closeAllBut(setOf(top))
         }
         break
       }
