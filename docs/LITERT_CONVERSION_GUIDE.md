@@ -1547,9 +1547,10 @@ Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-
 
 ## 2026-10-04 追記 — Kev-0.8B (Qwen3.5 hybrid + pointer head, typed decisions) on the S26 GPU: one graph call per question under explicit FP32, the checkpoint's own tokenizer.json, and a Kotlin host that reproduces CPython's float sum and round
 
-Model repo: `litert-community/Kev-0.8B-LiteRT` (row-prefill graphs L128 / L256 / L512 / L1024 / L2048, pointer head, tokenizer);
-Android sample `kev/`. Evidence: `~/code/standup/handoffs/assets/2026-10-03-kev-sample-app/` (`ROUND1.md`–`ROUND5.md`;
-`readme.facts.md` and `r5.facts.md` name the source of every number; device reports under `device/`). Reference = the author's code
+Model repo: `litert-community/Kev-0.8B-LiteRT` (row-prefill graphs L64 / L128 / L256 / L512 / L1024 / L2048, shared-state
+pairs Ls128 / Ls256, pointer head, tokenizer); Android sample `kev/`. Evidence:
+`~/code/standup/handoffs/assets/2026-10-03-kev-sample-app/` (`ROUND1.md`–`ROUND7.md`; `readme.facts.md`, `r5.facts.md`
+and `r7.facts.md` name the source of every number; device reports under `device/`). Reference = the author's code
 (`kev.api`, `kev.model`, transformers 5.17.0) on CPU fp32: 402 questions of 377 requests. On a desktop JVM the Kotlin
 host equals it on 402/402 rows and readout indices (`usage.input_tokens` 377/377), the head stays within max |Δp|
 2.98e-7, and `to_answers` gives the oracle's answers on 402/402. On the S26 (LiteRT 2.2.0, debug build, GPU explicit
@@ -1668,6 +1669,75 @@ closed L256 and compiled L2048 alone (low point 2,217,164 kB, no kill), and the 
 again; its answers started about 12 s after the request. Evidence: `device/r5_autoplay_ticket_l128.mem.txt`,
 `device/r5_autoplay_long.logcat_all_grep.txt`, `device/r5_autoplay_long.mem.txt`, `device/s30_mem.txt`,
 `device/s30_smoke.log`.
+
+**FP16_WITH_FP32_ACCUM on the final graphs (2026-10-05).** The published graphs are the conversion run's final
+kernel: the Gated DeltaNet chunk goes through an inverse instead of a step-by-step loop, and softplus and exp are
+written so that float16 storage stays finite; L64, L128 and L256 also carry a size-1 SUM after two projections for
+the NPU, which leaves the GPU outputs bit-identical (the app's gates give the same probabilities on every row).
+At the default GPU precision (float16 activations) these graphs stay finite but miss the bar on desktop Metal
+(L128: max |Δp| 0.0332, mean 3.59e-3; conversion run), so the precision stays explicit. At
+`CompiledModel.GpuOptions(precision = Precision.FP16_WITH_FP32_ACCUM)` (float16 storage, float32 accumulation)
+every graph passes the app's gate on the S26: L64 34 rows max |Δp| 0.00656, L128 147 rows 0.00736, L256 172 rows
+0.00917, L512 172 rows 0.00907, L1024 40 rows 0.00804, the Ls128 pair 132 questions 0.0101, the Ls256 pair 146
+questions 0.0110, and the 9 L2048 rows 0.0093 with mean 1.84e-3 (0.0015 and 4.3e-4 at FP32: the smallest margin,
+so the README gives it and the FP32 switch). On the same file it takes about a quarter less time than FP32: L128
+102.0 against 137.8 ms, L256 196.0 against 272.1 ms. The precision is a per-graph default in the app: a file of a
+size the repository published before the rewrite runs at FP32, and `--es precision fp32` forces FP32 everywhere.
+Evidence: `ROUND7.md`, `r7.facts.md`, `device/r7_G1_gate_L128_C7_fp16acc.json`,
+`device/r7_G4_gate_pair256_fp16acc_noshare.json`, `device/r7_T1_timing_L128_fp16acc.json`,
+`device/r7_F3_timing_L128_fp32.json`, `device/r7_T2_timing_L256_fp16acc.json`, `device/r7_F4_timing_L256_fp32.json`.
+
+**A shared-state pair: two signatures in one file, the state handed over as buffers (2026-10-05).** Every row of a
+request starts with the same `[state]` + state tokens, so the conversion run also exports a pair per state length.
+`state_prefill_<Ls>` takes `ids` / `valid` `[1,Ls]` and returns the 48 state tensors: `k_<l>` / `v_<l>`
+`[1,2,Ls,256]` of the 6 attention layers, `gdn_state_<l>` `[1,16,128,128]` and `conv_tail_<l>` `[1,3,6144]` of
+the 18 Gated DeltaNet layers. `question_step_<Ls>_64` takes one question's `ids` / `valid` `[1,64]`, the state
+call's `valid` as `state_valid` `[1,Ls]` and the 48 tensors, and returns `hidden` `[1,64,1024]` with positions
+continuing after the state. One `CompiledModel` holds both signatures. The app creates the state call's output
+buffers once and puts the same `TensorBuffer` objects into the question call's input map, so the state stays on
+the GPU and nothing is copied through the host. LiteRT has no call that lists a signature's tensors, so the names
+come from the conversion run's contract and the compile checks each one's type and shape. On the JVM the pair's
+path gives the row path's answers on all 312 questions (304 requests) that fit the Ls128 pair. On the S26 the
+five-question request takes 429.6 ms on the pair against 972.1–984.6 ms as five rows on L256, and a
+three-question email with a 167-token state 409.1 ms on the Ls256 pair against 585.0–593.8 ms. Evidence:
+`kev/app/src/main/java/com/kev/KevPairDecider.kt`, `KevPipelineTest`, `device/r7_F1_timing_pair128_fiveq_noshare.json`,
+`device/r7_T6_timing_L256_fiveq_fp16acc.json`, `device/r7_F2_timing_pair256_email3_noshare.json`,
+`device/r7_T8_timing_L256_email3_fp16acc.json`.
+
+**`constantTensorSharing` trades memory for time; the answers stay the same.** With
+`GpuOptions(constantTensorSharing = true)` the two signatures share one copy of the weights on the GPU; without it
+each holds its own. On the S26 the unshared pair is quicker: the five-question request 429.6 against 623.3 ms
+(state 116.0 against 152.3 ms, step 62.0 against 92.9 ms), the Ls256 email 409.1 against 544.6 ms. It also needs
+more memory: VmHWM 6.15–6.81 GB against 3.01–3.05 GB, MemAvailable low points 2.21–3.04 GB against 5.29–5.88 GB,
+kgsl page allocation 3.1–3.2 GB against 1.7–1.8 GB. The probabilities are identical: the 132-question gate gives
+the same numbers both ways. The app decides when it compiles the pair: unshared when Android reports at least
+6,500,000 kB available right before the compile, shared below that, and a compiled pair keeps its mode. Evidence:
+`device/r7_T5_timing_pair128_fiveq_fp16acc.json`, `device/r7_F1_timing_pair128_fiveq_noshare.json`,
+`device/r7_G3_gate_pair128_fp16acc.json`, `device/r7_G6_gate_pair128_fp16acc_noshare.json`.
+
+**The plan predicts both forms from measured times.** `KevCosts` holds this app's S26 medians: one question on each
+window, and the state call and one step of each pair, shared and unshared. `KevPlanner` sums them over the request
+(rows: the windows `KevResidentGraphs.assign` would use; pair: the state call plus one step per question) and runs
+the smaller, the rows on a tie. The prediction follows what the phone holds at that moment: two windows only when
+they could stay compiled (at least 4,500,000 kB available, or both already compiled), an unshared pair only when
+its compile would see at least 6,500,000 kB, and a compiled pair as it was compiled. The bundled ticket was
+predicted at 302 ms on the pair against about 400 ms on L256 + L128 and took 367 ms on the pair; with `--es graph
+rows` it took 463 ms. A single question whose row fits L128 stays on L128 (102.2 ms against 178 ms for the pair),
+while one whose row needs L256 goes to an unshared pair (178 ms against 196.3 ms). Evidence: `KevPlannerTest`,
+`device/r7_A1_autoplay_ticket_auto_kev-demo-1791138907893.json`,
+`device/r7_A2_autoplay_ticket_rows_kev-demo-1791139223945.json`.
+
+**Split the timings by the GPU clock ceiling, call by call.** On the S26 the GPU clock ceiling
+(`/sys/class/kgsl/kgsl-3d0/max_clock_mhz`) fell from 1,300 MHz 3–8 s into back-to-back calls, in most legs to
+578–902 MHz, while the thermal status stayed at 0 or 1, and calls then took 1.7–2.1 times as long (L256 196.3 →
+330.2 ms; the five-question request on the pair 429.6 → 727.6 ms). A median over a whole leg mixes the two speeds,
+and its value depends on the leg's length. The timing runner therefore reads the ceiling before each call, outside
+the timed span, and records it next to the call's time; the representative value is the median of the calls made
+at 1,300 MHz, and the others are given apart. In the conversion run a compile alone warmed the GPU (41.1 → 59.7 °C
+during a 7.6 s compile, the ceiling at 1,050–1,100 MHz at the opening call), so the runner also waits after the
+compile and before each set until the ceiling and the temperature are back to their values before the compile
+(`--ei cool_ms`); in this app's legs that wait took 0 s. Evidence: `kev/app/src/main/java/com/kev/KevTimingCore.kt`,
+`KevCool.kt`, `device/r7_chain1_table.md`, `device/r7_chain3_table.md`, `kev_work/ROUND14.md`.
 
 **A 360 dp screen sets the demo layout.** The S26 reports density 3.0, a 360 × 780 dp screen; a layout planned at
 density 2.625 cut the ticket's last line even at its 16 sp floor. Compose Material 1 `Text` inherits body1's 24 sp

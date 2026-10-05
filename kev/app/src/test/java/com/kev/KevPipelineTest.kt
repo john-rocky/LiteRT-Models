@@ -219,7 +219,10 @@ class KevPipelineTest {
     assertEquals(run.failures.joinToString("\n"), 402, run.answersEqual)
     assertEquals(402, run.inputsChecked)
     assertEquals(377, run.usageEqual)
-    assertEquals(mapOf(128 to 0, 256 to 0, 512 to 393, 1024 to 0, 2048 to 9), run.windows)
+    assertEquals(
+      mapOf(64 to 0, 128 to 0, 256 to 0, 512 to 393, 1024 to 0, 2048 to 9),
+      run.windows,
+    )
     assertEquals(402, run.smallestWindow)
   }
 
@@ -233,7 +236,10 @@ class KevPipelineTest {
     assertEquals(two.failures.joinToString("\n"), 402, two.answersEqual)
     assertEquals(402, two.inputsChecked)
     assertEquals(377, two.usageEqual)
-    assertEquals(mapOf(128 to 322, 256 to 64, 512 to 7, 1024 to 0, 2048 to 9), two.windows)
+    assertEquals(
+      mapOf(64 to 72, 128 to 250, 256 to 64, 512 to 7, 1024 to 0, 2048 to 9),
+      two.windows,
+    )
     assertEquals(402, two.smallestWindow)
     // Too little memory for a second graph: in the two requests with rows for both L128 and L256,
     // the rows of 128 tokens or fewer run on L256 too.
@@ -243,7 +249,10 @@ class KevPipelineTest {
     assertEquals(one.failures.joinToString("\n"), 402, one.answersEqual)
     assertEquals(402, one.inputsChecked)
     assertEquals(377, one.usageEqual)
-    assertEquals(mapOf(128 to 319, 256 to 67, 512 to 7, 1024 to 0, 2048 to 9), one.windows)
+    assertEquals(
+      mapOf(64 to 72, 128 to 247, 256 to 67, 512 to 7, 1024 to 0, 2048 to 9),
+      one.windows,
+    )
     assertEquals(399, one.smallestWindow)
   }
 
@@ -264,7 +273,7 @@ class KevPipelineTest {
             npz.floats(question.key).second
       }
     }
-    val shape = KevFiles.PAIRS.single()
+    val shape = KevFiles.DEFAULT_PAIRS.single()
     val pair = OraclePair(shape.stateLength, shape.questionLength, rows)
     val row = OracleGraph(KevFiles.WINDOWS.last(), rows)
     var requestsTaken = 0

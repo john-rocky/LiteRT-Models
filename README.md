@@ -109,7 +109,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Open Decision (DeBERTa-v3-large)](#open-decision-deberta-v3-large-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text (EN), one forward pass per request | Galaxy S26 | 697 ms per 512-token request (GPU FP32, 3 questions) | [🤗 HF](https://huggingface.co/litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT) |
 | [ModernBERT-Ja-310M Decision](#modernbert-ja-310m-decision-japanese-cross-encoder-typed-decisions) | Japanese typed decisions: choice / score / yes-no questions about a text, one graph call per candidate | Galaxy S26 | 229 ms per 256-token pair (GPU FP32), 42 ms (NPU) | [🤗 HF](https://huggingface.co/mlboydaisuke/ModernBERT-Ja-310M-Decision-LiteRT) |
 | [GLiClass-Edge v3.0](#gliclass-edge-v30-zero-shot-text-classification) | Zero-shot text classification (EN): up to 25 labels scored in one forward pass, single- or multi-label | Galaxy S26 | 5.8 ms per request at 128 tokens, 8.3 ms at 256 (GPU FP32) | [🤗 HF](https://huggingface.co/litert-community/GLiClass-Edge-v3.0-LiteRT) |
-| [Kev-0.8B](#kev-08b-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text or JSON state, calibrated probabilities (EN) | Galaxy S26 | 323.3 ms per question at the 256-token window, 175.8 ms at 128 (GPU FP32) | [🤗 HF](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) |
+| [Kev-0.8B](#kev-08b-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text or JSON state, calibrated probabilities (EN) | Galaxy S26 | 102 ms per question at the 128-token window, a 3-question request in 367 ms (GPU) | [🤗 HF](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
@@ -2314,10 +2314,13 @@ pointer head on Qwen3.5-0.8B-Base, Apache-2.0) answers typed questions about a s
 **noul** (yes or no, as p(true)), **choice** (one of named options) and **score** (ordered levels, as the
 expected level), with calibrated probabilities. Every question is one causal row,
 `[state] state [question] instructions ([option] option [/option])… [decide]`, and the pointer head scores each
-option from the hidden states at the decide token and at that option's closing token. The graphs take `ids`
-int32 `[1,L]` + `valid` float32 `[1,L]` and return `hidden` float32 `[1,L,1024]` for L = 128, 256, 512, 1024 or
-2048. The host tokenizes, builds the rows, runs each row on the smallest installed window that holds it, applies
-the pointer head (float32, temperature 2.3510958125672174) and the author's `to_answers`.
+option from the hidden states at the decide token and at that option's closing token. The row graphs take `ids`
+int32 `[1,L]` + `valid` float32 `[1,L]` and return `hidden` float32 `[1,L,1024]` for L = 64, 128, 256, 512, 1024
+or 2048. Two shared-state pairs (states of up to 128 or 256 tokens, questions of up to 64) read the state once
+and return the state's 48 tensors, then take each question's own tokens with them. The host tokenizes, builds the
+rows, runs either each row on the smallest installed window that holds it or the state once and each question on
+a pair, whichever it predicts to be quicker, and applies the pointer head (float32, temperature
+2.3510958125672174) and the author's `to_answers`.
 
 **Conversion:** each graph is a state-free row prefill. One call computes one row, the state plus one question,
 from scratch: positions are constants, the mask is a constant causal mask plus `(1 − valid) × (−1e4)`, and no KV or
@@ -2328,26 +2331,36 @@ weights in fp16 and the embedding table in int8: on 392 questions at L1024 it ke
 outside near-ties (max |Δp| 0.0104, the same on the Mac CPU, the Mac GPU and the S26 GPU at FP32 precision). Int8
 fully connected weights and table (V1) moved probabilities by up to
 0.0701 on the Mac GPU, and the GPU rejects an fp16 table (`EMBEDDING_LOOKUP: Empty quantization params`). GPU
-default precision (fp16 activations) gave non-finite read-out rows on 18 of 392 questions on desktop Metal and on
-18 of 58 on the S26, hence explicit FP32. Kev-4B converts the same way but did not fit the 12 GB Galaxy S26 (one
-try).
+default precision (fp16 activations) gave non-finite read-out rows with the original kernel (18 of 392 questions
+on desktop Metal, 18 of 58 on the S26). The published graphs are the conversion run's final kernel: the Gated
+DeltaNet chunk is computed with an inverse instead of a step-by-step loop, and softplus and exp are written so that
+float16 storage stays finite. They stay finite at the default precision but miss the bar on desktop Metal (L128:
+max |Δp| 0.0332, mean 3.59e-3), hence an explicit precision: they run at `FP16_WITH_FP32_ACCUM` (float16 storage,
+float32 accumulation). Each shared-state pair is one file with two signatures, the state call and the question
+step. Kev-4B converts the same way but did not fit the 12 GB Galaxy S26: with the original kernel at L1024 (FP32)
+Android's low-memory killer stopped the process during the compile, and with the final kernel at L64
+(`FP16_WITH_FP32_ACCUM`) the available memory fell to 1.2 GB during the compile and the run's memory guard stopped
+it.
 
-**On-device (Galaxy S26, LiteRT 2.2.0, debug build, verified):** the L128, L256, L512 and L2048 graphs each run whole
-on the GPU delegate in one partition with `GpuOptions(precision = FP32)` (17,603, 18,755, 21,059 and 34,883 nodes).
-In the sample app all 181 questions of the bundled gate (SemIf authored144 and 12 invented requests) get row
-IDs identical to the author's fp32 oracle. On the 172 rows that fit L512 the argmax matches on 166/166 rows outside
-near-ties (max |Δp| 0.0078), and L256 gives the same counts on the same rows; L128 matches 147/147 on the rows of up
-to 128 tokens (max |Δp| 0.0078); the 9 rows that need L2048 match 9/9 (max |Δp| 0.0015); CPU with four threads
-matches 40/40 (max |Δp| 0.0052). Starting at thermal status 0, **one question takes a median 175.8 ms at L128 and
-323.3 ms at L256** (the same rows of 73–97 tokens), 615.1 ms at L512 (300-token row) and 1,333.4 ms at L1024
-(1,000-token row), timed from the input writes to the output read-back. GPU default precision was not measured in
-the app.
+**On-device (Galaxy S26, LiteRT 2.2.0, debug build, verified):** every graph runs whole on the GPU delegate in one
+partition at `FP16_WITH_FP32_ACCUM` (L64 3,912 nodes, L128 4,759, L256 6,019, L512 8,515, L1024 13,555, L2048
+23,635; the pairs 4,975 / 6,235 + 3,965). In the sample app all 181 questions of the bundled gate (SemIf
+authored144 and 12 invented requests) get row IDs identical to the author's fp32 oracle, and every graph keeps
+the argmax on all rows outside near-ties: max |Δp| 0.00656 at L64, 0.00736 at L128, 0.00917 at L256, 0.00907 at
+L512, 0.00804 at L1024 (40 rows), 0.0101 on the Ls128 pair (132 questions, the same with and without weight
+sharing) and 0.0110 on the Ls256 pair (146 questions); the 9 rows that need L2048 reach 0.0093 (0.0015 at FP32).
+CPU with four threads passes on the pair's opening 40 questions (max |Δp| 0.00525). With the GPU clock ceiling at
+1,300 MHz, **one question takes a median 56.6 ms at L64, 102.2 ms at L128 and 196.3 ms at L256**, 388.8 ms at
+L512 and 816.0 ms at L1024, timed from the input writes to the output read-back; at FP32 L128 takes 137.8 ms and
+L256 272.1 ms. The bundled ticket takes 367 ms on the Ls128 pair and 463 ms on L256 + L128, and a five-question
+request 429.6 ms on the pair with the weights held once per signature (623.3 ms when the two signatures share
+them). 3–8 s into back-to-back calls the ceiling falls and calls take 1.7–2.1 times as long.
 
 | Model | Download | Size | Input → Output | Delegate |
 |---|---|---|---|---|
-| Kev-0.8B L128 / L256 / L512 / L1024 / L2048 | [HF: litert-community/Kev-0.8B-LiteRT](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) | 1,261,728,400 / 1,262,377,184 (L128 / L256 to be confirmed at upload) / 1,264,068,368 / 1,269,023,216 / 1,285,227,888 B + 2,099,632 B pointer head + 19,989,325 B tokenizer.json | ids [1,L] + valid [1,L] → hidden [1,L,1024] → host pointer head → `to_answers` | GPU FP32 (verified on the S26; CPU also verified) |
+| Kev-0.8B L64 / L128 / L256 / L512 / L1024 / L2048, pairs Ls128 / Ls256 | [HF: litert-community/Kev-0.8B-LiteRT](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) | 1,258,031,552 / 1,258,444,912 / 1,259,246,704 / 1,261,233,328 / 1,266,799,568 / 1,284,223,520 B; pairs 1,261,368,160 / 1,261,918,016 B; + 2,099,632 B pointer head + 19,989,325 B tokenizer.json | ids [1,L] + valid [1,L] → hidden [1,L,1024]; pair: `state_prefill_<Ls>` → 48 state tensors, `question_step_<Ls>_64` → hidden [1,64,1024]; → host pointer head → `to_answers` | GPU FP16_WITH_FP32_ACCUM (verified on the S26; CPU also verified) |
 
-**Sample app**: [kev/](kev/) — pure-Kotlin host (byte-level BPE tokenizer read from the checkpoint's `tokenizer.json`, the author's request rendering and rows, the pointer head read from safetensors, `to_answers` with CPython's float `sum` and `round`) in a Compose app: a state + typed questions → an answer card per question with every option's probability and the window it ran on, and the response JSON; GPU FP32 or CPU, three invented example requests. The default install is the L256 and L512 graphs; each question asks for the smallest installed window that holds its row, L128 and L256 can stay compiled side by side when Android reports at least 4,500,000 kB available, and a request that needs L512 or more runs on that one graph (with L2048 compiled next to L128, Android's low-memory killer stopped the app in one run). The limit was then checked on the phone: L128 + L256 stayed up again (low point 638,280 kB), and a long request ran on L2048 alone. On a desktop JVM the host equals the author's oracle on 402/402 questions (rows, readout indices and answers). On the Galaxy S26 the bundled ticket answers team `billing` 0.9258, refund 0.9456 and mood score 1.1842 on L256 in 1,046 ms (756 ms with L128 installed too; GPU FP32).
+**Sample app**: [kev/](kev/) — pure-Kotlin host (byte-level BPE tokenizer read from the checkpoint's `tokenizer.json`, the author's request rendering and rows, the pointer head read from safetensors, `to_answers` with CPython's float `sum` and `round`) in a Compose app: a state + typed questions → an answer card per question with every option's probability and the graph it ran on, and the response JSON; GPU or CPU, three invented example requests. The default install is the L128 and L256 graphs and the Ls128 pair. For each request the app predicts, from its own S26 measurements, the time of the rows (each question on the smallest installed window that holds its row; two windows compiled at once only when both are L256 or smaller and Android reports at least 4,500,000 kB available) and of the pair (the state once, then 62–93 ms per question), and runs the smaller. The pair holds its weights once per signature when at least 6,500,000 kB are available before its compile (quicker, more memory) and shares one copy below that. On a desktop JVM the host equals the author's oracle on 402/402 questions (rows, readout indices and answers), and the pair's path gives the row path's answers on 312/312. On the Galaxy S26 the bundled ticket answers team `billing` 0.9258, refund 0.9457 and mood score 1.1844 on the pair in 367 ms (the author's fp32 model: 0.9256, 0.9459 and 1.1865).
 Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-04 Kev-0.8B section).
 
 **Original project**: [jaredpalmer/kev](https://github.com/jaredpalmer/kev) (Apache-2.0); base model Qwen3.5-0.8B-Base (Apache-2.0)

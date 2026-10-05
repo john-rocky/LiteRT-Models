@@ -186,11 +186,17 @@ private fun StatusLine(state: UiState) {
         else MaterialTheme.colors.onSurface,
     )
     state.engine?.let { engine ->
+      val precision = KevPrecision.common(engine.precisions, engine.forcedPrecision)
+      // On GPU, graphs at different precisions name theirs one by one.
+      val each =
+        engine.precisions.takeIf {
+          precision == null && it.isNotEmpty() && engine.backend == KevDecider.Backend.GPU
+        }
       Text(
         stringResource(
           R.string.engine_line,
-          backendTitle(engine.backend, engine.precision),
-          residentText(engine.resident),
+          backendTitle(engine.backend, precision),
+          residentText(engine.resident, each),
           engine.loadMs / MILLIS_PER_SECOND,
           engine.compileMs / MILLIS_PER_SECOND,
         ),
@@ -448,20 +454,44 @@ private fun graphName(graph: KevGraphKey?): String =
     null -> ""
   }
 
-/** "L128 + L256" or "S128+Q64": the [resident] graphs (windows ascending, then the pair). */
+/**
+ * "L128 + L256" or "S128+Q64": the [resident] graphs (windows ascending, then the pair); with
+ * [precisions] (one per graph) "L128 FP16 (FP32 accum) + L256 FP32".
+ */
 @Composable
-private fun residentText(resident: List<KevGraphKey>): String =
+private fun residentText(resident: List<KevGraphKey>, precisions: List<KevPrecision>?): String =
   if (resident.isEmpty()) stringResource(R.string.no_graph)
-  else resident.map { graphName(it) }.joinToString(WINDOW_SEPARATOR)
+  else
+    resident
+      .mapIndexed { index, graph ->
+        val precision = precisions?.getOrNull(index)
+        if (precision == null) graphName(graph)
+        else stringResource(R.string.graph_precision, graphName(graph), precisionName(precision))
+      }
+      .joinToString(WINDOW_SEPARATOR)
 
-/** "GPU FP32", "GPU FP16 (FP32 accum)" or "CPU 4 threads". */
+/**
+ * "GPU FP32", "GPU FP16 (FP32 accum)", "GPU" (no single [precision]: graphs at different ones, or
+ * each graph at its own default before any compiles) or "CPU 4 threads".
+ */
 @Composable
-private fun backendTitle(backend: KevDecider.Backend, precision: KevPrecision): String =
+private fun backendTitle(backend: KevDecider.Backend, precision: KevPrecision?): String =
   stringResource(
     when {
       backend == KevDecider.Backend.CPU -> R.string.backend_cpu
       precision == KevPrecision.FP16_FP32_ACCUM -> R.string.backend_gpu_fp16acc
-      else -> R.string.backend_gpu
+      precision == KevPrecision.FP32 -> R.string.backend_gpu
+      else -> R.string.backend_gpu_any
+    }
+  )
+
+/** "FP32" or "FP16 (FP32 accum)". */
+@Composable
+private fun precisionName(precision: KevPrecision): String =
+  stringResource(
+    when (precision) {
+      KevPrecision.FP32 -> R.string.precision_fp32
+      KevPrecision.FP16_FP32_ACCUM -> R.string.precision_fp16acc
     }
   )
 

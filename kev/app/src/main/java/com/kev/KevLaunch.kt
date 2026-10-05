@@ -4,10 +4,15 @@ import java.util.Locale
 
 /** What a launch intent asks for (see `MainActivity` for the extras). */
 sealed interface KevLaunch {
-  /** The editable sample: Decide plans each request in [graph] mode, on GPU at [precision]. */
+  /**
+   * The editable sample: Decide plans each request in [graph] mode, on GPU at [precision] (null:
+   * each graph at its own default, [KevPrecision.defaultFor]).
+   */
   data class Normal(
     val graph: KevGraphMode = KevGraphMode.AUTO,
-    val precision: KevPrecision = KevPrecision.FP32,
+    val precision: KevPrecision? = null,
+    /** Whether a pair compiles with constant tensor sharing (the `share` extra). */
+    val share: KevPairShare = KevPairShare.AUTO,
   ) : KevLaunch
 
   /**
@@ -15,28 +20,33 @@ sealed interface KevLaunch {
    */
   data class Gate(
     val backend: KevDecider.Backend,
-    val precision: KevPrecision,
+    val precision: KevPrecision?,
     val report: String,
     val graph: KevGraphKey,
     val limit: Int,
+    val share: KevPairShare = KevPairShare.AUTO,
   ) : KevLaunch
 
   /**
    * Debug and benchmark builds: the timing protocol on the rows of `files/<rows>`, limited to the
-   * [sets] named (null: all of them), on the row [window] or on the pair when [graph] is
+   * [sets] named (null: all of them), on the row [window] or on the [pair] when [graph] is
    * [KevGraphMode.PAIR]; then, with [requestPath], the bundled request from its text on the plan of
-   * [graph] (every row on [window] when the mode is [KevGraphMode.ROWS]).
+   * [graph] (every row on [window] when the mode is [KevGraphMode.ROWS]). With [coolMs] > 0, each
+   * set and the request path first wait for the GPU to cool ([KevCooler]).
    */
   data class Timing(
     val rows: String,
     val backend: KevDecider.Backend,
-    val precision: KevPrecision,
+    val precision: KevPrecision?,
     val report: String,
     val window: Int,
+    val pair: KevPairShape,
     val graph: KevGraphMode,
     val clearCache: Boolean,
     val sets: List<String>?,
     val requestPath: Boolean,
+    val coolMs: Long = 0,
+    val share: KevPairShare = KevPairShare.AUTO,
   ) : KevLaunch
 
   /**
@@ -50,7 +60,8 @@ sealed interface KevLaunch {
     val gapMs: Long,
     val window: Int?,
     val graph: KevGraphMode = KevGraphMode.AUTO,
-    val precision: KevPrecision = KevPrecision.FP32,
+    val precision: KevPrecision? = null,
+    val share: KevPairShare = KevPairShare.AUTO,
   ) : KevLaunch
 
   /** Extras that cannot be followed; [autoplay] says which log tag reports it. */
@@ -63,10 +74,15 @@ sealed interface KevLaunch {
     fun backend(name: String?): KevDecider.Backend? =
       KevDecider.Backend.entries.firstOrNull { it.name == (name ?: "gpu").uppercase(Locale.ROOT) }
 
-    /** The `precision` extra: `fp32` (default) or `fp16acc`; null for anything else. */
-    fun precision(name: String?): KevPrecision? =
-      if (name == null) KevPrecision.FP32
-      else KevPrecision.entries.firstOrNull { it.wireName == name.trim().lowercase(Locale.ROOT) }
+    /**
+     * The `precision` extra, `fp32` or `fp16acc`, for every graph of the process; null for anything
+     * else. Without the extra each graph runs at its own default ([KevPrecision.defaultFor]).
+     */
+    fun precision(name: String): KevPrecision? =
+      KevPrecision.entries.firstOrNull { it.wireName == name.trim().lowercase(Locale.ROOT) }
+
+    /** The `share` extra: `auto`, `on` or `off` (constant tensor sharing of a pair); else null. */
+    fun share(name: String): KevPairShare? = KevPairShare.of(name)
 
     fun reportNameValid(name: String): Boolean =
       name.matches(REPORT_NAME) && !name.endsWith(".partial")

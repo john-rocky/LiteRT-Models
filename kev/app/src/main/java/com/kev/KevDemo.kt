@@ -41,7 +41,11 @@ object KevDemo {
         is KevPlan.NoPair -> "PLAN form=none pair=${plan.miss}"
       } +
         " avail_mem_bytes=${inputs?.availableBytes ?: "-"} " +
-        "resident=${inputs?.resident?.joinToString(",") { it.label } ?: "-"}",
+        "resident=${inputs?.resident?.joinToString(",") { it.label } ?: "-"} " +
+        "share_mode=${inputs?.pairShare?.wireName ?: "-"}" +
+        (if (plan is KevPlan.Ready) plan.prediction.pairShared else null).let {
+          if (it == null) "" else " pair_shared_predicted=${if (it) "on" else "off"}"
+        },
     )
 
   /**
@@ -56,7 +60,8 @@ object KevDemo {
         "compiled=${graphs.compiled.joinToString(",") { it.label }} " +
         "avail_mem_bytes=${graphs.availableBytes.joinToString(",")} " +
         "closed=${graphs.closed.joinToString(",") { it.label }} " +
-        "resident=${resident.joinToString(",") { it.label }}",
+        "resident=${resident.joinToString(",") { it.label }}" +
+        (graphs.pairShare?.let { " pair_share=${if (it) "on" else "off"}" } ?: ""),
     )
 
   /** The pair's state call of an autoplay request: its tokens and its ms. */

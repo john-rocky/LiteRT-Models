@@ -57,7 +57,7 @@ class KevDraftsTest {
         assertArrayEquals(key, OracleFixtures.ints(question["row_ids"]), row.ids)
         assertEquals(key, (question["decide_idx"] as JsonNumber).toInt(), row.decideIndex)
         assertArrayEquals(key, OracleFixtures.ints(question["opt_idx"]), row.optionIndices)
-        assertEquals(key, 256, row.window(KevFiles.DEFAULT_INSTALL))
+        assertEquals(key, if (row.length <= 128) 128 else 256, row.window(KevFiles.DEFAULT_INSTALL))
         checked++
       }
     }

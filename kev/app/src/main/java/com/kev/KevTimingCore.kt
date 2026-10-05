@@ -6,12 +6,18 @@ package com.kev
  * a call is input writes + `run()` + read-back of `hidden`; on the shared-state pair, the same
  * counts of requests (the state call once, then one question step per row); and the request path of
  * one request from its text (tokenize, the plan's graph calls, head, `to_answers`). [shouldStop] is
- * asked after every call; once it says yes, the remaining calls are left out.
+ * asked after every call; once it says yes, the remaining calls are left out. Each call (or
+ * request) also records its start on [wallClock] (the device's wall clock in milliseconds) and the
+ * GPU clock ceiling [ceiling] reads right before it (a pair request: also right after it), next to
+ * its ms; both are read outside the timed interval.
  */
 class KevTimingCore(
   private val pipeline: KevPipeline,
   /** The row graph the row sets run on (null when the run times the pair). */
   private val runner: RowRunner?,
+  private val wallClock: () -> Long = System::currentTimeMillis,
+  /** The GPU clock ceiling in MHz, or null when it cannot be read. */
+  private val ceiling: () -> Int? = { null },
   private val shouldStop: () -> Boolean,
 ) {
   var stoppedEarly = false
@@ -25,15 +31,21 @@ class KevTimingCore(
     }
     val padded = set.rows.map { KevPaddedRow.of(it.ids, runner.length) to it.ids.size }
     val warmup = ArrayList<Double>()
+    val warmupStarts = ArrayList<Long>()
+    val warmupCeilings = ArrayList<Int?>()
     var finite = true
     for (call in 0 until WARMUP_CALLS) {
       if (stoppedEarly) break
       val (inputs, length) = padded[call % padded.size]
+      warmupCeilings.add(ceiling())
+      warmupStarts.add(wallClock())
       val (ms, rowFinite) = call(inputs, length)
       warmup.add(ms)
       finite = finite && rowFinite
     }
     val perCall = ArrayList<Double>()
+    val callStarts = ArrayList<Long>()
+    val callCeilings = ArrayList<Int?>()
     val perRequest = ArrayList<Double>()
     for (repeat in 0 until TIMED_REPEATS) {
       if (stoppedEarly) break
@@ -44,6 +56,8 @@ class KevTimingCore(
           complete = false
           break
         }
+        callCeilings.add(ceiling())
+        callStarts.add(wallClock())
         val (ms, rowFinite) = call(inputs, length)
         finite = finite && rowFinite
         perCall.add(ms)
@@ -64,9 +78,13 @@ class KevTimingCore(
           )
         },
       "warmup_ms" to warmup,
+      "warmup_starts_ms" to warmupStarts,
+      "warmup_max_clock_mhz" to warmupCeilings,
       "per_call_ms" to KevStats.of(perCall)?.toJson(),
       "per_request_ms" to (if (set.rows.size > 1) KevStats.of(perRequest)?.toJson() else null),
       "calls_ms" to perCall,
+      "call_starts_ms" to callStarts,
+      "call_max_clock_mhz" to callCeilings,
       "finite" to finite,
     )
   }
@@ -80,16 +98,24 @@ class KevTimingCore(
   fun timePairSet(set: KevTimingSet, pair: PairRunner): LinkedHashMap<String, Any?> {
     val requests = pairRequests(set, pair)
     val warmup = ArrayList<Double>()
+    val warmupStarts = ArrayList<Long>()
+    val warmupCeilings = ArrayList<Int?>()
     var finite = true
     for (call in 0 until WARMUP_CALLS) {
       if (stoppedEarly) break
       val request = pairRequest(requests[call % requests.size], pair)
       warmup.add(request.totalMs)
+      warmupStarts.add(request.startMs)
+      warmupCeilings.add(request.ceilingBefore)
       finite = finite && request.finite
     }
     val perRequest = ArrayList<Double>()
+    val requestStarts = ArrayList<Long>()
+    val requestCeilings = ArrayList<Int?>()
+    val requestCeilingsAfter = ArrayList<Int?>()
     val perState = ArrayList<Double>()
     val perQuestion = ArrayList<Double>()
+    val questionStarts = ArrayList<Long>()
     for (repeat in 0 until TIMED_REPEATS) {
       for (split in requests) {
         if (stoppedEarly) break
@@ -97,9 +123,13 @@ class KevTimingCore(
         finite = finite && request.finite
         if (request.complete) {
           perRequest.add(request.totalMs)
+          requestStarts.add(request.startMs)
+          requestCeilings.add(request.ceilingBefore)
+          requestCeilingsAfter.add(request.ceilingAfter)
           perState.add(request.stateMs)
         }
         perQuestion.addAll(request.questionMs)
+        questionStarts.addAll(request.questionStartsMs)
       }
     }
     return linkedMapOf(
@@ -119,12 +149,18 @@ class KevTimingCore(
       "requests" to
         requests.map { linkedMapOf("state_len" to it.state.size, "branch_lens" to it.lengths) },
       "warmup_request_ms" to warmup,
+      "warmup_starts_ms" to warmupStarts,
+      "warmup_max_clock_mhz" to warmupCeilings,
       "request_ms" to KevStats.of(perRequest)?.toJson(),
       "state_ms" to KevStats.of(perState)?.toJson(),
       "question_ms" to KevStats.of(perQuestion)?.toJson(),
       "request_calls_ms" to perRequest,
+      "request_starts_ms" to requestStarts,
+      "request_max_clock_mhz" to requestCeilings,
+      "request_max_clock_mhz_after" to requestCeilingsAfter,
       "state_calls_ms" to perState,
       "question_calls_ms" to perQuestion,
+      "question_starts_ms" to questionStarts,
       "finite" to finite,
     )
   }
@@ -162,21 +198,31 @@ class KevTimingCore(
     return requests
   }
 
-  /** One timed pair request: the state call, then each question step. */
+  /**
+   * One timed pair request: the state call, then each question step; its start on the wall clock
+   * and the GPU ceiling read right before and right after it.
+   */
   private class PairCall(
+    val ceilingBefore: Int?,
+    val ceilingAfter: Int?,
+    val startMs: Long,
     val totalMs: Double,
     val stateMs: Double,
     val questionMs: List<Double>,
+    val questionStartsMs: List<Long>,
     val finite: Boolean,
     val complete: Boolean,
   )
 
   private fun pairRequest(split: PairSplit, pair: PairRunner): PairCall {
     val state = KevPaddedRow.of(split.state, pair.stateLength)
+    val ceilingBefore = ceiling()
+    val startMs = wallClock()
     val start = System.nanoTime()
     pair.runState(state.ids, state.valid)
     val stateEnd = System.nanoTime()
     val questionMs = ArrayList<Double>()
+    val questionStarts = ArrayList<Long>()
     val outputs = ArrayList<Pair<FloatArray, Int>>()
     var complete = true
     for (branch in split.branches) {
@@ -185,6 +231,7 @@ class KevTimingCore(
         break
       }
       val inputs = KevPaddedRow.of(branch, pair.questionLength)
+      questionStarts.add(wallClock())
       val questionStart = System.nanoTime()
       val hidden = pair.runQuestion(inputs.ids, inputs.valid)
       questionMs.add(KevPipeline.millis(System.nanoTime() - questionStart))
@@ -192,11 +239,22 @@ class KevTimingCore(
       if (shouldStop()) stoppedEarly = true
     }
     val totalMs = KevPipeline.millis(System.nanoTime() - start)
+    val ceilingAfter = ceiling()
     // Finiteness on the real positions, after the clock stops.
     val finite = outputs.all { (hidden, length) ->
       KevPipeline.nonFiniteCount(hidden, 0, length * KevPointerHead.HIDDEN_SIZE) == 0
     }
-    return PairCall(totalMs, KevPipeline.millis(stateEnd - start), questionMs, finite, complete)
+    return PairCall(
+      ceilingBefore,
+      ceilingAfter,
+      startMs,
+      totalMs,
+      KevPipeline.millis(stateEnd - start),
+      questionMs,
+      questionStarts,
+      finite,
+      complete,
+    )
   }
 
   /** [request] from its text with every question on the row graph. */
@@ -220,7 +278,11 @@ class KevTimingCore(
     val prepared0 = pipeline.prepare(request)
     val rowLengths = prepared0.rows.map { it.length }
     val warmup = ArrayList<Double>()
+    val warmupStarts = ArrayList<Long>()
+    val warmupCeilings = ArrayList<Int?>()
     val total = ArrayList<Double>()
+    val starts = ArrayList<Long>()
+    val ceilings = ArrayList<Int?>()
     val tokenize = ArrayList<Double>()
     val state = ArrayList<Double>()
     val infer = ArrayList<Double>()
@@ -228,6 +290,8 @@ class KevTimingCore(
     var lastAnswers: Map<String, Any?>? = null
     for (iteration in 0 until WARMUP_CALLS + TIMED_REPEATS) {
       if (stoppedEarly) break
+      val startCeiling = ceiling()
+      val startMs = wallClock()
       val start = System.nanoTime()
       val prepared = pipeline.prepare(request)
       val result = pipeline.runRequest(prepared, runners)
@@ -236,9 +300,13 @@ class KevTimingCore(
       if (shouldStop()) stoppedEarly = true
       if (iteration < WARMUP_CALLS) {
         warmup.add(ms)
+        warmupStarts.add(startMs)
+        warmupCeilings.add(startCeiling)
         continue
       }
       total.add(ms)
+      starts.add(startMs)
+      ceilings.add(startCeiling)
       tokenize.add(prepared.tokenizeMs)
       result.state?.let { state.add(it.ms) }
       infer.addAll(result.questions.map { it.inferMs })
@@ -261,7 +329,12 @@ class KevTimingCore(
           "tokenize the request, then per question: pad, graph call, head; then to_answers"
         },
       "warmup_ms" to warmup,
+      "warmup_starts_ms" to warmupStarts,
+      "warmup_max_clock_mhz" to warmupCeilings,
       "request_ms" to KevStats.of(total)?.toJson(),
+      "request_calls_ms" to total,
+      "request_starts_ms" to starts,
+      "request_max_clock_mhz" to ceilings,
       "tokenize_ms" to KevStats.of(tokenize)?.toJson(),
       "state_ms" to KevStats.of(state)?.toJson(),
       "infer_ms_per_call" to KevStats.of(infer)?.toJson(),

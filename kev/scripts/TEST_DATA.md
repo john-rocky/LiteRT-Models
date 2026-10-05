@@ -71,18 +71,22 @@ and the other 9 tokens that only `tokenizer_config.json` lists.
 
 | Test | Needs | Checks |
 |---|---|---|
-| `KevEncoderTest` | tokenizer, requests, oracle | 377 requests → rows: IDs, decide and option indices of all 402 questions; `usage.input_tokens` of all 377; windows 393 / 0 / 9 over L512 / L1024 / L2048 and 322 / 64 / 7 / 0 / 9 over the five published windows; padding, `valid` mask and the rejection over 2,048 tokens |
+| `KevEncoderTest` | tokenizer, requests, oracle | 377 requests → rows: IDs, decide and option indices of all 402 questions; `usage.input_tokens` of all 377; windows 393 / 0 / 9 over L512 / L1024 / L2048 and 72 / 250 / 64 / 7 / 0 / 9 over the six published windows (L64 … L2048); padding, `valid` mask and the rejection over 2,048 tokens |
 | `KevTokenizerTest` | tokenizer, probes | the tokenizer.json contract (regex, 33 added tokens, vocabulary size), the Java spelling of the regex, the `<\|name\|>` rewrite, the 54 probes |
 | `KevPointerHeadTest` | head, oracle, hidden states | the 402 oracle questions within 1e-5 (probabilities) and 1e-4 (logits); the 12 bundled questions; the head constants |
 | `KevAnswersTest` | oracle, requests, numbers | `to_answers` on the oracle's probabilities equals the oracle's answers (402 questions, 377 requests), CPython's `sum`, `round` and the confidence formulas |
 | `KevRecordsTest` | render cases | `render`, `option_text`, `to_record`, request validation |
 | `KevJsonTest` | numbers | key order, integer vs float literals, escapes, rejection of malformed JSON, Python's float `repr` |
 | `GateFixturesTest` | debug asset, tokenizer, oracle | declared counts (156 requests, 181 questions), rows and indices of every asset question, answers from the asset's probabilities, asset = oracle |
-| `KevPipelineTest` | tokenizer, head, requests, oracle, hidden states | the app's decision path with stand-in graphs that check the padded inputs and return the oracle's hidden states at the readout positions, with the graphs `KevResidentGraphs` compiles: L512 / L1024 / L2048 installed (windows 393 / 0 / 9), all five with memory for a second graph (322 / 64 / 7 / 0 / 9, every row on its smallest installed window) and without (319 / 67 / 7 / 0 / 9); answers of all 402 questions and `usage.input_tokens` of all 377 requests in all three; rows over the window and NaN outputs are rejected; the IDs' sha256 |
-| `KevWindowsTest` | nothing external | the smallest installed window per row length for the installed sets {256, 512}, {128, 256, 512}, {512} and {512, 2048}; L128 + L256 side by side with enough available memory, L256 alone below the limit, L512 or more alone, the return from L2048 to the small windows, the bundled examples on L256 with the default install, a named window for every row, another backend reopening the primary only; never more than two graphs open |
-| `DemoFixtureTest` | tokenizer, demo fixtures | every demo fixture parses and encodes to the row lengths of `token_lengths.json` (`demo_ticket_01`: 131 / 101 / 93) and the demo oracle's row IDs; without the demo files, the bundled ticket example against `examples_oracle.json`; the demo run JSON has every key the recording scripts read |
+| `KevPipelineTest` | tokenizer, head, requests, oracle, hidden states | the app's decision path with stand-in graphs that check the padded inputs and return the oracle's hidden states at the readout positions, with the graphs `KevResidentGraphs` compiles: L512 / L1024 / L2048 installed (windows 393 / 0 / 9), all six with memory for a second graph (72 / 250 / 64 / 7 / 0 / 9, every row on its smallest installed window) and without (72 / 247 / 67 / 7 / 0 / 9); answers of all 402 questions and `usage.input_tokens` of all 377 requests in all three; the Ls128 pair on every request it takes (304 requests, 312 questions: the row path's and the oracle's answers), states and branches too long for it rejected with the reason; rows over the window and NaN outputs are rejected; the IDs' sha256 |
+| `KevWindowsTest` | nothing external | the smallest installed window per row length for the installed sets {256, 512}, {128, 256, 512}, {512} and {512, 2048}; the default install (L128 + L256 + the Ls128 pair) and the files a launch without any graph asks for; a plan's two largest windows side by side with enough available memory (three small windows keep the two largest), the largest alone below the limit, L512 or more alone, the return from L2048 to the small windows, the bundled examples on L128 and L256 with the default install, a named window for every row, another backend closing every graph; the pair alone, closed by a row plan and keeping the weight sharing it was compiled with; never more than two graphs open |
+| `KevPlannerTest` | tokenizer, debug asset | the plan with the Galaxy S26 table: the bundled examples, the five-question request and a three-question email on the default install at three memory levels (pair without sharing, with sharing, rows), a compiled pair's mode, the `share` extra, the Ls128 / Ls256 state limits, a tie to the rows, a named form or window; the table's request lengths are the encoder's |
+| `KevOptionsTest` | nothing external | the compile options: GPU with an explicit precision, constant tensor sharing on or off for a pair and LiteRT's default for a row graph, CPU with four threads; the `share` extra |
+| `KevPrecisionTest` | nothing external | each published graph's default precision (`FP16_WITH_FP32_ACCUM`), FP32 for the sizes published before the kernel rewrite, the precision a status line names |
+| `KevCoolTest` | nothing external | the wait for the GPU clock ceiling and temperature (back in time, at its limit, unreadable kgsl), the start time and ceiling recorded with each timed call |
+| `DemoFixtureTest` | tokenizer, demo fixtures | every demo fixture parses and encodes to the row lengths of `token_lengths.json` (`demo_ticket_01`: 131 / 101 / 93) and the demo oracle's row IDs; without the demo files, the bundled ticket example against `examples_oracle.json`; the demo run JSON has every key the recording scripts read, and a pair run keeps each question's row coordinates and adds the state |
 | `KevDraftsTest` | `examples_oracle.json`, tokenizer | the three examples are the demo requests byte for byte (sha256) and encode to the demo oracle's rows (9/9) and `usage.input_tokens`; `to_answers` on the oracle's and on the shipped graph's probabilities gives their answers (18/18); the editor round trip keeps the record; editor errors; Python's `indent=2` JSON; 4-decimal strings |
-| `KevDeviceRunsTest` | debug assets, tokenizer, head, hidden states, timing rows | the on-device gate's checks with a stand-in graph that returns the oracle's hidden states: PASS with probes 54/54, rows 181/181, 172 rows run and 9 skipped as `needs L2048` at L512 and L256, 147 run at L128 (25 skipped as `needs L256`); `limit`, the stop file and a NaN graph cut or fail the run; the timing sets of the launch's window; the timing protocol's numbers of calls (5 + 20, request sets 20 × rows, the request path) |
+| `KevDeviceRunsTest` | debug assets, tokenizer, head, hidden states, timing rows | the on-device gate's checks with a stand-in graph that returns the oracle's hidden states: PASS with probes 54/54, rows 181/181, 172 rows run and 9 skipped as `needs L2048` at L512 and L256, 147 run at L128 (25 skipped as `needs L256`); on the Ls128 pair 124 requests and 132 questions (24 branches and 8 states too long); `limit`, the stop file and a NaN graph cut or fail the run; the timing sets of the launch's window and of the pair; the timing protocol's numbers of calls (5 + 20, request sets 20 × rows, pair requests, the request path) |
 | `KevGateChecksTest` | debug assets, tokenizer, oracle, timing rows | the gate's assets parse, the device probes equal the test probes, the near-tie gap equals the oracle's float32 gap (15 near-ties), numpy's median, the timing rows (`fiveq` = `own_fiveq_09`'s rows) |
 
 The bundled head fixture still needs the head weights from the external directory; they are
@@ -105,23 +109,29 @@ start and at the end (`…:cpuset:/top-app` in the foreground). A file `files/ST
 timing run after the current graph call (`stopped_early: true`); a stale one is removed at the
 start. Progress and results go to logcat under `KevGate`.
 
-Gate and timing runs compile the one window `--ei window` names, or the smallest installed one;
-their reports record `avail_mem_bytes_before_compile` and `resident_windows`. The app logs each
-request's windows under `KevDemo` (`WINDOWS questions=… compiled=… avail_mem_bytes=… closed=…
-resident=…`).
+Gate and timing runs compile the one graph they name: the pair with `--es graph pair` (`--ei ls
+128` or `256` names it by its state length; without it, Ls128 when it is installed, else Ls256),
+the window `--ei window` names, or the smallest installed window. `--es precision fp32|fp16acc` sets the GPU precision of
+every graph (without it each graph runs at its own default) and `--es share auto|on|off` the
+pair's weight sharing, as for a normal launch. The reports record `precision` (as compiled),
+`precision_requested`, `pair_share` and `pair_share_mode` for a pair, `avail_mem_bytes_before_compile`
+and `resident_graphs`. The app logs each request's plan and graphs under `KevDemo` (`PLAN form=…
+rows=…ms pair=…ms avail_mem_bytes=… resident=… share_mode=… pair_shared_predicted=…`, then `WINDOWS
+form=… questions=… compiled=… avail_mem_bytes=… closed=… resident=…`, with `pair_share=on|off` for a
+pair, and `STATE_DONE tokens=… ms=…` after a pair's state call).
 
 ```bash
 # Fixture gate: probes, all 181 rows, graph + head on the rows that fit the window.
 adb shell am start -n com.kev/.MainActivity --ez gate true --es backend gpu \
-  --es report app_gate_gpu.json [--ei window 256] [--ei limit 40]
+  --es report app_gate_gpu.json [--ei window 256 | --es graph pair --ei ls 128] [--ei limit 40]
 adb exec-out run-as com.kev cat files/app_gate_gpu.json > app_gate_gpu.json
 
 # Timing protocol (also in the benchmark build): the conversion run's timing_rows.json in files/.
 adb push timing_rows.json /data/local/tmp/kev_timing_rows.json
 adb shell run-as com.kev cp /data/local/tmp/kev_timing_rows.json files/timing_rows.json
 adb shell am start -n com.kev/.MainActivity --ez timing true --es rows timing_rows.json \
-  --es backend gpu --es report app_timing_gpu_L512.json [--ei window 512] [--ez clear_cache true] \
-  [--es sets T300] [--ez request_path false]
+  --es backend gpu --es report app_timing_gpu_L512.json [--ei window 512 | --es graph pair --ei ls 128] \
+  [--ez clear_cache true] [--es sets T300] [--ez request_path false] [--ei cool_ms 60000]
 # A rows file may name a set once per window (fiveq at L256 and at L512); a launch times the sets of its window.
 ```
 
@@ -144,7 +154,17 @@ the one before; to start every set at the same temperature, give each set a laun
 fiveq --ez request_path false`, then `--es sets T300 --ez request_path false`, then `--es sets none`).
 The report records `sets_requested` and `request_path_requested`. A call is input
 writes + `run()` + read-back. With `clear_cache` the app's cache directory is emptied before the
-graph compiles, so the compile time is a cold one.
+graph compiles, so the compile time is a cold one. Every timed call records its start (the
+device's wall clock) and the GPU clock ceiling (`/sys/class/kgsl/kgsl-3d0/max_clock_mhz`) read
+right before it, outside the timed span: `call_starts_ms` / `call_max_clock_mhz` for a row set,
+`request_starts_ms` / `request_max_clock_mhz` / `request_max_clock_mhz_after` and
+`question_starts_ms` for a pair set, `request_starts_ms` / `request_max_clock_mhz` for the request
+path (warm-ups: `warmup_starts_ms` / `warmup_max_clock_mhz`). With `--ei cool_ms` the app reads the
+ceiling and the GPU temperature before the compile (`gpu_state_before_compile`) and, before each
+set and before the request path, waits until the ceiling is back and the temperature at most 5 °C
+above that reading, at most `cool_ms` (a fixed sleep when kgsl cannot be read); each records what
+it did as `cool`. The request path records its plan (`form`, `predicted_ms`, `avail_mem_bytes`,
+the graphs and their precision, `pair_share`).
 
 The demo autoplay reaches the running app (`launchMode="singleTop"`). Put the request in
 `files/` as `{"id", "state", "questions"}`, launch the app normally, wait for `ENGINE_READY`, then:
@@ -155,18 +175,22 @@ adb shell am start -n com.kev/.MainActivity --ez autoplay true \
 ```
 
 `delay_ms` runs from the intent to the request on screen, `gap_ms` before each question. Without
-`--ei window` each question runs on the window a Decide would use; `--ei window 2048` runs every
-question on that graph (it becomes the second compiled graph). The app
+`--ei window` the request runs on the plan a Decide would use (rows or the pair; `--es graph`
+fixes the form); `--ei window 2048` runs every question on that graph. The app
 logs under `KevDemo`: `ENGINE_READY load_ms=<tokenizer + head + compile>`, `AUTOPLAY_START
 fixture=<path>`, `Q_DONE qid=<id> ms=<the card's ms>`, `AUTOPLAY_DONE json=<path>`, or
 `failed <reason>`; `GPU_FALLBACK <error>` when the GPU graph could not be compiled and the app
-runs on CPU. The run JSON `files/kev-demo-<epoch ms>.json` records the device, the runtime,
-the graphs (`graph`: `file`, `L` and `bytes` of the largest window the questions ran on, `windows`
-= every window they ran on, `resident` = the compiled graphs at the end, `compiled` = each compile
-for the request with `avail_mem_bytes` read right before it, `closed`, and `second_refused` when
-the memory was too low for a second graph), the title and footer
+runs on CPU. The run JSON `files/kev-demo-<epoch ms>.json` records the device, the runtime
+(`litert`, `accelerator` as the footer shows it, `precision`, `precision_requested`), the graphs
+(`graph`: `file`, `L` and `bytes` of the largest window the questions ran on or of the pair,
+`form`, `precision`, `share` for a pair, `pair` = its Ls and Lq, `windows` = every window the
+questions ran on, `resident` = the compiled graphs at the end with their precision, `compiled` =
+each compile for the request with `avail_mem_bytes` read right before it, `closed`, and
+`second_refused` when the memory was too low for a second graph), the plan (`requested`, `form`,
+`predicted_ms` of both forms, `avail_mem_bytes`, `resident`, `share_mode`,
+`pair_shared_predicted`), the pair's state call (`state`: tokens, window, ms), the title and footer
 lines as shown, every question's probabilities, the strings on its card (`shown`, `shown_ms` = the
 ms only; the card also shows the window), its answer, row IDs, readout indices, `window`,
-`ids_sha256` and times (`infer_ms` = the card's ms), `request_total_ms` (tokenize to the last
+`ids_sha256`, `form`, `precision` and times (`infer_ms` = the card's ms), `request_total_ms` (tokenize to the last
 answer, without the demo's waits and without a graph compile), airplane mode, the cgroup line and
 where the screen drew the title, the cards' state indicators and the footer (`layout`).

@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
-# Download the files (the L256 and L512 graphs, the head and the tokenizer; the L128, L1024 and L2048
-# graphs are optional):
-# hf download litert-community/Kev-0.8B-LiteRT kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite \
-#   kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite \
+# Download the files (the L128 and L256 graphs, the Ls128 shared-state pair, the head and the
+# tokenizer; the L64, L512, L1024 and L2048 graphs and the Ls256 pair are optional):
+# hf download litert-community/Kev-0.8B-LiteRT kev-0.8b_rowprefill_L128_fp16fc_i8emb.tflite \
+#   kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite \
+#   kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite \
 #   head/kev_0.8b_pointer_head.safetensors tokenizer/tokenizer.json \
 #   --local-dir "$HOME/Downloads/Kev-0.8B-LiteRT"
 # Usage: ./scripts/install_to_device.sh [dir-with-downloaded-HF-repo]
 # The directory holds the graphs at its top level, head/ and tokenizer/. A directory without
-# head/ and tokenizer/ is read flat (all files side by side). WINDOWS selects the graphs: "256 512"
-# by default; WINDOWS="128 256 512 1024 2048" installs all five. PAIR=1 adds the shared-state pair
-# (kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite). Every file must be in the directory with
-# the published size; nothing is copied otherwise. CHECK_SIZES=0 skips the published sizes (files
-# you converted yourself) and checks each copy against its source instead. Graphs already on the
-# device that WINDOWS does not name stay there.
+# head/ and tokenizer/ is read flat (all files side by side). WINDOWS selects the graphs: "128 256"
+# by default; WINDOWS="64 128 256 512 1024 2048" installs all six, WINDOWS="" none. PAIR selects the
+# shared-state pairs by their state length: the Ls128 pair by default (PAIR=1 or PAIR=128,
+# kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite), PAIR="128 256" both, PAIR=0 none. Every
+# file must be in the directory with the published size; nothing is copied otherwise.
+# CHECK_SIZES=0 skips the published sizes (files you converted yourself) and checks each copy
+# against its source instead.
+# Graphs already on the device that WINDOWS and PAIR do not name stay there.
 # Install the debug APK before running this script: run-as needs a debuggable package.
 # Set ANDROID_SERIAL to select a device when more than one is connected.
 set -euo pipefail
@@ -27,19 +30,21 @@ TEMP_DIR=/data/local/tmp/kev
 TOKENIZER=tokenizer.json
 HEAD=kev_0.8b_pointer_head.safetensors
 graph() { printf 'kev-0.8b_rowprefill_L%s_fp16fc_i8emb.tflite\n' "$1"; }
-PAIR_FILE=kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite
+pair() { printf 'kev-0.8b_sharedstate_Ls%s_Lq64_fp16fc_i8emb.tflite\n' "$1"; }
 
-# Published sizes in bytes (the L128, L256 and pair sizes are to be confirmed at upload).
+# Published sizes in bytes (the files staged for the next upload; to be confirmed at upload).
 size_of() {
     case "$1" in
         "$TOKENIZER") echo 19989325 ;;
         "$HEAD") echo 2099632 ;;
-        "$(graph 128)") echo 1261728400 ;;
-        "$(graph 256)") echo 1262377184 ;;
-        "$(graph 512)") echo 1264068368 ;;
-        "$(graph 1024)") echo 1269023216 ;;
-        "$(graph 2048)") echo 1285227888 ;;
-        "$PAIR_FILE") echo 1264544720 ;;
+        "$(graph 64)") echo 1258031552 ;;
+        "$(graph 128)") echo 1258444912 ;;
+        "$(graph 256)") echo 1259246704 ;;
+        "$(graph 512)") echo 1261233328 ;;
+        "$(graph 1024)") echo 1266799568 ;;
+        "$(graph 2048)") echo 1284223520 ;;
+        "$(pair 128)") echo 1261368160 ;;
+        "$(pair 256)") echo 1261918016 ;;
     esac
 }
 
@@ -57,23 +62,26 @@ source_file() {
 }
 
 FILES=("$TOKENIZER" "$HEAD")
-for window in ${WINDOWS:-256 512}; do
+for window in ${WINDOWS-128 256}; do
     case "$window" in
-        128 | 256 | 512 | 1024 | 2048) FILES+=("$(graph "$window")") ;;
+        64 | 128 | 256 | 512 | 1024 | 2048) FILES+=("$(graph "$window")") ;;
         *)
-            printf 'WINDOWS holds %s; the graphs are 128, 256, 512, 1024 and 2048\n' "$window" >&2
+            printf 'WINDOWS holds %s; the graphs are 64, 128, 256, 512, 1024 and 2048\n' "$window" >&2
             exit 2
             ;;
     esac
 done
-case "${PAIR:-0}" in
-    1) FILES+=("$PAIR_FILE") ;;
-    0) ;;
-    *)
-        printf 'PAIR is %s; use PAIR=1 to add the shared-state pair\n' "$PAIR" >&2
-        exit 2
-        ;;
-esac
+for length in ${PAIR-1}; do
+    case "$length" in
+        0) ;;
+        1 | 128) FILES+=("$(pair 128)") ;;
+        256) FILES+=("$(pair 256)") ;;
+        *)
+            printf 'PAIR holds %s; use PAIR=0, PAIR=1 or a list of state lengths, 128 and 256\n' "$length" >&2
+            exit 2
+            ;;
+    esac
+done
 case "${CHECK_SIZES:-1}" in
     0 | 1) ;;
     *)
@@ -82,7 +90,7 @@ case "${CHECK_SIZES:-1}" in
         ;;
 esac
 if [[ ${#FILES[@]} -eq 2 ]]; then
-    printf 'WINDOWS names no graph\n' >&2
+    printf 'WINDOWS and PAIR name no graph\n' >&2
     exit 2
 fi
 

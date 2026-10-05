@@ -42,8 +42,14 @@ class MainViewModel(private val context: Context) : ViewModel() {
   /** How Decide plans a request (the `graph` extra of the launch that started the app). */
   private var interactiveGraph = KevGraphMode.AUTO
 
-  /** The GPU precision of every graph of this process (the `precision` extra). */
-  private var precision = KevPrecision.FP32
+  /**
+   * The GPU precision of every graph of this process (the `precision` extra), or null when each
+   * graph runs at its own default ([KevPrecision.defaultFor]).
+   */
+  private var precision: KevPrecision? = null
+
+  /** Whether a pair compiles with constant tensor sharing (the `share` extra; auto by default). */
+  private var pairShare = KevPairShare.AUTO
 
   /** The bundled requests (`res/raw`): invented support ticket, incident report and review. */
   private val examples: List<KevFixture> = EXAMPLES.map { id ->
@@ -65,6 +71,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
       is KevLaunch.Timing -> runTiming(launch)
       is KevLaunch.Autoplay -> {
         usePrecision(launch.precision)
+        pairShare = launch.share
         // The graphs compiled at startup are the ones the fixture's request runs on.
         loadInteractive { autoplayStartup(launch) }
         autoplay(launch, SystemClock.elapsedRealtimeNanos())
@@ -76,12 +83,13 @@ class MainViewModel(private val context: Context) : ViewModel() {
       is KevLaunch.Normal -> {
         interactiveGraph = launch.graph
         usePrecision(launch.precision)
+        pairShare = launch.share
         loadInteractive { editorStartup() }
       }
     }
   }
 
-  private fun usePrecision(value: KevPrecision) {
+  private fun usePrecision(value: KevPrecision?) {
     precision = value
     mutableState.update { it.copy(precision = value) }
   }
@@ -219,8 +227,13 @@ class MainViewModel(private val context: Context) : ViewModel() {
           }
         ) {
           val loaded =
-            KevEngine.load(context, uiState.value.backendChoice, precision, cpuFallback = true) {
-              stage ->
+            KevEngine.load(
+              context,
+              uiState.value.backendChoice,
+              precision,
+              pairShare,
+              cpuFallback = true,
+            ) { stage ->
               setLoading(stage, null, switching = false)
             }
           engine = loaded
@@ -335,7 +348,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
             it.copy(
               status = KevStatus.Done(totalMs, results.size),
               engine = engineUi(loaded),
-              footerLines = footerLines(loaded, graphs.used, totalMs),
+              footerLines = footerLines(loaded, graphs, totalMs),
               responseJson = KevJson.writeIndented(loaded.pipeline.response(prepared, answers)),
             )
           }
@@ -534,7 +547,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
         title,
         KevRecords.render(fixture.request.state),
         cards.toList(),
-        presentationFooter(loaded, graphs.used, null),
+        presentationFooter(loaded, graphs, null),
         state = pair?.let { StateLineUi(prepared.encoded.stateIds.size) },
       )
     mutableState.update {
@@ -580,13 +593,14 @@ class MainViewModel(private val context: Context) : ViewModel() {
           inferMs,
           KevAnswerView.wholeMillis(result.headMs),
           KevAnswerView.wholeMillis(KevPipeline.millis(totalNanos)),
+          graphs.precisionOf(index),
         )
       )
     }
     // From the start of tokenizing to the last answer, without the presentation waits.
     val requestTotalMs =
       KevAnswerView.wholeMillis(KevPipeline.millis(lastAnswerNanos - requestStart - waitedNanos))
-    val footer = presentationFooter(loaded, graphs.used, requestTotalMs)
+    val footer = presentationFooter(loaded, graphs, requestTotalMs)
     presentation = presentation.copy(footerLines = footer)
     mutableState.update {
       it.copy(presentation = presentation, status = KevStatus.Done(requestTotalMs, questions.size))
@@ -603,12 +617,20 @@ class MainViewModel(private val context: Context) : ViewModel() {
           deviceShownAs = KevDevice.marketName(),
           deviceAndroidRelease = Build.VERSION.RELEASE,
           litert = KevDecider.LITERT_VERSION,
-          accelerator = backendName(loaded.backend),
-          precision = precision.wireName,
-          graph = graphFile(graphs.used.last()),
+          accelerator = backendName(loaded.backend, KevPrecision.common(graphs.precisions, null)),
+          precision = KevPrecision.common(graphs.precisions, null)?.wireName ?: MIXED_PRECISION,
+          precisionRequested = precision?.wireName,
+          graph = graphFile(graphs.used.last(), graphs.precisions.last(), graphs.pairShare),
           form = plan.form,
           windowsUsed = graphs.used.filterIsInstance<KevGraphKey.Window>().map { it.window },
-          resident = loaded.resident.map { graphFile(it) },
+          resident =
+            loaded.resident.zip(loaded.residentPrecisions) { graph, precision ->
+              graphFile(
+                graph,
+                precision,
+                loaded.pair?.shareConstants?.takeIf { graph is KevGraphKey.Pair },
+              )
+            },
           compiled = graphs.compiled,
           availableBytesBeforeCompile = graphs.availableBytes,
           closed = graphs.closed,
@@ -699,9 +721,13 @@ class MainViewModel(private val context: Context) : ViewModel() {
     }
   }
 
-  private fun graphFile(graph: KevGraphKey): KevGraphFile {
+  private fun graphFile(
+    graph: KevGraphKey,
+    precision: KevPrecision,
+    share: Boolean?,
+  ): KevGraphFile {
     val file = File(context.filesDir, graph.file)
-    return KevGraphFile(graph, file.length())
+    return KevGraphFile(graph, file.length(), precision, share)
   }
 
   /** The presentation screen reports where it drew the cards. */
@@ -719,6 +745,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
 
   private fun runGate(launch: KevLaunch.Gate) {
     usePrecision(launch.precision)
+    pairShare = launch.share
     mutableState.update {
       it.copy(
         mode = LaunchMode.GATE,
@@ -755,6 +782,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
 
   private fun runTiming(launch: KevLaunch.Timing) {
     usePrecision(launch.precision)
+    pairShare = launch.share
     mutableState.update {
       it.copy(
         mode = LaunchMode.TIMING,
@@ -771,13 +799,8 @@ class MainViewModel(private val context: Context) : ViewModel() {
       return
     }
     val setGraph =
-      if (launch.graph == KevGraphMode.PAIR) {
-        KevGraphKey.Pair(
-          KevFiles.installedPairs(context.filesDir).firstOrNull() ?: KevFiles.PAIRS.first()
-        )
-      } else {
-        KevGraphKey.Window(launch.window)
-      }
+      if (launch.graph == KevGraphMode.PAIR) KevGraphKey.Pair(launch.pair)
+      else KevGraphKey.Window(launch.window)
     worker.launch {
       engineLock.withLock {
         guarded(onFailure = ::diagnosticsFailed) {
@@ -795,6 +818,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
                   launch.clearCache,
                   launch.sets,
                   launch.requestPath,
+                  launch.coolMs,
                 ),
                 loadEngine = { diagnosticEngine(setGraph, launch.backend) },
                 prepare = { loaded, graph -> diagnosticGraph(loaded, graph) },
@@ -820,7 +844,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
     check(missing.isEmpty()) { "missing ${missing.joinToString(" ")}" }
     engine?.close()
     engine = null
-    return KevEngine.load(context, backend, precision, cpuFallback = false) { stage ->
+    return KevEngine.load(context, backend, precision, pairShare, cpuFallback = false) { stage ->
         setLoading(stage, null, false)
       }
       .also { engine = it }
@@ -921,8 +945,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
   private fun engineUi(loaded: KevEngine) =
     EngineUi(
       loaded.backend,
-      loaded.precision,
+      loaded.forcedPrecision,
       loaded.resident,
+      loaded.residentPrecisions,
       KevAnswerView.wholeMillis(loaded.loadMs ?: (loaded.tokenizerMs + loaded.headMs)),
       KevAnswerView.wholeMillis(loaded.compileMs),
       loaded.gpuFailure,
@@ -947,28 +972,28 @@ class MainViewModel(private val context: Context) : ViewModel() {
 
   /**
    * The footer under the answers, one line per group so that a 360 dp wide screen does not wrap
-   * them: device and Android version; LiteRT and backend; the graphs the questions ran on and the
-   * request total.
+   * them: device and Android version; LiteRT, backend and precision; the graphs the questions ran
+   * on and the request total.
    */
   private fun footerLines(
     loaded: KevEngine,
-    graphs: List<KevGraphKey>,
+    graphs: KevRequestGraphs,
     totalMs: Long,
   ): List<String> =
     listOf(
       string(R.string.footer_device, KevDevice.displayName(), Build.VERSION.RELEASE),
-      string(R.string.footer_litert, KevDecider.LITERT_VERSION, backendName(loaded.backend)),
-      string(R.string.footer_graph_total, graphsText(graphs), totalMs),
+      string(R.string.footer_litert, KevDecider.LITERT_VERSION, backendName(loaded, graphs)),
+      string(R.string.footer_graph_total, graphsText(loaded, graphs), totalMs),
     )
 
   /**
-   * The presentation footer: three short lines that fit a 360 dp wide screen (device name, LiteRT
-   * and backend; the graphs of the questions; the request total, empty until the end). Model code
-   * and Android version are in the run JSON only.
+   * The presentation footer: three short lines that fit a 360 dp wide screen (device name, LiteRT,
+   * backend and precision; the graphs of the questions; the request total, empty until the end).
+   * Model code and Android version are in the run JSON only.
    */
   private fun presentationFooter(
     loaded: KevEngine,
-    graphs: List<KevGraphKey>,
+    graphs: KevRequestGraphs,
     totalMs: Long?,
   ): List<String> =
     listOf(
@@ -976,29 +1001,57 @@ class MainViewModel(private val context: Context) : ViewModel() {
         R.string.footer_runtime,
         KevDevice.marketName(),
         KevDecider.LITERT_VERSION,
-        backendName(loaded.backend),
+        backendName(loaded, graphs),
       ),
-      string(R.string.footer_graph, graphsText(graphs)),
+      string(R.string.footer_graph, graphsText(loaded, graphs)),
       if (totalMs == null) "" else string(R.string.presentation_total, totalMs),
     )
 
-  /** "L256 + L512" or "S128+Q64": [graphs] by their names on screen. */
-  private fun graphsText(graphs: List<KevGraphKey>): String =
-    graphs.joinToString(WINDOW_SEPARATOR) {
-      when (it) {
-        is KevGraphKey.Window -> string(R.string.window_name, it.window)
-        is KevGraphKey.Pair ->
-          string(R.string.pair_name, it.shape.stateLength, it.shape.questionLength)
+  /**
+   * "L256 + L512" or "S128+Q64": the graphs of the request by their names on screen; on GPU with
+   * graphs at different precisions, each with its own ("L128 FP16 (FP32 accum) + L256 FP32").
+   */
+  private fun graphsText(loaded: KevEngine, graphs: KevRequestGraphs): String {
+    val each =
+      loaded.backend == KevDecider.Backend.GPU &&
+        KevPrecision.common(graphs.precisions, null) == null
+    return graphs.used
+      .mapIndexed { index, graph ->
+        val name =
+          when (graph) {
+            is KevGraphKey.Window -> string(R.string.window_name, graph.window)
+            is KevGraphKey.Pair ->
+              string(R.string.pair_name, graph.shape.stateLength, graph.shape.questionLength)
+          }
+        if (each) string(R.string.graph_precision, name, precisionName(graphs.precisions[index]))
+        else name
       }
-    }
+      .joinToString(WINDOW_SEPARATOR)
+  }
 
-  /** "GPU FP32", "GPU FP16 (FP32 accum)" or "CPU 4 threads". */
-  private fun backendName(backend: KevDecider.Backend): String =
+  /** The backend of [graphs] with their precision when they share one ([backendName]). */
+  private fun backendName(loaded: KevEngine, graphs: KevRequestGraphs): String =
+    backendName(loaded.backend, KevPrecision.common(graphs.precisions, null))
+
+  /**
+   * "GPU FP32", "GPU FP16 (FP32 accum)", "GPU" (graphs at different precisions) or "CPU 4 threads".
+   */
+  private fun backendName(backend: KevDecider.Backend, precision: KevPrecision?): String =
     string(
       when {
         backend == KevDecider.Backend.CPU -> R.string.backend_cpu
         precision == KevPrecision.FP16_FP32_ACCUM -> R.string.backend_gpu_fp16acc
-        else -> R.string.backend_gpu
+        precision == KevPrecision.FP32 -> R.string.backend_gpu
+        else -> R.string.backend_gpu_any
+      }
+    )
+
+  /** "FP32" or "FP16 (FP32 accum)". */
+  private fun precisionName(precision: KevPrecision): String =
+    string(
+      when (precision) {
+        KevPrecision.FP32 -> R.string.precision_fp32
+        KevPrecision.FP16_FP32_ACCUM -> R.string.precision_fp16acc
       }
     )
 
@@ -1057,6 +1110,9 @@ class MainViewModel(private val context: Context) : ViewModel() {
     private const val NANOS_PER_MILLI = 1_000_000L
     private const val LAYOUT_SETTLE_MS = 300L
     private const val WINDOW_SEPARATOR = " + "
+
+    /** The run JSON's `runtime.precision` when the questions ran on graphs at different ones. */
+    private const val MIXED_PRECISION = "mixed"
 
     /** Factory that builds the ViewModel with the application context. */
     fun getFactory(context: Context): ViewModelProvider.Factory =

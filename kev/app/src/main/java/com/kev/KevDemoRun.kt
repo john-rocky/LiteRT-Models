@@ -17,6 +17,8 @@ class KevDemoQuestion(
   val headMs: Long,
   /** From the card turning to running until its answer. */
   val totalMs: Long,
+  /** The GPU precision of the graph the question ran on. */
+  val precision: KevPrecision,
 )
 
 /** Where the presentation screen drew things, in screen pixels (filled on the device). */
@@ -42,8 +44,16 @@ class KevDemoLayout(
   )
 }
 
-/** A graph file in `files/`: the graph and its size. */
-class KevGraphFile(val graph: KevGraphKey, val bytes: Long)
+/**
+ * A graph file in `files/`: the graph, its size, the GPU precision it is compiled with and, for a
+ * pair, whether it holds one copy of the weights (constant tensor sharing).
+ */
+class KevGraphFile(
+  val graph: KevGraphKey,
+  val bytes: Long,
+  val precision: KevPrecision,
+  val share: Boolean? = null,
+)
 
 /**
  * How a demo request ran: the `graph` mode asked for, the form taken, both predictions and what the
@@ -66,10 +76,14 @@ class KevDemoRunInput(
   val deviceShownAs: String,
   val deviceAndroidRelease: String,
   val litert: String,
-  /** "GPU FP32", "GPU FP16 (FP32 accum)" or "CPU 4 threads". */
+  /**
+   * "GPU FP32", "GPU FP16 (FP32 accum)", "GPU" (graphs at different precisions) or "CPU 4 threads".
+   */
   val accelerator: String,
-  /** The GPU precision's launch name: `fp32` or `fp16acc`. */
+  /** The questions' GPU precision by its launch name, `fp32` or `fp16acc`, or `mixed`. */
   val precision: String,
+  /** The `precision` extra of the launch, or null when each graph ran at its own default. */
+  val precisionRequested: String?,
   /**
    * The largest window the questions ran on (the graph that holds the longest row), or the pair.
    */
@@ -114,11 +128,12 @@ class KevDemoRunInput(
  * the shown strings and timings of every question, its row (IDs, readout indices, sha256 of the
  * int32 IDs, the window it ran on) and where the screen drew the cards. Key names follow the demo
  * recording scripts; `graph` keeps the `file` / `L` / `bytes` of the largest window used (`L` is
- * null for the pair, whose `Ls` / `Lq` are under `pair`) and adds `form`, `precision`, `windows`
- * (every window the questions ran on), `resident` (the compiled graphs), `compiled` (each compile
- * for this request with the available memory right before it), `closed` and `second_refused`. The
- * row IDs and indices are the causal row's (state + branch) in both forms; a pair run adds `state`
- * (`tokens`, `window` = Ls, `ms`) and each question's `branch_len`.
+ * null for the pair, whose `Ls` / `Lq` are under `pair`) and adds `form`, `precision` (that
+ * graph's), `windows` (every window the questions ran on), `resident` (the compiled graphs with
+ * their precision), `compiled` (each compile for this request with the available memory right
+ * before it), `closed` and `second_refused`. The row IDs and indices are the causal row's (state +
+ * branch) in both forms; a pair run adds `state` (`tokens`, `window` = Ls, `ms`) and each
+ * question's `branch_len`. Each question has the `precision` of its graph.
  */
 object KevDemoRun {
   /** Card indicator colours: pending grey, running blue, done green. */
@@ -166,6 +181,7 @@ object KevDemoRun {
       "opt_idx",
       "form",
       "window",
+      "precision",
       "branch_len",
       "ids_sha256",
       "tokenize_ms",
@@ -194,6 +210,7 @@ object KevDemoRun {
           "litert" to input.litert,
           "accelerator" to input.accelerator,
           "precision" to input.precision,
+          "precision_requested" to input.precisionRequested,
         ),
       "graph" to
         linkedMapOf(
@@ -201,7 +218,8 @@ object KevDemoRun {
           "L" to (input.graph.graph as? KevGraphKey.Window)?.window,
           "bytes" to input.graph.bytes,
           "form" to input.form.wireName,
-          "precision" to input.precision,
+          "precision" to input.graph.precision.wireName,
+          "share" to input.graph.share,
           "pair" to (input.graph.graph as? KevGraphKey.Pair)?.let { shape(it) },
           "windows" to input.windowsUsed,
           "resident" to input.resident.map { graph(it) },
@@ -225,6 +243,8 @@ object KevDemoRun {
             ),
           "avail_mem_bytes" to input.plan.inputs?.availableBytes,
           "resident" to input.plan.inputs?.resident?.map { it.label },
+          "share_mode" to input.plan.inputs?.pairShare?.wireName,
+          "pair_shared_predicted" to input.plan.prediction.pairShared,
         ),
       "state" to
         input.state?.let {
@@ -248,7 +268,11 @@ object KevDemoRun {
   private fun graph(graph: KevGraphFile): LinkedHashMap<String, Any?> =
     linkedMapOf<String, Any?>("file" to graph.graph.file)
       .apply { putAll(key(graph.graph)) }
-      .apply { put("bytes", graph.bytes) }
+      .apply {
+        put("bytes", graph.bytes)
+        put("precision", graph.precision.wireName)
+        if (graph.graph is KevGraphKey.Pair) put("share", graph.share)
+      }
 
   /** A graph as `{"L"}` (window) or `{"Ls", "Lq"}` (pair). */
   private fun key(graph: KevGraphKey): LinkedHashMap<String, Any?> =
@@ -277,6 +301,7 @@ object KevDemoRun {
       "opt_idx" to row.optionIndices,
       "form" to result.form.wireName,
       "window" to result.window,
+      "precision" to question.precision.wireName,
       "branch_len" to result.branchLength,
       "ids_sha256" to KevPipeline.idsSha256(row.ids),
       "tokenize_ms" to question.tokenizeMs,

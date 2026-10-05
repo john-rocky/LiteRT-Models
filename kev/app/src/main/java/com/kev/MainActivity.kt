@@ -18,21 +18,27 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kev.view.ApplicationTheme
 import com.kev.view.KevScreen
 import com.kev.view.PresentationScreen
+import java.io.File
 
 /**
  * Hosts the Compose screen (`launchMode="singleTop"`: a demo intent reaches the running activity
  * through [onNewIntent], without a new process). Extras:
  * - every launch: `[--es graph auto|rows|pair]` (auto: the form with the smaller predicted time;
- *   rows: one row graph per question; pair: the shared-state pair, or a failure that says why) and
- *   `[--es precision fp32|fp16acc]` (GPU precision of every graph of the process; fp32 by default)
+ *   rows: one row graph per question; pair: the shared-state pair, or a failure that says why),
+ *   `[--es precision fp32|fp16acc]` (GPU precision of every graph of the process; without it each
+ *   graph runs at its own default, `KevPrecision.defaultFor`) and `[--es share auto|on|off]`
+ *   (whether a pair holds one copy of its weights for both signatures on the GPU; auto: without
+ *   sharing when memory allows, `KevPairShare.AUTO`)
  * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800
  *   [--ei window 512]` (without `window`, the questions run on the plan a Decide would use)
  * - debug build: `--ez gate true --es backend gpu|cpu --es report <name.json> [--ei window 512]
- *   [--ei limit n]` (with `--es graph pair`, the gate runs on the pair)
+ *   [--ei limit n]` (with `--es graph pair`, the gate runs on the pair; `[--ei ls 128]` names the
+ *   pair by its state length, else the first installed one)
  * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|cpu --es
  *   report <name.json> [--ei window 512] [--ez clear_cache true] [--es sets <name[,name…]>|none]
- *   [--ez request_path false]` (one set per launch keeps every set at the same starting
- *   temperature; with `--es graph pair` the sets run on the pair)
+ *   [--ez request_path false] [--ei cool_ms 60000]` (one set per launch keeps every set at the same
+ *   starting temperature; with `--es graph pair` the sets run on the pair, `[--ei ls 128]` as for
+ *   the gate; `cool_ms` waits before each set for the GPU to cool after the compile)
  *
  * Gate and timing sets compile the one graph they name: the pair, the `window`, or without it the
  * smallest installed window.
@@ -124,11 +130,25 @@ class MainActivity : ComponentActivity() {
       KevGraphMode.of(graphName)
         ?: return KevLaunch.Invalid(KevLaunch.graphInvalid(graphName.orEmpty()), autoplay)
     val precisionName = intent.getStringExtra(EXTRA_PRECISION)
-    val precision =
-      KevLaunch.precision(precisionName)
-        ?: return KevLaunch.Invalid(KevLaunch.precisionInvalid(precisionName.orEmpty()), autoplay)
-    // The pair a gate or timing run on the pair compiles: an installed shape (PAIRS order).
-    val pair = KevFiles.installedPairs(filesDir).firstOrNull() ?: KevFiles.PAIRS.first()
+    val precision = precisionName?.let {
+      KevLaunch.precision(it) ?: return KevLaunch.Invalid(KevLaunch.precisionInvalid(it), autoplay)
+    }
+    val shareName = intent.getStringExtra(EXTRA_SHARE)
+    val share =
+      shareName?.let {
+        KevLaunch.share(it)
+          ?: return KevLaunch.Invalid("share $it is not auto, on or off", autoplay)
+      } ?: KevPairShare.AUTO
+    // The pair of a gate or timing run: the one of the named state length, else an installed pair
+    // of PAIRS (in order).
+    val namedLs = if (intent.hasExtra(EXTRA_LS)) intent.getIntExtra(EXTRA_LS, 0) else null
+    val shapes =
+      if (namedLs == null) KevFiles.PAIRS else KevFiles.PAIRS.filter { it.stateLength == namedLs }
+    if (shapes.isEmpty()) {
+      val known = KevFiles.PAIRS.joinToString(", ") { it.stateLength.toString() }
+      return KevLaunch.Invalid("ls $namedLs is not one of $known", autoplay)
+    }
+    val pair = shapes.firstOrNull { File(filesDir, KevFiles.pair(it)).isFile } ?: shapes.first()
     return when {
       autoplay -> {
         val fixture = intent.getStringExtra(EXTRA_FIXTURE)
@@ -146,6 +166,7 @@ class MainActivity : ComponentActivity() {
               named,
               graph,
               precision,
+              share,
             )
         }
       }
@@ -169,6 +190,7 @@ class MainActivity : ComponentActivity() {
               report,
               gateGraph,
               intent.getIntExtra(EXTRA_LIMIT, 0),
+              share,
             )
         }
       }
@@ -194,14 +216,17 @@ class MainActivity : ComponentActivity() {
               precision,
               report,
               window,
+              pair,
               graph,
               intent.getBooleanExtra(EXTRA_CLEAR_CACHE, false),
               intent.getStringExtra(EXTRA_SETS)?.let(KevLaunch::setNames),
               intent.getBooleanExtra(EXTRA_REQUEST_PATH, true),
+              intent.getIntExtra(EXTRA_COOL_MS, 0).toLong(),
+              share,
             )
         }
       }
-      else -> KevLaunch.Normal(graph, precision)
+      else -> KevLaunch.Normal(graph, precision, share)
     }
   }
 
@@ -222,6 +247,9 @@ class MainActivity : ComponentActivity() {
     const val EXTRA_REQUEST_PATH = "request_path"
     const val EXTRA_GRAPH = "graph"
     const val EXTRA_PRECISION = "precision"
+    const val EXTRA_LS = "ls"
+    const val EXTRA_COOL_MS = "cool_ms"
+    const val EXTRA_SHARE = "share"
     const val DEFAULT_DELAY_MS = 1500
     const val DEFAULT_GAP_MS = 800
   }

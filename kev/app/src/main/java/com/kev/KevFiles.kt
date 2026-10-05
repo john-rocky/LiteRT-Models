@@ -14,13 +14,28 @@ object KevFiles {
   const val HEAD = "kev_0.8b_pointer_head.safetensors"
 
   /** The graph windows (sequence lengths) the model repository publishes, in ascending order. */
-  val WINDOWS = listOf(128, 256, 512, 1024, 2048)
+  val WINDOWS = listOf(64, 128, 256, 512, 1024, 2048)
 
   /** The windows the install script copies when `WINDOWS` is not set. */
-  val DEFAULT_INSTALL = listOf(256, 512)
+  val DEFAULT_INSTALL = listOf(128, 256)
 
-  /** The shared-state pairs the app knows: the shapes measured on the Galaxy S26. */
-  val PAIRS = listOf(KevPairShape(128, 64))
+  /** The shared-state pairs the install script copies when `PAIR` is not set. */
+  val DEFAULT_PAIRS = listOf(KevPairShape(128, 64))
+
+  /** The shared-state pairs the app plans with: the shapes measured on the Galaxy S26. */
+  val PAIRS = listOf(KevPairShape(128, 64), KevPairShape(256, 64))
+
+  /**
+   * File sizes of the graphs the model repository published before the fp16-safe kernel rewrite. A
+   * file of one of these sizes runs at FP32 by default ([KevPrecision.defaultFor]).
+   */
+  // Their kernel gives non-finite values on some rows at FP16_WITH_FP32_ACCUM.
+  val PRE_REWRITE_BYTES: Map<KevGraphKey, Long> =
+    mapOf(
+      KevGraphKey.Window(512) to 1_264_068_368L,
+      KevGraphKey.Window(1024) to 1_269_023_216L,
+      KevGraphKey.Window(2048) to 1_285_227_888L,
+    )
 
   /** The row-prefill graph of [window] tokens (fp16 fully connected weights, int8 embedding). */
   fun graph(window: Int): String = "kev-0.8b_rowprefill_L${window}_fp16fc_i8emb.tflite"
@@ -46,12 +61,12 @@ object KevFiles {
 
   /**
    * Files a launch needs that are not in [directory]: the tokenizer, the head, and the graphs of
-   * [DEFAULT_INSTALL] when no graph (window or pair) is installed at all.
+   * [DEFAULT_INSTALL] and [DEFAULT_PAIRS] when no graph (window or pair) is installed at all.
    */
   fun missing(directory: File): List<String> =
     listOf(TOKENIZER, HEAD).filterNot { File(directory, it).isFile } +
       if (installedWindows(directory).isEmpty() && installedPairs(directory).isEmpty()) {
-        DEFAULT_INSTALL.map { graph(it) }
+        DEFAULT_INSTALL.map { graph(it) } + DEFAULT_PAIRS.map { pair(it) }
       } else {
         emptyList()
       }

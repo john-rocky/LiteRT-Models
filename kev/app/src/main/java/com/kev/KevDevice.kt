@@ -68,6 +68,18 @@ object KevDevice {
   fun airplaneMode(context: Context): Boolean =
     Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
 
+  /**
+   * The GPU's clock ceiling and temperature from kgsl (Qualcomm Adreno), or null when the files are
+   * missing or the app may not read them.
+   */
+  fun gpuState(): KevGpuState? = runCatching {
+    KevGpuState(
+      File(KGSL_DIR, "max_clock_mhz").readText().trim().toInt(),
+      File(KGSL_DIR, "temp").readText().trim().toInt(),
+    )
+  }
+    .getOrNull()
+
   /** Files and bytes under [directory] (LiteRT may keep compiled GPU programs in the cache dir). */
   fun directoryUsage(directory: File): LinkedHashMap<String, Any?> {
     val files = directory.walkTopDown().filter { it.isFile }.toList()
@@ -88,6 +100,7 @@ object KevDevice {
     )
 
   private const val TENTHS = 10.0
+  private const val KGSL_DIR = "/sys/class/kgsl/kgsl-3d0"
 
   /** Models this sample was measured on, shown by their market name (key: `Build.MODEL` prefix). */
   private val MARKET_NAMES = mapOf("SM-S942" to "Galaxy S26")

@@ -86,7 +86,7 @@ class DemoFixtureTest {
           assertArrayEquals("${fixture.id}/${question.id}", it, row.ids)
           idsCompared++
         }
-        assertEquals(256, row.window(KevFiles.DEFAULT_INSTALL))
+        assertEquals(if (row.length <= 128) 128 else 256, row.window(KevFiles.DEFAULT_INSTALL))
       }
       report[fixture.id] =
         linkedMapOf(
@@ -165,6 +165,7 @@ class DemoFixtureTest {
           inferMs,
           1,
           inferMs + 4,
+          KevPrecision.FP32,
         )
       }
     for (layout in
@@ -181,7 +182,7 @@ class DemoFixtureTest {
           1f,
         ),
       )) {
-      val l256 = KevGraphFile(KevGraphKey.Window(256), 1_262_377_184L)
+      val l256 = KevGraphFile(KevGraphKey.Window(256), 1_262_377_184L, KevPrecision.FP32)
       val run =
         KevDemoRun.build(
           KevDemoRunInput(
@@ -194,6 +195,7 @@ class DemoFixtureTest {
             litert = "2.2.0",
             accelerator = "GPU FP32",
             precision = "fp32",
+            precisionRequested = null,
             graph = l256,
             form = KevForm.ROW,
             windowsUsed = listOf(256),
@@ -251,19 +253,36 @@ class DemoFixtureTest {
       )
       val plan = parsed["plan"] as Map<*, *>
       assertEquals(
-        listOf("requested", "form", "predicted_ms", "avail_mem_bytes", "resident"),
+        listOf(
+          "requested",
+          "form",
+          "predicted_ms",
+          "avail_mem_bytes",
+          "resident",
+          "share_mode",
+          "pair_shared_predicted",
+        ),
         plan.keys.toList(),
       )
+      assertNull(graph["share"])
       assertEquals(listOf("L512"), plan["resident"])
       assertEquals("row", plan["form"])
       assertNull((plan["predicted_ms"] as Map<*, *>)["pair"])
       assertNull(parsed["state"])
-      assertEquals("fp32", (parsed["runtime"] as Map<*, *>)["precision"])
+      val runtime = parsed["runtime"] as Map<*, *>
+      assertEquals(
+        listOf("litert", "accelerator", "precision", "precision_requested"),
+        runtime.keys.toList(),
+      )
+      assertEquals("fp32", runtime["precision"])
+      assertNull(runtime["precision_requested"])
+      assertEquals("fp32", ((graph["resident"] as List<*>).single() as Map<*, *>)["precision"])
       assertEquals(listOf("line 1", "line 2", "line 3"), parsed["footer_lines"])
       for (question in parsed["questions"] as List<*>) {
         val entry = question as Map<*, *>
         assertEquals(KevDemoRun.QUESTION_KEYS, entry.keys.toList())
         assertEquals("row", entry["form"])
+        assertEquals("fp32", entry["precision"])
         assertEquals(5, (entry["branch_len"] as JsonNumber).toInt())
         // The recording's check: the card's ms (shown_ms) is the question's infer_ms.
         assertEquals(
@@ -325,7 +344,13 @@ class DemoFixtureTest {
         0.6,
       )
     val view = KevAnswerView.of(answer, meta, probs)
-    val pair = KevGraphFile(KevGraphKey.Pair(KevPairShape(128, 64)), 1_264_544_720L)
+    val pair =
+      KevGraphFile(
+        KevGraphKey.Pair(KevPairShape(128, 64)),
+        1_261_368_160L,
+        KevPrecision.FP16_FP32_ACCUM,
+        share = false,
+      )
     val run =
       KevDemoRun.build(
         KevDemoRunInput(
@@ -336,8 +361,9 @@ class DemoFixtureTest {
           deviceShownAs = "Galaxy S26",
           deviceAndroidRelease = "16",
           litert = "2.2.0",
-          accelerator = "GPU FP32",
-          precision = "fp32",
+          accelerator = "GPU FP16 (FP32 accum)",
+          precision = "fp16acc",
+          precisionRequested = "fp16acc",
           graph = pair,
           form = KevForm.PAIR,
           windowsUsed = emptyList(),
@@ -350,7 +376,7 @@ class DemoFixtureTest {
             KevDemoPlan(
               KevGraphMode.AUTO,
               KevForm.PAIR,
-              KevPrediction(1321.0, 1201.0),
+              KevPrediction(1321.0, 1201.0, pairShared = true),
               KevPlanInputs(
                 5_000_000_000L,
                 listOf(KevGraphKey.Window(128), KevGraphKey.Window(256)),
@@ -366,7 +392,19 @@ class DemoFixtureTest {
           tokenizeMs = 9,
           requestTotalMs = 480,
           questions =
-            listOf(KevDemoQuestion(result, answer, view.shownCompact(), "187 ms", 3, 187, 1, 190)),
+            listOf(
+              KevDemoQuestion(
+                result,
+                answer,
+                view.shownCompact(),
+                "187 ms",
+                3,
+                187,
+                1,
+                190,
+                KevPrecision.FP16_FP32_ACCUM,
+              )
+            ),
           airplaneMode = false,
           cgroup = "6:cpuset:/top-app",
           cgroupEnd = "6:cpuset:/top-app",
@@ -391,11 +429,22 @@ class DemoFixtureTest {
       (graph["closed"] as List<*>).map { ((it as Map<*, *>)["L"] as JsonNumber).toInt() },
     )
     val resident = (graph["resident"] as List<*>).single() as Map<*, *>
-    assertEquals(listOf("file", "Ls", "Lq", "bytes"), resident.keys.toList())
+    assertEquals(listOf("file", "Ls", "Lq", "bytes", "precision", "share"), resident.keys.toList())
+    assertEquals("fp16acc", resident["precision"])
+    assertEquals(false, resident["share"])
+    assertEquals("fp16acc", graph["precision"])
+    assertEquals(false, graph["share"])
+    val runtime = parsed["runtime"] as Map<*, *>
+    assertEquals("GPU FP16 (FP32 accum)", runtime["accelerator"])
+    assertEquals("fp16acc", runtime["precision_requested"])
     val plan = parsed["plan"] as Map<*, *>
     assertEquals("pair", plan["form"])
     assertEquals(listOf("L128", "L256"), plan["resident"])
     assertEquals("5000000000", (plan["avail_mem_bytes"] as JsonNumber).literal)
+    // The plan predicted the pair with sharing (5.0 GB available); the compile read 7.0 GB and
+    // compiled it without.
+    assertEquals("auto", plan["share_mode"])
+    assertEquals(true, plan["pair_shared_predicted"])
     assertEquals(
       listOf(1321.0, 1201.0),
       (plan["predicted_ms"] as Map<*, *>).values.map { (it as JsonNumber).toDouble() },
@@ -406,6 +455,7 @@ class DemoFixtureTest {
     val question = (parsed["questions"] as List<*>).single() as Map<*, *>
     assertEquals(KevDemoRun.QUESTION_KEYS, question.keys.toList())
     assertEquals("pair", question["form"])
+    assertEquals("fp16acc", question["precision"])
     assertEquals(64, (question["window"] as JsonNumber).toInt())
     assertEquals(5, (question["branch_len"] as JsonNumber).toInt())
     // The row coordinates the recording checks: the whole row, decide = its last token.
@@ -425,6 +475,7 @@ class DemoFixtureTest {
         "bytes",
         "form",
         "precision",
+        "share",
         "pair",
         "windows",
         "resident",

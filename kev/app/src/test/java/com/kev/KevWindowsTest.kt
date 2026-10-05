@@ -1,6 +1,8 @@
 package com.kev
 
 import java.io.Closeable
+import java.io.File
+import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -35,9 +37,15 @@ class KevWindowsTest {
     }
   }
 
-  /** A stand-in pair of [shape]; it is in [open] from creation until [close]. */
-  private class FakePair(val shape: KevPairShape, private val open: MutableList<Any>) :
-    PairRunner, Closeable {
+  /**
+   * A stand-in pair of [shape], compiled with constant tensor sharing or not ([shared]); it is in
+   * [open] from creation until [close].
+   */
+  private class FakePair(
+    val shape: KevPairShape,
+    val shared: Boolean,
+    private val open: MutableList<Any>,
+  ) : PairRunner, Closeable {
     override val stateLength = shape.stateLength
     override val questionLength = shape.questionLength
     var closed = false
@@ -81,8 +89,10 @@ class KevWindowsTest {
       return FakeGraph(window, open).also { maxOpen = maxOf(maxOpen, open.size + pairsOpen.size) }
     }
 
-    fun openPair(shape: KevPairShape): FakePair =
-      FakePair(shape, pairsOpen).also { maxOpen = maxOf(maxOpen, open.size + pairsOpen.size) }
+    fun openPair(shape: KevPairShape, shared: Boolean = false): FakePair =
+      FakePair(shape, shared, pairsOpen).also {
+        maxOpen = maxOf(maxOpen, open.size + pairsOpen.size)
+      }
 
     /** Plans and prepares a request with rows of [rows] tokens over [installed]. */
     fun request(installed: List<Int>, vararg rows: Int): KevWindowRun<FakeGraph> {
@@ -116,10 +126,11 @@ class KevWindowsTest {
       }
     }
     assertEquals(256, KevWindows.smallestHolding(listOf(512, 256), 200))
-    assertEquals(listOf(128, 256, 512, 1024, 2048), KevFiles.WINDOWS)
-    assertEquals(listOf(256, 512), KevFiles.DEFAULT_INSTALL)
+    assertEquals(listOf(64, 128, 256, 512, 1024, 2048), KevFiles.WINDOWS)
+    assertEquals(listOf(128, 256), KevFiles.DEFAULT_INSTALL)
+    assertEquals(listOf(KevPairShape(128, 64)), KevFiles.DEFAULT_PAIRS)
     assertEquals(
-      "kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite",
+      "kev-0.8b_rowprefill_L128_fp16fc_i8emb.tflite",
       KevFiles.graph(KevFiles.DEFAULT_INSTALL.first()),
     )
     // The plan: every question's own window, and the rows no installed window holds.
@@ -132,6 +143,35 @@ class KevWindowsTest {
     assertEquals(1024, notInstalled.window)
     val overLargest = graphs.plan(listOf(3000), KevFiles.WINDOWS) as KevWindowPlan.Missing
     assertNull(overLargest.window)
+  }
+
+  @Test
+  fun aLaunchWithNoGraphAsksForTheDefaultInstall() {
+    val directory = createTempDirectory("kev-files").toFile()
+    try {
+      // Nothing installed: the tokenizer, the head and the default install's three graphs.
+      assertEquals(
+        listOf(
+          KevFiles.TOKENIZER,
+          KevFiles.HEAD,
+          "kev-0.8b_rowprefill_L128_fp16fc_i8emb.tflite",
+          "kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite",
+          "kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite",
+        ),
+        KevFiles.missing(directory),
+      )
+      // Any one graph is enough to launch; a request that needs another one names it.
+      for (name in listOf(KevFiles.TOKENIZER, KevFiles.HEAD, KevFiles.graph(512))) {
+        File(directory, name).writeText("")
+      }
+      assertTrue(KevFiles.missing(directory).isEmpty())
+      File(directory, KevFiles.graph(512)).delete()
+      File(directory, KevFiles.pair(KevPairShape(256, 64))).writeText("")
+      assertTrue(KevFiles.missing(directory).isEmpty())
+      assertEquals(listOf(KevPairShape(256, 64)), KevFiles.installedPairs(directory))
+    } finally {
+      directory.deleteRecursively()
+    }
   }
 
   @Test
@@ -222,17 +262,22 @@ class KevWindowsTest {
   }
 
   @Test
-  fun theDefaultInstallRunsTheBundledExamplesOnL256() {
+  fun theDefaultInstallRunsTheBundledExamplesOnL128AndL256() {
     // The bundled examples' rows (ticket 131 / 101 / 93, incident 148 / 122 / 128, review 124 /
-    // 106 / 94) all fit L256, the graph the default install compiles at startup.
+    // 106 / 94) on the default install: rows over 128 tokens on L256, the others on L128.
     val harness = Harness(256)
-    for (rows in
-      listOf(intArrayOf(131, 101, 93), intArrayOf(148, 122, 128), intArrayOf(124, 106, 94))) {
-      val run = harness.request(KevFiles.DEFAULT_INSTALL, *rows)
-      assertEquals(listOf(256, 256, 256), run.windows)
+    val ticket = harness.request(KevFiles.DEFAULT_INSTALL, 131, 101, 93)
+    assertEquals(listOf(256, 128, 128), ticket.windows)
+    assertEquals(listOf(128), ticket.compiled)
+    val incident = harness.request(KevFiles.DEFAULT_INSTALL, 148, 122, 128)
+    assertEquals(listOf(256, 128, 128), incident.windows)
+    val review = harness.request(KevFiles.DEFAULT_INSTALL, 124, 106, 94)
+    assertEquals(listOf(128, 128, 128), review.windows)
+    for (run in listOf(incident, review)) {
       assertTrue(run.compiled.isEmpty() && run.closed.isEmpty())
     }
-    assertTrue(harness.compiled.isEmpty())
+    assertEquals(listOf(128), harness.compiled)
+    assertEquals(2, harness.maxOpen)
   }
 
   @Test
@@ -276,7 +321,10 @@ class KevWindowsTest {
     val harness = Harness(128)
     harness.request(KevFiles.WINDOWS, 131, 101)
     assertEquals(listOf(128, 256), harness.graphs.windows)
-    val run = harness.graphs.preparePair(pair, { harness.available }, harness::openPair)
+    val run =
+      harness.graphs.preparePair(pair, { harness.available }) { shape, _ ->
+        harness.openPair(shape)
+      }
     assertTrue(run.compiled)
     assertEquals(PLENTY, run.availableBytes)
     assertEquals(listOf(128, 256), run.closedWindows)
@@ -285,7 +333,10 @@ class KevWindowsTest {
     assertEquals(listOf(KevGraphKey.Pair(pair)), harness.graphs.resident)
     assertEquals(1, harness.pairsOpen.size)
     // The pair already resident: nothing compiles or closes.
-    val again = harness.graphs.preparePair(pair, { harness.available }, harness::openPair)
+    val again =
+      harness.graphs.preparePair(pair, { harness.available }) { shape, _ ->
+        harness.openPair(shape)
+      }
     assertFalse(again.compiled)
     assertNull(again.availableBytes)
     assertTrue(again.closedWindows.isEmpty())
@@ -299,7 +350,7 @@ class KevWindowsTest {
     assertEquals(listOf(256, 128, 128), rows.windows)
     assertEquals(listOf(128, 256), harness.graphs.windows)
     // The same with too little memory for a second window: L256 alone after the pair.
-    harness.graphs.preparePair(pair, { harness.available }, harness::openPair)
+    harness.graphs.preparePair(pair, { harness.available }) { shape, _ -> harness.openPair(shape) }
     harness.available = KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1
     val low = harness.request(KevFiles.WINDOWS, 131, 101, 93)
     assertEquals(pair, low.closedPair)
@@ -307,6 +358,32 @@ class KevWindowsTest {
     assertEquals(listOf(256, 256, 256), low.windows)
     assertEquals(listOf(256), harness.graphs.windows)
     assertEquals(2, harness.maxOpen)
+  }
+
+  @Test
+  fun aResidentPairKeepsTheSharingItWasCompiledWith() {
+    // share auto: the pair compiled with plenty of memory holds its weights per signature; with
+    // less memory later the resident pair runs as compiled (no compile to switch); once rows have
+    // closed it, the next compile reads the memory again.
+    val pair = KevPairShape(128, 64)
+    val harness = Harness(128)
+    fun prepare() =
+      harness.graphs.preparePair(pair, { harness.available }) { shape, available ->
+        harness.openPair(shape, KevPairShare.AUTO.sharesAt(available))
+      }
+    val first = prepare()
+    assertTrue(first.compiled)
+    assertFalse(first.graph.shared)
+    harness.available = KevResidentGraphs.PAIR_UNSHARED_MIN_AVAILABLE_BYTES - 1
+    val again = prepare()
+    assertFalse(again.compiled)
+    assertTrue(again.graph === first.graph)
+    harness.request(KevFiles.DEFAULT_INSTALL, 131, 101, 93)
+    assertTrue(first.graph.closed)
+    val later = prepare()
+    assertTrue(later.compiled)
+    assertTrue(later.graph.shared)
+    assertEquals(KevResidentGraphs.PAIR_UNSHARED_MIN_AVAILABLE_BYTES - 1, later.availableBytes)
   }
 
   @Test
@@ -331,6 +408,69 @@ class KevWindowsTest {
     assertEquals(listOf(256, 256, 256), KevResidentGraphs.assign(ticket, secondAllowed = false))
     val long = KevWindowPlan.Ready(listOf(128, 512))
     assertEquals(listOf(512, 512), KevResidentGraphs.assign(long, secondAllowed = true))
+  }
+
+  @Test
+  fun threeSmallWindowsKeepTheTwoLargest() {
+    // L64, L128 and L256 installed; rows of 60 / 100 / 200 tokens ask for all three. At most two
+    // graphs stay compiled: L256 and L128, and the L64 row runs on L128.
+    val small = listOf(64, 128, 256)
+    val harness = Harness(256)
+    val run = harness.request(small, 60, 100, 200)
+    assertEquals(listOf(128, 128, 256), run.windows)
+    assertEquals(listOf(128), run.compiled)
+    assertTrue(run.closed.isEmpty())
+    assertFalse(run.secondRefused)
+    assertEquals(listOf(128, 256), harness.graphs.windows)
+    assertEquals(2, harness.maxOpen)
+    // Both kept windows resident: memory under the limit compiles and closes nothing.
+    harness.available = KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1
+    val covered = harness.request(small, 200, 60, 100, 50)
+    assertEquals(listOf(256, 128, 128, 128), covered.windows)
+    assertTrue(covered.compiled.isEmpty() && covered.closed.isEmpty())
+    assertFalse(covered.secondRefused)
+    // Two small windows: both stay, each row on its own.
+    val fresh = Harness(64)
+    assertEquals(listOf(64, 256), fresh.request(small, 60, 200).windows)
+    assertEquals(listOf(64, 256), fresh.graphs.windows)
+    assertEquals(listOf(64, 128, 64), Harness(64).request(small, 60, 100, 30).windows)
+    // No room for a second graph: L256 alone takes every row.
+    val low = Harness(64, available = KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1)
+    val refused = low.request(small, 60, 100, 200)
+    assertTrue(refused.secondRefused)
+    assertEquals(listOf(256, 256, 256), refused.windows)
+    assertEquals(listOf(256), low.graphs.windows)
+    assertEquals(1, low.maxOpen)
+  }
+
+  @Test
+  fun assignKeepsTheTwoLargestSmallWindows() {
+    // (plan windows, second allowed) to the window each question runs on.
+    val table =
+      listOf(
+        (listOf(64, 128, 256) to true) to listOf(128, 128, 256),
+        (listOf(256, 64, 128, 64) to true) to listOf(256, 128, 128, 128),
+        (listOf(64, 256) to true) to listOf(64, 256),
+        (listOf(64, 256, 64) to true) to listOf(64, 256, 64),
+        (listOf(64, 128) to true) to listOf(64, 128),
+        (listOf(64, 64) to true) to listOf(64, 64),
+        (listOf(64, 128, 256) to false) to listOf(256, 256, 256),
+        (listOf(64, 128) to false) to listOf(128, 128),
+        (listOf(64, 512) to true) to listOf(512, 512),
+      )
+    for ((case, expected) in table) {
+      val (windows, second) = case
+      val plan = KevWindowPlan.Ready(windows)
+      assertEquals("$windows $second", expected, KevResidentGraphs.assign(plan, second))
+    }
+    // The planner and prepare agree for three small windows, with and without memory to spare.
+    for (available in listOf(PLENTY, KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES - 1)) {
+      val harness = Harness(512, available)
+      val plan = harness.graphs.plan(listOf(60, 100, 200), KevFiles.WINDOWS) as KevWindowPlan.Ready
+      val second = harness.graphs.secondAllowed(plan, available)
+      val run = harness.graphs.prepare(plan, { available }, harness::open)
+      assertEquals("$available", KevResidentGraphs.assign(plan, second), run.windows)
+    }
   }
 
   private companion object {

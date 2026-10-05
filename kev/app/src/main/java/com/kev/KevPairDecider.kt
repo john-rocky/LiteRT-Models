@@ -13,15 +13,18 @@ import java.io.File
  * question call's `ids`, `valid`, `state_valid` and `hidden`. The state reaches the question call
  * without a copy: its input map holds the state call's output buffers themselves.
  *
- * GPU compiles with constant tensor sharing, so that both signatures use one copy of the weights
- * (without it the GPU holds the weights once per signature), and with an explicit [precision]. CPU
- * runs four threads. Create, run and close only on [KevRuntime.dispatcher].
+ * GPU compiles with an explicit [precision] and, when [shareConstants], with constant tensor
+ * sharing: both signatures use one copy of the weights; without it the GPU holds the weights once
+ * per signature, which is faster and takes more memory ([KevPairShare] decides). CPU runs four
+ * threads. Create, run and close only on [KevRuntime.dispatcher].
  */
 class KevPairDecider
 private constructor(
   val backend: KevDecider.Backend,
   /** The GPU precision the pair was compiled with (CPU ignores it). */
   val precision: KevPrecision,
+  /** Whether the GPU holds one copy of the weights for both signatures (CPU ignores it). */
+  val shareConstants: Boolean,
   val shape: KevPairShape,
   val file: File,
   /** Wall time of `CompiledModel.create` (graph load and compilation), in milliseconds. */
@@ -93,40 +96,29 @@ private constructor(
 
   companion object {
     /**
-     * Compiles the [shape] pair from `files/` on [backend] ([precision] on GPU). With
-     * [cpuFallback], a GPU failure is kept as [gpuFailure] and the pair is compiled on CPU instead.
+     * Compiles the [shape] pair from `files/` on [backend] ([precision] and [shareConstants] on
+     * GPU). With [cpuFallback], a GPU failure is kept as [gpuFailure] and the pair is compiled on
+     * CPU instead.
      */
     fun create(
       context: Context,
       shape: KevPairShape,
       backend: KevDecider.Backend,
       precision: KevPrecision,
+      shareConstants: Boolean,
       cpuFallback: Boolean,
     ): KevPairDecider {
       val file = File(context.filesDir, KevFiles.pair(shape))
       check(file.isFile) { "Missing ${file.name}" }
-      if (backend == KevDecider.Backend.CPU || !cpuFallback)
-        return compile(context, file, shape, backend, precision, null)
+      fun on(target: KevDecider.Backend, gpuFailure: String?) =
+        compile(context, file, shape, target, precision, shareConstants, gpuFailure)
+      if (backend == KevDecider.Backend.CPU || !cpuFallback) return on(backend, null)
       return try {
-        compile(context, file, shape, KevDecider.Backend.GPU, precision, null)
+        on(KevDecider.Backend.GPU, null)
       } catch (failure: Exception) {
-        compile(
-          context,
-          file,
-          shape,
-          KevDecider.Backend.CPU,
-          precision,
-          KevDecider.describe(failure),
-        )
+        on(KevDecider.Backend.CPU, KevDecider.describe(failure))
       } catch (failure: LinkageError) {
-        compile(
-          context,
-          file,
-          shape,
-          KevDecider.Backend.CPU,
-          precision,
-          KevDecider.describe(failure),
-        )
+        on(KevDecider.Backend.CPU, KevDecider.describe(failure))
       }
     }
 
@@ -136,9 +128,10 @@ private constructor(
       shape: KevPairShape,
       backend: KevDecider.Backend,
       precision: KevPrecision,
+      shareConstants: Boolean,
       gpuFailure: String?,
     ): KevPairDecider {
-      val options = KevDecider.options(backend, precision, shareConstants = true)
+      val options = KevDecider.options(backend, precision, shareConstants)
       val start = System.nanoTime()
       val model = CompiledModel.create(file.absolutePath, options, KevRuntime.environment(context))
       val compileMs = KevPipeline.millis(System.nanoTime() - start)
@@ -164,6 +157,7 @@ private constructor(
         return KevPairDecider(
           backend,
           precision,
+          shareConstants,
           shape,
           file,
           compileMs,

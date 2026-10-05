@@ -5,14 +5,15 @@ answered as p(true)), **choice** (one of named options) and **score** (ordered l
 the expected level). Tap **Decide** and every question gets its answer with calibrated
 probabilities, computed as the author's `to_answers` computes them (four decimals). Three invented
 requests are bundled: a support ticket, an incident note and a product review. Everything runs on
-the phone: a Kotlin tokenizer, one LiteRT graph call per question and the pointer head on the host.
-Each question runs on the smallest installed graph window that holds its row, from 128 to 2,048
-tokens.
+the phone: a Kotlin tokenizer, LiteRT graphs on the GPU and the pointer head on the host. A request
+runs in one of two forms, whichever this app predicts to be quicker: one graph call per question
+on the smallest installed window that holds its row (64 to 2,048 tokens), or a shared-state pair
+that reads the state once and then each question on its own.
 
 ## Model and requirements
 
 - Model: [litert-community/Kev-0.8B-LiteRT](https://huggingface.co/litert-community/Kev-0.8B-LiteRT)
-  (row-prefill graphs, pointer head and tokenizer).
+  (row-prefill graphs, shared-state pairs, pointer head and tokenizer).
 - Upstream: [jaredpalmer/kev-0.8b](https://huggingface.co/jaredpalmer/kev-0.8b) tag `v1.0`
   (commit `bf75a6a8`), Apache-2.0: a rank-16 LoRA and a pointer head on Qwen3.5-0.8B-Base
   (revision `dc7cdfe2`, Apache-2.0). Code: [github.com/jaredpalmer/kev](https://github.com/jaredpalmer/kev)
@@ -23,22 +24,32 @@ tokens.
 - Android: arm64-v8a, Android 8.0 / API 26 or newer; compile/target SDK 35.
 - Runtime: LiteRT **2.2.0** `CompiledModel`; Material 1 Compose with MVVM.
 
-The app asks the GPU for FP32 explicitly:
-`CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)`. The default GPU
-precision was not measured in this app; in the conversion run it gave non-finite outputs on the
-S26 GPU and on desktop Metal. CPU (four threads) is a second backend you can choose in the app.
-When the GPU graph cannot be compiled, the app runs on CPU and shows the GPU error.
+The app compiles every graph for the GPU with an explicit precision, `FP16_WITH_FP32_ACCUM`
+(float16 storage with float32 accumulation):
+`CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP16_WITH_FP32_ACCUM)`.
+The model repository's graphs are written so that this precision keeps every hidden state finite,
+and each one passes the parity bar at it on the Galaxy S26 (see Measured). The launch extra
+`--es precision fp32` compiles every graph at FP32 instead. A graph file whose size is one the
+repository published before that rewrite (L512 1,264,068,368 B, L1024 1,269,023,216 B, L2048
+1,285,227,888 B) runs at FP32. The default GPU precision (float16 activations) is never used: with
+the conversion run's original kernel it gave non-finite outputs on the S26 GPU and on desktop
+Metal, and the published graphs stay finite at it but miss the parity bar on desktop Metal (L128:
+max |Δp| 0.0332, mean 3.59e-3; conversion run). CPU (four
+threads) is a second backend you can choose in the app. When a GPU graph cannot be compiled, the
+app runs on CPU and shows the GPU error. NPU is not supported: this sample runs on the GPU and the
+CPU.
 
 ## Download, build and install
 
 Use JDK 17, Android SDK platform 35 / build-tools 35.0.0, Android platform-tools (`adb`) and the
-Hugging Face CLI (`hf`). The app needs four files of the model repository: the 256- and 512-token
-graphs, the head and the tokenizer. The 128-, 1,024- and 2,048-token graphs are optional:
+Hugging Face CLI (`hf`). The default install is five files of the model repository: the 128- and
+256-token graphs, the shared-state pair for states of up to 128 tokens, the head and the tokenizer:
 
 ```bash
 hf download litert-community/Kev-0.8B-LiteRT \
+  kev-0.8b_rowprefill_L128_fp16fc_i8emb.tflite \
   kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite \
-  kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite \
+  kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite \
   head/kev_0.8b_pointer_head.safetensors tokenizer/tokenizer.json \
   --local-dir "$HOME/Downloads/Kev-0.8B-LiteRT"
 ./gradlew :app:assembleDebug
@@ -49,210 +60,271 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n com.kev/.MainActivity
 ```
 
-The install script's argument defaults to the download directory above. It installs the L256 and
-L512 graphs; `WINDOWS="128 256 512 1024 2048"` installs all five (download the extra graphs
-beforehand; each graph it names must be in the directory). It checks the size of every file before
-it touches the device. Each file goes through `/data/local/tmp/kev/` into the app's private
-`files/` with `run-as com.kev`; the script then removes the temporary copy and checks the copied
-size. Install the debug APK before the files: `run-as` needs a debuggable package. A launch before
-the install script ran shows "Missing <file>. Run scripts/install_to_device.sh, then reopen the
-app."
+The install script's argument defaults to the download directory above. `WINDOWS` names the row
+graphs to copy (`"128 256"` by default; `WINDOWS="64 128 256 512 1024 2048"` copies all six,
+`WINDOWS=""` none) and `PAIR` the shared-state pairs by their state length (the Ls128 pair by
+default; `PAIR=256`, `PAIR="128 256"`, or `PAIR=0` for none). Download every file it names
+beforehand. It checks the size of every file against the published one before it touches the
+device; `CHECK_SIZES=0` skips that for graphs you converted yourself and checks each copy against
+its source instead. Graphs already on the device that `WINDOWS` and `PAIR` do not name stay there.
+Each file goes through `/data/local/tmp/kev/` into the app's private `files/` with `run-as
+com.kev`; the script then removes the temporary copy and checks the copied size. Install the debug
+APK before the files: `run-as` needs a debuggable package. A launch with no graph installed shows
+"Missing <files>. Run scripts/install_to_device.sh, then reopen the app."; a request that needs a
+graph that is not installed names it and the install command.
 
 ## External files
 
 | File | Bytes | Purpose |
 |---|---:|---|
-| `kev-0.8b_rowprefill_L128_fp16fc_i8emb.tflite` | 1,261,728,400 (to be confirmed at upload) | Rows up to 128 tokens (optional) |
-| `kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite` | 1,262,377,184 (to be confirmed at upload) | Rows up to 256 tokens (installed by default) |
-| `kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite` | 1,264,068,368 | Rows up to 512 tokens (installed by default) |
-| `kev-0.8b_rowprefill_L1024_fp16fc_i8emb.tflite` | 1,269,023,216 | Rows up to 1,024 tokens (optional) |
-| `kev-0.8b_rowprefill_L2048_fp16fc_i8emb.tflite` | 1,285,227,888 | Rows up to 2,048 tokens (optional) |
+| `kev-0.8b_rowprefill_L64_fp16fc_i8emb.tflite` | 1,258,031,552 | Rows up to 64 tokens (optional) |
+| `kev-0.8b_rowprefill_L128_fp16fc_i8emb.tflite` | 1,258,444,912 | Rows up to 128 tokens (installed by default) |
+| `kev-0.8b_rowprefill_L256_fp16fc_i8emb.tflite` | 1,259,246,704 | Rows up to 256 tokens (installed by default) |
+| `kev-0.8b_rowprefill_L512_fp16fc_i8emb.tflite` | 1,261,233,328 | Rows up to 512 tokens (optional) |
+| `kev-0.8b_rowprefill_L1024_fp16fc_i8emb.tflite` | 1,266,799,568 | Rows up to 1,024 tokens (optional) |
+| `kev-0.8b_rowprefill_L2048_fp16fc_i8emb.tflite` | 1,284,223,520 | Rows up to 2,048 tokens (optional) |
+| `kev-0.8b_sharedstate_Ls128_Lq64_fp16fc_i8emb.tflite` | 1,261,368,160 | Shared-state pair: a state of up to 128 tokens, questions of up to 64 (installed by default) |
+| `kev-0.8b_sharedstate_Ls256_Lq64_fp16fc_i8emb.tflite` | 1,261,918,016 | Shared-state pair: a state of up to 256 tokens, questions of up to 64 (optional) |
 | `head/kev_0.8b_pointer_head.safetensors` | 2,099,632 | Pointer head: q and k projections, float32 |
 | `tokenizer/tokenizer.json` | 19,989,325 | The checkpoint's tokenizer, unchanged |
 
-Each graph takes `ids` int32 `[1,L]` (right-padded with `<|endoftext|>` 248044) and `valid`
-float32 `[1,L]` (1 on real tokens, 0 on pads) and returns `hidden` float32 `[1,L,1024]` after the
-final RMSNorm, signature `serving_default`. The five graphs have the same weights (float16
-fully connected layers, int8 embedding); a graph computes all L positions, so a smaller window
-takes less time for the same row. The default install (L256 + L512) holds rows of up to 512
-tokens. L128 runs rows of up to 128 tokens faster (175.8 instead of 323.3 ms per question on the
-S26), but a request that mixes such rows with longer ones can keep two graphs in memory (see App
-architecture).
+Every graph has the same weights (float16 fully connected layers, int8 embedding). A row graph
+takes `ids` int32 `[1,L]` (right-padded with `<|endoftext|>` 248044) and `valid` float32 `[1,L]`
+(1 on real tokens, 0 on pads) and returns `hidden` float32 `[1,L,1024]` after the final RMSNorm,
+signature `serving_default`. It computes all L positions, so a smaller window takes less time for
+the same row. A pair file has two signatures. `state_prefill_<Ls>` takes the state part of the rows
+(`[state]` and the state tokens) as `ids` / `valid` `[1,Ls]` and returns the model's state after it:
+48 tensors, `k_<l>` / `v_<l>` of the 6 attention layers and `gdn_state_<l>` / `conv_tail_<l>` of
+the 18 Gated DeltaNet layers. `question_step_<Ls>_64` takes one question's tokens as `ids` /
+`valid` `[1,64]`, the state call's `valid` as `state_valid` `[1,Ls]` and the 48 tensors, and
+returns `hidden` `[1,64,1024]` for that question's tokens, continuing the positions after the
+state. The hidden states are those of the full row, so the head and the answers are the row
+form's.
 
-## App architecture
+## How a request runs
 
 ```text
 State + typed questions → to_record (rendered state, option texts) → Kotlin byte-level BPE
   → one causal row per question:
     [state] state [question] instructions ([option] option [/option])… [decide]
-  → padded to the smallest installed window that holds the row (128 / 256 / 512 / 1024 / 2048)
-    + valid mask
-  → LiteRT graph (GPU FP32 or CPU 4 threads) → hidden [L,1024]
+  → the plan: rows or the pair, by the predicted time
+  rows: each row padded to the smallest installed window that holds it (64 … 2048) + valid
+        → row graph → hidden [L,1024]
+  pair: [state] + state once (padded to Ls) → state_prefill → 48 state tensors on the GPU
+        → per question: its own tokens (padded to 64) → question_step → hidden [64,1024]
   → hidden at the decide token and at each option's closing token
   → pointer head on the host (float32, z / T, softmax) → to_answers
 ```
 
-`MainActivity` observes immutable `UiState`. `MainViewModel` owns the engine (tokenizer, head and
-at most two compiled graphs) and runs every model call on one worker thread with one LiteRT
-Environment per process, because LiteRT reuses its native input and output buffers;
-`onCleared()` closes the graphs. At startup the app compiles the smallest installed window (L256
-with the default install) and warms it up with one untimed call on a ticket question whose row it
-holds. Each question asks for the smallest installed window that holds its row. When a request
-asks for L512 or a larger window, that window is the only compiled graph and every question of
-the request runs on it. When it asks only for L128 and L256, both can stay compiled side by side,
-so short and long questions of one request run on different windows. The second graph compiles
-only when Android reports at least 4,500,000 kB available (`ActivityManager.MemoryInfo`); otherwise
-L256 alone takes every question. Graphs a request does not ask for are closed before a
-missing one compiles, and a request the compiled graphs already cover compiles nothing.
+The planner predicts both forms from this app's Galaxy S26 measurements (GPU
+`FP16_WITH_FP32_ACCUM`, calls made while the GPU clock ceiling stayed at 1,300 MHz) and takes the
+smaller, the rows on a tie; a request that only one form can take runs on that one. The pair takes
+a request when the state part fits Ls and every question part fits 64 tokens; with both pairs
+installed, the one with the smaller prediction runs.
 
-Three runs on the 12 GB Galaxy S26 back the limits. Compiling L256 next to the resident L128 left
-the app running both times, with the available memory (MemAvailable) down to 0.88 and 0.64 GB.
-Compiling L2048 next to L128 took it from 4.77 to 0.62 GB, and Android's low-memory killer stopped
-the app.
+| Graph | Predicted ms |
+|---|---|
+| L64 / L128 / L256 / L512 / L1024 / L2048, one question | 56.6 / 102.2 / 196.3 / 388.8 / 816.0 / 1,803.5 |
+| Ls128 pair, state call + one step per question | 116.0 + 62.0 without weight sharing, 152.3 + 92.9 with it |
+| Ls256 pair, state call + one step per question | 216.5 + 62.5 without weight sharing, 255.4 + 95.1 with it |
 
-A request that needs a window that is not installed names the missing file. Rows over 2,048
-tokens are rejected, never truncated. A graph output with NaN or infinity on a question's real
-positions gives that question no answer.
+For the bundled ticket on the default install (rows of 131, 101 and 93 tokens) that is 400.7 ms
+for the rows (L256 + L128 + L128) against 302 ms for the pair without sharing, so the pair runs; a
+five-question request (rows of 128–142 tokens) is 793.3 ms against 426 ms; a single question whose
+row fits L128 stays on L128 (102.2 ms against the pair's 178 ms). The prediction depends on what is
+already compiled and on the memory available when the request is planned: a second window and an
+unshared pair are only predicted when they could be compiled now, and a compiled pair is predicted
+as it was compiled.
+
+**Graphs in memory.** A row plan keeps its two largest windows compiled when both are L256 or
+smaller and Android reports at least 4,500,000 kB available (`ActivityManager.MemoryInfo`), or
+when both are already compiled; otherwise its largest window takes every question. L512 and larger
+windows run alone, and the pair runs alone. Graphs a request does not use are closed before a
+missing one compiles, and a request the compiled graphs already cover compiles nothing. At startup
+the app compiles the plan of the editor's opening example (the ticket) and warms each graph up with
+one untimed call.
+
+**Weight sharing in the pair.** The two signatures can share one copy of the weights on the GPU
+(`GpuOptions(constantTensorSharing = true)`) or hold one each. Without sharing the pair is quicker
+and takes more memory; the answers are the same (identical probabilities on 132 gate questions).
+The app decides when it compiles the pair: without sharing when Android reports at least 6,500,000
+kB available right before the compile, with sharing below that; a compiled pair keeps its mode.
+`--es share on` or `--es share off` fixes it. On the S26:
+
+| Ls128 pair, five-question request | Request | State call | Step | MemAvailable low point | VmHWM |
+|---|---:|---:|---:|---:|---:|
+| without sharing | 429.6 ms | 116.0 ms | 62.0 ms | 2.51 GB | 6.81 GB |
+| with sharing | 623.3 ms | 152.3 ms | 92.9 ms | 5.44 GB | 3.01 GB |
+
+**Launch options.** `--es graph auto|rows|pair` (auto by default; `pair` fails with the reason
+when the pair cannot take the request), `--es precision fp32|fp16acc` and `--es share
+auto|on|off` apply to a normal launch, an autoplay, the gate and the timing runs; see
+[scripts/TEST_DATA.md](scripts/TEST_DATA.md).
 
 The state is plain text unless the whole text parses as a JSON object or array; JSON is rendered
 the author's way (`key: value` lines, `- item` lines, two spaces per level). Options go one per
 line: choice `key: description` or `key`, noul `true: …` and `false: …` (both optional), score one
 level per line. Text that contains `<|name|>` is rewritten to `<¦name¦>` before tokenizing, as the
-author's `user_tokens` does.
+author's `user_tokens` does. Rows over 2,048 tokens are rejected, never truncated. A graph output
+with NaN or infinity on a question's real positions gives that question no answer.
 
 Each card shows the time of its graph call (input writes + `run()` + output read-back, in whole
-milliseconds) and the window it ran on, for example `324 ms · L256`. `run()` alone returns before
-the GPU work ends. The status line names the compiled windows (`L128 + L256` when both are
-compiled). The total under the cards adds the tokenizer time and every question's graph call, head
-and answer.
+milliseconds) and the graph it ran on: `105 ms · L128` for a row, `62 ms · Q64` for a pair step.
+`run()` alone returns before the GPU work ends. A pair request also shows the state call, for
+example `State · 95 tokens · 115 ms`. The engine line names the precision and the compiled graphs
+(`GPU FP16 (FP32 accum) · S128+Q64`); the status line gives the request's time from tokenizing to
+the last answer.
 
 ## Files
 
 | Path | Role |
 |---|---|
 | `app/src/main/java/com/kev/MainActivity.kt` | Compose host (`singleTop`); reads the launch extras |
-| `app/src/main/java/com/kev/MainViewModel.kt` | Engine on the worker thread: load, Decide, second graph, autoplay, gate and timing runs |
-| `app/src/main/java/com/kev/UiState.kt` | Immutable screen state: status, cards, presentation |
+| `app/src/main/java/com/kev/MainViewModel.kt` | Engine on the worker thread: load, Decide, the plan's graphs, autoplay, gate and timing runs |
+| `app/src/main/java/com/kev/UiState.kt` | Immutable screen state: status, engine line, cards, presentation |
 | `app/src/main/java/com/kev/view/KevScreen.kt` | The editable screen; `view/PresentationScreen.kt` the read-only demo layout; `view/Theme.kt`, `view/Color.kt` |
-| `app/src/main/java/com/kev/KevDecider.kt` | LiteRT `CompiledModel` (GPU FP32 or CPU), its buffers and the process Environment |
-| `app/src/main/java/com/kev/KevEngine.kt` | Tokenizer, head and the compiled graphs |
+| `app/src/main/java/com/kev/KevDecider.kt` | One row graph on LiteRT `CompiledModel` (GPU with an explicit precision, or CPU), its buffers, `KevPrecision` and the process Environment |
+| `app/src/main/java/com/kev/KevPairDecider.kt`, `KevPair.kt` | The shared-state pair: two signatures, the state handed to the question call as its own buffers; the pair's contract |
+| `app/src/main/java/com/kev/KevPlanner.kt` | Rows or pair by the predicted time (`KevCosts`), weight sharing (`KevPairShare`), Android-free |
+| `app/src/main/java/com/kev/KevEngine.kt` | Tokenizer, head and the compiled graphs of the plan |
 | `app/src/main/java/com/kev/KevWindows.kt` | Window choice per question and the compiled graphs, Android-free (`KevResidentGraphs`) |
-| `app/src/main/java/com/kev/KevPipeline.kt` | Request → rows → graph → head → answers, Android-free (`RowRunner`) |
+| `app/src/main/java/com/kev/KevPipeline.kt` | Request → rows or state + branches → graph → head → answers, Android-free (`RowRunner`, `PairRunner`) |
 | `app/src/main/java/com/kev/KevTokenizer.kt` | Byte-level BPE tokenizer read from `tokenizer.json` |
 | `app/src/main/java/com/kev/KevRequest.kt`, `KevEncoder.kt` | Request validation, `render` / `to_record`, rows, windows, padding |
 | `app/src/main/java/com/kev/KevPointerHead.kt`, `KevAnswers.kt` | Pointer head (safetensors) and `to_answers` |
 | `app/src/main/java/com/kev/KevJson.kt` | JSON with Python's key order and number semantics |
 | `app/src/main/java/com/kev/KevDrafts.kt`, `KevAnswerView.kt` | Editor form of a request; the strings an answer shows |
 | `app/src/main/java/com/kev/KevGateRunner.kt`, `KevGateCore.kt`, `KevGateChecks.kt` | Debug fixture gate (device shell, Android-free checks) |
-| `app/src/main/java/com/kev/KevTimingRunner.kt`, `KevTimingCore.kt`, `KevTimingRows.kt` | Timing protocol (debug and benchmark builds) |
-| `app/src/main/java/com/kev/KevDemo.kt`, `KevDemoRun.kt`, `KevDevice.kt`, `KevLaunch.kt`, `KevFiles.kt` | Demo log lines and run JSON, device facts, launch extras, file names |
+| `app/src/main/java/com/kev/KevTimingRunner.kt`, `KevTimingCore.kt`, `KevTimingRows.kt`, `KevCool.kt` | Timing protocol with the GPU clock ceiling read before each call and a wait for the GPU to cool (debug and benchmark builds) |
+| `app/src/main/java/com/kev/KevDemo.kt`, `KevDemoRun.kt`, `KevDevice.kt`, `KevLaunch.kt`, `KevFiles.kt` | Demo log lines and run JSON, device facts, launch extras, file names and sizes |
 | `app/src/main/res/raw/example_*.json` | The three bundled requests |
 | `app/src/debug/assets/` | Gate fixtures (SemIf 144 + 12 invented requests) and tokenizer probes |
-| `app/src/test/java/com/kev/` | JVM parity tests against the author's oracle |
+| `app/src/test/java/com/kev/` | JVM parity tests against the author's oracle; planner, window and sharing rules |
 | `scripts/install_to_device.sh` | Copies the external files into the app's `files/` |
-| `scripts/make_test_data.py`, `scripts/TEST_DATA.md` | Bundled test data and how to run the tests |
+| `scripts/make_test_data.py`, `scripts/TEST_DATA.md` | Bundled test data and how to run the tests and the device runs |
 | `LICENSE`, `NOTICE`, `licenses/` | Apache-2.0 text, attribution and the retained upstream licenses |
 
 ## Measured
 
-Samsung Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, debug build, USB powered, screen on, app in
-the foreground (top-app). A graph call is timed from the input writes through `run()` to the
-output read-back. Each timing leg starts at thermal status 0 with no thermal cap on any CPU policy;
-with the screen on, the prime cores read 4.19 of their 4.74 GHz. A leg runs 5 untimed warm-ups,
-then 20 timed calls or 20 timed five-question requests. Medians are numpy's. The L512, L1024,
-L2048 and CPU runs used two earlier debug builds of this module, and the L256 and L128 runs a third;
-they differ from this version in layout and in how graphs stay compiled, not in the timed code.
-Available memory is Android's MemAvailable, written in GB of 1,000,000 kB.
+Samsung Galaxy S26 SM-S942Q (12 GB), Android 16, LiteRT 2.2.0, debug build, USB powered, screen
+on, app in the foreground (top-app), the files above, GPU `FP16_WITH_FP32_ACCUM` unless a line says
+FP32. A graph call is timed from the input writes through `run()` to the output read-back; a pair's
+state call from its input writes to the write of `state_valid`, which waits for the state. Each
+timing leg starts at thermal status 0 with no thermal cap on any CPU policy, after at least 180 s
+of rest, and waits after the compile until the GPU clock ceiling and the GPU temperature are back
+to their values before it. A leg runs 5 untimed warm-ups, then 20 timed calls (or 20 timed
+requests). The app reads the GPU clock ceiling (`/sys/class/kgsl/kgsl-3d0/max_clock_mhz`) before
+each call: the values below are the medians (numpy's) of the calls made while it stayed at
+1,300 MHz, and the calls after it fell are given apart. Available memory is Android's
+MemAvailable and VmHWM the process's peak resident memory, in GB of 1,000,000 kB.
 
-- **Fixture gate, GPU FP32, L512:** tokenizer probes 54/54; rows 181/181 identical to the author's
-  fp32 oracle; 172 rows run in the graph (9 need L2048), all finite. The argmax equals the
-  oracle's on 166/166 rows outside near-ties (oracle top-2 gap ≤ 0.02); of the 6 near-ties, 5 keep
-  the argmax and 1 flips (`own_sensor_08/alert`, oracle gap 8.1e-5). Max |Δp| 0.0078, mean 9.1e-4
-  over 524 options. The whole graph runs on the GPU delegate in one partition (21,059 of 21,059
-  nodes).
-- **Fixture gate, CPU four threads, L512, 40 rows:** probes 54/54, rows 181/181 identical, the 40
-  rows all finite, argmax 40/40, max |Δp| 0.0052, mean 8.6e-4.
-- **Fixture gate, GPU FP32, L256 and L128:** probes 54/54 and rows 181/181 identical in both. L256
-  runs the same 172 rows as L512: argmax 166/166 outside near-ties, the same single flip
-  (`own_sensor_08/alert`), max |Δp| 0.0078, mean 9.1e-4. L128 runs the 147 rows of up to 128
-  tokens: argmax 147/147, max |Δp| 0.0078, mean 9.5e-4. Each graph runs whole on the GPU delegate
-  in one partition (L256 18,755 of 18,755 nodes, L128 17,603 of 17,603).
-- **L2048, GPU FP32:** the 9 rows that need the 2,048-token window (three invented long requests,
-  rows of 1,369–1,805 tokens) ran through the app with row IDs 9/9 identical, argmax 9/9 and max
-  |Δp| 0.0015, the whole graph in one GPU partition (34,883 of 34,883 nodes). So all 181 gate
-  questions have run through the device graphs (172 at L512, 9 at L2048). These rows took
-  3.7–5.2 s each at thermal status 2 with the GPU clock capped, outside the timing protocol.
-- **One question, GPU FP32:** three rows of 73, 80 and 97 tokens take a median **175.8 ms** on
-  L128 (min 173.7, max 238.3, n 60, status 0 → 0) and **323.3 ms** on L256 (min 318.8, max 483.2,
-  n 60, status 0 → 1). L512, 300-token row: median **615.1 ms** (min 611.2, max 649.9, n 20),
-  thermal status 0 → 2 during the leg. L1024, 1,000-token row: median **1,333.4 ms** (min 1,297.6,
-  max 1,395.5, n 20), status 0 → 2.
-- **Five-question request, GPU FP32, L512** (rows of 128–142 tokens): per call median 689.7 ms
-  (min 617.2, max 798.9, n 100), per request median 3,455.9 ms (min 3,094.0, n 20). The leg started
-  6 minutes after the 172-row gate. The phone went from status 0 to 3 during its 125 calls: the
-  earliest took 617–630 ms, the last 772–799 ms.
-- **The same request from its text, GPU FP32, L512** (tokenize, five graph calls, head,
-  `to_answers`): per request median 3,603.7 ms (min 3,314.4, max 3,982.0, n 20); the five warm-up
-  requests took 3,137–3,189 ms. Inside a request: tokenizer 7.0 ms, graph 706.7 ms per call (min
-  637.4, max 803.5), head 11.6 ms per question. Status 0 → 2.
-- **Five-question request, GPU FP32, L256:** per call median 408.7 ms (min 317.0, max 488.1,
-  n 100), per request median 2,056.0 ms (min 1,596.3, max 2,411.8, n 20). Requests 1–4 took
-  1,596–1,626 ms and requests 14–20 2,390–2,412 ms: during the leg the GPU clock ceiling fell from
-  1,300 to 646 MHz while the thermal status stayed 0.
-- **The same request from its text, GPU FP32, L256:** per request median 2,230.8 ms (min 1,663.4,
-  max 2,764.4, n 20); the five warm-up requests took 1,663–1,699 ms. Inside a request: tokenizer
-  8.2 ms, graph 429.5 ms per call (min 316.7), head 12.8 ms per question.
-- **Five-question request, CPU four threads, L512:** per call median 1,832.1 ms (min 1,410.5, max
-  1,874.8, n 100), per request median 9,187.9 ms (min 7,328.0, max 9,284.7, n 20). The warm-up
-  calls took 975–1,321 ms and the last timed calls 1,821–1,871 ms as the phone went from status 0
-  to 2.
-- **Graph compile:** GPU L512 16.9 s at a gate launch, 17.5, 18.0 and 18.5 s with the cache
-  cleared, 18.9 s at a normal launch (tokenizer, head and graph loaded in 20.4 s); GPU L1024
-  21.3 s with the cache cleared; GPU L256 12.8 s at a gate launch and 15.9, 15.9 and 17.1 s with
-  the cache cleared; GPU L128 16.4 s at a gate launch and 14.5 s with the cache cleared; CPU 2.9
-  and 3.6 s.
-- **Memory:** available memory fell from 7.8 to 5.1 GB with the L512 graph resident (about
-  2.7 GB) and from 7.6 to 3.9 GB with the L2048 graph (about 3.7 GB). While a graph compiled,
-  Android's low-memory daemon reclaimed cached background apps; the sample was not killed. Two
-  graphs at once, three runs: L256 compiled next to the resident L128 twice, and the app stayed up
-  both times (low points 0.88 and 0.64 GB, 2.9–3.0 GB once both were resident); L2048 compiled next
-  to L128 once, the available memory fell from 4.77 to 0.62 GB, and the low-memory killer stopped
-  the app. With this version, a long request after the ticket closed L256 and compiled L2048 alone
-  (low point 2.22 GB, no kill); the next short request closed L2048 and compiled L256 again, and
-  its answers started about 12 s after the request.
-- **Not measured:** Pixel phones and other devices; the NPU; GPU default precision in this app;
-  L256 and L128 on the CPU; runs longer than the legs above; a release (non-debuggable) build.
+- **One question per window** (rows of 73, 80 and 97 tokens; L64: 51, 58 and 64; L512 one
+  300-token row; L1024 one 1,000-token row; L2048 the nine long gate rows of 1,369–1,805 tokens,
+  three requests of three questions, each after the GPU wait):
 
-Example 1 (the ticket) shows what a working install answers. On the S26 with GPU FP32 and the
-default install, **Decide** runs all three questions on the L256 graph and gives team `billing`
-0.9258 (shipping 0.0203, returns 0.0316, technical 0.0203, account 0.002) with confidence 0.9073,
-refund (noul) 0.9456, and mood (score) 1.1842 with Calm 0.0772, Annoyed 0.6613 and Angry 0.2614,
-confidence 0.492. The L512 graph gives the same four-decimal answers on the phone and on a desktop
-CPU (max |Δp| 1.3e-6 against the phone's L256 run). The author's fp32 model on the same request
-gives billing 0.9256, refund 0.9459 and mood score 1.1865 (Annoyed 0.6579), within max |Δp|
-0.0035 of the phone. The rows are 131, 101 and 93 tokens (`usage.input_tokens` 181). In one run on
-a cooled phone the cards showed 343, 332 and 332 ms, and the request took 1,046 ms from tokenizing
-to the last answer. With L128 installed too, refund and mood run on L128: 348, 182 and 191 ms,
-756 ms in all.
+  | Window | Median | Min–max | n | Compile |
+  |---|---:|---|---:|---:|
+  | L64 | 56.6 ms | 55.3–60.1 | 60 | 7.4 s |
+  | L128 | 102.2 ms | 101.2–104.6 | 60 | 6.8 s |
+  | L256 | 196.3 ms | 195.1–262.6 | 31 | 7.5 s |
+  | L512 | 388.8 ms | 384.9–392.9 | 15 | 9.0 s |
+  | L1024 | 816.0 ms | 806.7–1,178.2 | 18 | 10.6 s |
+  | L2048 | 1,803.5 ms | 1,789–1,821 | 8 | not logged |
+
+  At FP32 the same rows take 137.8 ms on L128 and 272.1 ms on L256 (n 30 and 40), measured on
+  the conversion run's previous build of those two graphs; at `FP16_WITH_FP32_ACCUM` that build
+  gives the published files' probabilities on every gate row.
+- **When the GPU clock ceiling falls:** 3–8 s into back-to-back calls it fell from 1,300 MHz, in
+  most legs to 578–902 MHz, and a call then took 1.7–2.1 times as long: L256 330.2 ms instead of
+  196.3 ms (n 29), the five-question request on the pair 727.6 ms instead of 429.6 ms, and from its
+  text 822.5 ms instead of 465.9 ms. The thermal status stayed at 0 or 1 meanwhile, so it does not
+  tell. After each compile the ceiling and the temperature were already back (the wait took 0 s).
+- **Requests:**
+
+  | Request | Plan | Request time | Inside |
+  |---|---|---:|---|
+  | Bundled ticket, default install, normal launch | pair without sharing | 367 ms | state 72 tokens 129 ms, steps 61, 63, 62 ms |
+  | The same, `--es graph rows` | L256 + L128 | 463 ms | 214, 105, 105 ms |
+  | Bundled incident, in the ticket's process | pair (compiled) | 333 ms | state 95 tokens 115 ms, steps 60–63 ms |
+  | Five-question request from its text, default install | pair without sharing | 465.9 ms (452.6–624.7, n 15) | tokenize 8.4 ms, state 115.1 ms, step 61.8 ms, head 6.1 ms per question |
+  | Five-question request, rows on L256 | rows | 972.1–984.6 ms | 195.0 ms per call |
+  | Three-question email, state 167 tokens: Ls256 pair without sharing | pair | 409.1 ms (402.4–420.4, n 12) | state 216.5 ms, step 62.5 ms |
+  | The same with sharing | pair | 544.6 ms | state 255.4 ms, step 95.1 ms |
+  | The same, rows on L256 | rows | 585.0–593.8 ms | 195.6 ms per call |
+
+  The ticket and incident times run from tokenizing to the last answer, without the demo's waits
+  and without a compile; the row requests' ranges are the requests made before the ceiling fell.
+- **Fixture gate:** tokenizer probes 54/54, all 181 rows identical to the author's fp32 oracle
+  (IDs, decide and option indices) for every graph, no non-finite row. The argmax counts leave out
+  the near-ties (oracle top-2 gap ≤ 0.02):
+
+  | Graph | Rows run | Argmax outside near-ties | Near-ties kept | Max \|Δp\| | Mean \|Δp\| |
+  |---|---:|---:|---:|---:|---:|
+  | L64 | 34 | 33/33 | 1/1 | 0.00656 | 1.03e-3 |
+  | L128 | 147 | 144/144 | 3/3 | 0.00736 | 1.11e-3 |
+  | L256 | 172 | 166/166 | 6/6 | 0.00917 | 1.05e-3 |
+  | L512 | 172 | 166/166 | 5/6 | 0.00907 | 1.07e-3 |
+  | L1024 (the asset's opening 40 rows) | 40 | 40/40 | — | 0.00804 | 1.06e-3 |
+  | L2048 (the 9 long rows) | 9 | 9/9 | — | 0.0093 | 1.84e-3 |
+  | Ls128 pair, with or without sharing | 132 questions | 130/130 | 2/2 | 0.0101 | 1.14e-3 |
+  | Ls256 pair, without sharing | 146 questions | 141/141 | 4/5 | 0.0110 | 1.10e-3 |
+  | L256 at FP32 | 172 | 166/166 | 5/6 | 0.00780 | 9.13e-4 |
+  | Ls128 pair at FP32 | 132 questions | 130/130 | 2/2 | 0.00780 | 9.76e-4 |
+  | L2048 at FP32 (the 9 long rows) | 9 | 9/9 | — | 0.0015 | 4.26e-4 |
+
+  The one near-tie that flips is `own_sensor_08/alert` (oracle gap 8e-5). The L64, L128 and L256
+  gates give the same probabilities on every row as the conversion run's previous build of those
+  graphs. Every graph runs whole on the GPU delegate in one partition (L64 3,912 nodes, L128 4,759,
+  L256 6,019, L512 8,515, L1024 13,555, L2048 23,635; the Ls128 pair 4,975 + 3,965, the Ls256 pair
+  6,235 + 3,965). On the CPU (four threads) the Ls128 pair passes the gate on its opening 40
+  questions (40/40, max |Δp| 0.00525, mean 8.6e-4).
+- **Graph compile** (cache cleared): L64 7.4 s, L128 6.8 s, L256 7.5 s, L512 9.0 s, L1024 10.6 s;
+  the Ls128 pair 15.1 and 16.3 s without sharing, 13.7 s with it; the Ls256 pair 17.9 s without
+  sharing (26.1 s in a gate launch at thermal status 2). A normal launch with the default install is ready in 21.2 s (the pair's compile 20.2 s);
+  with `--es graph rows` in 16.9 s (L256 and L128).
+- **Memory:** one compiled window (L64 to L1024): MemAvailable low points 3.18–3.96 GB, VmHWM
+  4.61–5.56 GB. L256 +
+  L128 compiled at startup: low point 2.71 GB, VmHWM 7.20 GB. The pair without sharing: low points
+  2.21–3.04 GB, VmHWM 6.15–6.81 GB; with sharing: 5.29–5.88 GB, 3.01–3.05 GB. Android's
+  low-memory killer stopped the app in none of these runs.
+- **Not measured:** Pixel phones and other devices; the CPU's time on these files; runs longer than
+  the legs above; a release (non-debuggable) build.
+
+Rows over 1,024 tokens have the smallest margin at `FP16_WITH_FP32_ACCUM`: on the 9 long rows the
+largest probability change is 0.0093 and the mean 1.84e-3, against 0.0015 and 4.3e-4 at FP32, still
+within the bar (0.02 and 0.002). `--es precision fp32` runs every graph at FP32 for such inputs. The
+graphs compile when a request needs them: on the S26 7–11 s per window up to L1024 and 14–26 s for a
+pair.
+
+Example 1 (the ticket) shows what a working install answers. On the S26 with the default install,
+**Decide** runs the three questions on the pair and gives team `billing` 0.9258 (shipping 0.0203,
+returns 0.0316, technical 0.0202, account 0.002) with confidence 0.9073, refund (noul) 0.9457, and
+mood (score) 1.1844 with Calm 0.0776, Annoyed 0.6605 and Angry 0.262, confidence 0.4907. With
+`--es graph rows` (L256 and L128) it gives billing 0.9261, refund 0.9454 and mood 1.1858. The
+author's fp32 model on the same request gives billing 0.9256, refund 0.9459 and mood 1.1865
+(Annoyed 0.6579). The rows are 131, 101 and 93 tokens (`usage.input_tokens` 181).
 
 ## Tests
 
 JVM tests compare the Kotlin host with the author's fp32 oracle (request → rows, head, answers,
-and the whole pipeline with a stand-in graph). They read the conversion run's reference data and
-skip without it; see [scripts/TEST_DATA.md](scripts/TEST_DATA.md). On a desktop JVM 17 the rows,
-decide and option indices equal the oracle on 402/402 questions (`usage.input_tokens` 377/377),
-the head stays within max |Δp| 2.98e-7 of it, and `to_answers` gives the oracle's answers on
-402/402. The bundled examples carry their oracle rows and answers in
-`app/src/test/resources/examples_oracle.json`.
+and the whole pipeline with stand-in graphs for the rows and for the pair) and check the planner,
+window, sharing and default-install rules. They read the conversion run's reference data and skip
+without it; see [scripts/TEST_DATA.md](scripts/TEST_DATA.md). On a desktop JVM 17 the rows, decide
+and option indices equal the oracle on 402/402 questions (`usage.input_tokens` 377/377), the head
+stays within max |Δp| 2.98e-7 of it, and `to_answers` gives the oracle's answers on 402/402. On the
+pair's path the 304 requests whose state and questions fit the Ls128 pair (312 questions) give the
+row path's and the oracle's answers on 312/312. The bundled examples carry their oracle rows and
+answers in `app/src/test/resources/examples_oracle.json`.
 
 ```bash
 ./gradlew :app:testDebugUnitTest -Pkev.work=/path/to/kev_work
 ```
 
 The debug APK also runs a fixture gate on the device: the tokenizer on 54 probe strings, the rows
-of all 181 bundled questions, and the graph and head on the rows that fit the window it compiles
-(`--ei window`; without it, the smallest installed one), against the oracle. Gate, timing and
-demo launches are described in [scripts/TEST_DATA.md](scripts/TEST_DATA.md).
+of all 181 bundled questions, and the graph and head on the rows that fit the graph it compiles
+(`--ei window`, `--es graph pair` with `--ei ls`; without them, the smallest installed window),
+against the oracle. Gate, timing and demo launches are described in
+[scripts/TEST_DATA.md](scripts/TEST_DATA.md).
 
 ```bash
 adb shell am force-stop com.kev

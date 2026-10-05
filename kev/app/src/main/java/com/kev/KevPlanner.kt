@@ -23,31 +23,90 @@ enum class KevGraphMode(val wireName: String) {
   }
 }
 
+/**
+ * Whether a pair holds one copy of its weights for both signatures on the GPU (constant tensor
+ * sharing); [wireName] is the `share` extra's value. Without sharing the pair is faster and needs
+ * more memory (see [KevResidentGraphs.PAIR_UNSHARED_MIN_AVAILABLE_BYTES]).
+ */
+enum class KevPairShare(val wireName: String) {
+  /**
+   * Without sharing when the phone has at least
+   * [KevResidentGraphs.PAIR_UNSHARED_MIN_AVAILABLE_BYTES] available right before the compile, else
+   * with it.
+   */
+  AUTO("auto"),
+  ON("on"),
+  OFF("off");
+
+  /** Whether a pair compiled with [availableBytes] available shares its weights. */
+  fun sharesAt(availableBytes: Long): Boolean =
+    when (this) {
+      ON -> true
+      OFF -> false
+      AUTO -> availableBytes < KevResidentGraphs.PAIR_UNSHARED_MIN_AVAILABLE_BYTES
+    }
+
+  companion object {
+    /** The `share` extra: `auto`, `on` or `off`; null for anything else. */
+    fun of(name: String): KevPairShare? = entries.firstOrNull {
+      it.wireName == name.trim().lowercase()
+    }
+  }
+}
+
 /** One question step and one state call of a pair, in milliseconds. */
 class KevPairCost(val stateMs: Double, val questionMs: Double)
 
 /**
  * Milliseconds per graph call that [KevPlanner] compares: one question on each row window, and the
- * state and one question on each pair.
+ * state and one question on each pair, with constant tensor sharing ([pairMs]) and without it
+ * ([unsharedPairMs]).
  */
-class KevCosts(val rowMs: Map<Int, Double>, val pairMs: Map<KevPairShape, KevPairCost>) {
+class KevCosts(
+  val rowMs: Map<Int, Double>,
+  val pairMs: Map<KevPairShape, KevPairCost>,
+  val unsharedPairMs: Map<KevPairShape, KevPairCost> = pairMs,
+) {
   companion object {
     /**
-     * Galaxy S26 measurements of this app (GPU FP32, input writes + run + read-back), used only to
-     * choose a plan: one question on each window (L128 175.8 ms, L256 323.3, L512 615.1, L1024
-     * 1,333.4 from cool starts; L2048 3,175 from a warm run) and the pair's state call and question
-     * step in the five-question request from a cool start (271.2 ms, 185.3 ms).
+     * Galaxy S26 measurements of this app (GPU FP16_WITH_FP32_ACCUM, input writes + run +
+     * read-back, cool starts, the median of the calls while the GPU clock ceiling stayed at its
+     * 1,300 MHz), used only to choose a plan: one question on each window (L64 56.6 ms, L128 102.2,
+     * L256 196.3, L512 388.8, L1024 816.0, L2048 1,803.5) and each pair's state call and question
+     * step (Ls128 in the five-question request: 152.3 / 92.9 ms shared, 116.0 / 62.0 ms not shared;
+     * Ls256 in a three-question request: 255.4 / 95.1 and 216.5 / 62.5 ms). One table for every
+     * precision: a launch that forces FP32 plans with it too (an approximation).
      */
-    val GALAXY_S26_GPU_FP32 =
+    val GALAXY_S26_GPU =
       KevCosts(
-        rowMs = mapOf(128 to 176.0, 256 to 323.0, 512 to 615.0, 1024 to 1333.0, 2048 to 3175.0),
-        pairMs = mapOf(KevPairShape(128, 64) to KevPairCost(stateMs = 271.0, questionMs = 185.0)),
+        rowMs =
+          mapOf(
+            64 to 56.6,
+            128 to 102.2,
+            256 to 196.3,
+            512 to 388.8,
+            1024 to 816.0,
+            2048 to 1803.5,
+          ),
+        pairMs =
+          mapOf(
+            KevPairShape(128, 64) to KevPairCost(stateMs = 152.3, questionMs = 92.9),
+            KevPairShape(256, 64) to KevPairCost(stateMs = 255.4, questionMs = 95.1),
+          ),
+        unsharedPairMs =
+          mapOf(
+            KevPairShape(128, 64) to KevPairCost(stateMs = 116.0, questionMs = 62.0),
+            KevPairShape(256, 64) to KevPairCost(stateMs = 216.5, questionMs = 62.5),
+          ),
       )
   }
 }
 
-/** The predicted request time of each form, or null when that form cannot take the request. */
-class KevPrediction(val rowsMs: Double?, val pairMs: Double?)
+/**
+ * The predicted request time of each form, or null when that form cannot take the request;
+ * [pairShared] says which pair costs [pairMs] used (null without a pair).
+ */
+class KevPrediction(val rowsMs: Double?, val pairMs: Double?, val pairShared: Boolean? = null)
 
 /** Why the pair cannot take a request. */
 sealed interface KevPairMiss {
@@ -105,7 +164,10 @@ object KevPlanner {
    * The plan of a request whose state part is [stateTokens] long (`[state]` included) and whose
    * branches are [branchTokens] long, given the installed windows and pairs. [residentWindows] and
    * [availableBytes] decide whether two row windows may stay compiled
-   * ([KevResidentGraphs.secondAllowed]); [fixedWindow] runs every row on that one window.
+   * ([KevResidentGraphs.secondAllowed]); [fixedWindow] runs every row on that one window. A pair is
+   * predicted with the costs of the way it would run: the resident pair ([residentPair]) as it was
+   * compiled ([residentPairShared]), another one as [share] decides with [availableBytes] (an
+   * approximation, like the second window: the compile reads the memory again).
    */
   fun plan(
     stateTokens: Int,
@@ -116,7 +178,10 @@ object KevPlanner {
     availableBytes: Long,
     mode: KevGraphMode = KevGraphMode.AUTO,
     fixedWindow: Int? = null,
-    costs: KevCosts = KevCosts.GALAXY_S26_GPU_FP32,
+    costs: KevCosts = KevCosts.GALAXY_S26_GPU,
+    share: KevPairShare = KevPairShare.AUTO,
+    residentPair: KevPairShape? = null,
+    residentPairShared: Boolean? = null,
   ): KevPlan {
     require(branchTokens.isNotEmpty()) { "A request has at least one question" }
     val rows = branchTokens.map { stateTokens + it }
@@ -128,16 +193,22 @@ object KevPlanner {
       }
     val rowsMs =
       (windowPlan as? KevWindowPlan.Ready)?.let { ready ->
-        val second =
-          residentWindows.containsAll(ready.windows.toSet()) ||
-            availableBytes >= KevResidentGraphs.SECOND_RESIDENT_MIN_AVAILABLE_BYTES
+        val second = KevResidentGraphs.secondAllowed(ready, residentWindows, availableBytes)
         KevResidentGraphs.assign(ready, second).sumOf { costs.rowMs.getValue(it) }
       }
     val pairs = installedPairs.filter {
       stateTokens <= it.stateLength && branchTokens.all { tokens -> tokens <= it.questionLength }
     }
-    val pair = pairs.minByOrNull { pairMs(costs, it, branchTokens.size) }
-    val prediction = KevPrediction(rowsMs, pair?.let { pairMs(costs, it, branchTokens.size) })
+    fun shared(shape: KevPairShape): Boolean =
+      if (shape == residentPair && residentPairShared != null) residentPairShared
+      else share.sharesAt(availableBytes)
+    val pair = pairs.minByOrNull { pairMs(costs, it, branchTokens.size, shared(it)) }
+    val prediction =
+      KevPrediction(
+        rowsMs,
+        pair?.let { pairMs(costs, it, branchTokens.size, shared(it)) },
+        pair?.let { shared(it) },
+      )
     val rowPlan = (windowPlan as? KevWindowPlan.Ready)?.let { KevPlan.Rows(it, prediction) }
     val pairPlan = pair?.let { KevPlan.Pair(it, branchTokens.size, prediction) }
     if (mode == KevGraphMode.PAIR) {
@@ -151,8 +222,13 @@ object KevPlanner {
     else rowPlan
   }
 
-  private fun pairMs(costs: KevCosts, shape: KevPairShape, questions: Int): Double {
-    val cost = costs.pairMs.getValue(shape)
+  private fun pairMs(
+    costs: KevCosts,
+    shape: KevPairShape,
+    questions: Int,
+    shared: Boolean,
+  ): Double {
+    val cost = (if (shared) costs.pairMs else costs.unsharedPairMs).getValue(shape)
     return cost.stateMs + questions * cost.questionMs
   }
 

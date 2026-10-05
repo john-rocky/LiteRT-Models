@@ -66,7 +66,8 @@ class KevPairRun<P>(
  * plan asks for each question's smallest installed window, with at most two graphs compiled:
  * - when the plan's largest window is over [SECOND_RESIDENT_MAX_WINDOW], that window is the only
  *   graph and every question runs on it;
- * - otherwise the plan's windows are compiled, one or two, and each question runs on its own; a
+ * - otherwise the plan's two largest windows are compiled (one when it asks for one) and each
+ *   question runs on its own window, or on the smaller kept one when its window is not kept; a
  *   second graph is compiled only when the phone has at least [SECOND_RESIDENT_MIN_AVAILABLE_BYTES]
  *   available right before, else the plan's largest window is the only graph and takes every
  *   question ([assign] gives the same answer before anything compiles).
@@ -117,13 +118,10 @@ class KevResidentGraphs<R, P> : Closeable
     Companion.planFixed(rows, window, installed)
 
   /**
-   * Whether [plan] may keep two windows: both are resident already, or [availableBytes] is at least
-   * the limit. [prepare] reads the memory again right before the second compile, so a plan made
-   * with this answer can still end on one window (slower than planned, never wrong).
+   * See [KevResidentGraphs.Companion.secondAllowed], with the resident windows of this instance.
    */
   fun secondAllowed(plan: KevWindowPlan.Ready, availableBytes: Long): Boolean =
-    graphs.keys.containsAll(plan.windows.toSet()) ||
-      availableBytes >= SECOND_RESIDENT_MIN_AVAILABLE_BYTES
+    Companion.secondAllowed(plan, graphs.keys, availableBytes)
 
   /**
    * Makes [plan]'s windows resident as described on the class: closes the pair and the windows the
@@ -186,12 +184,12 @@ class KevResidentGraphs<R, P> : Closeable
 
   /**
    * Makes [shape] the only resident graph: closes every window and any other pair, then opens the
-   * pair with [open] when it is not resident, reading [availableBytes] right before the compile.
+   * pair with [open] when it is not resident, with [availableBytes] read right before the compile.
    */
   fun preparePair(
     shape: KevPairShape,
     availableBytes: () -> Long,
-    open: (KevPairShape) -> P,
+    open: (KevPairShape, Long) -> P,
   ): KevPairRun<P> {
     val closedWindows = windows
     for (window in closedWindows) graphs.remove(window)?.close()
@@ -202,8 +200,9 @@ class KevResidentGraphs<R, P> : Closeable
       if (current != null) {
         current
       } else {
-        available = availableBytes()
-        open(shape).also {
+        val read = availableBytes()
+        available = read
+        open(shape, read).also {
           pairGraph = it
           pairShape = shape
         }
@@ -257,6 +256,14 @@ class KevResidentGraphs<R, P> : Closeable
      */
     const val SECOND_RESIDENT_MIN_AVAILABLE_BYTES = 4_500_000L * 1024
 
+    /**
+     * A pair compiles without constant tensor sharing ([KevPairShare.AUTO]) only with at least this
+     * much available memory right before the compile. Three runs on the Galaxy S26 are the basis:
+     * without sharing the compile took MemAvailable from 7,649,632 kB down to 2,210,636 kB (the app
+     * stayed up each time, low points 2.21, 2.46 and 2.51 GB); with sharing it took about 1.7 GB.
+     */
+    const val PAIR_UNSHARED_MIN_AVAILABLE_BYTES = 6_500_000L * 1024
+
     /** See [KevResidentGraphs.plan]. */
     fun plan(rows: List<Int>, installed: List<Int>): KevWindowPlan {
       val windows = rows.map { KevWindows.smallestHolding(installed, it) }
@@ -275,14 +282,31 @@ class KevResidentGraphs<R, P> : Closeable
     }
 
     /**
-     * The window each question of [plan] runs on: its own window, or the plan's top window for
-     * every question when that is over [SECOND_RESIDENT_MAX_WINDOW] or when a second graph is not
-     * [secondAllowed]. [prepare] and the planner's time prediction both use it.
+     * Whether [plan] may keep two windows: the windows [assign] keeps are all in [resident]
+     * already, or [availableBytes] is at least the limit. [prepare] reads the memory again right
+     * before the second compile, so a plan made with this answer can still end on one window
+     * (slower than planned, never wrong).
+     */
+    fun secondAllowed(
+      plan: KevWindowPlan.Ready,
+      resident: Collection<Int>,
+      availableBytes: Long,
+    ): Boolean =
+      resident.containsAll(assign(plan, secondAllowed = true).toSet()) ||
+        availableBytes >= SECOND_RESIDENT_MIN_AVAILABLE_BYTES
+
+    /**
+     * The window each question of [plan] runs on. The plan's top window for every question when
+     * that is over [SECOND_RESIDENT_MAX_WINDOW] or when a second graph is not [secondAllowed];
+     * otherwise the plan's [MAX_RESIDENT] largest windows are kept, and each question runs on the
+     * smallest kept window that holds its row (its own window when that is kept). [prepare] and the
+     * planner's time prediction both use it.
      */
     fun assign(plan: KevWindowPlan.Ready, secondAllowed: Boolean): List<Int> {
       val top = plan.top
-      return if (top > SECOND_RESIDENT_MAX_WINDOW || !secondAllowed) plan.windows.map { top }
-      else plan.windows
+      if (top > SECOND_RESIDENT_MAX_WINDOW || !secondAllowed) return plan.windows.map { top }
+      val kept = plan.windows.distinct().sortedDescending().take(MAX_RESIDENT)
+      return plan.windows.map { window -> kept.filter { it >= window }.min() }
     }
   }
 }

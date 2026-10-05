@@ -21,7 +21,11 @@
   <string name="gpu_fallback">GPU failed, running on CPU: %1$s</string>
   <string name="backend_gpu">GPU FP32</string>
   <string name="backend_gpu_fp16acc">GPU FP16 (FP32 accum)</string>
+  <string name="backend_gpu_any">GPU</string>
   <string name="backend_cpu">CPU 4 threads</string>
+  <string name="precision_fp32">FP32</string>
+  <string name="precision_fp16acc">FP16 (FP32 accum)</string>
+  <string name="graph_precision">%1$s %2$s</string>
 
   <!-- Editor -->
   <string name="backend_title">Run on</string>
@@ -67,9 +71,9 @@
 
   <!-- Request errors -->
   <string name="error_over_largest">The longest question row is %1$d tokens; the largest graph takes %2$d. Shorten the state or the question.</string>
-  <string name="error_needs_window">This request needs the L%1$d graph (%2$s). Install it with WINDOWS=%1$d scripts/install_to_device.sh, then retry.</string>
+  <string name="error_needs_window">This request needs the L%1$d graph (%2$s). Install it with WINDOWS=%1$d PAIR=0 scripts/install_to_device.sh, then retry.</string>
   <string name="error_nonfinite">The graph returned non-finite values for question %1$s (%2$d values), so it has no answer.</string>
-  <string name="error_no_pair">The shared-state pair is not installed. Install it with PAIR=1 scripts/install_to_device.sh, then retry.</string>
+  <string name="error_no_pair">The shared-state pair is not installed. Install it with WINDOWS=\"\" PAIR=1 scripts/install_to_device.sh, then retry.</string>
   <string name="error_pair_state">The state is %1$d tokens; the shared-state pair takes %2$d.</string>
   <string name="error_pair_question">Question %1$s is %2$d tokens; the shared-state pair takes %3$d per question.</string>
   <string name="draft_no_questions">Add at least one question.</string>

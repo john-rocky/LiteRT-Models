@@ -117,7 +117,7 @@ class KevEncoderTest {
     )
     assertEquals(linkedMapOf(512 to 393, 1024 to 0, 2048 to 9), windows)
     assertEquals(
-      linkedMapOf(128 to 322, 256 to 64, 512 to 7, 1024 to 0, 2048 to 9),
+      linkedMapOf(64 to 72, 128 to 250, 256 to 64, 512 to 7, 1024 to 0, 2048 to 9),
       published,
     )
   }
@@ -126,7 +126,7 @@ class KevEncoderTest {
   fun paddingAndWindowRules() {
     val row = KevRow(intArrayOf(248060, 11, 248061, 248049, 12, 248050, 248062), 6, intArrayOf(5))
     assertEquals(512, row.window(THREE_WINDOWS))
-    assertEquals(128, row.window(KevFiles.WINDOWS))
+    assertEquals(64, row.window(KevFiles.WINDOWS))
     val padded = row.padded(512)
     assertEquals(512, padded.ids.size)
     assertArrayEquals(row.ids, padded.ids.copyOf(row.length))

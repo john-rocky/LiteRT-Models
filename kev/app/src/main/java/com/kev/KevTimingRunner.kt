@@ -11,14 +11,16 @@ import java.security.MessageDigest
  * graph (a row window: the sets whose L is that window; the shared-state pair: the sets it takes),
  * then the request path of the bundled five-question request on the plan of the launch's graph mode
  * ([KevPlanner]; the report says which form it took). Each compile (cold with `clear_cache`) is
- * timed too, and the report records the device facts around the run. `files/STOP` ends the run
- * after the current call.
+ * timed too, and the report records the device facts around the run. With `cool_ms`, the GPU state
+ * is read before the first compile and each set and the request path wait for it ([KevCooler]).
+ * `files/STOP` ends the run after the current call.
  */
 class KevTimingRunner(private val context: Context) {
   class Args(
     val rows: File,
     val backend: KevDecider.Backend,
-    val precision: KevPrecision,
+    /** The launch's precision, or null for each graph's default ([KevPrecision.defaultFor]). */
+    val precision: KevPrecision?,
     val report: String,
     /** The graph the sets run on. */
     val setGraph: KevGraphKey,
@@ -32,6 +34,8 @@ class KevTimingRunner(private val context: Context) {
     val sets: List<String>?,
     /** Whether to time the request path after the sets. */
     val requestPath: Boolean,
+    /** The longest wait for the GPU to cool before each set and the request path (0: none). */
+    val coolMs: Long = 0,
   )
 
   private val files = context.filesDir
@@ -54,7 +58,9 @@ class KevTimingRunner(private val context: Context) {
         "set" to "kev_app_timing",
         "status" to "RUNNING",
         "backend" to args.backend.name.lowercase(),
-        "precision" to args.precision.wireName,
+        // The precision the set graph compiled with, set once it has.
+        "precision" to null,
+        "precision_requested" to args.precision?.wireName,
         "graph" to args.setGraph.label,
         "graph_mode" to args.mode.wireName,
         "window" to (args.setGraph as? KevGraphKey.Window)?.window,
@@ -70,8 +76,17 @@ class KevTimingRunner(private val context: Context) {
         "clear_cache" to args.clearCache,
         "sets_requested" to (args.sets ?: "all"),
         "request_path_requested" to args.requestPath,
+        "cool_ms" to args.coolMs,
       )
     )
+    val cooler = KevCooler(args.coolMs, KevDevice::gpuState)
+    // The GPU state before the first compile: the base each set waits for.
+    fun readBase() {
+      if (args.coolMs > 0 && !report.containsKey("gpu_state_before_compile")) {
+        report["gpu_state_before_compile"] =
+          cooler.readBase()?.toJson() ?: linkedMapOf("readable" to false)
+      }
+    }
     var error: String? = null
     var core: KevTimingCore? = null
     try {
@@ -97,16 +112,21 @@ class KevTimingRunner(private val context: Context) {
       selection.skipped.forEach {
         skipped.add(linkedMapOf("name" to it.name, "L" to it.window, "reason" to it.reason))
       }
-      var timing = KevTimingCore(engine.pipeline, null) { stop.exists() }
+      val gpuCeiling = { KevDevice.gpuState()?.maxClockMhz }
+      var timing = KevTimingCore(engine.pipeline, null, ceiling = gpuCeiling) { stop.exists() }
       if (selection.run.isNotEmpty()) {
+        readBase()
         val graphs = prepare(engine, args.setGraph)
+        report["precision"] = graphs.precisions.single().wireName
+        report["pair_share"] = graphs.pairShare
+        report["pair_share_mode"] = engine.pairShare.wireName
         report["cache_dir_after_load"] = KevDevice.directoryUsage(context.cacheDir)
         report["accelerator_used"] = engine.backend.name.lowercase()
         report["compile_ms"] = engine.compileMs
         report["avail_mem_bytes_before_compile"] = graphs.availableBytes.firstOrNull()
         report["resident_graphs"] = engine.resident.map { it.label }
         val row = (graphs.runners as? KevRunners.Rows)?.graphs?.single()
-        timing = KevTimingCore(engine.pipeline, row) { stop.exists() }
+        timing = KevTimingCore(engine.pipeline, row, ceiling = gpuCeiling) { stop.exists() }
         write(partial, report)
         for (set in selection.run) {
           if (timing.stoppedEarly) break
@@ -115,11 +135,12 @@ class KevTimingRunner(private val context: Context) {
             KevGateRunner.LOG_TAG,
             "TIMING_SET ${set.name} rows=${set.rows.size} graph=${args.setGraph.label}",
           )
+          val cool = cooler.waitForBase()
           sets[set.name] =
             when (val runners = graphs.runners) {
               is KevRunners.Rows -> timing.timeSet(set)
               is KevRunners.Pair -> timing.timePairSet(set, runners.graph)
-            }
+            }.apply { put("cool", cool) }
           write(partial, report)
         }
       }
@@ -149,16 +170,21 @@ class KevTimingRunner(private val context: Context) {
               },
           )
         if (plan is KevPlan.Ready) {
+          readBase()
           val graphs = preparePlan(engine, plan)
           planReport["graphs"] = graphs.used.map { it.label }
+          planReport["precisions"] = graphs.precisions.map { it.wireName }
+          planReport["pair_share"] = graphs.pairShare
           planReport["windows"] = graphs.windows
           planReport["compiled"] = graphs.compiled.map { it.label }
           planReport["closed"] = graphs.closed.map { it.label }
           planReport["avail_mem_bytes_before_compile"] = graphs.availableBytes
           planReport["compile_ms"] = engine.compileMs
+          val cool = cooler.waitForBase()
           report["request_path"] =
             timing.timeRequestPath(item.id, request, graphs.runners).apply {
               put("plan", planReport)
+              put("cool", cool)
             }
         } else {
           planReport["error"] =

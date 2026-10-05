@@ -11,8 +11,15 @@ enum class LoadStage {
   GRAPH,
 }
 
-/** What a plan was made with: the available memory in bytes and the resident graphs. */
-class KevPlanInputs(val availableBytes: Long, val resident: List<KevGraphKey>)
+/**
+ * What a plan was made with: the available memory in bytes, the resident graphs and whether a pair
+ * compiles with constant tensor sharing.
+ */
+class KevPlanInputs(
+  val availableBytes: Long,
+  val resident: List<KevGraphKey>,
+  val pairShare: KevPairShare = KevPairShare.AUTO,
+)
 
 /**
  * The graphs of one request after [KevEngine.prepare]: each question's row graph or the pair, and
@@ -25,6 +32,8 @@ class KevRequestGraphs(
   val windows: List<Int>,
   /** The graphs the questions run on: the distinct row windows ascending, or the pair. */
   val used: List<KevGraphKey>,
+  /** The GPU precision of each graph of [used], in that order. */
+  val precisions: List<KevPrecision>,
   /** The graphs compiled for this request, in order. */
   val compiled: List<KevGraphKey>,
   /** The available memory read right before each compile, in bytes, in the order of [compiled]. */
@@ -33,16 +42,26 @@ class KevRequestGraphs(
   val closed: List<KevGraphKey>,
   /** The row plan wanted a second window but the available memory was below the limit. */
   val secondRefused: Boolean,
+  /** For a pair plan, whether the pair holds one copy of the weights (constant tensor sharing). */
+  val pairShare: Boolean? = null,
 ) {
   /** The pair, for a pair plan. */
   val pair: PairRunner?
     get() = (runners as? KevRunners.Pair)?.graph
+
+  /** The GPU precision of the graph question [index] runs on. */
+  fun precisionOf(index: Int): KevPrecision =
+    when (runners) {
+      is KevRunners.Pair -> precisions.single()
+      is KevRunners.Rows -> precisions[used.indexOf(KevGraphKey.Window(windows[index]))]
+    }
 }
 
 /**
  * The tokenizer, the pointer head and the compiled graphs ([KevResidentGraphs]). Loading reads only
  * the tokenizer and the head; each request's plan ([KevPlanner]) then compiles what it needs: row
- * windows (at most two, and only L128 / L256 side by side) or the shared-state pair alone. Use only
+ * windows (at most two, and only windows up to L256 side by side) or the shared-state pair alone,
+ * each graph at [forcedPrecision] or else at its own default ([KevPrecision.defaultFor]). Use only
  * on [KevRuntime.dispatcher].
  */
 class KevEngine
@@ -54,8 +73,12 @@ private constructor(
   /** Wall time of loading the head weights, in milliseconds. */
   val headMs: Double,
   backend: KevDecider.Backend,
-  /** The GPU precision every graph of this engine is compiled with. */
-  val precision: KevPrecision,
+  /**
+   * The GPU precision of every graph of this engine (the launch's), or null for each graph's own.
+   */
+  val forcedPrecision: KevPrecision?,
+  /** Whether a pair compiles with constant tensor sharing (one copy of the weights on the GPU). */
+  val pairShare: KevPairShare,
   private val cpuFallback: Boolean,
 ) : Closeable {
   private val graphs = KevResidentGraphs<KevDecider, KevPairDecider>()
@@ -78,6 +101,17 @@ private constructor(
   /** The resident windows, in ascending order. */
   val windows: List<Int>
     get() = graphs.windows
+
+  /** The GPU precision of each resident graph, in the order of [resident]. */
+  val residentPrecisions: List<KevPrecision>
+    get() = graphs.all.map { it.precision } + listOfNotNull(graphs.pairRunner?.precision)
+
+  /**
+   * The GPU precision [graph] compiles with: [forcedPrecision], or the graph's default for its
+   * installed file ([KevPrecision.defaultFor]).
+   */
+  fun precisionOf(graph: KevGraphKey): KevPrecision =
+    forcedPrecision ?: KevPrecision.defaultFor(graph, File(context.filesDir, graph.file).length())
 
   /** Compile time of the resident graphs together, in milliseconds. */
   val compileMs: Double
@@ -105,7 +139,7 @@ private constructor(
     fixedWindow: Int? = null,
   ): KevPlan {
     val available = KevDevice.availableMemoryBytes(context)
-    lastPlanInputs = KevPlanInputs(available, graphs.resident)
+    lastPlanInputs = KevPlanInputs(available, graphs.resident, pairShare)
     return KevPlanner.plan(
       prepared.encoded.stateIds.size,
       prepared.encoded.branches.map { it.ids.size },
@@ -115,6 +149,9 @@ private constructor(
       available,
       mode,
       fixedWindow,
+      share = pairShare,
+      residentPair = graphs.pair,
+      residentPairShared = graphs.pairRunner?.shareConstants,
     )
   }
 
@@ -127,14 +164,17 @@ private constructor(
       is KevPlan.Rows -> {
         val run =
           graphs.prepare(plan.windows, { KevDevice.availableMemoryBytes(context) }) { window ->
-            onCompile(KevGraphKey.Window(window))
-            KevDecider.create(context, window, requestedBackend, precision, cpuFallback)
+            val key = KevGraphKey.Window(window)
+            onCompile(key)
+            KevDecider.create(context, window, requestedBackend, precisionOf(key), cpuFallback)
           }
+        val used = run.windows.distinct().sorted()
         KevRequestGraphs(
           plan,
           KevRunners.Rows(run.graphs),
           run.windows,
-          run.windows.distinct().sorted().map { KevGraphKey.Window(it) },
+          used.map { KevGraphKey.Window(it) },
+          used.map { graphs.graph(it).precision },
           run.compiled.map { KevGraphKey.Window(it) },
           run.availableBytes,
           listOfNotNull(run.closedPair?.let { KevGraphKey.Pair(it) }) +
@@ -144,9 +184,19 @@ private constructor(
       }
       is KevPlan.Pair -> {
         val run =
-          graphs.preparePair(plan.shape, { KevDevice.availableMemoryBytes(context) }) { shape ->
-            onCompile(KevGraphKey.Pair(shape))
-            KevPairDecider.create(context, shape, requestedBackend, precision, cpuFallback)
+          graphs.preparePair(plan.shape, { KevDevice.availableMemoryBytes(context) }) {
+            shape,
+            available ->
+            val key = KevGraphKey.Pair(shape)
+            onCompile(key)
+            KevPairDecider.create(
+              context,
+              shape,
+              requestedBackend,
+              precisionOf(key),
+              pairShare.sharesAt(available),
+              cpuFallback,
+            )
           }
         val key = KevGraphKey.Pair(run.shape)
         KevRequestGraphs(
@@ -154,11 +204,13 @@ private constructor(
           KevRunners.Pair(run.graph),
           List(plan.questions) { run.shape.questionLength },
           listOf(key),
+          listOf(run.graph.precision),
           if (run.compiled) listOf(key) else emptyList(),
           listOfNotNull(run.availableBytes),
           run.closedWindows.map { KevGraphKey.Window(it) } +
             listOfNotNull(run.closedPair?.let { KevGraphKey.Pair(it) }),
           false,
+          run.graph.shareConstants,
         )
       }
     }
@@ -196,13 +248,14 @@ private constructor(
   companion object {
     /**
      * Loads tokenizer and head from `files/`, reporting each stage as it starts; graphs compile
-     * when a request needs them. With [cpuFallback], a graph that does not compile on the GPU runs
-     * on CPU.
+     * when a request needs them, at [forcedPrecision] or at their own default. With [cpuFallback],
+     * a graph that does not compile on the GPU runs on CPU.
      */
     fun load(
       context: Context,
       backend: KevDecider.Backend,
-      precision: KevPrecision,
+      forcedPrecision: KevPrecision?,
+      pairShare: KevPairShare,
       cpuFallback: Boolean,
       onStage: (LoadStage) -> Unit,
     ): KevEngine {
@@ -221,7 +274,8 @@ private constructor(
         tokenizerMs,
         headMs,
         backend,
-        precision,
+        forcedPrecision,
+        pairShare,
         cpuFallback,
       )
     }

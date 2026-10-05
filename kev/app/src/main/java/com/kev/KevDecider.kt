@@ -17,9 +17,10 @@ import kotlinx.coroutines.asCoroutineDispatcher
  * `valid` float32 `[1, L]` in, `hidden` float32 `[1, L, 1024]` (after the final RMSNorm) out,
  * signature `serving_default`. The three buffers are created once and reused for every row.
  *
- * GPU always requests an explicit precision ([KevPrecision], FP32 by default): the default GPU
- * precision runs the graph in float16, which gives non-finite hidden states on part of the rows.
- * CPU runs four threads. Create, run and close only on [KevRuntime.dispatcher].
+ * GPU always requests an explicit precision ([KevPrecision]): the default GPU precision computes in
+ * float16, which gave non-finite hidden states on part of the rows with the earlier kernel and
+ * missed the parity bar on a desktop GPU with the rewritten one. CPU runs four threads. Create, run
+ * and close only on [KevRuntime.dispatcher].
  */
 class KevDecider
 private constructor(
@@ -116,20 +117,21 @@ private constructor(
       "${failure.javaClass.simpleName}: ${failure.message.orEmpty()}"
 
     /**
-     * The options of one graph: GPU with [precision] (and the weights held once for all signatures
-     * when [shareConstants]), or CPU with [CPU_THREADS] threads.
+     * The options of one graph: GPU with [precision] and, for a graph of several signatures,
+     * [shareConstants] (true: the weights held once for all signatures; null: LiteRT's default), or
+     * CPU with [CPU_THREADS] threads.
      */
     fun options(
       backend: Backend,
       precision: KevPrecision,
-      shareConstants: Boolean = false,
+      shareConstants: Boolean? = null,
     ): CompiledModel.Options =
       CompiledModel.Options(backend.accelerator).apply {
         when (backend) {
           Backend.GPU ->
             gpuOptions =
               CompiledModel.GpuOptions(
-                constantTensorSharing = if (shareConstants) true else null,
+                constantTensorSharing = shareConstants,
                 precision =
                   when (precision) {
                     KevPrecision.FP32 -> CompiledModel.GpuOptions.Precision.FP32
@@ -215,11 +217,41 @@ private constructor(
  * the launch extra's value.
  */
 enum class KevPrecision(val wireName: String) {
-  /** float32 storage and arithmetic: the precision the shipped graphs are measured with. */
+  /** float32 storage and arithmetic. */
   FP32("fp32"),
 
   /** float16 storage with float32 accumulation (LiteRT `FP16_WITH_FP32_ACCUM`). */
-  FP16_FP32_ACCUM("fp16acc"),
+  FP16_FP32_ACCUM("fp16acc");
+
+  companion object {
+    /**
+     * The graphs whose gate in this app passes the bar at [FP16_FP32_ACCUM] on the Galaxy S26 with
+     * the model repository's files; the other graphs run at [FP32] by default.
+     */
+    val FP16_FP32_ACCUM_GRAPHS: Set<KevGraphKey> =
+      (KevFiles.WINDOWS.map { KevGraphKey.Window(it) } +
+          KevFiles.PAIRS.map { KevGraphKey.Pair(it) })
+        .toSet()
+
+    /**
+     * The precision [graph] compiles with when the launch names none: [FP16_FP32_ACCUM] for the
+     * graphs of [FP16_FP32_ACCUM_GRAPHS], [FP32] for the others and for a file of [fileBytes] that
+     * is a pre-rewrite size ([KevFiles.PRE_REWRITE_BYTES]).
+     */
+    fun defaultFor(graph: KevGraphKey, fileBytes: Long): KevPrecision =
+      if (graph in FP16_FP32_ACCUM_GRAPHS && KevFiles.PRE_REWRITE_BYTES[graph] != fileBytes) {
+        FP16_FP32_ACCUM
+      } else {
+        FP32
+      }
+
+    /**
+     * The one precision of [precisions] (the graphs a line names); for none, [forced] (the launch's
+     * precision, or null); null when they differ.
+     */
+    fun common(precisions: List<KevPrecision>, forced: KevPrecision?): KevPrecision? =
+      if (precisions.isEmpty()) forced else precisions.distinct().singleOrNull()
+  }
 }
 
 /**

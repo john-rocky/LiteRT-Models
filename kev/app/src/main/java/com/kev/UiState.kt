@@ -40,13 +40,17 @@ sealed interface KevStatus {
 
 /**
  * The engine as the status line shows it: backend and GPU precision, the resident graphs (windows
- * ascending, then the pair), the load time and the resident graphs' compile time.
+ * ascending, then the pair) with the precision of each, the load time and the resident graphs'
+ * compile time.
  */
 @Immutable
 data class EngineUi(
   val backend: KevDecider.Backend,
-  val precision: KevPrecision,
+  /** The launch's precision for every graph, or null when each graph runs at its own default. */
+  val forcedPrecision: KevPrecision?,
   val resident: List<KevGraphKey>,
+  /** The GPU precision of each [resident] graph, in that order. */
+  val precisions: List<KevPrecision>,
   val loadMs: Long,
   val compileMs: Long,
   /** GPU's error when the app fell back to CPU. */
@@ -110,8 +114,11 @@ data class UiState(
   val status: KevStatus = KevStatus.Loading(LoadStage.TOKENIZER, null, false, 0L),
   val engine: EngineUi? = null,
   val backendChoice: KevDecider.Backend = KevDecider.Backend.GPU,
-  /** The GPU precision of this launch (the `precision` extra; there is no control on screen). */
-  val precision: KevPrecision = KevPrecision.FP32,
+  /**
+   * The GPU precision the launch set for every graph (the `precision` extra; there is no control on
+   * screen), or null when each graph runs at its own default.
+   */
+  val precision: KevPrecision? = null,
   /** The state line above the cards when the last request ran on the pair. */
   val stateLine: StateLineUi? = null,
   val cards: List<AnswerCardUi> = emptyList(),
