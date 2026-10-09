@@ -17,6 +17,7 @@ MediaPipe. Independent, not affiliated with Google.
 |---|---|---|
 | Find a model, its download and its measured latency | The table at the top of the README (model, task, device, latency, download); each row links the model's section | README "Models" |
 | Run a `.tflite` in an existing app on the GPU | Dependency `com.google.ai.edge.litert:litert` (Google Maven), then `CompiledModel.create(context.assets, "model.tflite", CompiledModel.Options(Accelerator.GPU), null)`, `createInputBuffers()`, `run()` | README "How to use" |
+| Generate an image from a typed prompt on the phone | Bonsai Image 4B: three graphs on `CompiledModel` CPU (XNNPACK); type a prompt, tap Generate; 256×256 in 23.5 s on a Galaxy S26 (2026-10-09) | [bonsai_image/README.md](bonsai_image/README.md) |
 | Add one feature end to end, verified on a device | Background removal: one dependency, one Kotlin file, one 176 MB model; Pixel 8a numbers dated 2026-09-05; data in [ormbg/recipe.json](ormbg/recipe.json) | [ormbg/INTEGRATION.md](ormbg/INTEGRATION.md) |
 | The Kotlin helpers to copy into an app | `CompiledModelRunner`, `ImageTensor`, `RealtimeCameraPipeline`, `AudioCapture`, `MathOps` (canonical sources; every sample carries a byte-identical copy) | [common/README.md](common/README.md), `common/kotlin/` |
 | A complete sample app for a model | Each model directory is its own Gradle project: `cd <model>/ && ./gradlew :app:installDebug` | README, the model's section names its app |
