@@ -31,6 +31,7 @@ Dependency: `com.google.ai.edge.litert:litert` from Google Maven; the version ea
 - [asr_litertlm/](https://github.com/john-rocky/LiteRT-Models/tree/main/asr_litertlm): speech to text with three LiteRT-LM bundles (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2) through `litertlm-android` 0.17.1 on the phone CPU; model picker, microphone up to 30 s, three bundled clips, a device check; Galaxy S26 numbers dated 2026-10-09.
 - [bonsai_image/](https://github.com/john-rocky/LiteRT-Models/tree/main/bonsai_image): type a prompt and get a 256×256 image on the phone with Bonsai Image 4B; three graphs on `CompiledModel` CPU (XNNPACK), 23.5 s on a Galaxy S26 (2026-10-09).
 - [docs/COMPOSE_MVVM_SAMPLE_GUIDE.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/COMPOSE_MVVM_SAMPLE_GUIDE.md): the Compose + MVVM shape for a litert-samples pull request, distilled from 32 samples.
+- [audio8_tts/README.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/audio8_tts/README.md): text-to-speech with zero-shot voice cloning in 11 languages (Audio8-TTS-Preview-0.6b): type a sentence, pick a voice or record your own, Speak; Galaxy S26 numbers dated 2026-10-10.
 
 ## Models
 
