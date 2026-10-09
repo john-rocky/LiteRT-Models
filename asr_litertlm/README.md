@@ -2,7 +2,7 @@
 
 Hold the button, speak for up to 30 s, and the app writes what you said. On the CPU of a Galaxy S26
 (4 threads, measured 2026-10-09), Qwen3-ASR-1.7B turned a 6.4 s English clip into text in 2.49 s and
-Fun-ASR-Nano-2512 in 1.60 s. The app runs three speech recognition models in the LiteRT-LM `.litertlm`
+Fun-ASR-Nano-2512 in 1.19 s. The app runs three speech recognition models in the LiteRT-LM `.litertlm`
 format through one code path: pick a model, then talk or play one of three bundled clips. Everything
 runs on the phone; the app asks for the microphone and nothing else (no network permission).
 
@@ -49,8 +49,8 @@ in three languages (below).
 | Model | zh, 9.7 s | en, 6.4 s | ja, 11.0 s | Microphone, 9 s | CPU limit at the start (big / prime cores) |
 |---|---|---|---|---|---|
 | Qwen3-ASR-1.7B | 2.38 s, RTF 0.25 | 2.49 s, RTF 0.39 | 3.56 s, RTF 0.32 | 2.97 s, CER 0 | 3.51 / 4.19 GHz |
-| Confucius4-R2T2 | 4.03 s, RTF 0.41 | 3.06 s, RTF 0.48 | 3.83 s, RTF 0.35 | 2.93 s, CER 0 | 2.75 / 2.67 GHz |
-| Fun-ASR-Nano-2512 | 1.26 s, RTF 0.13 | 1.60 s, RTF 0.25 | 2.29 s, RTF 0.21 | 1.75 s, CER 0 | 2.23 / 2.23 GHz |
+| Confucius4-R2T2 | 3.48 s, RTF 0.36 | 2.59 s, RTF 0.40 | 3.54 s, RTF 0.32 | 3.17 s, CER 0 | 3.63 / 4.74 GHz (no limit) |
+| Fun-ASR-Nano-2512 | 1.95 s, RTF 0.20 | 1.19 s, RTF 0.19 | 1.83 s, RTF 0.17 | 1.44 s, CER 0 | 3.63 / 4.74 GHz (no limit) |
 
 | Model | Engine load, first (writes the cache) | Engine load, cache in place | Runtime cache | Peak resident memory, first load |
 |---|---|---|---|---|
@@ -60,10 +60,13 @@ in three languages (below).
 
 - Every clip's text equals the Mac CPU answer of the same file (LiteRT-LM 0.17.1, Python) after
   removing punctuation and spaces. The three models write the same sentences for these clips.
-- The phone was warm: its CPU limit fell during the runs (the maximum is 3.63 / 4.74 GHz), and the
-  Confucius4-R2T2 and Fun-ASR rows ran under the lower limits in the last column. Confucius4-R2T2 has
-  the same architecture and file size as Qwen3-ASR-1.7B. In a run that started at the maximum,
-  Qwen3-ASR-1.7B took 2.13 / 2.14 / 3.19 s for the three clips.
+- The last column is the CPU limit at the start of the run (the maximum is 3.63 / 4.74 GHz; a warm phone
+  lowers it). The Confucius4-R2T2 and Fun-ASR rows are a second run of the check on the same day with no
+  limit (Confucius4-R2T2 at thermal status 0, Fun-ASR at status 1, each file pushed alone). The first run,
+  with the limit lowered by heat, gave Confucius4-R2T2 4.03 / 3.06 / 3.83 s at 2.75 / 2.67 GHz and
+  Fun-ASR 1.26 / 1.60 / 2.29 s at 2.23 / 2.23 GHz. Confucius4-R2T2 has the same architecture and file
+  size as Qwen3-ASR-1.7B. In a run that started at the maximum, Qwen3-ASR-1.7B took 2.13 / 2.14 / 3.19 s
+  for the three clips.
 - "Engine load" is `Engine.initialize()` plus the first conversation, which creates the audio encoder.
   The Qwen3-ASR-1.7B cached load is a new launch; the other two are a second load in the same process.
 - Microphone: the phone plays clip en through its speaker and records it with its microphone
