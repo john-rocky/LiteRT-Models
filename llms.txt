@@ -28,6 +28,7 @@ Dependency: `com.google.ai.edge.litert:litert` from Google Maven; the version ea
 ## Sample apps
 
 - Each model directory is an independent Gradle project (`cd <model>/ && ./gradlew :app:installDebug`); the README section for the model names it.
+- [asr_litertlm/](https://github.com/john-rocky/LiteRT-Models/tree/main/asr_litertlm): speech to text with three LiteRT-LM bundles (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2) through `litertlm-android` 0.17.1 on the phone CPU; model picker, microphone up to 30 s, three bundled clips, a device check; Galaxy S26 numbers dated 2026-10-09.
 - [docs/COMPOSE_MVVM_SAMPLE_GUIDE.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/COMPOSE_MVVM_SAMPLE_GUIDE.md): the Compose + MVVM shape for a litert-samples pull request, distilled from 32 samples.
 
 ## Models
