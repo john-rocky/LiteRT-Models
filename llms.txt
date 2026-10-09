@@ -28,6 +28,7 @@ Dependency: `com.google.ai.edge.litert:litert` from Google Maven; the version ea
 ## Sample apps
 
 - Each model directory is an independent Gradle project (`cd <model>/ && ./gradlew :app:installDebug`); the README section for the model names it.
+- [bonsai_image/](https://github.com/john-rocky/LiteRT-Models/tree/main/bonsai_image): type a prompt and get a 256×256 image on the phone with Bonsai Image 4B; three graphs on `CompiledModel` CPU (XNNPACK), 23.5 s on a Galaxy S26 (2026-10-09).
 - [docs/COMPOSE_MVVM_SAMPLE_GUIDE.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/COMPOSE_MVVM_SAMPLE_GUIDE.md): the Compose + MVVM shape for a litert-samples pull request, distilled from 32 samples.
 
 ## Models

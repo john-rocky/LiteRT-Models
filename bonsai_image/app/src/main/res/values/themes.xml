@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0E1116</color>
+
+    <!-- Dark, no action bar; the activity draws edge to edge on this colour
+         (status bar visible, navigation bar hidden). -->
+    <style name="Base.Theme.Bonsai" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="Theme.Bonsai" parent="Base.Theme.Bonsai" />
+</resources>
