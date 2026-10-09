@@ -52,7 +52,7 @@ in three languages (below).
 | Confucius4-R2T2 | 4.03 s, RTF 0.41 | 3.06 s, RTF 0.48 | 3.83 s, RTF 0.35 | 2.93 s, CER 0 | 2.75 / 2.67 GHz |
 | Fun-ASR-Nano-2512 | 1.26 s, RTF 0.13 | 1.60 s, RTF 0.25 | 2.29 s, RTF 0.21 | 1.75 s, CER 0 | 2.23 / 2.23 GHz |
 
-| Model | Engine load, first (writes the cache) | Engine load, cache in place | Runtime cache | Peak memory, first load |
+| Model | Engine load, first (writes the cache) | Engine load, cache in place | Runtime cache | Peak resident memory, first load |
 |---|---|---|---|---|
 | Qwen3-ASR-1.7B | 7.35 s | 0.72 s | 3.0 GB | 5.6 GB |
 | Confucius4-R2T2 | 4.27 s | 1.33 s | 3.0 GB | 5.7 GB |
@@ -60,9 +60,9 @@ in three languages (below).
 
 - Every clip's text equals the Mac CPU answer of the same file (LiteRT-LM 0.17.1, Python) after
   removing punctuation and spaces. The three models write the same sentences for these clips.
-- The phone was warm: its CPU limit fell during the runs (the maximum is 3.63 / 4.74 GHz). The
-  Confucius4-R2T2 and Fun-ASR rows ran under the lower limits. Confucius4-R2T2 has the same graphs and
-  size as Qwen3-ASR-1.7B; its slower row is the limit. In a run that started at the maximum,
+- The phone was warm: its CPU limit fell during the runs (the maximum is 3.63 / 4.74 GHz), and the
+  Confucius4-R2T2 and Fun-ASR rows ran under the lower limits in the last column. Confucius4-R2T2 has
+  the same architecture and file size as Qwen3-ASR-1.7B. In a run that started at the maximum,
   Qwen3-ASR-1.7B took 2.13 / 2.14 / 3.19 s for the three clips.
 - "Engine load" is `Engine.initialize()` plus the first conversation, which creates the audio encoder.
   The Qwen3-ASR-1.7B cached load is a new launch; the other two are a second load in the same process.
@@ -102,8 +102,9 @@ val raw = engine.createConversation(ConversationConfig(
 Only the answer differs: [`ModelProfile.kt`](app/src/main/kotlin/com/asrlitertlm/ModelProfile.kt)
 splits the Qwen3-ASR answer at `<asr_text>` and shows the named language; Fun-ASR's answer is the text.
 
-- One file is loaded at a time: picking another model closes the engine first. A first load peaked at
-  5.6–5.7 GB on this phone with 11.4 GB of memory.
+- One file is loaded at a time: picking another model closes the engine first. A first load of a
+  Qwen3-ASR file peaked at 5.6–5.7 GB resident (VmHWM, the memory-mapped file included) on this phone
+  with 11.4 GB of memory.
 - `Engine.close()` throws when called twice, so the app drops its reference before closing; releasing
   twice is harmless.
 - All model calls run on one worker thread.
