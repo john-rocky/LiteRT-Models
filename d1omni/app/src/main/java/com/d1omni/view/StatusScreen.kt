@@ -35,9 +35,9 @@ fun StatusScreen(state: UiState, modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.body1,
         color = if (state.error) ErrorRed else Color.Unspecified,
       )
-      if (state.engine.isNotEmpty()) {
+      if (state.engineLine.isNotEmpty()) {
         Spacer(Modifier.height(8.dp))
-        Text(state.engine, style = MaterialTheme.typography.body2)
+        Text(state.engineLine, style = MaterialTheme.typography.body2)
       }
     }
   }

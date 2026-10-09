@@ -4,7 +4,7 @@ import android.content.Context
 import java.io.Closeable
 import java.io.File
 
-/** One question's call on the inbox engine: its row's bucket, the call, its probabilities and times. */
+/** One question's call on the app's engine: its row's bucket, the call, its probabilities and times. */
 class D1QuestionCall(
   val row: D1Row,
   val bucket: Int,
@@ -18,13 +18,13 @@ class D1QuestionCall(
 )
 
 /**
- * The inbox demo's engine: the tokenizer and the contract ([D1Engine]), and every graph the demo
- * needs compiled once at startup and kept: the decision graphs L256 and L128 (`D1Residency`: L128
- * is given up when the memory Android reports is under 2.5 GB before it compiles), the audio graph
- * of the demo's clip (T1001) and the vision tower with the projector ([D1VisionEngine]); each kind
- * at its own GPU precision ([D1Precisions]). Use only on [D1Runtime.dispatcher].
+ * The app's engine: the tokenizer and the contract ([D1Engine]), and every graph a voice note, a photo or a message
+ * needs, compiled once at startup and kept: the decision graphs L256 and L128 (`D1Residency`: L128 is given up when the
+ * memory Android reports is under 2.5 GB before it compiles), the audio graph for clips up to 10 s (T1001; a longer
+ * recording compiles its own bucket in its place when that file is installed) and the vision tower with the projector
+ * ([D1VisionEngine]); each kind at its own GPU precision ([D1Precisions]). Use only on [D1Runtime.dispatcher].
  */
-class D1InboxEngine
+class D1AppEngine
 private constructor(
   private val context: Context,
   val decide: D1Engine,
@@ -36,8 +36,8 @@ private constructor(
   val memoryAtReady: Map<String, Any?>,
 ) : Closeable {
   /** The resident graphs with their files, sizes, backends, precisions and compile times. */
-  fun graphs(): List<D1DemoGraph> {
-    val out = ArrayList<D1DemoGraph>()
+  fun graphs(): List<D1RunGraph> {
+    val out = ArrayList<D1RunGraph>()
     for (compile in decide.compiles) {
       if (compile.graph == "decide" && compile.bucket !in decide.resident) continue
       if (compile.graph == D1AudioEngine.GRAPH && compile.bucket !in decide.audio.resident) continue
@@ -45,7 +45,7 @@ private constructor(
         if (compile.graph == "decide") decide.fileOf(compile.bucket)
         else requireNotNull(decide.audio.bucketFiles[compile.bucket]).name
       out.add(
-        D1DemoGraph(
+        D1RunGraph(
           if (compile.graph == "decide") "decide_L${compile.bucket}" else "audio_T${compile.bucket}",
           name,
           File(context.filesDir, name).length(),
@@ -60,7 +60,7 @@ private constructor(
     for (compile in vision.compiles) {
       val name = requireNotNull(files[compile.graph])
       out.add(
-        D1DemoGraph(
+        D1RunGraph(
           compile.graph,
           name,
           File(context.filesDir, name).length(),
@@ -79,9 +79,9 @@ private constructor(
   fun backends(): List<Pair<D1Backend, D1Precision>> =
     graphs().map { it.backend to (it.precision ?: D1Precision.FP32) }
 
-  /** The rows of [item] after [prefixRows] media rows (the item's kind: text, image or audio). */
-  fun rows(item: D1InboxItem, prefixRows: Int): List<D1Row> =
-    D1Rows.rows(decide.tokenizer, decide.contract, item.state, item.questions.values.toList(), prefixRows, item.kind)
+  /** One row per question of [questions] over [state] after [prefixRows] media rows (a request of [kind]). */
+  fun rows(state: Any?, questions: Collection<D1Question>, prefixRows: Int, kind: D1Kind): List<D1Row> =
+    D1Rows.rows(decide.tokenizer, decide.contract, state, questions.toList(), prefixRows, kind)
 
   /**
    * One question: its inputs on the smallest resident decision graph that holds P + n, one call,
@@ -91,7 +91,11 @@ private constructor(
     val start = System.nanoTime()
     val bucket =
       D1Contract.bucketFor(row.positions, decide.resident)
-        ?: throw IllegalStateException("no compiled decision graph holds ${row.positions} positions")
+        ?: throw IllegalStateException(
+          "This question needs ${row.positions} positions (the media's ${row.prefixRows} and ${row.ids.size} of " +
+            "text); the app keeps the decision graphs for up to ${decide.resident.maxOrNull() ?: 0}. Shorten the text " +
+            "or the options."
+        )
     val inputs = D1Rows.buildInputs(row.ids, prefix, row.prefixRows, bucket, row.question.type)
     val call = decide.call(bucket, inputs)
     val probabilities =
@@ -123,7 +127,7 @@ private constructor(
     /** The decision buckets compiled at startup (largest first: the second one is the one memory can refuse). */
     val DECISION_BUCKETS = listOf(256, 128)
 
-    /** The audio bucket of the demo's clip (up to 10 s). */
+    /** The audio bucket compiled at startup (clips up to 10 s). */
     const val AUDIO_BUCKET = 1001
 
     /**
@@ -135,7 +139,7 @@ private constructor(
       backend: D1Backend,
       precisions: D1Precisions,
       progress: (String) -> Unit = {},
-    ): D1InboxEngine {
+    ): D1AppEngine {
       val start = System.nanoTime()
       progress("Loading the tokenizer…")
       val decide = D1Engine.load(context, backend, precisions.decide, precisions.audio)
@@ -151,7 +155,7 @@ private constructor(
         progress("Compiling the vision tower and the projector…")
         val vision = D1VisionEngine.open(context, backend, precisions.vision)
         val loadMs = (System.nanoTime() - start) / 1e6
-        return D1InboxEngine(
+        return D1AppEngine(
           context.applicationContext,
           decide,
           vision,

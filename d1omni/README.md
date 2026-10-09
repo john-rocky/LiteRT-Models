@@ -1,8 +1,23 @@
-# d1-omni Decide — typed decisions on Android with d1-omni-600M
+# d1-omni Decide — ask your own questions about a voice note, a photo or a message, on the phone
 
-Give the model a state and typed questions — **noul** (yes or no, answered as P(yes)), **choice** (one of named options) and **score** (ordered levels, answered as the expected level) — and each question gets its answer with the probability of every option, in one pass of the model, on the phone. The model never generates text: each answer is read from its distribution over the question's options. Everything runs on the phone: a Kotlin tokenizer and request encoder, LiteRT decision graphs on the GPU and the read-out on the host.
+Record a voice note, pick a photo or type a message, write the questions you want answered, and tap **Decide**: d1-omni-600M answers each question on the phone, with the probability of its answer, in a fraction of a second. Questions are typed — **noul** (yes or no, answered as P(yes)), **choice** (one of named options) and **score** (ordered levels, answered as the expected level) — and the model never generates text: each answer is read from its distribution over the question's options. Everything runs on the phone, offline: a Kotlin tokenizer and request encoder, the provider's audio front end and picture preprocessing in Kotlin, LiteRT graphs on the GPU, the read-out on the host.
 
-The app is an offline inbox: three unread items — a voice note, a photo and a message — each with its own typed questions. One tap on Decide (or one autoplay intent) plays the voice note through the speaker, then answers every question of every item on the phone, one row at a time with its probability and its ms, and shows the total. It also keeps the debug runs of each input path (a fixture gate and a timing protocol for text, audio and pictures).
+**Load sample** fills the three screens with an example — an invented pet-grooming shop's customer who leaves a voice note asking to book a bath and a trim for their dog on Saturday morning, sends a photo of the dog, and writes that they were charged twice — with one default question per input. Replace any of it with your own: your voice, your photo, your text, your questions.
+
+## Try it
+
+- **Voice**: ● Record (16 kHz mono from the microphone; it stops at the length the largest installed audio graph holds: 10 s with the default install, 20 / 30 s with `AUDIO="2001"` / `"3001"`), ■ Stop; or Pick WAV (a 16 kHz mono 16-bit PCM file; another format is refused with the reason); Play listens to it. Default question: *What is the customer asking for?* (booking / cancel / prices / complaint).
+- **Photo**: Pick photo opens **Recent photos**, the four pictures added to the phone most recently (asks for the photo permission the first time: READ_MEDIA_IMAGES from Android 13, READ_EXTERNAL_STORAGE before); tap one, or Browse… for the system photo picker (no permission needed). Default question: *What animal is in the photo?* (dog / cat / bird).
+- **Message**: type or paste any text. Default questions: *Is the customer asking for a refund?* (yes or no) and *Which team should handle this?* (billing / booking / grooming).
+- **Questions**: each screen shows its questions folded; **Edit** opens the editor (the same syntax as this repository's Kev Decide sample): a name, the type, the question, and the options one per line — a choice `name: description` or `name` (at least two), a score one level per line from the lowest (2 to 10), a noul optionally `true: what yes means` / `false: what no means`. Reset brings the default back.
+- **Decide** answers the screen's questions: each answer's word and probability in large type as its call returns, then the input's milliseconds and the decision graph it ran on (`312 ms · L256`): from the input's samples, bytes or text to the last answer — the mel and the audio graph, or the decoding and the vision graphs, the encoding and one decision call per question.
+- **Summary** adds up the inputs you decided: `3 inputs · 4 answers · N ms · airplane mode on`, one line of answers per input (N adds the milliseconds each screen showed).
+
+The sample's answers on the Mac (the provider's float32 model and this repository's Python host agree within 4.8e-5): *booking* 0.999, *dog* 1.000, *yes* 0.999 and *billing* 0.939.
+
+A picture longer than 384 px on its long side is first shrunk to 384 px (the size of the model repository's check-set pictures) with the provider's own float bilinear antialias resize, so that a phone photo becomes one crop whose rows fit the 128- and 256-position graphs (a 12 MP photo would otherwise be cut into ten tiles and need the 4,096-position graph); a smaller picture goes in unchanged. A JPEG is decoded by Android, whose decoder can differ from Pillow's by a level here and there, so a JPEG's answers match the Python host's closely rather than bit for bit (a PNG's decoded pixels are the Python host's exactly).
+
+A recording is kept in the app's `files/` as `recorded-<epoch ms>.wav` (16 kHz mono 16-bit PCM) and is what Decide sends. The microphone is opened with Android's VOICE_RECOGNITION source (tuned for speech to a recogniser, without the call path's processing); the mel normalises each recording by its own mean and spread, so its level does not matter.
 
 ## Model and requirements
 
@@ -11,32 +26,9 @@ The app is an offline inbox: three unread items — a voice note, a photo and a 
 - Semantics: the provider's `prompt.py` (`encode`: one row per question, `<bos> <state> state <q> instructions <opt> <mask> option … <decide>`), the model repository's host steps (`contract.json` `host_steps.text` and `host_steps.audio`), the audio front end of `host/d1_audio_host.py` (the provider's `audio.py`: waveform, preemphasis, STFT, Slaney mel 128, log, per-bin normalization, bucket and mask inputs), the read-out of `d1_host.readout_f64` (the scores at each option's `<mask>`, divided by the checkpoint's temperature for a text request, softmax, a noul reversed to [yes, no]) and `prompt.answer`.
 - Android: arm64-v8a, Android 8.0 / API 26 or newer; compile/target SDK 35.
 - Runtime: LiteRT **2.2.0** `CompiledModel`; Material 1 Compose with MVVM.
+- Permissions: `RECORD_AUDIO` (asked the first time you tap Record) and `READ_MEDIA_IMAGES` (`READ_EXTERNAL_STORAGE` up to Android 12; asked the first time you tap Pick photo). No network permission: everything runs on the phone, in airplane mode too.
 
-Each kind of graph has its own GPU precision; `--es precision fp32|fp16acc` sets every kind, `--es precision_audio` / `--es precision_vision` one kind (a normal launch and an autoplay; the gate and timing runs read `precision` for the decision graphs only). The app compiles every decision graph for the GPU at an explicit precision, FP32 by default: `CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)`. At FP32 the Galaxy S26 gives the provider's answers within the parity bar on every public text row (see Measured). The launch extra `--es precision fp16acc` compiles at `FP16_WITH_FP32_ACCUM` (float16 storage with float32 accumulation) instead: a little faster per call, but one public text row then moves past the bar (see Measured). The audio graph has its own precision, `--es precision_audio fp16acc|fp32` (`FP16_WITH_FP32_ACCUM` by default, `D1AudioEngine.DEFAULT_PRECISION`). The GPU's default precision is never used. When the GPU cannot compile or run a graph, the app runs it on the CPU (four threads) and logs `GPU_FALLBACK <error>` under the tag `D1OmniDemo`.
-
-## The inbox demo
-
-`res/raw/inbox_demo.json` holds the inbox: the voice note `aud_food_03` (8.7 s, 16 kHz mono; topic, request, urgency), the photo `img_dogs_01` (animal, water) and the message `card_text` (refund, team, urgency) — eight questions. The two media files are bundled (`res/raw/aud_food_03.wav`, `res/raw/img_dogs_01.png`; see License). A normal launch compiles the five graphs the inbox needs (the decision graphs L256 and L128 at FP32, the audio graph T1001, the vision tower and the projector at FP16_WITH_FP32_ACCUM), makes one untimed pass over the inbox and shows it; Decide runs it on the presentation screen:
-
-```text
-presentation (9:16 band): title + state pill (READY → ● PLAYING → DECIDING → DONE)
-  voice note: played through the speaker (the pill turns red when the sound starts, a bar follows it)
-              → mel → audio graph → three decision calls, each row shown when its call returns
-  photo:      decode → resize → patches → tower → unshuffle → projector → two decision calls
-  message:    three decision calls
-footer: device · LiteRT · accelerator / the graphs / "total N ms · airplane mode on|off"
-```
-
-Each row shows the answer (choice: the option's name; noul: yes or no; score: the level's text), its probability to three decimals and the decision call's ms (input writes + `run()` + read-back); each card's total line is its item's work (host steps, media graphs and calls) rounded to whole ms on its own; the footer's total is the sum of the three cards' numbers (the playback and the waits between items are not part of it). Every text is measured with the phone's fonts before the screen is drawn, so nothing moves, wraps or is cut while the rows fill in.
-
-The demo recording drives the same flow with an intent to the running app:
-
-```bash
-adb shell am start -n com.d1omni/.MainActivity --ez autoplay true --es fixture inbox_demo.json \
-  --ei delay_ms 1000 --ei gap_ms 1500 [--es precision fp32|fp16acc] [--es backend gpu|cpu]
-```
-
-`fixture` names a file in the app's `files/` (an absolute path inside it, or the bundled `inbox_demo.json`); the app reads media files from `files/` first, then from its bundled copies, and checks their sha256 against the fixture. Logcat tag `D1OmniDemo`: `ENGINE_READY load_ms= warmup_ms=`, `AUTOPLAY_START`, `PLAYING item= head_ms=`, `DECIDING item=`, `Q_DONE item= qid= ms=`, `ITEM_DONE item= ms=`, `AUTOPLAY_DONE json=`, `failed …`, `GPU_FALLBACK …` (a graph runs on the CPU). Every run writes `files/d1omni-demo-<epoch ms>.json`: the device and runtime, the resident graphs with their precision and compile time, the memory at ready, per item its media file's sha256, the playback (when the sound started, in wall-clock ms), the host steps' and media graphs' ms, and per question its row (ids, markers, P, bucket, the sha256 of the int32 ids), its unrounded probabilities, `prompt.answer()`, the strings and ms on screen; the footer's lines, its total (`request_total_ms`) and the same work unrounded (`request_total_ns`); where the pill and the cards' state indicators were drawn (screen px) and the layout's sizes.
+Each kind of graph has its own GPU precision; `--es precision fp32|fp16acc` sets every kind, `--es precision_audio` / `--es precision_vision` one kind (a normal launch and the reproduction run; the gate and timing runs read `precision` for the decision graphs only). The app compiles every decision graph for the GPU at an explicit precision, FP32 by default: `CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)`. At FP32 the Galaxy S26 gives the provider's answers within the parity bar on every public text row (see Measured). The launch extra `--es precision fp16acc` compiles at `FP16_WITH_FP32_ACCUM` (float16 storage with float32 accumulation) instead: a little faster per call, but one public text row then moves past the bar (see Measured). The audio graph has its own precision, `--es precision_audio fp16acc|fp32` (`FP16_WITH_FP32_ACCUM` by default, `D1AudioEngine.DEFAULT_PRECISION`). The GPU's default precision is never used. When the GPU cannot compile or run a graph, the app runs it on the CPU (four threads) and logs `GPU_FALLBACK <error>` under the tag `D1OmniDemo`.
 
 ## Download, build and install
 
@@ -56,7 +48,7 @@ AUDIO="1001" VISION=1 ./scripts/install_to_device.sh "$HOME/Downloads/d1-omni-60
 adb shell am start -n com.d1omni/.MainActivity
 ```
 
-The inbox demo needs all eight files (`AUDIO="1001" VISION=1` with the default `BUCKETS`).
+The app needs all eight files (`AUDIO="1001" VISION=1` with the default `BUCKETS`): it compiles the five graphs at startup (about 9 s on the Galaxy S26).
 
 The install script's argument defaults to the download directory above. `BUCKETS` names the decision graphs to copy (`"128 256"` by default; `BUCKETS="128 256 512 1024 2048"` copies five) and `AUDIO` the audio graphs (none by default; `AUDIO="1001"`, or any of 501 / 1001 / 2001 / 3001 for clips up to 5 / 10 / 20 / 30 s). It checks the size of every file against `contract.json` before it touches the device; a file already in the app's private `files/` with the contract's size and sha256 stays as it is, any other is copied through `/data/local/tmp/d1omni/` into `files/` with `run-as com.d1omni`, the temporary copy removed, and the copy's sha256 on the phone checked against `contract.json`. Install the debug APK before the files: `run-as` needs a debuggable package.
 
@@ -133,11 +125,22 @@ The mel runs every step in float64 (one rounding to float32 at the end), the mod
 
 At most two decision graphs stay compiled. Before a graph compiles next to another one the app reads the memory Android reports available; under 2,500,000,000 bytes it gives up the second graph and runs every question of the request on the larger one. One audio graph stays compiled beside them (a clip of another bucket closes it first).
 
-`D1AudioPlayer` plays a clip through the speaker (`AudioTrack`, USAGE_MEDIA / CONTENT_TYPE_SPEECH, 16 kHz mono PCM16, at the phone's own media volume) and reports when the sound started: the time frame 0 left the output by `AudioTimestamp`, else the first moving playback head (the sound starts a fraction of a second after `play()`). The inbox demo turns its pill to ● PLAYING at that moment and answers the voice note after its last sample left the speaker.
+Play on the voice screen plays the clip through the speaker (`D1AudioPlayer`: `AudioTrack`, USAGE_MEDIA / CONTENT_TYPE_SPEECH, 16 kHz mono PCM16) at the phone's own media volume; the app never changes it.
+
+## Run JSON and logcat (for a recording harness)
+
+Every Decide writes `files/d1omni-run-<epoch ms>.json`: the input (`voice`, `photo`, `message`) and where it came from (`recorded`, `picked`, `typed`, `sample`); the media's sha256 and size (a recording's length, start and stop times, its saved wav and the audio source; a photo's format, EXIF orientation, decoded size and the size the model saw); the questions as asked; per question its row (ids, markers, P, bucket, the sha256 of the int32 ids), its unrounded probabilities, `prompt.answer()` and the strings on screen; the host steps' and media graphs' ms, the work as shown (`item_total_ms`) and unrounded (`item_total_ns`); the device, runtime, resident graphs and their compile times, the memory at ready, airplane mode and the process's cgroup at the start and the end; and where the pill and the answers were drawn (screen px, text size, lines, overflow). Logcat tag `D1OmniDemo`: `ENGINE_READY load_ms= warmup_ms=`, `RECORD_START`, `RECORD_STOP samples= seconds= wav= sha256=`, `PHOTOS_SHOWN n= names=`, `PICKED kind= sha256= name=`, `TYPED chars=`, `SAMPLE_LOADED`, `DECIDE_START item= source=`, `Q_DONE item= qid= ms=`, `DECIDE_DONE item= ms= json=`, `failed …`, `GPU_FALLBACK …` (a graph runs on the CPU).
+
+The reproduction run drives the same code path as the buttons — Load sample, then Decide on the voice, photo and message screens in turn, then the summary — and logs `AUTOPLAY_START` / `AUTOPLAY_DONE json=…`:
+
+```bash
+adb shell am start -n com.d1omni/.MainActivity --ez autoplay true [--ei delay_ms 1000] [--ei gap_ms 1500] \
+  [--es precision fp32|fp16acc] [--es backend gpu|cpu]
+```
 
 ## Measured
 
-Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, this app's debug build, connected over USB, the files above; every phone run below ended with the app in the foreground (cgroup `top-app`: 18 of 18 runs). Each check-set run is the debug fixture gate or the timing protocol (scripts/TEST_DATA.md) on the model repository's public check sets (`fixtures/public_text.json`, `public_audio.json`, `public_image.json`), compared with the provider's float32 probabilities. The bar: the same argmax on every row whose reference top-2 gap is above 0.02, max |Δp| ≤ 0.02 and mean |Δp| ≤ 0.002 over every option, no non-finite value. A graph call is timed from the input writes through `run()` to the read-back of its output.
+Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, this app's debug build, connected over USB, the files above; every phone run below ended with the app in the foreground (cgroup `top-app`: 17 of 17 runs). Each check-set run is the debug fixture gate or the timing protocol (scripts/TEST_DATA.md) on the model repository's public check sets (`fixtures/public_text.json`, `public_audio.json`, `public_image.json`), compared with the provider's float32 probabilities. The bar: the same argmax on every row whose reference top-2 gap is above 0.02, max |Δp| ≤ 0.02 and mean |Δp| ≤ 0.002 over every option, no non-finite value. A graph call is timed from the input writes through `run()` to the read-back of its output.
 
 ### Text (210 rows that fit 128 positions, 43 that need 256)
 
@@ -171,7 +174,7 @@ The same phone and build; each clip's wav read on the phone; the decision graphs
 | T1001, FP32 | 18 | 18/18 | 0.00154 | 1.25e-04 | pass | 40.0 ms (39.4–40.4) |
 
 - The app's mel on the phone equals the model repository's float64 mel bit for bit on 6/6 clips (within 5.7e-05 of its float32 form); n, frames, T, the bucket and P equal the Python host's on 6/6 clips, and the app's own encoding gives the fixture's ids and markers on 18/18 rows. The audio graph compiled whole for the GPU in every run: `Replacing 2423 out of 2423 node(s) with delegate (LITERT_CL) node, yielding 1 partitions`.
-- A whole request, timing protocol (`aud_food_03`, the inbox demo's clip, its three questions on L256; audio graph at `FP16_WITH_FP32_ACCUM`, decision graphs at FP32; five warm-up and 20 timed requests): **302.5 ms** median (294.3–311.1) from the wav file to the three answers. Per step (medians): reading the wav 0.6 ms, the mel 13.1 ms, the audio graph 33.1 ms, the encoding of the three questions 1.1 ms, the three decision calls 253.1 ms, the waveform, the inputs, the prefix copy and the read-out 1.5 ms together. The app read the GPU clock ceiling 1,300 MHz before every request; 3 of the 8 samples taken during the run (about 2 s apart) read a lower ceiling or a raised thermal power level (1,200 MHz at the lowest, power level up to 2, GPU up to 104 °C), and 0 a CPU frequency cap.
+- A whole request, timing protocol (`aud_food_03`, a check-set clip, its three questions on L256; audio graph at `FP16_WITH_FP32_ACCUM`, decision graphs at FP32; five warm-up and 20 timed requests): **302.5 ms** median (294.3–311.1) from the wav file to the three answers. Per step (medians): reading the wav 0.6 ms, the mel 13.1 ms, the audio graph 33.1 ms, the encoding of the three questions 1.1 ms, the three decision calls 253.1 ms, the waveform, the inputs, the prefix copy and the read-out 1.5 ms together. The app read the GPU clock ceiling 1,300 MHz before every request; 3 of the 8 samples taken during the run (about 2 s apart) read a lower ceiling or a raised thermal power level (1,200 MHz at the lowest, power level up to 2, GPU up to 104 °C), and 0 a CPU frequency cap.
 - With the L256, L128 and T1001 graphs compiled at once, the app's VmHWM reached 6,245,076 kB and MemAvailable fell to 3,227,380 kB at its lowest (samples about 1 s apart); Android reported 6,988,881,920 bytes available before the first compile and 4,102,299,648 after the third.
 
 ### Pictures (12 rows: 5 pictures of the public image check set, 11 crops)
@@ -184,55 +187,48 @@ The same phone and build; each picture decoded on the phone; the decision graphs
 | FP32 (the 9 rows that fit 256 positions) | 9 | 9/9 | 0.00330 | 4.23e-04 | pass | 191.7 ms (187.4–195.6, 4 crops) |
 
 - The app's decoded pictures equal the Python host's on 5/5 pictures (sha256 of the RGB), the tower's inputs on 11/11 crops (grid, pixels, positions, mask), P on 5/5 pictures and the ids on 12/12 rows. The tower and the projector compiled whole for the GPU in every run: `Replacing 717 out of 717 node(s) with delegate (LITERT_CL) node, yielding 1 partitions`, `Replacing 5 out of 5 node(s) with delegate (LITERT_CL) node, yielding 1 partitions`.
-- A whole request, timing protocol (`img_dogs_01`, the inbox demo's photo, two questions on L128; five warm-up and 20 timed requests): **264.7 ms** median (258.3–272.3) from the picture file to the two answers. Per step (medians): decoding 9.5 ms, resize and patches 21.2 ms, the tower 136.0 ms, the unshuffle 2.1 ms, the projector 4.3 ms, the two decision calls 91.4 ms. The app read the GPU clock ceiling 1,300 MHz before every request; 0 of the 8 samples taken during the run read a lower ceiling and 5 a CPU frequency cap.
+- A whole request, timing protocol (`img_dogs_01`, the sample's photo, two questions on L128; five warm-up and 20 timed requests): **264.7 ms** median (258.3–272.3) from the picture file to the two answers. Per step (medians): decoding 9.5 ms, resize and patches 21.2 ms, the tower 136.0 ms, the unshuffle 2.1 ms, the projector 4.3 ms, the two decision calls 91.4 ms. The app read the GPU clock ceiling 1,300 MHz before every request; 0 of the 8 samples taken during the run read a lower ceiling and 5 a CPU frequency cap.
 - With the vision tower, the projector, L256 and L128 compiled at once, the app's VmHWM reached 6,021,596 kB and MemAvailable fell to 2,334,976 kB at its lowest (samples about 1 s apart).
 
-### The inbox demo
+### The app on the Galaxy S26
 
-One run of the inbox on the presentation screen (round 4's smoke: `--ez autoplay true`, delay 3,000 ms, gap 4,000 ms, airplane mode on; at its start thermal status 0, no CPU frequency cap, GPU clock ceiling 1,300 MHz). The numbers are the run JSON's, which the screen shows:
+Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, this app's debug build, airplane mode on, the phone at its lock screen (the app shows over it); one Decide per input as a person makes it, the taps and typing sent with adb. The numbers are the run JSON's, which the screen shows; each answer was checked against the model repository's Python host on the same input (and, for the recording, the provider's own float32 code): same ids, same argmax, max |Δp| ≤ 0.02.
 
-| Item | Question | Answer on screen | Probability | Decision call |
-|---|---|---|---:|---:|
-| Voice note · 8.7 s | topic | food_order | 1.000 | 79 ms |
-| Voice note · 8.7 s | request | yes | 0.890 | 79 ms |
-| Voice note · 8.7 s | urgency | Right now | 1.000 | 79 ms |
-| Photo | animal | dog | 1.000 | 44 ms |
-| Photo | water | yes | 1.000 | 44 ms |
-| Message | refund | yes | 0.998 | 54 ms |
-| Message | team | billing | 0.993 | 44 ms |
-| Message | urgency | Blocking the customer now | 0.802 | 44 ms |
+| Input | Source | Question | Answer on screen | Probability | ms on screen |
+|---|---|---|---|---:|---|
+| Voice | a recording through the phone's microphone (the Mac's speaker played the sample line) | What is the customer asking for? | booking | 0.999 | 143 ms · L256 |
+| Photo | picked from Recent photos | What animal is in the photo? | dog | 1.000 | 212 ms · L128 |
+| Message | typed | Is the customer asking for a refund? | yes | 0.999 |  |
+|  |  | Which team should handle this? | billing | 0.939 | 110 ms · L128 |
 
-| Item | Host steps (ms) | Media graphs (ms) | Item total |
-|---|---|---|---:|
-| Voice note · 8.7 s | wav 0, mel 34, inputs 1, encode 9 | audio 33 | 319 ms |
-| Photo | decode 4, resize 14, patches 1, pos 0, unshuffle 2, encode 3 | tower 138, projector 5 | 259 ms |
-| Message | encode 15 | none | 160 ms |
+- The recording: 9.50 s of 16 kHz mono from the phone's microphone (VOICE_RECOGNITION) while the Mac's built-in speaker played the sample line in the same room (the distance was not measured); the phone's answer P(booking) 0.998819, the Python host on the same wav 0.998809.
+- Recent photos showed 4 pictures (img_dogs_01.png, img_03.png, img_02.png, img_bike_03.png), the four the smoke had just copied to the phone; the dogs' photo is 384 × 216, so the app used it unchanged.
+- Engine load (five graphs compiled on the GPU) 8,541 ms and 8,832 ms in the two launches, then one untimed pass over the sample; MemAvailable at ready 3,744,472 kB and 4,087,128 kB.
+- Each ms on screen is the input's whole work: from its samples, file bytes or text to the last answer (the mel and the audio graph, or the decoding and the vision graphs, then the encoding and one decision call per question).
 
-- The total on screen, **737 ms**, adds the three items' work (the voice note's 8.7 s of playback and the waits between items are not part of it; this run's build rounded the items' unrounded sum, while its cards add up to 319 + 259 + 160 = 738 ms: the app now shows the cards' sum); each decision call is input writes + `run()` + read-back. All 8 answers have the provider's argmax (max |Δp| 5.7e-04) and every row's ids equal the Python host's.
-- The launch compiled 5 graphs on the GPU (decide_L256 3.01 s, decide_L128 2.85 s, audio_T1001 1.29 s, vision_tower 0.60 s, projector 0.06 s) and was ready after 8,204 ms, then made one untimed pass over the inbox (768 ms). With the five graphs resident Android reported 4,005,416,960 bytes available and MemAvailable 3,911,540 kB (VmHWM 6,041,388 kB); its lowest was 3,062,552 kB, during the launch (samples about 2 s apart).
-
-Not measured: FP32 with the text timing protocol, text rows over 256 positions, picture rows over 256 positions at FP32, the audio graphs other than T1001, the inbox demo's steady state over many runs (the run above is the first after one untimed pass), other phones.
+Not measured: FP32 with the text timing protocol, text rows over 256 positions, picture rows over 256 positions at FP32, the audio graphs other than T1001, recordings and photos other than the ones above, the app's steady state over many Decides, other phones.
 
 ## Files
 
 | Path | Role |
 |---|---|
-| `app/src/main/java/com/d1omni/MainActivity.kt`, `MainViewModel.kt`, `view/StatusScreen.kt` | Compose host (`singleTop`), the engine on the worker thread, the status screen |
+| `app/src/main/java/com/d1omni/MainActivity.kt`, `MainViewModel.kt` | Compose host (`singleTop`; the microphone and photo permissions, the system photo and file pickers), the screen's state (the Recent photos sheet from MediaStore), the engine on the worker thread |
+| `app/src/main/java/com/d1omni/view/AppScreen.kt`, `QuestionsEditor.kt`, `StatusScreen.kt` | The title and pill, the Voice / Photo / Message / Summary tabs, the Recent photos sheet, the answers in large type; the questions editor; the status screen of the debug runs |
+| `app/src/main/java/com/d1omni/D1Sample.kt`, `D1Drafts.kt` | The bundled sample (`res/raw/sample.json`); the editor's questions and their checks |
+| `app/src/main/java/com/d1omni/D1Recorder.kt`, `D1Decide.kt`, `D1AppEngine.kt` | The microphone at 16 kHz mono; one Decide per input (and the photo's shrink); the five resident graphs |
+| `app/src/main/java/com/d1omni/D1Answers.kt`, `D1Run.kt`, `D1Demo.kt` | The answer's word and probability on screen and the screen's words; the run JSON; the logcat lines |
 | `app/src/main/java/com/d1omni/D1Tokenizer.kt` | Byte-level BPE tokenizer read from `tokenizer.json` |
 | `app/src/main/java/com/d1omni/D1Prompt.kt` | The provider's `prompt.py`: questions, `escape`, `serialize`, options, `encode`, `answer` |
 | `app/src/main/java/com/d1omni/D1Json.kt` | JSON with Python's key order, number semantics and `json.dumps` output |
 | `app/src/main/java/com/d1omni/D1Contract.kt`, `D1Request.kt` | `contract.json`; requests `{state, questions}` |
 | `app/src/main/java/com/d1omni/D1Rows.kt`, `D1Readout.kt` | Request kinds, rows, `build_inputs`; the read-out |
 | `app/src/main/java/com/d1omni/D1Decider.kt`, `D1Residency.kt`, `D1Engine.kt` | One graph on `CompiledModel`; which graphs stay compiled; tokenizer + contract + graphs |
-| `app/src/main/java/com/d1omni/D1Audio.kt`, `D1Wav.kt` | The audio host (waveform, mel, buckets, mask inputs, prefix rows); the 16 kHz mono PCM16 wav reader |
-| `app/src/main/java/com/d1omni/D1Graph.kt`, `D1AudioEngine.kt` | One float32 single-signature graph on `CompiledModel`; the audio graph and a clip's prefix |
-| `app/src/main/java/com/d1omni/D1AudioPlayer.kt` | Speaker playback with the time the sound started |
-| `app/src/main/java/com/d1omni/D1GateCore.kt`, `D1GateRunner.kt`, `D1TimingRunner.kt` | Debug fixture gate and timing protocol |
-| `app/src/main/java/com/d1omni/D1Device.kt`, `D1Demo.kt`, `D1Launch.kt` | Device facts, demo log lines and run JSON file, launch extras |
-| `app/src/main/java/com/d1omni/D1Inbox.kt`, `D1InboxLayout.kt` | The inbox fixture, the answer row's strings, the screen's words; the presentation's sizes fixed before drawing |
-| `app/src/main/java/com/d1omni/D1InboxEngine.kt`, `D1Autoplay.kt`, `D1DemoRun.kt` | The five resident graphs; one inbox run (playback, work, rows, waits); the run JSON |
-| `app/src/main/java/com/d1omni/view/InboxScreen.kt`, `view/PresentationScreen.kt` | The inbox screen with Decide; the presentation |
-| `app/src/main/res/raw/` | `inbox_demo.json`, `aud_food_03.wav`, `img_dogs_01.png` (the inbox and its media) |
+| `app/src/main/java/com/d1omni/D1Audio.kt`, `D1Wav.kt` | The audio host (waveform, mel, buckets, mask inputs, prefix rows); the 16 kHz mono PCM16 wav reader and writer |
+| `app/src/main/java/com/d1omni/D1Graph.kt`, `D1AudioEngine.kt`, `D1AudioPlayer.kt` | One float32 single-signature graph on `CompiledModel`; the audio graph and a clip's prefix; speaker playback |
+| `app/src/main/java/com/d1omni/D1Vision.kt`, `D1Image.kt`, `D1Npy.kt`, `D1VisionEngine.kt` | The picture host (layout, resize, patches, positions, unshuffle); decoding; the position table; the tower and the projector |
+| `app/src/main/java/com/d1omni/D1GateCore.kt`, `D1GateRunner.kt`, `D1TimingRunner.kt`, `D1VisionGate.kt` | Debug fixture gates and timing protocols |
+| `app/src/main/java/com/d1omni/D1Device.kt`, `D1Launch.kt` | Device facts; launch extras |
+| `app/src/main/res/raw/` | `sample.json`, `sample_voice_note.wav`, `img_dogs_01.png` (the sample and its media) |
 | `app/src/test/java/com/d1omni/` | JVM parity tests against the provider's code and the Python host |
 | `scripts/install_to_device.sh` | Copies the external files into the app's `files/` |
 | `scripts/TEST_DATA.md` | The tests' reference data and the device runs |
@@ -242,4 +238,4 @@ Not measured: FP32 with the text timing protocol, text rows over 256 positions, 
 
 The model and the code ported from the provider's `prompt.py` and `audio.py` (through the model repository's `host/d1_audio_host.py`) are under the LFM Open License v1.0 (`LICENSE`, unchanged); `NOTICE` lists what this sample changed. The tokenizer port follows Hugging Face `tokenizers` and `transformers` (Apache License 2.0, `licenses/`).
 
-The bundled media are the model repository's public check-set files: `aud_food_03.wav` is speech synthesised with Kokoro-82M (Apache License 2.0, voice af_sarah) from an English script written for the check set; `img_dogs_01.png` is a CC0 1.0 photograph from Wikimedia Commons (`File:Two_French_bulldogs_swimming_in_life_jackets.jpg`), its long side resized to 384 px. The inbox's message is the provider model card's text example.
+The sample's media: `sample_voice_note.wav` is speech synthesised with Kokoro-82M (Apache License 2.0, `licenses/Kokoro-82M-APACHE-2.0.txt`, voice am_michael) from a line written for this sample; `img_dogs_01.png` is a CC0 1.0 photograph from Wikimedia Commons (`File:Two_French_bulldogs_swimming_in_life_jackets.jpg`), its long side resized to 384 px (the model repository's public check-set file). The sample's message, its questions and the grooming shop are invented for this sample.

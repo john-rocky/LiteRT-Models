@@ -1,0 +1,80 @@
+{
+ "sample": "d1omni-sample/1",
+ "id": "grooming_story_r7",
+ "title": "d1-omni",
+ "what": "The app's bundled sample (Load sample): an invented pet-grooming shop's customer sends a voice note (booking a bath and a trim for their dog on Saturday morning), a photo of their dog and a message (charged twice for Saturday, refund one); the default question of each input. The voice note is speech synthesised with Kokoro-82M (Apache-2.0) from a line written for this demo; the photo is the model repository's public check-set file (CC0 1.0).",
+ "inputs": [
+  {
+   "input": "voice",
+   "kind": "audio",
+   "label": "Voice",
+   "media": {
+    "file": "sample_voice_note.wav",
+    "bytes": 235278,
+    "sha256": "c0bf96ce3359734e358a50d08b499ed0aeb77f8010b270815e8430fde977f4dd",
+    "source": "demo/fixtures/story/voice_c.wav",
+    "licence": "speech synthesised with Kokoro-82M (Apache-2.0, voice am_michael) from a line written for this demo",
+    "text": "Hi, I'd like to book a grooming appointment for my dog on Saturday morning, a bath and a trim, please."
+   },
+   "state": null,
+   "questions": {
+    "topic": {
+     "type": "choice",
+     "instructions": "What is the customer asking for?",
+     "criteria": {
+      "booking": "Booking or changing an appointment",
+      "cancel": "Cancelling an appointment",
+      "prices": "A question about prices or opening hours",
+      "complaint": "A complaint"
+     }
+    }
+   }
+  },
+  {
+   "input": "photo",
+   "kind": "image",
+   "label": "Photo",
+   "media": {
+    "file": "img_dogs_01.png",
+    "bytes": 138690,
+    "sha256": "dde44ce93c4f0722a4262499e91afc636667dcb5ff9f8c917010ff6b48c5c519",
+    "source": "ship/fixtures/media/img_dogs_01.png",
+    "licence": "CC0 1.0 photograph from Wikimedia Commons (Two_French_bulldogs_swimming_in_life_jackets.jpg), long side resized to 384 px"
+   },
+   "state": null,
+   "questions": {
+    "animal": {
+     "type": "choice",
+     "instructions": "What animal is in the photo?",
+     "criteria": {
+      "dog": "A dog",
+      "cat": "A cat",
+      "bird": "A bird"
+     }
+    }
+   }
+  },
+  {
+   "input": "message",
+   "kind": "text",
+   "label": "Message",
+   "media": null,
+   "state": "You charged me twice for the bath and trim on Saturday, please refund one of them.",
+   "questions": {
+    "refund": {
+     "type": "noul",
+     "instructions": "Is the customer asking for a refund?"
+    },
+    "team": {
+     "type": "choice",
+     "instructions": "Which team should handle this?",
+     "criteria": {
+      "billing": "Charges, refunds, invoices",
+      "booking": "Appointments and the schedule",
+      "grooming": "The service itself"
+     }
+    }
+   }
+  }
+ ]
+}

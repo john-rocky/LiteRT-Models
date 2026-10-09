@@ -29,10 +29,17 @@ host's float64 form; the provider computes in float32), with a radix-2 FFT of it
 path is a Kotlin port of host/d1_vision_host.py (the provider's vision.py layout and preprocessing and
 transformers' position-table resize; D1Vision.kt, D1Image.kt).
 
-app/src/main/res/raw/aud_food_03.wav is speech synthesised with Kokoro-82M (Apache License 2.0) and
-app/src/main/res/raw/img_dogs_01.png a CC0 1.0 photograph from Wikimedia Commons, both from the model
-repository's public check set (fixtures/media/). The message in app/src/main/res/raw/inbox_demo.json
-is the text example of the provider's model card.
+app/src/main/res/raw/sample_voice_note.wav is speech synthesised with Kokoro-82M (hexgrad/Kokoro-82M,
+revision f3ff3571, Apache License 2.0, licenses/Kokoro-82M-APACHE-2.0.txt) in the voice
+am_michael from a line written for this sample. app/src/main/res/raw/img_dogs_01.png is a CC0 1.0 photograph
+from Wikimedia Commons (File:Two_French_bulldogs_swimming_in_life_jackets.jpg, long side resized to 384 px), the
+model repository's public check-set file (fixtures/media/). The message, the questions and the pet-grooming shop
+in app/src/main/res/raw/sample.json are invented for this sample.
+
+The app's own steps around the ported code: a picture longer than 384 px on its long side is shrunk to 384 px
+with the provider's float bilinear antialias resize before the provider's preprocessing (D1Decide.kt, D1Photo);
+a recording is taken from the microphone at 16 kHz mono 16-bit PCM and saved as a wav file (D1Recorder.kt,
+D1Wav.encode).
 
 The tokenizer follows the published tokenizer.json contract of Hugging Face tokenizers and
 transformers (Apache License 2.0; licenses/Tokenizers-APACHE-2.0.txt and

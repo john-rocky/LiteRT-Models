@@ -14,7 +14,7 @@
 # app's private files/ with run-as com.d1omni, the temporary copy is removed, and the copy's sha256
 # on the phone (toybox sha256sum) is checked against contract.json. Files already on the device that
 # BUCKETS and AUDIO do not name stay there.
-# The app's inbox demo needs the default BUCKETS with AUDIO="1001" VISION=1 (eight files).
+# The app needs the default BUCKETS with AUDIO="1001" VISION=1 (eight files).
 # Install the debug APK before running this script: run-as needs a debuggable package.
 # Set ANDROID_SERIAL to select a device when more than one is connected.
 set -euo pipefail

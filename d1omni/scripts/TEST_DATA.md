@@ -118,31 +118,34 @@ adb shell am start -n com.d1omni/.MainActivity --ez vtiming true --es rows timin
 A picture record's `reference` names `files/` copies of the Python host's RGB and prefix rows (`vref_<id>_rgb.u8`, `vref_<id>_prefix.f32`); without them the report keeps the sha256 checks only.
 <!-- end vision (round 3) -->
 
-<!-- inbox demo (round 4) -->
-## The inbox demo
+<!-- the app (round 7) -->
+## The app: your own input, the bundled sample
 
-The demo's tests read the conversion run's fixture and expected file under `d1omni.demo` (made by `demo/scripts/provider_demo.py` = the provider's own float32 code on the three requests, `demo/scripts/mac_host_demo.py` = the model repository's Python host on the desktop CPU, and `demo/scripts/expected_demo.py`):
+The app's tests read the conversion run's sample and expected file under `d1omni.demo` (made by `demo/scripts/kokoro_story_r7.py` = the Kokoro voice-note candidates, `demo/scripts/provider_story_r7.py` = the provider's own float32 code on the candidate requests, `demo/scripts/mac_host_story_r7.py` = the model repository's Python host on the desktop CPU, `demo/scripts/voice_robustness_r7.py` = the clips through simulated room paths, and `demo/scripts/expected_story_r7.py` = the adopted questions and the sample file):
 
 ```text
 demo/
-  fixtures/demo/inbox_demo.json   # the inbox (equal to res/raw/inbox_demo.json byte for byte)
-  oracle/expected_demo.json       # per question: the provider's probabilities, the host's ids / markers / P / bucket /
-                                  # probabilities / answer(), the screen's strings of both
+  fixtures/story/sample_r7.json   # the sample (equal to res/raw/sample.json byte for byte)
+  fixtures/story/voice_c.wav      # the sample's voice note (equal to res/raw/sample_voice_note.wav)
+  oracle/expected_story.json      # per adopted question: the provider's probabilities (natural call and alone), the
+                                  # host's ids / markers / P / bucket / probabilities / answer(), the screen's strings
 ```
 
 | Test | Needs | Checks |
 |---|---|---|
-| `D1InboxTest` | repo, demo | the bundled fixture = the run's, its media = the check set's files (sha256, bytes, the clip's 139,200 samples and header); this app's ids, markers, P, bucket and int32 sha256 of all eight questions = the host's; the screen strings of the provider's and the host's probabilities = Python's; `answer()` = Python's; the screen's words; fixtures it refuses |
-| `D1InboxLayoutTest` | nothing external | the 9:16 band; the plan for a 1080 × 2340 screen at density 3.0 (a stand-in for the fonts): everything inside the band, the long score level on two lines, the photo between its bounds; a larger font scale; a band too small |
-| `D1DemoRunTest` | nothing external | the run JSON's keys (run, item, question, layout), whole-ms numbers, shown strings, palettes, a round trip through the JSON writer; the footer's total = the cards' totals added up (on items whose unrounded sum would round 1 ms lower) |
+| `D1SampleTest` | repo, demo | the bundled sample = the run's, its media = the files the oracle scored (sha256, bytes, the clip's 117,600 samples); this app's ids, markers, P, bucket and int32 sha256 of the four questions = the host's; the screen strings of the provider's and the host's probabilities = Python's; `answer()` = Python's; samples it refuses |
+| `D1DraftsTest` | nothing external | the questions editor: the sample's questions survive it unchanged; option lines become the provider's criteria (choice, score, noul); every refusal and its message |
+| `D1RunTest` | nothing external | the run JSON's keys (run, question, layout), the ms on screen = the work rounded once, the shown strings, the palette, a round trip through the JSON writer; a message's text is its state |
+| `D1ManifestTest` | nothing external | the app's own permissions: RECORD_AUDIO, READ_MEDIA_IMAGES, READ_EXTERNAL_STORAGE up to API 32; no network |
+| `D1TextTest` | nothing external | the answer's rule (three decimals half to even), the ms line, the summary that adds the inputs' ms as shown, the accelerator words; the photo's shrink to 384 px (sizes rounded half to even, the provider's resize) and the format sniffing |
 
-On the phone (`AUDIO="1001" VISION=1` install; the fixture is bundled, a copy in `files/` is read first):
+On the phone (`AUDIO="1001" VISION=1` install; the sample is bundled):
 
 ```bash
 adb shell am start -n com.d1omni/.MainActivity                       # ENGINE_READY load_ms= warmup_ms=
-adb shell am start -n com.d1omni/.MainActivity --ez autoplay true --es fixture inbox_demo.json \
-  --ei delay_ms 1000 --ei gap_ms 1500                                # AUTOPLAY_DONE json=files/d1omni-demo-<ms>.json
-adb exec-out run-as com.d1omni cat files/d1omni-demo-<ms>.json > run.json
+# by hand: Record / Pick WAV, Pick photo, type a message, Decide on each screen -> DECIDE_DONE item= ms= json=
+adb shell am start -n com.d1omni/.MainActivity --ez autoplay true --ei gap_ms 1500   # AUTOPLAY_DONE json=a,b,c
+adb exec-out run-as com.d1omni cat files/d1omni-run-<ms>.json > run.json
 python3 demo/check_take.py run.json --logcat app_logcat.txt        # in the conversion run's directory
 ```
-<!-- end inbox demo (round 4) -->
+<!-- end the app (round 7) -->

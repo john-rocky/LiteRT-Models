@@ -37,6 +37,29 @@ class D1WavTest {
   }
 
   @Test
+  fun encodeWritesWhatParseReadsAndWhatPythonReads() {
+    val samples = ShortArray(16000) { ((it * 37) % 65536 - 32768).toShort() }
+    val bytes = D1Wav.encode(samples)
+    assertEquals(44 + 2 * samples.size, bytes.size)
+    assertArrayEquals(samples, D1Wav.parse(bytes, "encoded"))
+    // The header Python's wave module writes for 16 kHz mono 16-bit (sample count aside): RIFF size, fmt 16, PCM 1,
+    // one channel, 16,000 Hz, 32,000 bytes/s, block 2, 16 bits, data size.
+    val header = ByteBuffer.wrap(bytes, 0, 44).order(ByteOrder.LITTLE_ENDIAN)
+    assertEquals(36 + 2 * samples.size, header.getInt(4))
+    assertEquals(16, header.getInt(16))
+    assertEquals(1, header.getShort(20).toInt())
+    assertEquals(1, header.getShort(22).toInt())
+    assertEquals(16000, header.getInt(24))
+    assertEquals(32000, header.getInt(28))
+    assertEquals(2, header.getShort(32).toInt())
+    assertEquals(16, header.getShort(34).toInt())
+    assertEquals(2 * samples.size, header.getInt(40))
+    // The bundled sample clip (ffmpeg's file, with a LIST chunk) keeps its samples through encode and parse.
+    val bundled = D1Wav.parse(File("src/main/res/raw/sample_voice_note.wav").readBytes())
+    assertArrayEquals(bundled, D1Wav.parse(D1Wav.encode(bundled)))
+  }
+
+  @Test
   fun otherRatesChannelsAndFormatsAreRefused() {
     val pcm = shortArrayOf(0, 1, -1, 32767, -32768)
     assertArrayEquals(pcm, D1Wav.parse(wav(pcm)))

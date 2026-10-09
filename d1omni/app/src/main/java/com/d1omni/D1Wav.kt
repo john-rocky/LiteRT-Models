@@ -32,6 +32,21 @@ object D1Wav {
   /** The int16 samples of [file] (see the class comment for what is refused). */
   fun read(file: File): ShortArray = parse(file.readBytes(), file.name)
 
+  /**
+   * A 16 kHz mono 16-bit PCM wav file of [samples]: the 44-byte RIFF / WAVE header (format 1, one `fmt ` and one
+   * `data` chunk) and the samples little-endian; [parse] reads it back to the same samples.
+   */
+  fun encode(samples: ShortArray, sampleRate: Int = SAMPLE_RATE): ByteArray {
+    val data = samples.size * 2
+    val buffer = ByteBuffer.allocate(44 + data).order(ByteOrder.LITTLE_ENDIAN)
+    buffer.put("RIFF".toByteArray(Charsets.ISO_8859_1)).putInt(36 + data).put("WAVE".toByteArray(Charsets.ISO_8859_1))
+    buffer.put("fmt ".toByteArray(Charsets.ISO_8859_1)).putInt(FMT_MIN_BYTES).putShort(PCM.toShort()).putShort(1)
+    buffer.putInt(sampleRate).putInt(sampleRate * 2).putShort(2).putShort(BITS.toShort())
+    buffer.put("data".toByteArray(Charsets.ISO_8859_1)).putInt(data)
+    buffer.asShortBuffer().put(samples)
+    return buffer.array()
+  }
+
   /** The int16 samples of a wav file's [bytes]; [name] goes into the error messages. */
   fun parse(bytes: ByteArray, name: String = "wav"): ShortArray {
     require(

@@ -41,30 +41,23 @@ class D1LaunchTest {
 
   @Test
   fun autoplayLaunch() {
-    assertEquals(
-      D1Launch.Autoplay("inbox_demo.json", 1000, 1500),
-      parse(true, "autoplay" to true, "fixture" to "inbox_demo.json"),
-    )
-    val long = parse(true, "autoplay" to true, "fixture" to "inbox_demo.json", "delay_ms" to 4000, "gap_ms" to 6000, "precision" to "fp16acc", "backend" to "gpu")
+    assertEquals(D1Launch.Autoplay(1000, 1500), parse(true, "autoplay" to true))
+    val long = parse(true, "autoplay" to true, "delay_ms" to 4000, "gap_ms" to 6000, "precision" to "fp16acc", "backend" to "gpu")
     assertTrue(long is D1Launch.Autoplay)
     long as D1Launch.Autoplay
     assertEquals(4000L, long.delayMs)
     assertEquals(6000L, long.gapMs)
     assertEquals(D1Precision.FP16_FP32_ACCUM, long.precisions.decide)
-    assertEquals(
-      D1Launch.Autoplay("/data/user/0/com.d1omni/files/inbox_demo.json", 0, 0),
-      parse(true, "autoplay" to true, "fixture" to "/data/user/0/com.d1omni/files/inbox_demo.json", "delay_ms" to 0, "gap_ms" to 0),
-    )
-    // a release build runs the autoplay too (it is the demo, not a debug run)
-    assertTrue(parse(false, "autoplay" to true, "fixture" to "inbox_demo.json") is D1Launch.Autoplay)
+    assertEquals(D1Launch.Autoplay(0, 0), parse(true, "autoplay" to true, "delay_ms" to 0, "gap_ms" to 0))
+    // a release build runs the autoplay too (it is the reproduction run of the sample, not a debug run)
+    assertTrue(parse(false, "autoplay" to true) is D1Launch.Autoplay)
     val invalid =
       listOf(
-        parse(true, "autoplay" to true),
-        parse(true, "autoplay" to true, "fixture" to "../x.json"),
-        parse(true, "autoplay" to true, "fixture" to "/data/user/0/com.d1omni/files/../x.json"),
-        parse(true, "autoplay" to true, "fixture" to "inbox_demo.json", "delay_ms" to -1),
-        parse(true, "autoplay" to true, "fixture" to "inbox_demo.json", "precision" to "fp16"),
-        parse(true, "autoplay" to true, "gate" to true, "fixture" to "inbox_demo.json", "report" to "g.json"),
+        // the reproduction run takes the bundled sample only
+        parse(true, "autoplay" to true, "fixture" to "inbox_demo.json"),
+        parse(true, "autoplay" to true, "delay_ms" to -1),
+        parse(true, "autoplay" to true, "precision" to "fp16"),
+        parse(true, "autoplay" to true, "gate" to true, "fixture" to "rows.json", "report" to "g.json"),
       )
     for (launch in invalid) assertTrue("$launch", launch is D1Launch.Invalid)
   }

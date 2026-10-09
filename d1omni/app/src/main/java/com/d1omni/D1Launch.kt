@@ -61,7 +61,7 @@ data class D1Precisions(
 /** What a launch intent asks for (see `MainActivity` for the extras). */
 sealed interface D1Launch {
   /**
-   * The app: the inbox screen, every graph of the demo compiled at startup on [backend] at
+   * The app: the voice, photo and message screens, every graph they need compiled at startup on [backend] at
    * [precisions] (`precision` sets every kind, `precision_audio` / `precision_vision` one kind).
    */
   data class Normal(
@@ -76,14 +76,12 @@ sealed interface D1Launch {
   }
 
   /**
-   * The demo recording: the inbox of [fixture] (a file in `files/`, an absolute path inside it, or
-   * the bundled `inbox_demo.json`) answered on the presentation screen: [delayMs] after the intent
-   * arrived the presentation appears, [gapMs] before each item; the voice note is played through the
-   * speaker before it is answered. [backend] and [precisions] apply when this launch starts the app
+   * The reproduction run: [delayMs] after the engine is ready (or after the intent reached a ready app), Load sample,
+   * then Decide on the voice, photo and message screens in turn with [gapMs] before each, then the summary; the same
+   * code path as the buttons, one run JSON per Decide. [backend] and [precisions] apply when this launch starts the app
    * (a running app keeps its compiled graphs).
    */
   data class Autoplay(
-    val fixture: String,
     val delayMs: Long,
     val gapMs: Long,
     val backend: D1Backend = D1Backend.GPU,
@@ -228,20 +226,16 @@ sealed interface D1Launch {
       }
     }
 
-    /** `--ez autoplay true --es fixture <name or path> [--ei delay_ms 1000] [--ei gap_ms 1500]`. */
+    /** `--ez autoplay true [--ei delay_ms 1000] [--ei gap_ms 1500]` (the bundled sample; no other input). */
     private fun autoplay(extras: D1Extras, backend: D1Backend): D1Launch {
-      val fixture = extras.string(EXTRA_FIXTURE)
       val delay = extras.int(EXTRA_DELAY_MS, DEFAULT_DELAY_MS)
       val gap = extras.int(EXTRA_GAP_MS, DEFAULT_GAP_MS)
       val (precisions, error) = D1Precisions.parse(extras)
       return when {
-        fixture.isNullOrEmpty() -> Invalid("no fixture extra")
-        !fixture.startsWith("/") && !fileNameValid(fixture) -> Invalid("invalid fixture name $fixture")
-        fixture.startsWith("/") && (fixture.contains("/../") || fixture.endsWith("/..")) ->
-          Invalid("invalid fixture path $fixture")
+        extras.has(EXTRA_FIXTURE) -> Invalid("autoplay runs the bundled sample; it takes no fixture extra")
         delay < 0 || gap < 0 -> Invalid("delay_ms $delay and gap_ms $gap must be >= 0")
         precisions == null -> Invalid(requireNotNull(error))
-        else -> Autoplay(fixture, delay.toLong(), gap.toLong(), backend, precisions)
+        else -> Autoplay(delay.toLong(), gap.toLong(), backend, precisions)
       }
     }
   }
