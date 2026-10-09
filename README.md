@@ -2473,6 +2473,6 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 
 # License
 
-MIT (sample apps). Model licenses follow their original projects.
+MIT (sample apps; `kev/`, `julia1/` and `d1-3b/` carry their own Apache-2.0 `LICENSE`). Model licenses follow their original projects.
 
 
