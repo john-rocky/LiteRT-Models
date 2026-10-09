@@ -148,4 +148,108 @@ sealed interface D1Launch {
       }
     }
   }
+
+  // vision (round 3): the picture path's debug launches (D1VisionGate), parsed before the ones above.
+  // Each kind of graph has its own GPU precision: `precision` the decision graphs (FP32 by default,
+  // the supervisor's ruling of 2026-10-09: fp16acc32 moved one L128 text row past the bar),
+  // `precision_vision` the vision tower and the projector (fp16acc by default: both pass there).
+  /**
+   * Debug build: every record of `files/<fixture>` (a picture rows file) decoded, turned into its
+   * prefix rows and run through the smallest resident decision graph per question, into
+   * `files/<report>`; [limit] > 0 runs the first rows.
+   */
+  data class VGate(
+    val fixture: String,
+    val report: String,
+    val limit: Int,
+    val backend: D1Backend,
+    val precision: D1Precision,
+    val visionPrecision: D1Precision,
+  ) : D1Launch
+
+  /**
+   * Debug build: the picture timing sets of `files/<rows>` (only [sets] when named): per set, a
+   * wait of at most [coolMs] for the GPU, [warmup] requests, then [reps] timed requests (decode to
+   * answers); into `files/<report>`.
+   */
+  data class VTiming(
+    val rows: String,
+    val report: String,
+    val warmup: Int,
+    val reps: Int,
+    val coolMs: Long,
+    val sets: List<String>?,
+    val backend: D1Backend,
+    val precision: D1Precision,
+    val visionPrecision: D1Precision,
+  ) : D1Launch
+
+  /** The extras of the picture runs: `--ez vgate true` / `--ez vtiming true` with the extras above. */
+  object Vision {
+    const val EXTRA_VGATE = "vgate"
+    const val EXTRA_VTIMING = "vtiming"
+    const val EXTRA_PRECISION_VISION = "precision_vision"
+
+    /** The decision graphs' precision when `precision` is not given. */
+    val DEFAULT_PRECISION = D1Precision.DEFAULT
+
+    /** The vision tower's and the projector's precision when `precision_vision` is not given. */
+    val DEFAULT_VISION_PRECISION = D1Precision.FP16_FP32_ACCUM
+
+    /**
+     * [VGate] or [VTiming] when [extras] ask for one (or [Invalid] when they cannot be followed),
+     * null for every other launch ([D1Launch.parse] reads those).
+     */
+    fun parse(extras: D1Extras, debug: Boolean): D1Launch? {
+      val vgate = extras.boolean(EXTRA_VGATE, false)
+      val vtiming = extras.boolean(EXTRA_VTIMING, false)
+      if (!vgate && !vtiming) return null
+      if (!debug) return Invalid("vgate and vtiming runs need the debug build")
+      val others = listOf(EXTRA_GATE, EXTRA_TIMING).count { extras.boolean(it, false) }
+      if (others > 0 || (vgate && vtiming)) return Invalid("gate, timing, vgate and vtiming exclude each other")
+      val precisionName = extras.string(EXTRA_PRECISION)
+      val precision =
+        if (precisionName == null) DEFAULT_PRECISION
+        else
+          D1Precision.of(precisionName)
+            ?: return Invalid("precision $precisionName is not fp16acc or fp32")
+      val visionName = extras.string(EXTRA_PRECISION_VISION)
+      val visionPrecision =
+        if (visionName == null) DEFAULT_VISION_PRECISION
+        else
+          D1Precision.of(visionName)
+            ?: return Invalid("precision_vision $visionName is not fp16acc or fp32")
+      val backendName = extras.string(EXTRA_BACKEND)
+      val backend =
+        if (backendName == null) D1Backend.GPU
+        else D1Backend.of(backendName) ?: return Invalid("backend $backendName is not gpu or cpu")
+      val report = extras.string(EXTRA_REPORT)
+      if (report.isNullOrEmpty() || !fileNameValid(report)) return Invalid("invalid report name $report")
+      if (vgate) {
+        val fixture = extras.string(EXTRA_FIXTURE)
+        if (fixture.isNullOrEmpty() || !fileNameValid(fixture)) return Invalid("invalid fixture name $fixture")
+        return VGate(fixture, report, extras.int(EXTRA_LIMIT, 0), backend, precision, visionPrecision)
+      }
+      val rows = extras.string(EXTRA_ROWS)
+      val warmup = extras.int(EXTRA_WARMUP, DEFAULT_WARMUP)
+      val reps = extras.int(EXTRA_REPS, DEFAULT_REPS)
+      return when {
+        rows.isNullOrEmpty() || !fileNameValid(rows) -> Invalid("invalid rows name $rows")
+        warmup < 0 || reps < 1 -> Invalid("warmup $warmup and reps $reps: warmup >= 0, reps >= 1")
+        else ->
+          VTiming(
+            rows,
+            report,
+            warmup,
+            reps,
+            extras.int(EXTRA_COOL_MS, 0).toLong(),
+            extras.string(EXTRA_SETS)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() },
+            backend,
+            precision,
+            visionPrecision,
+          )
+      }
+    }
+  }
+  // end vision (round 3)
 }

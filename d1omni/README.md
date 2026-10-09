@@ -92,6 +92,39 @@ Each decision graph has one signature, `decide_<L>`: `ids` int32 `[1,L]`, `prefi
 `[1,T3]` (T1001: 501 / 251 / 126) → `prefix` float32 `[1,T3,1024]`, whose first P rows are the
 clip's prefix.
 
+<!-- vision (round 3) -->
+### The picture path
+
+`VISION=1 ./scripts/install_to_device.sh` also copies the three files a picture needs (download
+them with `hf download litert-community/d1-omni-600M-LiteRT d1-omni-600M_vision_tower_fp16.tflite
+d1-omni-600M_projector_fp16.tflite host/vision_position_table.npy`):
+
+| File | Bytes | sha256 | Purpose |
+|---|---:|---|---|
+| `d1-omni-600M_vision_tower_fp16.tflite` | 171,563,424 | `6835066c…0942202` | Vision tower, one crop per call: `pixels` / `pos` float32 `[1,1024,768]`, `mask` `[1,1024]` → `features` `[1,1024,768]` |
+| `d1-omni-600M_projector_fp16.tflite` | 16,791,504 | `9224b508…df80117` | `soft` float32 `[1,256,3072]` → `prefix` `[1,256,1024]` |
+| `host/vision_position_table.npy` | 786,560 | `76d764aa…4fdb073` | The tower's 16 × 16 position table, float32 `[16,16,768]` (on the phone: `files/host/`) |
+
+A picture goes through the provider's preprocessing on the phone, in Kotlin, giving the same values
+as the model repository's Python host (`host/d1_vision_host.py`) bit for bit:
+
+```text
+picture file → BitmapFactory (a PNG without its colour chunks, as Pillow ignores them) → RGB, EXIF orientation applied
+  → layout: factor 32, a thumbnail, and above 524,288 pixels up to 10 tiles of 512 px
+  → resize on the float path: PyTorch's bilinear kernel with antialias in float32, round half to even
+  → per crop: 16 × 16 patches (x − 127.5) / 127.5, the position table resized to the patch grid, a mask
+  → vision tower (GPU) → 2 × 2 pixel unshuffle → projector (GPU) → (rows / 2)(columns / 2) prefix rows
+  → each question's row after the P prefix rows → decide_<L> → read-out without temperature → answer
+```
+
+Each kind of graph has its own GPU precision: the decision graphs follow `--es precision` (FP32 by
+default) and the tower and the projector `--es precision_vision` (`FP16_WITH_FP32_ACCUM` by
+default; `fp32` selects FP32). Picture files: `D1Vision.kt` (layout, resize, patches, position
+table, unshuffle), `D1Image.kt` (decoding), `D1Npy.kt` (the position table), `D1Graph.kt` (one
+single-signature graph on `CompiledModel`), `D1VisionEngine.kt` (the tower, the projector and a
+picture's prefix rows) and `D1VisionGate.kt` (the debug picture gate and timing, scripts/TEST_DATA.md).
+<!-- end vision (round 3) -->
+
 ## How a request runs
 
 ```text

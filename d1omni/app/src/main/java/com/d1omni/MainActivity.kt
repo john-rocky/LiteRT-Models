@@ -65,7 +65,13 @@ class MainActivity : ComponentActivity() {
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
   }
 
-  private fun parse(intent: Intent): D1Launch = D1Launch.parse(IntentExtras(intent), BuildConfig.DEBUG)
+  // vision (round 3): the picture runs (`--ez vgate true --es fixture <rows> --es report <name>
+  // [--ei limit n]`, `--ez vtiming true --es rows <rows> --es report <name> [--ei warmup 5]
+  // [--ei reps 20] [--ei cool_ms 120000] [--es sets dogs2]`) first, then the launches above
+  private fun parse(intent: Intent): D1Launch =
+    D1Launch.Vision.parse(IntentExtras(intent), BuildConfig.DEBUG)
+      ?: D1Launch.parse(IntentExtras(intent), BuildConfig.DEBUG)
+  // end vision (round 3)
 
   /** The extras of [intent] as [D1Launch.parse] reads them. */
   private class IntentExtras(private val intent: Intent) : D1Extras {
