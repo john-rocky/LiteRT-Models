@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stable ids for the input screen, so uiautomator and adb input can find the controls by name. -->
+<resources>
+    <item name="voice_ja" type="id" />
+    <item name="voice_en" type="id" />
+    <item name="voice_mine" type="id" />
+    <item name="record_button" type="id" />
+    <item name="text_input" type="id" />
+    <item name="message" type="id" />
+    <item name="speak_button" type="id" />
+    <item name="cancel_button" type="id" />
+</resources>

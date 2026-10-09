@@ -1,0 +1,244 @@
+{
+ "source": "audio8_tts_work/out/ship/tokenizer.json (sha256 f24e0809..., HF rev e8620a9b), tokenizers add_special_tokens=False; produced by round 0 of the demo lane",
+ "note": "<|speaker:0|> is NOT an added token: it is plain BPE, so the Kotlin side prefixes it to the reference transcript string and BPE-encodes the whole string, exactly as audio8_tts_litert.py does. The fragments below ARE fixed and become constants.",
+ "fragments": {
+  "sys_open": {
+   "text": "<|im_start|>system\n",
+   "ids": [
+    151644,
+    8948,
+    198
+   ]
+  },
+  "sys_noref": {
+   "text": "convert the provided text to speech",
+   "ids": [
+    14166,
+    279,
+    3897,
+    1467,
+    311,
+    8806
+   ]
+  },
+  "sys_ref": {
+   "text": "convert the provided text to speech reference to the following:\n\nText:\n",
+   "ids": [
+    14166,
+    279,
+    3897,
+    1467,
+    311,
+    8806,
+    5785,
+    311,
+    279,
+    2701,
+    1447,
+    1178,
+    510
+   ]
+  },
+  "speech": {
+   "text": "\n\nSpeech:\n",
+   "ids": [
+    271,
+    55625,
+    510
+   ]
+  },
+  "im_end_nl": {
+   "text": "<|im_end|>\n",
+   "ids": [
+    151645,
+    198
+   ]
+  },
+  "user_open": {
+   "text": "<|im_start|>user\n",
+   "ids": [
+    151644,
+    872,
+    198
+   ]
+  },
+  "asst_voice": {
+   "text": "<|im_start|>assistant\n<|voice|>",
+   "ids": [
+    151644,
+    77091,
+    198,
+    151673
+   ]
+  }
+ },
+ "ids": {
+  "SEM_BEGIN": 151678,
+  "SEM_END": 155773,
+  "EOS": 151645,
+  "PAD": 151643,
+  "IM_START": 151644,
+  "IM_END": 151645,
+  "VOICE": 151673
+ },
+ "test_vectors": {
+  "demo_ja": {
+   "text": "録音した声を登録して、その声で文章を読み上げます。",
+   "ids": [
+    90679,
+    110,
+    78685,
+    54951,
+    70074,
+    29412,
+    28641,
+    90679,
+    110,
+    38826,
+    5373,
+    57326,
+    70074,
+    16161,
+    82025,
+    29412,
+    133392,
+    129239,
+    32441,
+    1773
+   ]
+  },
+  "demo_en": {
+   "text": "Everything you hear was made on this phone, with no network at all.",
+   "ids": [
+    34964,
+    498,
+    6723,
+    572,
+    1865,
+    389,
+    419,
+    4540,
+    11,
+    448,
+    902,
+    3922,
+    518,
+    678,
+    13
+   ]
+  },
+  "ref_ja_with_speaker": {
+   "text": "<|speaker:0|>うちの中学は弁当制で、持っていけない場合は、五十円の学校販売のパンを買う。",
+   "ids": [
+    27,
+    91,
+    64476,
+    25,
+    15,
+    91,
+    29,
+    127120,
+    15767,
+    104418,
+    15322,
+    119582,
+    39165,
+    43316,
+    16161,
+    5373,
+    143635,
+    131033,
+    123861,
+    129808,
+    5373,
+    106355,
+    34657,
+    15767,
+    100344,
+    79531,
+    102,
+    125988,
+    15767,
+    130459,
+    29412,
+    137313,
+    1773
+   ]
+  },
+  "ref_en_with_speaker": {
+   "text": "<|speaker:0|>Mister Quilter has missed his chance, for he has failed even to make himself the Tupper of painting.",
+   "ids": [
+    27,
+    91,
+    64476,
+    25,
+    15,
+    91,
+    29,
+    44,
+    1571,
+    3406,
+    2044,
+    702,
+    13628,
+    806,
+    6012,
+    11,
+    369,
+    566,
+    702,
+    4641,
+    1496,
+    311,
+    1281,
+    5561,
+    279,
+    350,
+    13574,
+    315,
+    18824,
+    13
+   ]
+  },
+  "ws_u3000": {
+   "text": "a　b",
+   "ids": [
+    64,
+    22441,
+    65
+   ]
+  },
+  "apostrophes": {
+   "text": "It's the phone's voice, isn't it?",
+   "ids": [
+    2132,
+    594,
+    279,
+    4540,
+    594,
+    7743,
+    11,
+    4436,
+    944,
+    432,
+    30
+   ]
+  },
+  "mixed": {
+   "text": "日本語と English を mix、句読点。",
+   "ids": [
+    101059,
+    102819,
+    19182,
+    6364,
+    94271,
+    6514,
+    5373,
+    99700,
+    97399,
+    27442,
+    1773
+   ]
+  }
+ }
+}

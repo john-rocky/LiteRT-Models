@@ -29,6 +29,7 @@ Dependency: `com.google.ai.edge.litert:litert` from Google Maven; the version ea
 
 - Each model directory is an independent Gradle project (`cd <model>/ && ./gradlew :app:installDebug`); the README section for the model names it.
 - [docs/COMPOSE_MVVM_SAMPLE_GUIDE.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/COMPOSE_MVVM_SAMPLE_GUIDE.md): the Compose + MVVM shape for a litert-samples pull request, distilled from 32 samples.
+- [audio8_tts/README.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/audio8_tts/README.md): text-to-speech with zero-shot voice cloning in 11 languages (Audio8-TTS-Preview-0.6b): type a sentence, pick a voice or record your own, Speak; Galaxy S26 numbers dated 2026-10-10.
 
 ## Models
 

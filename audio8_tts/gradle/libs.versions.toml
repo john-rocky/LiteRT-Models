@@ -1,0 +1,18 @@
+[versions]
+agp = "8.9.1"
+kotlin = "2.2.21"
+# The LiteRT runtime the app links; shown on screen and written to the JSON report.
+litert = "2.2.0"
+junit = "4.13.2"
+androidxTestRunner = "1.6.2"
+androidxTestExtJunit = "1.2.1"
+
+[libraries]
+litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExtJunit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

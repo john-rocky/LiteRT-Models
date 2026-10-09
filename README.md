@@ -63,6 +63,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [KittenTTS nano 0.8](#kittentts-nano-08-dynamic-length) | Text-to-speech (dynamic length) |  |  | [scripts](kittentts/) |
 | [Inflect-Nano-v2](#inflect-nano-v2-dynamic-length-exact-streaming) | Text-to-speech (exact streaming) | Mac | 25–32 ms first chunk | [scripts](inflect/) |
 | [Sopro v2 turbo](#sopro-v2-turbo-zero-shot-voice-cloning) | Text-to-speech (zero-shot voice cloning, EN / PT / FR / DE) | Galaxy S26 GPU (acoustic + encoders) + CPU (AR, vocoder); Pixel 8a pending | TTFA 2.07 s, RTF 0.41 (S26, release) | [🤗 HF](https://huggingface.co/litert-community/sopro-v2-turbo) |
+| [Audio8-TTS-Preview-0.6b](audio8_tts/) | Text-to-speech (zero-shot voice cloning, 11 languages) | Galaxy S26 (CPU) | RTF 1.12 on screen, 1.42–1.50 in the device check (2026-10-10) | [🤗 HF](https://huggingface.co/litert-community/Audio8-TTS-Preview-0.6b) |
 | [SmolVLM-256M](#smolvlm-256m) | Vision-language model |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_vision.tflite) |
 | [SmolVLA](#smolvla-lerobotsmolvla_base) | Vision-language-action robot policy | Galaxy S26 | 207 ms per 50-step action chunk (GPU) | [scripts](smolvla/) |
 | [RWKV-7 World 0.1B](#rwkv-7-world-01b) | Text generation (RNN LM, whole forward on GPU) | Pixel 8a | ~18 ms/token | [🤗 HF](https://huggingface.co/litert-community/RWKV-7-World-0.1B-LiteRT) |
