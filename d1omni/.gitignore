@@ -1,0 +1,14 @@
+.gradle/
+.kotlin/
+.local/
+build/
+app/build/
+local.properties
+.gradle-user-home/
+# Model files, the tokenizer and the contract come from the model repository and are installed on
+# the device (scripts/install_to_device.sh), never committed.
+*.tflite
+tokenizer.json
+contract.json
+*.npy
+app/src/main/assets/

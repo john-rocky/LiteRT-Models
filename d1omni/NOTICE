@@ -1,0 +1,27 @@
+d1-omni Decide Android sample
+
+Model: d1-omni-600M by Liquid AI, Inc. (huggingface.co/LiquidAI/d1-omni-600M, revision
+414f8d6438174f5b2133a9c21a478fc42625e308), licensed under the LFM Open License v1.0 (LICENSE,
+unchanged). The LiteRT graphs, contract.json and tokenizer.json the app loads come from the model
+repository litert-community/d1-omni-600M-LiteRT, a converted and modified Derivative Work of that
+model whose NOTICE lists the changes (graphs per input-length bucket, fp16 fully connected weights,
+fp16-safe normalisation layers). They are installed on the device, not kept in this source tree.
+
+The request handling is a Kotlin port of the provider's prompt.py (same revision, file sha256
+a6b29a55ec8345f1fc1fdbfcc4b64d80d473dc4316f095a62c51cb6cce1194cf), LFM Open License v1.0:
+as_question, escape, serialize, _criterion, render_options, encode, answer and temperature_key
+(app/src/main/java/com/d1omni/D1Prompt.kt), and of the model repository's Python host
+(host/d1_omni.py and host/d1_host.py): each request kind's settings, build_inputs, the bucket choice
+and readout_f64 (D1Rows.kt, D1Readout.kt). Changes: Python's json.dumps and str() and CPython 3.12's
+float sum are reproduced in Kotlin; the read-out runs in float64 as readout_f64 does; the graphs run
+on LiteRT CompiledModel on the GPU at FP16_WITH_FP32_ACCUM (FP32 by a launch extra, the CPU when the
+GPU cannot compile or run a graph).
+
+The tokenizer follows the published tokenizer.json contract of Hugging Face tokenizers and
+transformers (Apache License 2.0; licenses/Tokenizers-APACHE-2.0.txt and
+licenses/Transformers-APACHE-2.0.txt): added-token extraction (the tokens marked normalized: false,
+then those marked normalized: true), the Split pre-tokenizer regex, the ByteLevel mapping and
+byte-level BPE. D1Json.kt and D1Tokenizer.kt are adapted from this repository's kev sample (Apache
+License 2.0, the text in licenses/Tokenizers-APACHE-2.0.txt).
+
+Gradle wrapper files retain their upstream Apache License 2.0 headers.
