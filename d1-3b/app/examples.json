@@ -1,0 +1,117 @@
+{
+ "what": "The editor's bundled examples. The ticket is the d1-3B model card's text example; the incident note and the review are invented for this app (no real people, companies or products); the photo example is the card's picture question on a Pexels photo (fixtures/media_sources.json).",
+ "examples": [
+  {
+   "id": "ticket",
+   "title": "Ticket",
+   "state": "I was charged twice this month, please refund one of them.",
+   "questions": {
+    "refund": {
+     "type": "noul",
+     "instructions": "Is the customer asking for a refund?"
+    },
+    "team": {
+     "type": "choice",
+     "instructions": "Which team should handle this?",
+     "criteria": {
+      "billing": "Charges, refunds, invoices",
+      "technical": "App or site faults",
+      "fraud": "Suspected unauthorised use"
+     }
+    },
+    "urgency": {
+     "type": "score",
+     "instructions": "How urgent is this?",
+     "criteria": [
+      "Can wait",
+      "Today",
+      "Blocking the customer now"
+     ]
+    }
+   }
+  },
+  {
+   "id": "incident",
+   "title": "Incident",
+   "state": "Incident note. At 02:10 the checkout page began returning errors for about one in five customers. The on-call engineer rolled back the evening release at 02:35 and the errors stopped. No payment was taken twice. The release had set the payment service timeout too low; a test for that setting will run before the next release.",
+   "questions": {
+    "cause": {
+     "type": "choice",
+     "instructions": "What caused the errors?",
+     "criteria": {
+      "release": "A software release or a setting",
+      "hardware": "A hardware failure",
+      "traffic": "Too much traffic",
+      "provider": "A problem at an outside provider",
+      "unknown": "The note does not say"
+     }
+    },
+    "customers": {
+     "type": "noul",
+     "instructions": "Were customers affected?",
+     "criteria": {
+      "true": "Customers saw errors or lost money",
+      "false": "Customers did not notice anything"
+     }
+    },
+    "severity": {
+     "type": "score",
+     "instructions": "How serious was the incident?",
+     "criteria": [
+      "Minor: no customer saw it",
+      "Major: some customers affected for under an hour",
+      "Critical: a long outage or lost data"
+     ]
+    }
+   }
+  },
+  {
+   "id": "review",
+   "title": "Review",
+   "state": "Review of wireless headphones, by a verified buyer. The sound is clear and the battery lasts all week. After two months the ear cushions started to peel, and support asked me to pay the shipping for a replacement. Good headphones, poor follow-up.",
+   "questions": {
+    "complaint": {
+     "type": "choice",
+     "instructions": "What is the reviewer's main complaint?",
+     "criteria": {
+      "sound": "The sound quality",
+      "battery": "The battery life",
+      "wear": "Parts wear out or break",
+      "support": "Customer support",
+      "price": "The price"
+     }
+    },
+    "sound": {
+     "type": "noul",
+     "instructions": "Does the reviewer praise the sound?"
+    },
+    "feeling": {
+     "type": "score",
+     "instructions": "How does the reviewer feel overall?",
+     "criteria": [
+      "Unhappy",
+      "Mixed",
+      "Happy"
+     ]
+    }
+   }
+  },
+  {
+   "id": "photo",
+   "title": "Photo",
+   "state": null,
+   "photo": "fixtures/cats_10241192.jpg",
+   "questions": {
+    "cats": {
+     "type": "choice",
+     "instructions": "How many cats are there?",
+     "criteria": {
+      "one": "One",
+      "two": "Two",
+      "more": "Three or more"
+     }
+    }
+   }
+  }
+ ]
+}

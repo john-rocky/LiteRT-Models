@@ -1,0 +1,24 @@
+d1-3B Decide Mac sample
+
+The code in this directory (the app, its screen and its scripts) is licensed under the Apache License
+2.0 (LICENSE). It includes no third-party source code. The Python packages it uses are installed with
+pip from hub/host/requirements-host.txt and requirements-app.txt and are not part of this directory.
+
+Model: d1-3B by Liquid AI (huggingface.co/LiquidAI/d1-3B, revision
+da1fe36a861f24690f27f622dca1d8688503d113), post-trained from LiquidAI/LFM2.5-VL-3B. Both are licensed
+under the LFM Open License v1.0, which limits commercial use by organizations with annual revenue of
+US$10 million or more. The app runs litert-community/d1-3B-LiteRT
+(huggingface.co/litert-community/d1-3B-LiteRT, revision c7a76154b0eac65a86775d0bdd683d61ca78e14f), a
+LiteRT conversion of d1-3B under the same license. scripts/fetch_hub.sh downloads its files into hub/;
+they are not kept in this source tree. The app imports that repository's Python host (hub/host and
+hub/examples/run_example.py) as downloaded. The LiteRT files are a community conversion and are not
+affiliated with Liquid AI.
+
+Photo: fixtures/cats_10241192.jpg is "Cute Cats Lying Down Together" by Bruno Abdiel
+(www.pexels.com/photo/cute-cats-lying-down-together-10241192/), used under the Pexels License
+(www.pexels.com/license/) and resized to 512 x 341 pixels by scripts/make_photo.py.
+fixtures/media_sources.json records the original's SHA-256 and the resize.
+
+Examples: in app/examples.json, the support ticket with its three questions and the question "How many
+cats are there?" with its options are the examples of the LiquidAI/d1-3B model card; the photo they are
+asked about here is the one above. The incident note and the product review are invented for this app.

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=540, initial-scale=1">
+<title>d1-3B</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <div class="hud-row">
+      <span id="pill" class="pill idle"><span class="dot">●</span> on-device</span>
+      <span id="status" class="status">LOADING</span>
+    </div>
+    <div id="model" class="model">d1-3B</div>
+    <div id="device" class="device"></div>
+  </header>
+  <main id="editor">
+    <div id="examples" class="examples"><span class="label">Examples</span></div>
+    <section class="card state-card">
+      <div class="row">
+        <span class="label">State</span>
+        <span id="state-kind" class="kind"></span>
+        <button id="state-clear" class="x" type="button" title="Clear the state">×</button>
+      </div>
+      <textarea id="state" rows="2" spellcheck="false" placeholder="Paste a support ticket, a note, or JSON"></textarea>
+    </section>
+    <section id="photo" class="card photo empty">
+      <div class="row">
+        <span class="label">Photo</span>
+        <span id="photo-name" class="kind"></span>
+        <span id="drop-hint" class="drop-hint">Drop a JPEG or PNG here, or <button id="photo-choose" class="link" type="button">Choose photo…</button></span>
+        <button id="photo-clear" class="x" type="button" title="Remove the photo">×</button>
+      </div>
+      <img id="photo-img" alt="">
+    </section>
+    <div class="row qhead">
+      <span class="label">Questions</span>
+      <button id="add-q" class="add" type="button">+ Add question</button>
+    </div>
+    <div id="questions"></div>
+  </main>
+  <div class="actions">
+    <button id="decide" class="decide" type="button" disabled>Decide</button>
+    <div id="error" class="error"></div>
+  </div>
+  <footer id="footer" class="footer">
+    <div id="foot-main" class="foot-main"></div>
+    <div id="foot-note" class="foot-note"></div>
+    <div id="foot-hint" class="foot-hint"></div>
+  </footer>
+</div>
+<div id="caret"></div>
+<script src="app.js"></script>
+</body>
+</html>

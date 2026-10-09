@@ -1,0 +1,6 @@
+# The model files (scripts/fetch_hub.sh), the run outputs and the local environment are not committed.
+hub/
+out/
+venv-demo/
+*.safetensors
+__pycache__/
