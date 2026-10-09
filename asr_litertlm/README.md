@@ -148,7 +148,7 @@ It prints one line per step, `RESULT step=<name> ok=<true|false> model=<id> ...`
 shows; then it grants the permission. For each bundle on the phone: load, the three clips (text equal to
 the expected sentence after removing punctuation and spaces), the microphone (CER ≤ 0.15), release
 twice, and a second load. Then a 33.6 s clip (cut to 30 s), a silent recording and a file that is not
-on the phone. With two or more bundles it also switches models without releasing. Add
+on the phone. With two or more bundles it also switches models without releasing (not yet run on a phone: the shared Galaxy S26 had no room for two bundles and their caches). Add
 `-e class com.asrlitertlm.AsrDeviceCheck#gpu -e gpu_model fun-asr-nano-2512` for the GPU run.
 
 ## Launch extras
