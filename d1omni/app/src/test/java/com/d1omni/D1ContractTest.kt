@@ -33,7 +33,7 @@ class D1ContractTest {
     assertEquals(896315712L, contract.decisionFiles.getValue(256).bytes)
     assertEquals("tokenizer.json", contract.tokenizerFile)
     assertEquals(contract.tokenizerSha256, D1Contract.sha256(ExternalTestData.repoFile("tokenizer.json")))
-    assertTrue(contract.androidRecommended!!.startsWith("FP16_WITH_FP32_ACCUM"))
+    assertTrue("recommended names both GPU precisions: ${contract.androidRecommended}", contract.androidRecommended!!.contains("FP32") && contract.androidRecommended!!.contains("FP16_WITH_FP32_ACCUM"))
   }
 
   @Test

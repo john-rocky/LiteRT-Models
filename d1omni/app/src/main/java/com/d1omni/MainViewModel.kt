@@ -53,6 +53,14 @@ class MainViewModel(private val context: Context) : ViewModel() {
         D1TimingRunner(context).run(launch, progress)
       }
       is D1Launch.Normal -> load(launch)
+      // vision (round 3): the picture gate and timing (debug build)
+      is D1Launch.VGate -> diagnostics("Picture gate") { progress ->
+        D1VisionGate(context).gate(launch, progress)
+      }
+      is D1Launch.VTiming -> diagnostics("Picture timing") { progress ->
+        D1VisionGate(context).timing(launch, progress)
+      }
+      // end vision (round 3)
     }
   }
 

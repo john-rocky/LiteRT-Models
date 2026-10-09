@@ -111,6 +111,48 @@ copy() {  # name source: stage, copy into files/, remove the stage, check size a
     fi
 }
 
+# vision (round 3): VISION=1 also installs the picture path: the vision tower, the projector and the
+# position table (host/vision_position_table.npy in the download, files/host/vision_position_table.npy
+# on the phone). Their sizes are checked before any device command; each copy's sha256 on the phone
+# is checked against contract.json like the files above. Download them with:
+# hf download litert-community/d1-omni-600M-LiteRT d1-omni-600M_vision_tower_fp16.tflite \
+#   d1-omni-600M_projector_fp16.tflite host/vision_position_table.npy --local-dir "$SOURCE_DIR"
+if [[ "${VISION:-0}" == 1 ]]; then
+    VISION_FILES=(d1-omni-600M_vision_tower_fp16.tflite d1-omni-600M_projector_fp16.tflite
+        host/vision_position_table.npy)
+    for name in "${VISION_FILES[@]}"; do
+        source="$SOURCE_DIR/$name"
+        [[ -f "$source" ]] || { printf 'Missing source file: %s\n' "$source" >&2; exit 1; }
+        read -r bytes sha <<< "$(expected "$name")"
+        actual="$(wc -c < "$source" | tr -d ' ')"
+        if [[ "$actual" != "$bytes" ]]; then
+            printf '%s is %s bytes, contract.json says %s: %s\n' "$name" "$actual" "$bytes" "$source" >&2
+            exit 1
+        fi
+    done
+    adb shell mkdir -p "$TEMP_DIR"
+    adb shell run-as "$PACKAGE" mkdir -p files/host
+    for name in "${VISION_FILES[@]}"; do
+        # stage under a flat name: the copy() above would make a host/ dir in the stage
+        source="$SOURCE_DIR/$name"
+        read -r bytes sha <<< "$(expected "$name")"
+        pending="$TEMP_DIR/$$-${name//\//_}"
+        printf 'Staging %s\n' "$name"
+        adb push "$source" "$pending"
+        adb shell run-as "$PACKAGE" cp "$pending" "files/$name"
+        adb shell rm "$pending"
+        pending=''
+        copied="$(adb shell run-as "$PACKAGE" stat -c %s "files/$name" | tr -d '\r')"
+        sum="$(adb shell run-as "$PACKAGE" toybox sha256sum "files/$name" | cut -d' ' -f1 | tr -d '\r')"
+        if [[ "$copied" != "$bytes" || -z "$sum" || "$sum" != "$sha" ]]; then
+            printf 'files/%s on the device is %s bytes / sha256 %s, expected %s / %s\n' \
+                "$name" "$copied" "${sum:-<none>}" "$bytes" "$sha" >&2
+            exit 1
+        fi
+    done
+fi
+# end vision (round 3)
+
 adb shell mkdir -p "$TEMP_DIR"
 adb shell run-as "$PACKAGE" mkdir -p files
 copy contract.json "$CONTRACT"

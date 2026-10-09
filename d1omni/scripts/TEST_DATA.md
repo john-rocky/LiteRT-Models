@@ -63,3 +63,49 @@ adb shell am start -n com.d1omni/.MainActivity --ez timing true --es rows timing
 
 `--ei resident 128` compiles the L128 graph first and keeps it while the rows file's graph compiles
 (two graphs at once); the report holds each compile's memory before and after it.
+
+<!-- vision (round 3) -->
+## The picture path
+
+The picture tests read the Python host's dumps under `d1omni.demo` (made by the conversion run's
+`demo/scripts/vision_dump_v.py` from the repository's `host/d1_vision_host.py`, the five check-set
+PNGs, the vision tower and the projector on a desktop CPU) and the picture rows files:
+
+```text
+demo/
+  fixtures/vision/<id>/rgb.u8, crop<k>.u8         # load_image() and each crop after the float-path resize (uint8)
+  fixtures/vision/<id>/{pixels,pos,mask}<k>.f32  # the tower's inputs per crop (little-endian float32)
+  fixtures/vision/<id>/{features,soft,projected}<k>.f32, prefix.f32, meta.json
+                                                 # the graphs' outputs on the desktop CPU, the projector input,
+                                                 # the prefix rows; layout, sha256, each question's encoded row,
+                                                 # its decision inputs' sha256, scores and read-out
+  fixtures/vision/layout_cases.json, resize_cases.{json,bin}, positions_sweep.json, orient/, table.json
+  device/r3/rows_image{,_small,_L2048}.json, timing_image.json   # the picture gate's and timing's rows
+```
+
+| Test | Needs | Checks |
+|---|---|---|
+| `D1VisionTest` | repo, demo | bit for bit: the decoded RGB of the five PNGs (a plain PNG reader; Android's decoder is checked on the phone), layout() on 6,844 sizes and its grid order, the resample weights (79 size pairs) and the float-path resize (40 arrays), every crop's pixels and tower inputs (pixels / pos / mask, grid), the position table resized to 1,466 grids, the unshuffle and projector input, the prefix rows from the desktop graphs' outputs, each question's six decision inputs and read-out; EXIF orientations 1–8 against Pillow; the rows files parse and encode again |
+| `D1NpyTest` | repo, demo | the position table's `.npy` header, sha256 and values; headers it refuses |
+| `D1GraphTest` | repo | the declared tensors and feeds of a single-signature graph; the tower and the projector as contract.json declares them |
+| `D1VisionLaunchTest` | nothing external | the picture runs' launch extras |
+
+On the phone (debug APK, `VISION=1` install, the pictures and rows files in `files/`):
+
+```bash
+# Picture gate: per record the picture decoded and compared with the Python host's RGB (sha256), the
+# tower inputs per crop (pixels / pos / mask sha256), the prefix rows (against the desktop CPU's,
+# a reference value), then each question on the smallest resident decision graph, its probabilities,
+# whether this app encodes the question to the same ids, and the time of every step.
+adb shell am start -n com.d1omni/.MainActivity --ez vgate true --es fixture rows_image_small.json \
+  --es report vgate.json [--es precision fp32] [--es precision_vision fp16acc] [--ei limit 5]
+
+# Picture timing: per set, a wait for the GPU after the compiles, warm-up requests, then timed
+# requests, each = read and decode the picture, the prefix rows, every question's call and read-out.
+adb shell am start -n com.d1omni/.MainActivity --ez vtiming true --es rows timing_image.json \
+  --es report vtiming.json --ei warmup 5 --ei reps 20 --ei cool_ms 120000 [--es sets dogs2]
+```
+
+A picture record's `reference` names `files/` copies of the Python host's RGB and prefix rows
+(`vref_<id>_rgb.u8`, `vref_<id>_prefix.f32`); without them the report keeps the sha256 checks only.
+<!-- end vision (round 3) -->
