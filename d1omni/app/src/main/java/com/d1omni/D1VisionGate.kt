@@ -602,7 +602,7 @@ class D1VisionGate(private val context: Context) {
         wall,
         (end - start) / 1e6,
         (decoded1 - start) / 1e6,
-        prefixRun.resizeNanos / 1e6,
+        prefixRun.resizePatchesNanos / 1e6,
         prefixRun.positionsNanos / 1e6,
         prefixRun.towerNanos / 1e6,
         prefixRun.unshuffleNanos / 1e6,

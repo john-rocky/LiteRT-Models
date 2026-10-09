@@ -88,6 +88,12 @@ object D1Device {
   fun airplaneMode(context: Context): Boolean =
     Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
 
+  /** The market name of the models in [MARKET_NAMES] ("Galaxy S26"), else `Build.MODEL`. */
+  fun marketName(model: String = Build.MODEL): String =
+    MARKET_NAMES.entries.firstOrNull { model.startsWith(it.key) }?.value ?: model
+
+  private val MARKET_NAMES = mapOf("SM-S942" to "Galaxy S26")
+
   /** kgsl's clock ceiling and temperature (and clock, thermal power level), or null. */
   fun gpuState(): D1GpuState? =
     runCatching {

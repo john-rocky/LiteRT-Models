@@ -21,12 +21,52 @@ class D1LaunchTest {
 
   @Test
   fun normalLaunch() {
-    assertEquals(D1Launch.Normal(D1Backend.GPU, D1Precision.FP32), parse())
+    val defaults = parse() as D1Launch.Normal
+    assertEquals(D1Backend.GPU, defaults.backend)
+    assertEquals(D1Precision.FP32, defaults.precision)
+    assertEquals(D1Precision.FP16_FP32_ACCUM, defaults.audioPrecision)
+    assertEquals(D1Precision.FP16_FP32_ACCUM, defaults.precisions.vision)
+    // `precision` sets every kind of graph; `precision_audio` / `precision_vision` one kind.
+    val all = parse(true, "precision" to "fp32") as D1Launch.Normal
+    assertEquals(listOf(D1Precision.FP32, D1Precision.FP32, D1Precision.FP32), listOf(all.precisions.decide, all.precisions.audio, all.precisions.vision))
+    assertEquals("fp32", all.precisions.requested["precision"])
+    val mixed = parse(true, "precision" to "fp16acc", "precision_vision" to "fp32") as D1Launch.Normal
     assertEquals(
-      D1Launch.Normal(D1Backend.GPU, D1Precision.FP32),
-      parse(true, "precision" to "fp32"),
+      listOf(D1Precision.FP16_FP32_ACCUM, D1Precision.FP16_FP32_ACCUM, D1Precision.FP32),
+      listOf(mixed.precisions.decide, mixed.precisions.audio, mixed.precisions.vision),
     )
-    assertEquals(D1Launch.Normal(D1Backend.CPU, D1Precision.FP32), parse(true, "backend" to "cpu"))
+    assertEquals(D1Backend.CPU, (parse(true, "backend" to "cpu") as D1Launch.Normal).backend)
+    assertTrue(parse(true, "precision_vision" to "fp8") is D1Launch.Invalid)
+  }
+
+  @Test
+  fun autoplayLaunch() {
+    assertEquals(
+      D1Launch.Autoplay("inbox_demo.json", 1000, 1500),
+      parse(true, "autoplay" to true, "fixture" to "inbox_demo.json"),
+    )
+    val long = parse(true, "autoplay" to true, "fixture" to "inbox_demo.json", "delay_ms" to 4000, "gap_ms" to 6000, "precision" to "fp16acc", "backend" to "gpu")
+    assertTrue(long is D1Launch.Autoplay)
+    long as D1Launch.Autoplay
+    assertEquals(4000L, long.delayMs)
+    assertEquals(6000L, long.gapMs)
+    assertEquals(D1Precision.FP16_FP32_ACCUM, long.precisions.decide)
+    assertEquals(
+      D1Launch.Autoplay("/data/user/0/com.d1omni/files/inbox_demo.json", 0, 0),
+      parse(true, "autoplay" to true, "fixture" to "/data/user/0/com.d1omni/files/inbox_demo.json", "delay_ms" to 0, "gap_ms" to 0),
+    )
+    // a release build runs the autoplay too (it is the demo, not a debug run)
+    assertTrue(parse(false, "autoplay" to true, "fixture" to "inbox_demo.json") is D1Launch.Autoplay)
+    val invalid =
+      listOf(
+        parse(true, "autoplay" to true),
+        parse(true, "autoplay" to true, "fixture" to "../x.json"),
+        parse(true, "autoplay" to true, "fixture" to "/data/user/0/com.d1omni/files/../x.json"),
+        parse(true, "autoplay" to true, "fixture" to "inbox_demo.json", "delay_ms" to -1),
+        parse(true, "autoplay" to true, "fixture" to "inbox_demo.json", "precision" to "fp16"),
+        parse(true, "autoplay" to true, "gate" to true, "fixture" to "inbox_demo.json", "report" to "g.json"),
+      )
+    for (launch in invalid) assertTrue("$launch", launch is D1Launch.Invalid)
   }
 
   @Test

@@ -2,10 +2,12 @@ d1-omni Decide Android sample
 
 Model: d1-omni-600M by Liquid AI, Inc. (huggingface.co/LiquidAI/d1-omni-600M, revision
 414f8d6438174f5b2133a9c21a478fc42625e308), licensed under the LFM Open License v1.0 (LICENSE,
-unchanged). The LiteRT graphs, contract.json and tokenizer.json the app loads come from the model
-repository litert-community/d1-omni-600M-LiteRT, a converted and modified Derivative Work of that
-model whose NOTICE lists the changes (graphs per input-length bucket, fp16 fully connected weights,
-fp16-safe normalisation layers). They are installed on the device, not kept in this source tree.
+unchanged). The LiteRT graphs, contract.json, tokenizer.json and host/vision_position_table.npy the
+app loads come from the model repository litert-community/d1-omni-600M-LiteRT, a converted and
+modified Derivative Work of that model whose NOTICE lists the changes (decision graphs per
+input-length bucket, the vision tower and projector, audio encoders per clip-length bucket, fp16
+fully connected weights, fp16-safe normalisation layers). They are installed on the device, not kept
+in this source tree.
 
 The request handling is a Kotlin port of the provider's prompt.py (same revision, file sha256
 a6b29a55ec8345f1fc1fdbfcc4b64d80d473dc4316f095a62c51cb6cce1194cf), LFM Open License v1.0:
@@ -14,8 +16,23 @@ as_question, escape, serialize, _criterion, render_options, encode, answer and t
 (host/d1_omni.py and host/d1_host.py): each request kind's settings, build_inputs, the bucket choice
 and readout_f64 (D1Rows.kt, D1Readout.kt). Changes: Python's json.dumps and str() and CPython 3.12's
 float sum are reproduced in Kotlin; the read-out runs in float64 as readout_f64 does; the graphs run
-on LiteRT CompiledModel on the GPU at FP16_WITH_FP32_ACCUM (FP32 by a launch extra, the CPU when the
-GPU cannot compile or run a graph).
+on LiteRT CompiledModel on the GPU, the decision graphs at FP32 and the audio graph, the vision tower
+and the projector at FP16_WITH_FP32_ACCUM (launch extras select others; the CPU when the GPU cannot
+compile or run a graph).
+
+The audio path is a Kotlin port of the model repository's Python host host/d1_audio_host.py (the
+provider's audio.py at the same revision, LFM Open License v1.0): waveform, the preemphasis, the Hann
+window, the STFT, the Slaney mel filter bank, the log and the per-bin normalization, the lengths and
+buckets, build_inputs and prefix_rows (D1Audio.kt), and of read_audio for 16 kHz mono PCM16 wav files
+(D1Wav.kt). Changes: the mel runs every step in float64 and rounds to float32 once at the end (the
+host's float64 form; the provider computes in float32), with a radix-2 FFT of its own. The picture
+path is a Kotlin port of host/d1_vision_host.py (the provider's vision.py layout and preprocessing and
+transformers' position-table resize; D1Vision.kt, D1Image.kt).
+
+app/src/main/res/raw/aud_food_03.wav is speech synthesised with Kokoro-82M (Apache License 2.0) and
+app/src/main/res/raw/img_dogs_01.png a CC0 1.0 photograph from Wikimedia Commons, both from the model
+repository's public check set (fixtures/media/). The message in app/src/main/res/raw/inbox_demo.json
+is the text example of the provider's model card.
 
 The tokenizer follows the published tokenizer.json contract of Hugging Face tokenizers and
 transformers (Apache License 2.0; licenses/Tokenizers-APACHE-2.0.txt and

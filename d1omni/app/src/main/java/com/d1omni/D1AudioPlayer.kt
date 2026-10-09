@@ -48,7 +48,9 @@ class D1Playback(
  * when the sound really started: the playback head starts moving a fraction of a second after
  * `play()`, so a "playing" mark shown at `play()` would lead the sound. A watcher thread polls the
  * track every [POLL_MILLIS] ms: the first [AudioTimestamp] with a moving frame position gives the
- * time frame 0 left the output; without one, the first non-zero `playbackHeadPosition`. One clip at a
+ * time frame 0 left the output; without one, the first non-zero `playbackHeadPosition`. The clip
+ * has played once the head is within 20 ms of its last frame and the output time of its last frame
+ * has passed (without a timestamp: 200 ms after the head got there). One clip at a
  * time; [stop] ends it, [close] releases the track (a clip that played out keeps its track until
  * the next [play], [stop] or [close]). Do not call [play] from the callbacks: they run on the watcher.
  */
@@ -57,6 +59,11 @@ class D1AudioPlayer : Closeable {
   private var track: AudioTrack? = null
   private var watcher: Thread? = null
   @Volatile private var stopRequested = false
+
+  /** `System.nanoTime()` of the last `play()` call (set before its watcher starts, so its callbacks can read it). */
+  @Volatile
+  var lastPlayNanos: Long = 0L
+    private set
 
   /**
    * Starts [samples] (16 kHz mono) and returns at once. [onStarted] runs once on the watcher thread
@@ -100,6 +107,7 @@ class D1AudioPlayer : Closeable {
       }
       track = created
       val playNanos = System.nanoTime()
+      lastPlayNanos = playNanos
       created.play()
       watcher =
         Thread({ watch(created, samples.size, sampleRate, playNanos, onStarted, onDone) }, "D1Omni-Playback")
@@ -174,15 +182,17 @@ class D1AudioPlayer : Closeable {
           firstOutputNanos = timestamp.nanoTime - timestamp.framePosition * NANOS_PER_SECOND / rate
         }
         head = played.playbackHeadPosition
-        if (head >= frames && headEndNanos == 0L) headEndNanos = now
+        // The head of a static track can stop short of the last frame (the Fun-ASR demo's player on the
+        // same phone counts it at the end within 20 ms of it).
+        if (head >= frames - rate / HEAD_END_PARTS && headEndNanos == 0L) headEndNanos = now
         if (startNanos == null && (firstOutputNanos > 0 || head > 0)) {
           startNanos = if (firstOutputNanos > 0) firstOutputNanos else now
           startSource = if (firstOutputNanos > 0) "timestamp" else "head"
           onStarted(startNanos)
         }
-        val outputDone = firstOutputNanos > 0 && now >= firstOutputNanos + durationNanos
+        val outputDone = firstOutputNanos > 0 && headEndNanos > 0 && now >= firstOutputNanos + durationNanos
         val headDone = firstOutputNanos == 0L && headEndNanos > 0 && now >= headEndNanos + END_SLACK_MILLIS * 1_000_000L
-        if (head >= frames && (outputDone || headDone)) {
+        if (outputDone || headDone) {
           end = "played"
           break
         }
@@ -204,5 +214,7 @@ class D1AudioPlayer : Closeable {
     /** After the head reached the last frame without an output timestamp: the output's latency. */
     const val END_SLACK_MILLIS = 200L
     const val JOIN_MILLIS = 500L
+    /** The head counts as at the end within 1 / 50 s of the last frame. */
+    const val HEAD_END_PARTS = 50
   }
 }

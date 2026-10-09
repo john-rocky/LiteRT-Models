@@ -108,8 +108,9 @@ class D1CropRun(
 
 /**
  * A picture's prefix rows [P x 1024] (row-major) and the wall time of each host step and graph, in
- * nanoseconds: the resize and patches of every crop, the position tables, the tower calls, the
- * unshuffle and projector input, the projector calls.
+ * nanoseconds: the layout and resize of the crops ([resizeNanos]), the patches of every crop
+ * ([patchesNanos]), the position tables, the tower calls, the unshuffle and projector input, the
+ * projector calls.
  */
 class D1PrefixRun(
   val prefix: FloatArray,
@@ -121,7 +122,12 @@ class D1PrefixRun(
   val towerNanos: Long,
   val unshuffleNanos: Long,
   val projectorNanos: Long,
+  val patchesNanos: Long = 0L,
 ) {
+  /** The layout, the resize and the patches together (the debug runs' `resize_patches_ms`). */
+  val resizePatchesNanos: Long
+    get() = resizeNanos + patchesNanos
+
   fun toJson(): LinkedHashMap<String, Any?> =
     linkedMapOf(
       "P" to rows,
@@ -133,7 +139,9 @@ class D1PrefixRun(
           "thumb_w" to layout.thumbWidth,
           "tiled" to layout.tiled,
         ),
-      "resize_patches_ms" to resizeNanos / NANOS_PER_MS,
+      "resize_patches_ms" to resizePatchesNanos / NANOS_PER_MS,
+      "resize_ms" to resizeNanos / NANOS_PER_MS,
+      "patches_ms" to patchesNanos / NANOS_PER_MS,
       "pos_ms" to positionsNanos / NANOS_PER_MS,
       "tower_ms" to towerNanos / NANOS_PER_MS,
       "unshuffle_ms" to unshuffleNanos / NANOS_PER_MS,
@@ -187,6 +195,7 @@ object D1VisionPrefix {
     observer: Observer? = null,
   ): D1PrefixRun {
     var resize = 0L
+    var patching = 0L
     var position = 0L
     var towerTotal = 0L
     var unshuffle = 0L
@@ -201,7 +210,7 @@ object D1VisionPrefix {
     for ((index, crop) in crops.withIndex()) {
       start = System.nanoTime()
       val patches = D1Vision.toPatches(crop)
-      resize += System.nanoTime() - start
+      patching += System.nanoTime() - start
       start = System.nanoTime()
       val (pos, cached) = positions(patches.gridHeight, patches.gridWidth)
       position += System.nanoTime() - start
@@ -239,7 +248,7 @@ object D1VisionPrefix {
       )
     }
     check(row == total) { "prefix rows $row, expected $total" }
-    return D1PrefixRun(prefix, total, layout, runs, resize, position, towerTotal, unshuffle, projectorTotal)
+    return D1PrefixRun(prefix, total, layout, runs, resize, position, towerTotal, unshuffle, projectorTotal, patching)
   }
 }
 

@@ -1,0 +1,104 @@
+{
+ "fixture": "d1omni-inbox-demo/1",
+ "id": "inbox_demo",
+ "title": "d1-omni Inbox",
+ "what": "The d1-omni inbox demo: three unread items (a voice note, a photo, a message) and typed questions about each; every item's questions are answered on the phone in one pass of the model per question. Only invented names; the media are the model repository's public check-set files.",
+ "items": [
+  {
+   "item": "aud_food_03",
+   "kind": "audio",
+   "header": "Voice note",
+   "media": {
+    "file": "aud_food_03.wav",
+    "bytes": 278478,
+    "sha256": "455cf0134c2dee913385109f5505bfe83732438299a07d9b2222e9016c4c82eb",
+    "source": "ship/fixtures/media/aud_food_03.wav",
+    "licence": "speech synthesised with Kokoro-82M (Apache-2.0) from a script written for the check set"
+   },
+   "state": null,
+   "questions": {
+    "topic": {
+     "type": "choice",
+     "instructions": "What is the speaker talking about?",
+     "criteria": {
+      "reservation": "Booking or changing a reservation",
+      "weather": "The weather",
+      "food_order": "Ordering food",
+      "music": "Playing music"
+     }
+    },
+    "request": {
+     "type": "noul",
+     "instructions": "Is the speaker asking the assistant to do something?"
+    },
+    "urgency": {
+     "type": "score",
+     "instructions": "How urgent is the speaker's need?",
+     "criteria": [
+      "Can wait",
+      "Today",
+      "Right now"
+     ]
+    }
+   }
+  },
+  {
+   "item": "img_dogs_01",
+   "kind": "image",
+   "header": "Photo",
+   "media": {
+    "file": "img_dogs_01.png",
+    "bytes": 138690,
+    "sha256": "dde44ce93c4f0722a4262499e91afc636667dcb5ff9f8c917010ff6b48c5c519",
+    "source": "ship/fixtures/media/img_dogs_01.png",
+    "licence": "CC0 1.0 photograph from Wikimedia Commons (Two_French_bulldogs_swimming_in_life_jackets.jpg), long side resized to 384 px"
+   },
+   "state": null,
+   "questions": {
+    "animal": {
+     "type": "choice",
+     "instructions": "What animal is in the photo?",
+     "criteria": {
+      "dog": "A dog",
+      "cat": "A cat",
+      "bird": "A bird"
+     }
+    },
+    "water": {
+     "type": "noul",
+     "instructions": "Are the animals in the water?"
+    }
+   }
+  },
+  {
+   "item": "card_text",
+   "kind": "text",
+   "header": "Message",
+   "state": "I was charged twice this month, please refund one of them.",
+   "questions": {
+    "refund": {
+     "type": "noul",
+     "instructions": "Is the customer asking for a refund?"
+    },
+    "team": {
+     "type": "choice",
+     "instructions": "Which team should handle this?",
+     "criteria": {
+      "billing": "Charges, refunds, invoices",
+      "technical": "App or site faults",
+      "fraud": "Suspected unauthorised use"
+     }
+    },
+    "urgency": {
+     "type": "score",
+     "instructions": "How urgent is this?",
+     "criteria": [
+      "Can wait",
+      "Today",
+      "Blocking the customer now"
+     ]
+    }
+   }
+  }
+ ]
+}

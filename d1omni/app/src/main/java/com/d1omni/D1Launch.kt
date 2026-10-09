@@ -11,13 +11,83 @@ interface D1Extras {
   fun boolean(name: String, default: Boolean): Boolean
 }
 
+/**
+ * The GPU precision of each kind of graph: the decision graphs, the audio graph, the vision tower and
+ * the projector. [requested] = the launch's precision extras by kind (null when not given), for the
+ * run JSON.
+ */
+data class D1Precisions(
+  val decide: D1Precision = D1Precision.DEFAULT,
+  val audio: D1Precision = D1AudioEngine.DEFAULT_PRECISION,
+  val vision: D1Precision = D1Launch.Vision.DEFAULT_VISION_PRECISION,
+  val requested: Map<String, String?> = mapOf("precision" to null, "precision_audio" to null, "precision_vision" to null),
+) {
+  /** Kind -> wire name ("decide", "audio", "vision"). */
+  fun byKind(): LinkedHashMap<String, String?> =
+    linkedMapOf("decide" to decide.wireName, "audio" to audio.wireName, "vision" to vision.wireName)
+
+  companion object {
+    /**
+     * The precisions of a normal or autoplay launch: `precision` sets every kind of graph,
+     * `precision_audio` / `precision_vision` set one kind; a kind without either keeps its default
+     * (FP32 for the decision graphs, FP16_WITH_FP32_ACCUM for the audio graph, the tower and the
+     * projector: the fastest form within the parity bar on the Galaxy S26). Null + the reason when an
+     * extra names no precision.
+     */
+    fun parse(extras: D1Extras): Pair<D1Precisions?, String?> {
+      fun read(name: String): Pair<D1Precision?, String?> {
+        val value = extras.string(name) ?: return null to null
+        return (D1Precision.of(value) ?: return null to "$name $value is not fp16acc or fp32") to null
+      }
+      val (all, allError) = read(D1Launch.EXTRA_PRECISION)
+      val (audio, audioError) = read(D1Launch.EXTRA_PRECISION_AUDIO)
+      val (vision, visionError) = read(D1Launch.Vision.EXTRA_PRECISION_VISION)
+      val error = allError ?: audioError ?: visionError
+      if (error != null) return null to error
+      return D1Precisions(
+        all ?: D1Precision.DEFAULT,
+        audio ?: all ?: D1AudioEngine.DEFAULT_PRECISION,
+        vision ?: all ?: D1Launch.Vision.DEFAULT_VISION_PRECISION,
+        linkedMapOf(
+          "precision" to extras.string(D1Launch.EXTRA_PRECISION),
+          "precision_audio" to extras.string(D1Launch.EXTRA_PRECISION_AUDIO),
+          "precision_vision" to extras.string(D1Launch.Vision.EXTRA_PRECISION_VISION),
+        ),
+      ) to null
+    }
+  }
+}
+
 /** What a launch intent asks for (see `MainActivity` for the extras). */
 sealed interface D1Launch {
-  /** The app: [backend], the GPU [precision] of the decision graphs and of the audio graph. */
+  /**
+   * The app: the inbox screen, every graph of the demo compiled at startup on [backend] at
+   * [precisions] (`precision` sets every kind, `precision_audio` / `precision_vision` one kind).
+   */
   data class Normal(
     val backend: D1Backend = D1Backend.GPU,
-    val precision: D1Precision = D1Precision.DEFAULT,
-    val audioPrecision: D1Precision = D1AudioEngine.DEFAULT_PRECISION,
+    val precisions: D1Precisions = D1Precisions(),
+  ) : D1Launch {
+    val precision: D1Precision
+      get() = precisions.decide
+
+    val audioPrecision: D1Precision
+      get() = precisions.audio
+  }
+
+  /**
+   * The demo recording: the inbox of [fixture] (a file in `files/`, an absolute path inside it, or
+   * the bundled `inbox_demo.json`) answered on the presentation screen: [delayMs] after the intent
+   * arrived the presentation appears, [gapMs] before each item; the voice note is played through the
+   * speaker before it is answered. [backend] and [precisions] apply when this launch starts the app
+   * (a running app keeps its compiled graphs).
+   */
+  data class Autoplay(
+    val fixture: String,
+    val delayMs: Long,
+    val gapMs: Long,
+    val backend: D1Backend = D1Backend.GPU,
+    val precisions: D1Precisions = D1Precisions(),
   ) : D1Launch
 
   /**
@@ -72,8 +142,13 @@ sealed interface D1Launch {
     const val EXTRA_REPS = "reps"
     const val EXTRA_COOL_MS = "cool_ms"
     const val EXTRA_SETS = "sets"
+    const val EXTRA_AUTOPLAY = "autoplay"
+    const val EXTRA_DELAY_MS = "delay_ms"
+    const val EXTRA_GAP_MS = "gap_ms"
     const val DEFAULT_WARMUP = 5
     const val DEFAULT_REPS = 20
+    const val DEFAULT_DELAY_MS = 1000
+    const val DEFAULT_GAP_MS = 1500
 
     /** File names stay inside `files/`: letters, digits, dot, underscore and hyphen. */
     private val FILE_NAME = Regex("[A-Za-z0-9._-]+")
@@ -104,7 +179,9 @@ sealed interface D1Launch {
         else D1Backend.of(backendName) ?: return Invalid("backend $backendName is not gpu or cpu")
       val gate = extras.boolean(EXTRA_GATE, false)
       val timing = extras.boolean(EXTRA_TIMING, false)
+      val autoplay = extras.boolean(EXTRA_AUTOPLAY, false)
       if ((gate || timing) && !debug) return Invalid("gate and timing runs need the debug build")
+      if (autoplay) return if (gate || timing) Invalid("autoplay excludes gate and timing") else autoplay(extras, backend)
       return when {
         gate && timing -> Invalid("gate and timing exclude each other")
         gate -> {
@@ -144,7 +221,27 @@ sealed interface D1Launch {
               )
           }
         }
-        else -> Normal(backend, precision, audioPrecision)
+        else -> {
+          val (precisions, error) = D1Precisions.parse(extras)
+          if (precisions == null) Invalid(requireNotNull(error)) else Normal(backend, precisions)
+        }
+      }
+    }
+
+    /** `--ez autoplay true --es fixture <name or path> [--ei delay_ms 1000] [--ei gap_ms 1500]`. */
+    private fun autoplay(extras: D1Extras, backend: D1Backend): D1Launch {
+      val fixture = extras.string(EXTRA_FIXTURE)
+      val delay = extras.int(EXTRA_DELAY_MS, DEFAULT_DELAY_MS)
+      val gap = extras.int(EXTRA_GAP_MS, DEFAULT_GAP_MS)
+      val (precisions, error) = D1Precisions.parse(extras)
+      return when {
+        fixture.isNullOrEmpty() -> Invalid("no fixture extra")
+        !fixture.startsWith("/") && !fileNameValid(fixture) -> Invalid("invalid fixture name $fixture")
+        fixture.startsWith("/") && (fixture.contains("/../") || fixture.endsWith("/..")) ->
+          Invalid("invalid fixture path $fixture")
+        delay < 0 || gap < 0 -> Invalid("delay_ms $delay and gap_ms $gap must be >= 0")
+        precisions == null -> Invalid(requireNotNull(error))
+        else -> Autoplay(fixture, delay.toLong(), gap.toLong(), backend, precisions)
       }
     }
   }

@@ -1,19 +1,13 @@
 # Test data
 
-The JVM tests compare the Kotlin host (tokenizer, request → rows, read-out, answers) with the
-provider's code and the model repository's Python host. They read two directories kept out of the
-source tree; without them, or with a file missing, JUnit reports an assumption skip, and a skip is
-not parity evidence.
+The JVM tests compare the Kotlin host (tokenizer, request → rows, read-out, answers) with the provider's code and the model repository's Python host. They read two directories kept out of the source tree; without them, or with a file missing, JUnit reports an assumption skip, and a skip is not parity evidence.
 
 ```bash
 ./gradlew :app:testDebugUnitTest -Pd1omni.repo=/path/to/d1-omni-600M-LiteRT -Pd1omni.demo=/path/to/demo
 # Equivalently: -Dd1omni.repo=… -Dd1omni.demo=…
 ```
 
-`d1omni.repo` is the model repository directory: `contract.json`, `tokenizer.json` and
-`fixtures/public_{text,image,audio}.json` (the public check set: 242 + 5 + 6 requests, 303 questions,
-each with the provider's encoded row and its float32 probabilities). `d1omni.demo` holds the
-conversion run's test data:
+`d1omni.repo` is the model repository directory: `contract.json`, `tokenizer.json` and `fixtures/public_{text,image,audio}.json` (the public check set: 242 + 5 + 6 requests, 303 questions, each with the provider's encoded row and its float32 probabilities). `d1omni.demo` holds the conversion run's test data:
 
 ```text
 demo/
@@ -50,11 +44,7 @@ Reports go to `app/build/reports/parity/`, never to the data directories.
 
 ## On-device runs (debug APK)
 
-Every run below shows the activity above a secure lock screen and keeps the screen on, so that the
-measured process stays in the foreground; each report records the phone's state (thermal status,
-GPU clock ceiling and temperature, CPU caps, memory, the cgroup line) at the start and at the end.
-A file `files/STOP` ends a gate or timing run after the current graph call; a stale one is removed
-at the start. Progress goes to logcat under `D1OmniGate`.
+Every run below shows the activity above a secure lock screen and keeps the screen on, so that the measured process stays in the foreground; each report records the phone's state (thermal status, GPU clock ceiling and temperature, CPU caps, memory, the cgroup line) at the start and at the end. A file `files/STOP` ends a gate or timing run after the current graph call; a stale one is removed at the start. Progress goes to logcat under `D1OmniGate`.
 
 ```bash
 # Fixture gate: every row of a rows file on its bucket, the probabilities, the scores at the markers,
@@ -70,12 +60,9 @@ adb shell am start -n com.d1omni/.MainActivity --ez timing true --es rows timing
   --es report timing.json --ei warmup 5 --ei reps 20 --ei cool_ms 120000 [--es sets card3,one]
 ```
 
-`--ei resident 128` compiles the L128 graph first and keeps it while the rows file's graph compiles
-(two graphs at once); the report holds each compile's memory before and after it.
+`--ei resident 128` compiles the L128 graph first and keeps it while the rows file's graph compiles (two graphs at once); the report holds each compile's memory before and after it.
 
-An audio rows file (`"kind": "audio"`, `device/r2/rows_audio.json`) runs through the same gate and
-timing launches. Its clips' wavs (and, for the comparison, the Python mel dumps the file names) go
-into `files/` next to it; the audio graph comes with the model files (`AUDIO="1001"`).
+An audio rows file (`"kind": "audio"`, `device/r2/rows_audio.json`) runs through the same gate and timing launches. Its clips' wavs (and, for the comparison, the Python mel dumps the file names) go into `files/` next to it; the audio graph comes with the model files (`AUDIO="1001"`).
 
 ```bash
 # Audio gate: the decision graphs the rows need, the audio graph, then per clip wav -> mel -> audio_<T_b> -> prefix
@@ -91,9 +78,7 @@ adb shell am start -n com.d1omni/.MainActivity --ez timing true --es rows timing
 <!-- vision (round 3) -->
 ## The picture path
 
-The picture tests read the Python host's dumps under `d1omni.demo` (made by the conversion run's
-`demo/scripts/vision_dump_v.py` from the repository's `host/d1_vision_host.py`, the five check-set
-PNGs, the vision tower and the projector on a desktop CPU) and the picture rows files:
+The picture tests read the Python host's dumps under `d1omni.demo` (made by the conversion run's `demo/scripts/vision_dump_v.py` from the repository's `host/d1_vision_host.py`, the five check-set PNGs, the vision tower and the projector on a desktop CPU) and the picture rows files:
 
 ```text
 demo/
@@ -130,6 +115,34 @@ adb shell am start -n com.d1omni/.MainActivity --ez vtiming true --es rows timin
   --es report vtiming.json --ei warmup 5 --ei reps 20 --ei cool_ms 120000 [--es sets dogs2]
 ```
 
-A picture record's `reference` names `files/` copies of the Python host's RGB and prefix rows
-(`vref_<id>_rgb.u8`, `vref_<id>_prefix.f32`); without them the report keeps the sha256 checks only.
+A picture record's `reference` names `files/` copies of the Python host's RGB and prefix rows (`vref_<id>_rgb.u8`, `vref_<id>_prefix.f32`); without them the report keeps the sha256 checks only.
 <!-- end vision (round 3) -->
+
+<!-- inbox demo (round 4) -->
+## The inbox demo
+
+The demo's tests read the conversion run's fixture and expected file under `d1omni.demo` (made by `demo/scripts/provider_demo.py` = the provider's own float32 code on the three requests, `demo/scripts/mac_host_demo.py` = the model repository's Python host on the desktop CPU, and `demo/scripts/expected_demo.py`):
+
+```text
+demo/
+  fixtures/demo/inbox_demo.json   # the inbox (equal to res/raw/inbox_demo.json byte for byte)
+  oracle/expected_demo.json       # per question: the provider's probabilities, the host's ids / markers / P / bucket /
+                                  # probabilities / answer(), the screen's strings of both
+```
+
+| Test | Needs | Checks |
+|---|---|---|
+| `D1InboxTest` | repo, demo | the bundled fixture = the run's, its media = the check set's files (sha256, bytes, the clip's 139,200 samples and header); this app's ids, markers, P, bucket and int32 sha256 of all eight questions = the host's; the screen strings of the provider's and the host's probabilities = Python's; `answer()` = Python's; the screen's words; fixtures it refuses |
+| `D1InboxLayoutTest` | nothing external | the 9:16 band; the plan for a 1080 × 2340 screen at density 3.0 (a stand-in for the fonts): everything inside the band, the long score level on two lines, the photo between its bounds; a larger font scale; a band too small |
+| `D1DemoRunTest` | nothing external | the run JSON's keys (run, item, question, layout), whole-ms numbers, shown strings, palettes, a round trip through the JSON writer; the footer's total = the cards' totals added up (on items whose unrounded sum would round 1 ms lower) |
+
+On the phone (`AUDIO="1001" VISION=1` install; the fixture is bundled, a copy in `files/` is read first):
+
+```bash
+adb shell am start -n com.d1omni/.MainActivity                       # ENGINE_READY load_ms= warmup_ms=
+adb shell am start -n com.d1omni/.MainActivity --ez autoplay true --es fixture inbox_demo.json \
+  --ei delay_ms 1000 --ei gap_ms 1500                                # AUTOPLAY_DONE json=files/d1omni-demo-<ms>.json
+adb exec-out run-as com.d1omni cat files/d1omni-demo-<ms>.json > run.json
+python3 demo/check_take.py run.json --logcat app_logcat.txt        # in the conversion run's directory
+```
+<!-- end inbox demo (round 4) -->
