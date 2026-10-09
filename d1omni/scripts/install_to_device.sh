@@ -6,11 +6,14 @@
 #   --local-dir "$HOME/Downloads/d1-omni-600M-LiteRT"
 # Usage: ./scripts/install_to_device.sh [dir-with-downloaded-HF-repo]
 # BUCKETS selects the decision graphs: "128 256" by default; BUCKETS="128 256 512 1024 2048" adds the
-# longer ones (L4096 does not fit the GPU of a 12 GB phone). Every file must be in the directory with
-# the size contract.json gives; nothing is copied otherwise. Each file goes through
-# /data/local/tmp/d1omni/ into the app's private files/ with run-as com.d1omni, the temporary copy is
-# removed, and the copy's sha256 on the phone (toybox sha256sum) is checked against contract.json.
-# Files already on the device that BUCKETS does not name stay there.
+# longer ones (L4096 does not fit the GPU of a 12 GB phone). AUDIO selects the audio graphs by their
+# bucket T: none by default; AUDIO="1001" adds d1-omni-600M_audio_T1001_fp16.tflite (clips up to
+# 10 s; 501 / 2001 / 3001 hold 5 / 20 / 30 s). Every file must be in the directory with the size
+# contract.json gives; nothing is copied otherwise. A file already in files/ with the contract's
+# size and sha256 is left as it is; each other file goes through /data/local/tmp/d1omni/ into the
+# app's private files/ with run-as com.d1omni, the temporary copy is removed, and the copy's sha256
+# on the phone (toybox sha256sum) is checked against contract.json. Files already on the device that
+# BUCKETS and AUDIO do not name stay there.
 # Install the debug APK before running this script: run-as needs a debuggable package.
 # Set ANDROID_SERIAL to select a device when more than one is connected.
 set -euo pipefail
@@ -24,6 +27,7 @@ PACKAGE=com.d1omni
 TEMP_DIR=/data/local/tmp/d1omni
 CONTRACT="$SOURCE_DIR/contract.json"
 graph() { printf 'd1-omni-600M_decide_L%s_fp16.tflite\n' "$1"; }
+audio_graph() { printf 'd1-omni-600M_audio_T%s_fp16.tflite\n' "$1"; }
 
 if [[ ! -f "$CONTRACT" ]]; then
     printf 'Missing %s: download contract.json with the graphs\n' "$CONTRACT" >&2
@@ -61,6 +65,15 @@ for bucket in ${BUCKETS-128 256}; do
             ;;
     esac
 done
+for bucket in ${AUDIO-}; do
+    case "$bucket" in
+        501 | 1001 | 2001 | 3001) FILES+=("$(audio_graph "$bucket")") ;;
+        *)
+            printf 'AUDIO holds %s; the audio buckets are 501, 1001, 2001 and 3001\n' "$bucket" >&2
+            exit 2
+            ;;
+    esac
+done
 
 # Check every source before any device command to avoid a partial installation.
 for name in "${FILES[@]}"; do
@@ -85,9 +98,24 @@ cleanup() {
 }
 trap cleanup EXIT
 
-copy() {  # name source: stage, copy into files/, remove the stage, check size and sha256
+phone_sha() {  # name: the sha256 of files/<name> on the phone, empty when it is not there
+    adb shell run-as "$PACKAGE" toybox sha256sum "files/$1" 2>/dev/null | cut -d' ' -f1 | tr -d '\r'
+}
+
+copy() {  # name source: unless files/ holds it already, stage, copy into files/, remove the stage, check
     local name=$1 source=$2 want_bytes want_sha copied sum
     want_bytes="$(wc -c < "$source" | tr -d ' ')"
+    if [[ "$name" == contract.json ]]; then
+        want_sha="$(shasum -a 256 "$source" | cut -d' ' -f1)"
+    else
+        read -r _ want_sha <<< "$(expected "$name")"
+    fi
+    # A missing file makes stat fail: under set -e / pipefail that must not end the script.
+    copied="$(adb shell run-as "$PACKAGE" stat -c %s "files/$name" 2>/dev/null | tr -d '\r' || true)"
+    if [[ "$copied" == "$want_bytes" && -n "$want_sha" && "$(phone_sha "$name")" == "$want_sha" ]]; then
+        printf 'Already installed: %s\n' "$name"
+        return
+    fi
     pending="$TEMP_DIR/$$-$name"
     printf 'Staging %s\n' "$name"
     adb push "$source" "$pending"
@@ -99,12 +127,7 @@ copy() {  # name source: stage, copy into files/, remove the stage, check size a
         printf 'files/%s on the device is %s bytes, expected %s\n' "$name" "$copied" "$want_bytes" >&2
         exit 1
     fi
-    if [[ "$name" == contract.json ]]; then
-        want_sha="$(shasum -a 256 "$source" | cut -d' ' -f1)"
-    else
-        read -r _ want_sha <<< "$(expected "$name")"
-    fi
-    sum="$(adb shell run-as "$PACKAGE" toybox sha256sum "files/$name" | cut -d' ' -f1 | tr -d '\r')"
+    sum="$(phone_sha "$name")"
     if [[ -z "$sum" || "$sum" != "$want_sha" ]]; then
         printf 'files/%s on the device has sha256 %s, expected %s\n' "$name" "${sum:-<none>}" "$want_sha" >&2
         exit 1

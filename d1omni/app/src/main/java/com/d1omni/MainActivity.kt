@@ -17,11 +17,13 @@ import com.d1omni.view.StatusScreen
 /**
  * Hosts the Compose screen (`launchMode="singleTop"`: a later intent reaches the running activity
  * through [onNewIntent]). Extras ([D1Launch.parse]):
- * - every launch: `[--es backend gpu|cpu]` and `[--es precision fp32|fp16acc]` (the GPU precision
- *   of every graph; default fp32)
+ * - every launch: `[--es backend gpu|cpu]`, `[--es precision fp32|fp16acc]` (the GPU precision
+ *   of the decision graphs; default fp32) and `[--es precision_audio fp16acc|fp32]` (the audio
+ *   graph's; default [D1AudioEngine.DEFAULT_PRECISION])
  * - debug build: `--ez gate true --es fixture <rows file in files/> --es report <name.json>
  *   [--ei limit n] [--ei resident 128]` (the gate: every row of the file on its bucket, with
- *   `resident` compiled first and kept)
+ *   `resident` compiled first and kept; a rows file of kind audio runs its clips' wavs through the
+ *   audio graph first)
  * - debug build: `--ez timing true --es rows <rows file in files/> --es report <name.json>
  *   [--ei warmup 5] [--ei reps 20] [--ei cool_ms 120000] [--es sets card3,one]`
  */

@@ -13,16 +13,19 @@ interface D1Extras {
 
 /** What a launch intent asks for (see `MainActivity` for the extras). */
 sealed interface D1Launch {
-  /** The app: [backend] and the GPU [precision] of every graph. */
+  /** The app: [backend], the GPU [precision] of the decision graphs and of the audio graph. */
   data class Normal(
     val backend: D1Backend = D1Backend.GPU,
     val precision: D1Precision = D1Precision.DEFAULT,
+    val audioPrecision: D1Precision = D1AudioEngine.DEFAULT_PRECISION,
   ) : D1Launch
 
   /**
    * Debug build: the rows of `files/<fixture>` (one bucket L, rows already encoded) through the L
    * graph, one call per row, into `files/<report>`; [resident] compiles that bucket first and keeps
-   * it while L compiles (two graphs at once, the memory record); [limit] > 0 runs the first rows.
+   * it while L compiles (two graphs at once, the memory record); [limit] > 0 runs the first rows. A
+   * rows file of kind `audio` holds clips instead: each clip's wav through the audio graph at
+   * [audioPrecision], then its rows on the decision graphs (see [D1GateRunner]).
    */
   data class Gate(
     val fixture: String,
@@ -31,6 +34,7 @@ sealed interface D1Launch {
     val backend: D1Backend,
     val precision: D1Precision,
     val resident: Int?,
+    val audioPrecision: D1Precision = D1AudioEngine.DEFAULT_PRECISION,
   ) : D1Launch
 
   /**
@@ -47,6 +51,7 @@ sealed interface D1Launch {
     val sets: List<String>?,
     val backend: D1Backend,
     val precision: D1Precision,
+    val audioPrecision: D1Precision = D1AudioEngine.DEFAULT_PRECISION,
   ) : D1Launch
 
   /** Extras that cannot be followed. */
@@ -60,6 +65,7 @@ sealed interface D1Launch {
     const val EXTRA_REPORT = "report"
     const val EXTRA_LIMIT = "limit"
     const val EXTRA_PRECISION = "precision"
+    const val EXTRA_PRECISION_AUDIO = "precision_audio"
     const val EXTRA_BACKEND = "backend"
     const val EXTRA_RESIDENT = "resident"
     const val EXTRA_WARMUP = "warmup"
@@ -86,6 +92,12 @@ sealed interface D1Launch {
         else
           D1Precision.of(precisionName)
             ?: return Invalid("precision $precisionName is not fp16acc or fp32")
+      val audioPrecisionName = extras.string(EXTRA_PRECISION_AUDIO)
+      val audioPrecision =
+        if (audioPrecisionName == null) D1AudioEngine.DEFAULT_PRECISION
+        else
+          D1Precision.of(audioPrecisionName)
+            ?: return Invalid("precision_audio $audioPrecisionName is not fp16acc or fp32")
       val backendName = extras.string(EXTRA_BACKEND)
       val backend =
         if (backendName == null) D1Backend.GPU
@@ -106,7 +118,7 @@ sealed interface D1Launch {
             resident != null && resident !in RESIDENT_BUCKETS ->
               Invalid("resident $resident is not one of ${RESIDENT_BUCKETS.joinToString(", ")}")
             else ->
-              Gate(fixture, report, extras.int(EXTRA_LIMIT, 0), backend, precision, resident)
+              Gate(fixture, report, extras.int(EXTRA_LIMIT, 0), backend, precision, resident, audioPrecision)
           }
         }
         timing -> {
@@ -128,10 +140,11 @@ sealed interface D1Launch {
                 extras.string(EXTRA_SETS)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() },
                 backend,
                 precision,
+                audioPrecision,
               )
           }
         }
-        else -> Normal(backend, precision)
+        else -> Normal(backend, precision, audioPrecision)
       }
     }
   }

@@ -105,10 +105,17 @@ class D1Recheck(
  * the IDs the tokenizer makes on this device against the Python host's).
  */
 class D1GateCore(private val tokenizer: D1Tokenizer, private val contract: D1Contract) {
-  /** The six inputs of [row] for a bucket of [length] positions (`build_inputs`). */
-  fun inputs(row: D1GateRow, length: Int): D1Inputs {
-    require(row.prefixRows == 0) { "${row.key}: a media row (P = ${row.prefixRows}) needs its prefix" }
-    return D1Rows.buildInputs(row.ids, null, 0, length, row.type)
+  /**
+   * The six inputs of [row] for a bucket of [length] positions (`build_inputs`): a media row (P > 0)
+   * takes its [prefix] rows (P x 1024, the app's own audio prefix), a text row none.
+   */
+  fun inputs(row: D1GateRow, length: Int, prefix: FloatArray? = null): D1Inputs {
+    if (row.prefixRows == 0) {
+      require(prefix == null) { "${row.key}: a text row has no prefix" }
+      return D1Rows.buildInputs(row.ids, null, 0, length, row.type)
+    }
+    val rows = requireNotNull(prefix) { "${row.key}: a media row (P = ${row.prefixRows}) needs its prefix" }
+    return D1Rows.buildInputs(row.ids, rows, row.prefixRows, length, row.type)
   }
 
   /** Encodes the row's request again with this app's tokenizer and `encode` (text rows). */
@@ -197,4 +204,197 @@ class D1GateCore(private val tokenizer: D1Tokenizer, private val contract: D1Con
           "n" to values.size,
         )
   }
+}
+
+/** The kind of a rows file: its `kind` member, `text` when it has none (the timing rows of round 1). */
+fun d1RowsKind(bytes: ByteArray): String = ((D1Json.parse(bytes) as? Map<*, *>)?.get("kind") as? String) ?: "text"
+
+/**
+ * One clip of an audio rows file (`D/device/r2/rows_audio.json`, made by the Python host): the wav
+ * in `files/` ([mediaFile], its [mediaSha256]), the request's [state] (null = the audio mode's `{}`)
+ * and named [questions], the Python host's sizes of the clip ([expected]: n, frames, T, T_b, P), the
+ * Python mel dumps in `files/` to compare the app's mel with ([melFiles]: `f32` / `f64` -> file),
+ * and the encoded [rows] (P = the host's prefix rows, no temperature).
+ */
+class D1AudioRecord(
+  val id: String,
+  val mediaFile: String,
+  val mediaSha256: String?,
+  val state: Any?,
+  val questions: LinkedHashMap<String, D1Question>,
+  val expected: Map<*, *>?,
+  val melFiles: Map<String, String>,
+  val rows: List<D1GateRow>,
+) {
+  /** [expected]'s integer member [name], or null. */
+  fun expectedInt(name: String): Int? = (expected?.get(name) as? JsonNumber)?.toInt()
+
+  companion object {
+    fun fromJson(value: Any?): D1AudioRecord {
+      val record = value as Map<*, *>
+      val id = record["id"] as String
+      val media = record["media_file"] as String
+      require(D1Launch.fileNameValid(media)) { "$id: media_file $media is not a plain file name" }
+      val melFiles = LinkedHashMap<String, String>()
+      ((record["mel_files"] as Map<*, *>?) ?: emptyMap<String, String>()).forEach { (form, file) ->
+        require(D1Launch.fileNameValid(file as String)) { "$id: mel file $file is not a plain file name" }
+        melFiles[form as String] = file
+      }
+      val questions = LinkedHashMap<String, D1Question>()
+      (record["questions"] as Map<*, *>).forEach { (name, question) ->
+        questions[name as String] = D1Prompt.asQuestion(question)
+      }
+      val rows = (record["expected"] as List<*>).map { D1GateRow.fromJson(it) }
+      require(rows.isNotEmpty()) { "$id: no rows" }
+      for (row in rows) require(!row.calibrate) { "${row.key}: an audio row is read without the temperature" }
+      return D1AudioRecord(
+        id,
+        media,
+        record["media_sha256"] as String?,
+        record["state"],
+        questions,
+        record["info"] as Map<*, *>?,
+        melFiles,
+        rows,
+      )
+    }
+  }
+}
+
+/** An audio rows file: `{kind: audio, pad_id: 0, records: [...]}`. */
+class D1AudioRows(val padId: Int, val records: List<D1AudioRecord>) {
+  val rowCount: Int
+    get() = records.sumOf { it.rows.size }
+
+  companion object {
+    fun parse(bytes: ByteArray): D1AudioRows {
+      val root = D1Json.parse(bytes) as Map<*, *>
+      require(root["kind"] == "audio") { "not an audio rows file (kind ${root["kind"]})" }
+      val padId = (root["pad_id"] as JsonNumber).toInt()
+      require(padId == 0) { "pad_id $padId: the decision graph's pad id is 0" }
+      return D1AudioRows(padId, (root["records"] as List<*>).map { D1AudioRecord.fromJson(it) })
+    }
+  }
+}
+
+/** An audio timing set: [name], [kind] (`request`: the clip's wav to every answer) and the clip. */
+class D1AudioTimingSet(val name: String, val kind: String, val record: D1AudioRecord) {
+  companion object {
+    /** The sets of an audio timing rows file (`{kind: audio, pad_id: 0, sets: [{name, kind, record}]}`). */
+    fun parse(bytes: ByteArray): List<D1AudioTimingSet> {
+      val root = D1Json.parse(bytes) as Map<*, *>
+      require(root["kind"] == "audio") { "not an audio timing file (kind ${root["kind"]})" }
+      require((root["pad_id"] as JsonNumber).toInt() == 0) { "pad_id must be 0" }
+      return (root["sets"] as List<*>).map {
+        val set = it as Map<*, *>
+        D1AudioTimingSet(set["name"] as String, set["kind"] as String, D1AudioRecord.fromJson(set["record"]))
+      }
+    }
+  }
+}
+
+/** The audio gate's checks of one clip and of its rows, Android-free (see [D1GateCore]). */
+object D1AudioCheck {
+  /** [row] with the app's own prefix rows [prefixRows] (the markers are read at P + marker). */
+  fun withPrefix(row: D1GateRow, prefixRows: Int): D1GateRow =
+    D1GateRow(
+      row.key,
+      row.ids,
+      row.markers,
+      row.type,
+      row.options,
+      prefixRows,
+      row.calibrate,
+      row.hasRequest,
+      row.state,
+      row.question,
+      row.stateHash,
+    )
+
+  /**
+   * The app's own encoding of [row]'s question over [record]'s state (kind audio, a null state is
+   * the mode's `{}`) after [prefixRows] media rows, against the row's ids and markers, and the
+   * serialized state against the row's `state_hash`.
+   */
+  fun recheck(
+    tokenizer: D1Tokenizer,
+    contract: D1Contract,
+    record: D1AudioRecord,
+    row: D1GateRow,
+    prefixRows: Int,
+  ): D1Recheck {
+    val question = row.question ?: return D1Recheck(null, null, null, null)
+    val start = System.nanoTime()
+    val encoded = D1Rows.rows(tokenizer, contract, record.state, listOf(question), prefixRows, D1Kind.AUDIO).single()
+    val encodeMs = (System.nanoTime() - start) / 1e6
+    val mode = contract.modes.getValue(D1Kind.AUDIO.wireName)
+    val effective =
+      record.state ?: mode.stateNoneBecomes.takeIf { it !== D1Contract.NOT_SET }
+    val stateMatch = row.stateHash?.let { D1Contract.sha256(D1Prompt.serialize(effective ?: "")) == it }
+    return D1Recheck(
+      encoded.ids.contentEquals(row.ids),
+      encoded.markers.contentEquals(row.markers),
+      stateMatch,
+      encodeMs,
+    )
+  }
+
+  /** The app's clip sizes against the Python host's [D1AudioRecord.expected] (null when it has none). */
+  fun infoMatches(info: D1AudioInfo, record: D1AudioRecord): Boolean? {
+    if (record.expected == null) return null
+    return record.expectedInt("n") == info.samples &&
+      record.expectedInt("frames") == info.frames &&
+      record.expectedInt("T") == info.stftFrames &&
+      record.expectedInt("T_b") == info.bucket &&
+      record.expectedInt("P") == info.prefixRows
+  }
+
+  /** Little-endian float32 values of [bytes]. */
+  fun floats(bytes: ByteArray): FloatArray {
+    require(bytes.size % Float.SIZE_BYTES == 0) { "${bytes.size} bytes are not float32 values" }
+    val out = FloatArray(bytes.size / Float.SIZE_BYTES)
+    java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN).asFloatBuffer().get(out)
+    return out
+  }
+
+  /** [values] as little-endian float32 bytes. */
+  fun bytes(values: FloatArray): ByteArray {
+    val buffer = java.nio.ByteBuffer.allocate(values.size * Float.SIZE_BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+    buffer.asFloatBuffer().put(values)
+    return buffer.array()
+  }
+
+  /**
+   * The element-wise difference of the app's mel and a Python mel of the same shape: max and mean
+   * |Δ|, where the max is, the elements over 1e-3, and whether every element is bit-equal.
+   */
+  fun melDifference(app: FloatArray, python: FloatArray): LinkedHashMap<String, Any?> {
+    require(app.size == python.size) { "the app's mel has ${app.size} values, the Python mel ${python.size}" }
+    var worst = 0.0
+    var at = 0
+    var total = 0.0
+    var over = 0
+    var equal = true
+    for (i in app.indices) {
+      val d = Math.abs(app[i].toDouble() - python[i].toDouble())
+      if (d > worst) {
+        worst = d
+        at = i
+      }
+      total += d
+      if (d > MEL_ELEMENT_BAR) over++
+      if (app[i].toRawBits() != python[i].toRawBits()) equal = false
+    }
+    return linkedMapOf(
+      "values" to app.size,
+      "max_abs" to worst,
+      "mean_abs" to if (app.isEmpty()) 0.0 else total / app.size,
+      "at" to at,
+      "over_1e-3" to over,
+      "bit_equal" to equal,
+    )
+  }
+
+  /** The element bar of the mel comparison (the conversion lane's `bar_elementwise`). */
+  const val MEL_ELEMENT_BAR = 1e-3
 }

@@ -21,9 +21,15 @@ demo/
                                    # serialize / _criterion / str() cases, with the ids of Hugging Face tokenizers
   fixtures/scores_probe.json       # 20 check-set rows through the repository's graphs on a desktop CPU and the
                                    # Python host's read-out, answer() and three-decimal strings
+  fixtures/audio/                  # host/d1_audio_host.py on the six public clips: hann_f32.f32, slaney_fb.f32 and per
+                                   # clip samples.i16, waveform.f32, mel_f32.f32 / mel_f64.f32 (the host's two forms),
+                                   # stages_f64/ (pre, power, lin, log, mean, std), inputs/ (mel, mel_valid, v1-v3),
+                                   # prefix.f32 / prefix_melf64.f32 (desktop CPU), info.json (n, frames, T, T_b, L, P)
   device/r1/rows_L128.json         # the device gate's rows (210 + 43) and timing sets, made by the Python host
   device/r1/rows_L256.json
   device/r1/timing_rows.json
+  device/r2/rows_audio.json        # the audio gate's clips (6) and rows (18), the audio timing set (food3)
+  device/r2/timing_audio.json
 ```
 
 Reports go to `app/build/reports/parity/`, never to the data directories.
@@ -38,6 +44,9 @@ Reports go to `app/build/reports/parity/`, never to the data directories.
 | `D1RowsTest` | repo | `build_inputs` (text and media rows), buckets, request-kind rules |
 | `D1ResidencyTest` | nothing external | at most two graphs compiled, the memory rule for a second graph |
 | `D1JsonTest`, `D1LaunchTest` | nothing external | JSON reading and writing with Python semantics; the launch extras |
+| `D1AudioTest` | repo, audio dumps, device r2 rows | the Hann window and the Slaney filter bank bit for bit; per clip the waveform and preemphasis bit for bit, every float64 stage of the mel, the mel against the host's float64 form (bit for bit) and float32 form, frames / T / T_b / L1-3 / T1-3 / P, the mask inputs bit for bit; the 18 audio rows after the app's own P (ids and markers); the device rows file and the gate's checks; `precision_audio` |
+| `D1WavTest` | repo, audio dumps | the six public wavs give `read_audio`'s int16 samples; other rates, channel counts and formats refused, extra chunks, WAVE_FORMAT_EXTENSIBLE |
+| `D1GraphTest` | repo | the one-signature graph wrapper's checks (declarations, tensor types, feeds) and the audio graphs' declarations against contract.json |
 
 ## On-device runs (debug APK)
 
@@ -63,3 +72,18 @@ adb shell am start -n com.d1omni/.MainActivity --ez timing true --es rows timing
 
 `--ei resident 128` compiles the L128 graph first and keeps it while the rows file's graph compiles
 (two graphs at once); the report holds each compile's memory before and after it.
+
+An audio rows file (`"kind": "audio"`, `device/r2/rows_audio.json`) runs through the same gate and
+timing launches. Its clips' wavs (and, for the comparison, the Python mel dumps the file names) go
+into `files/` next to it; the audio graph comes with the model files (`AUDIO="1001"`).
+
+```bash
+# Audio gate: the decision graphs the rows need, the audio graph, then per clip wav -> mel -> audio_<T_b> -> prefix
+# -> its rows; the app's mel against the Python dumps, its sizes against the host's, the prefix rows into
+# files/<report stem>.prefix.f32.
+adb shell am start -n com.d1omni/.MainActivity --ez gate true --es fixture rows_audio.json \
+  --es report agate.json --es precision fp32 --es precision_audio fp16acc [--ei resident 256]
+# Audio timing: whole requests, the wav to every answer, every step timed.
+adb shell am start -n com.d1omni/.MainActivity --ez timing true --es rows timing_audio.json \
+  --es report atiming.json --es precision_audio fp16acc --ei warmup 5 --ei reps 20 --ei cool_ms 120000
+```

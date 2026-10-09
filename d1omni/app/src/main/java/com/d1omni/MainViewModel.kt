@@ -63,7 +63,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
         val ready =
           withContext(D1Runtime.dispatcher) {
             engine?.close()
-            val loaded = D1Engine.load(context, launch.backend, launch.precision)
+            val loaded = D1Engine.load(context, launch.backend, launch.precision, launch.audioPrecision)
             engine = loaded
             val startup = loaded.installed.filter { it <= STARTUP_LARGEST }.sortedDescending()
             require(startup.isNotEmpty()) {
