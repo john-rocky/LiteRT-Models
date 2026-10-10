@@ -1,0 +1,47 @@
+{
+ "what": "the pictures the demo app shows and sends (scene B), where they come from and how they were made",
+ "pictures": {
+  "cats_10241192": {
+   "file": "fixtures/cats_10241192.jpg",
+   "sha256": "e5d857580a7b1cd841c0df6f47023d215cf7badd16fdc1a53673da4310cd1a5f",
+   "bytes": 88242,
+   "size": [
+    512,
+    341
+   ],
+   "source": {
+    "site": "Pexels",
+    "id": "10241192",
+    "title": "Cute Cats Lying Down Together",
+    "page": "https://www.pexels.com/photo/cute-cats-lying-down-together-10241192/",
+    "url": "https://images.pexels.com/photos/10241192/pexels-photo-10241192.jpeg",
+    "photographer": "Bruno Abdiel",
+    "photographer_profile": "https://www.pexels.com/@brunoabdiel/",
+    "original_sha256": "35791ea2224f9d3d856f8b2246a46e37d431341470073b99f85161714fea1a03",
+    "original_bytes": 5829811,
+    "original_size": [
+     5632,
+     3755
+    ],
+    "original_format": "JPEG"
+   },
+   "license": {
+    "name": "Pexels License",
+    "url": "https://www.pexels.com/license/",
+    "text": [
+     "All photos and videos on Pexels are free to use.",
+     "Attribution is not required.",
+     "You can modify the photos and videos from Pexels."
+    ],
+    "not_allowed": [
+     "Identifiable people may not appear in a bad light or in a way that is offensive.",
+     "Don't sell unaltered copies of a photo or video",
+     "Don't imply endorsement of your product by people or brands on the imagery."
+    ],
+    "page_label": "Free"
+   },
+   "made_with": "Pillow 12.3.0: convert('RGB'), resize to a long side of 512 px (LANCZOS), JPEG quality 92, optimize, no EXIF or ICC profile written",
+   "content_check": "two kittens on a polka-dot blanket; no people, no text, no logos or trademarks (looked at)"
+  }
+ }
+}

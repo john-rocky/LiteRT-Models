@@ -63,6 +63,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [KittenTTS nano 0.8](#kittentts-nano-08-dynamic-length) | Text-to-speech (dynamic length) |  |  | [scripts](kittentts/) |
 | [Inflect-Nano-v2](#inflect-nano-v2-dynamic-length-exact-streaming) | Text-to-speech (exact streaming) | Mac | 25–32 ms first chunk | [scripts](inflect/) |
 | [Sopro v2 turbo](#sopro-v2-turbo-zero-shot-voice-cloning) | Text-to-speech (zero-shot voice cloning, EN / PT / FR / DE) | Galaxy S26 GPU (acoustic + encoders) + CPU (AR, vocoder); Pixel 8a pending | TTFA 2.07 s, RTF 0.41 (S26, release) | [🤗 HF](https://huggingface.co/litert-community/sopro-v2-turbo) |
+| [Audio8-TTS-Preview-0.6b](audio8_tts/) | Text-to-speech (zero-shot voice cloning, 11 languages) | Galaxy S26 (CPU) | RTF 1.12 on screen, 1.42–1.50 in the device check (2026-10-10) | [🤗 HF](https://huggingface.co/litert-community/Audio8-TTS-Preview-0.6b) |
 | [SmolVLM-256M](#smolvlm-256m) | Vision-language model |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/smolvlm_vision.tflite) |
 | [SmolVLA](#smolvla-lerobotsmolvla_base) | Vision-language-action robot policy | Galaxy S26 | 207 ms per 50-step action chunk (GPU) | [scripts](smolvla/) |
 | [RWKV-7 World 0.1B](#rwkv-7-world-01b) | Text generation (RNN LM, whole forward on GPU) | Pixel 8a | ~18 ms/token | [🤗 HF](https://huggingface.co/litert-community/RWKV-7-World-0.1B-LiteRT) |
@@ -89,6 +90,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [PP-OCRv5](#pp-ocrv5) | OCR | Pixel 8a | ~9 ms detector + ~9 ms recognizer | [🤗 HF](https://huggingface.co/litert-community/PP-OCRv5-LiteRT) |
 | [Real-ESRGAN x4v3](#real-esrgan-x4v3) | Super-resolution ×4 | Galaxy S26 | 12.30 ms (NPU 3.29) | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/real_esrgan_x4v3.tflite) |
 | [GFPGAN v1.4](#gfpgan-v14-blind-face-restoration) | Blind face restoration |  |  | [🤗 HF](https://huggingface.co/litert-community/GFPGAN-v1.4-LiteRT) |
+| [Bonsai Image 4B](bonsai_image/) | Text-to-image (ternary DiT, CPU) | Galaxy S26 (CPU) | 23.5 s per 256×256 image (app, 4 steps, 2026-10-09) | [🤗 HF](https://huggingface.co/litert-community/Bonsai-Image-ternary-4B) |
 | [MoGe-2 ViT-S](#moge-2-vit-s) | Monocular geometry (points, normals, depth) | Pixel 8a | ~522 ms | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v3/moge.tflite) |
 | [Depth Anything 3 Small](#depth-anything-3-vit-s-small) | Monocular depth | Pixel 8a | ~1.8 s/image | [🤗 HF](https://huggingface.co/mlboydaisuke/Depth-Anything-3-Small-LiteRT) |
 | [Metric3D v2 ViT-S](#metric3d-v2-vit-s) | Metric depth | Pixel 8a | ~44 ms | [🤗 HF](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT) |
@@ -110,12 +112,16 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [ModernBERT-Ja-310M Decision](#modernbert-ja-310m-decision-japanese-cross-encoder-typed-decisions) | Japanese typed decisions: choice / score / yes-no questions about a text, one graph call per candidate | Galaxy S26 | 229 ms per 256-token pair (GPU FP32), 42 ms (NPU) | [🤗 HF](https://huggingface.co/mlboydaisuke/ModernBERT-Ja-310M-Decision-LiteRT) |
 | [GLiClass-Edge v3.0](#gliclass-edge-v30-zero-shot-text-classification) | Zero-shot text classification (EN): up to 25 labels scored in one forward pass, single- or multi-label | Galaxy S26 | 5.8 ms per request at 128 tokens, 8.3 ms at 256 (GPU FP32) | [🤗 HF](https://huggingface.co/litert-community/GLiClass-Edge-v3.0-LiteRT) |
 | [Kev-0.8B](#kev-08b-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text or JSON state, calibrated probabilities (EN) | Galaxy S26 | 102 ms per question at the 128-token window, a 3-question request in 367 ms (GPU); 66 ms and 298 ms (NPU) | [🤗 HF](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) |
+| [d1-3B](#d1-3b-typed-decisions-desktop) | Typed decisions: yes-no / choice / score questions about a text, a JSON value or a photo, a probability for every option | Apple M4 Max (Mac, Metal float32) | 3 questions in 153.9 ms, a photo and 1 question in 389.3 ms | [🤗 HF](https://huggingface.co/litert-community/d1-3B-LiteRT) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
 | [SmolLM3-3B](#smollm3-3b) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~22.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/SmolLM3-3B-LiteRT) |
+| [Qwen3-ASR-1.7B](asr_litertlm/) | Speech recognition, 30 languages (LiteRT-LM) | Galaxy S26 (CPU) | 2.49 s for a 6.4 s clip (RTF 0.39) | [🤗 HF](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) |
+| [Fun-ASR-Nano-2512](asr_litertlm/) | Speech recognition, zh / en / ja (LiteRT-LM) | Galaxy S26 (CPU) | 1.19 s for a 6.4 s clip (RTF 0.19) | [🤗 HF](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) |
+| [Confucius4-R2T2](asr_litertlm/) | Speech recognition, zh / en, a Qwen3-ASR-1.7B fine-tune (LiteRT-LM) | Galaxy S26 (CPU) | 2.59 s for a 6.4 s clip (RTF 0.40) | [🤗 HF](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT) |
 
-Latency is the figure each model's section below records, on the device named; blank means this repository records no measurement. **Galaxy S26** rows (Snapdragon 8 Elite Gen 5) come from [npubench](npubench/): LiteRT 2.2.0 `CompiledModel` GPU, median of 50 runs after warm-up, `run()` plus output readback, thermal status NONE, 2026-08; the value in parentheses is the same phone's Hexagon NPU. 50 models were measured that way — see [Snapdragon NPU](#snapdragon-npu-hexagon). **Pixel 8a** (Tensor G3, Mali GPU, fp16) figures marked `~` come from each model's conversion notes; per [docs § Latency figures](docs/LITERT_CONVERSION_GUIDE.md#latency-figures-time-run--readback), figures recorded before 2026-08 may time only the asynchronous `run()` call (ormbg's earlier "~10 ms" re-measured at 246 ms with the readback). Camera FPS, RTF, tok/s and per-turn figures are end-to-end app measurements. The Model column links to the full entry: I/O shapes, preprocessing, license, conversion script and sample app.
+Latency is the figure each model's section below records, on the device named; blank means this repository records no measurement. **Galaxy S26** rows (Snapdragon 8 Elite Gen 5) come from [npubench](npubench/): LiteRT 2.2.0 `CompiledModel` GPU, median of 50 runs after warm-up, `run()` plus output readback, thermal status NONE, 2026-08; the value in parentheses is the same phone's Hexagon NPU. 50 models were measured that way — see [Snapdragon NPU](#snapdragon-npu-hexagon). The Galaxy S26 (CPU) rows dated 2026-10 (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2, Bonsai Image 4B, Audio8-TTS-Preview-0.6b) are instead the sample apps' own device checks on the same phone, as their sections say. **Pixel 8a** (Tensor G3, Mali GPU, fp16) figures marked `~` come from each model's conversion notes; per [docs § Latency figures](docs/LITERT_CONVERSION_GUIDE.md#latency-figures-time-run--readback), figures recorded before 2026-08 may time only the asynchronous `run()` call (ormbg's earlier "~10 ms" re-measured at 246 ms with the readback). Camera FPS, RTF, tok/s and per-turn figures are end-to-end app measurements. The Model column links to the full entry: I/O shapes, preprocessing, license, conversion script and sample app.
 
 # Run a model in 5 lines
 
@@ -2382,6 +2388,23 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 
 **Original project**: [jaredpalmer/kev](https://github.com/jaredpalmer/kev) (Apache-2.0); base model Qwen3.5-0.8B-Base (Apache-2.0)
 
+### d1-3B (typed decisions, desktop)
+
+[LiquidAI/d1-3B](https://huggingface.co/LiquidAI/d1-3B) is a decision model by Liquid AI, post-trained from [LiquidAI/LFM2.5-VL-3B](https://huggingface.co/LiquidAI/LFM2.5-VL-3B). It reads a state (text, a JSON value, pictures, or a mix) and named questions about it: yes/no (`noul`), a pick from named options (`choice`) and an ordered rating (`score`, 2 to 10 levels). For each question it returns the probability of every option, read from the logits of a few option tokens at the prompt's last position. It never generates text.
+
+**Conversion:** the LFM2 hybrid text decoder (30 layers: 22 short-convolution and 8 grouped-query attention) was exported with litert-torch 0.9.4 from the float32 weights, its attention written as batched matrix products with an additive mask and constant rotary tables. ai-edge-quantizer 0.9.0 stores the FULLY_CONNECTED weights in float16 (a pair's one-hot rotary pick stays float32), and activations stay float32. Six row graphs take rows of up to 128, 256, 512, 1,024, 2,048 and 4,096 tokens, one row per question. Three shared-state pairs read a state of up to 64, 128 or 256 tokens once, then each question from it. The SigLIP2 picture tower and the projector are two more graphs; the host resizes the tower's position table and does the projector's 2 × 2 unshuffle. On an Apple M4 Max, on the CPU and on Metal at float32 precision, every file gave the most likely option of the provider's float32 code on every test question it holds, with probabilities within 1.02e-5 on text and 3.39e-5 on the three test requests with pictures.
+
+**On the Mac (Apple M4 Max, 128 GB, macOS 27.0, ai-edge-litert 2.2.0, Python CompiledModel API, Metal at float32 precision, 2026-10-09):** the source model card's three-question example takes a median 153.9 ms on the 64-token pair, and its photo with one question 389.3 ms on the tower, the projector and the 512-token row graph (medians of 20 requests; each time covers every input write, graph run and output read-back). The files are for desktops and laptops. On a 12 GB Galaxy S26, the GPU and CPU delegates accepted an earlier 5.14 GB form of the 256-token row graph, but the phone ran short of memory during the compile and the app's memory guard stopped it.
+
+| Model | Download | Size | Input → Output | Delegate |
+|---|---|---|---|---|
+| d1-3B L128 / L256 / L512 / L1024 / L2048 / L4096, pairs Ls64 / Ls128 / Ls256, picture tower and projector | [HF: litert-community/d1-3B-LiteRT](https://huggingface.co/litert-community/d1-3B-LiteRT) | 4,871,345,568 to 4,940,420,512 B per text graph; tower 825,613,520 B, projector 27,281,424 B; + 524,288,104 B embedding table (bfloat16) + 17,905,750 B tokenizer.json | embeds [1,L,2048] + valid [1,L] → hidden [1,L,2048]; pair: `state_prefill_<Ls>` → 38 state tensors, `question_step_<Ls>_<Lq>` → hidden [1,Lq,2048]; tower: pixels [1,1024,768] + pos [1,1024,1152] + mask [1,1024] → features [1,1024,1152]; projector: soft [1,256,4608] → mm [1,256,2048]; → host read-out over the options' tokens | GPU (Metal) at float32 precision; CPU (XNNPACK); verified on an Apple M4 Max |
+
+**Sample app**: [d1-3b/](d1-3b/) — a Mac app in Python. Paste or type a state (text or JSON), add a photo, write the questions with their options and press Decide: every question comes back at once, with a probability for each option and the request time. It runs on Apple silicon; the default download is 16.1 GB, and the app process held 32.2 GB of memory with its four graphs compiled. For a screen recording, the app can also play two scenes by itself, typing into the same fields and pressing the same buttons; its scripts then check the recording against the run.
+Conversion scripts and steps: [conversion/](https://huggingface.co/litert-community/d1-3B-LiteRT/tree/main/conversion) and [REPRODUCE.md](https://huggingface.co/litert-community/d1-3B-LiteRT/blob/main/REPRODUCE.md) in the model repository.
+
+**Original project**: [LiquidAI/d1-3B](https://huggingface.co/LiquidAI/d1-3B) and its base model [LiquidAI/LFM2.5-VL-3B](https://huggingface.co/LiquidAI/LFM2.5-VL-3B), by Liquid AI, under the LFM Open License v1.0, which limits commercial use by organizations with annual revenue of US$10 million or more. The LiteRT files are a community conversion and are not affiliated with Liquid AI. The sample's code is Apache-2.0.
+
 # Text Generation (LLM)
 
 > **Conversion recipes** (official `litert-torch` `export_hf`, no fork — blockwise int4 + OCTAV, `externalize_embedder`, simple chat templates): [`text-generation/`](text-generation/).
@@ -2450,6 +2473,6 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 
 # License
 
-MIT (sample apps). Model licenses follow their original projects.
+MIT (sample apps; `kev/`, `julia1/` and `d1-3b/` carry their own Apache-2.0 `LICENSE`). Model licenses follow their original projects.
 
 

@@ -1,0 +1,8 @@
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+# The graphs are pushed to the phone and prep_assets.sh fills assets/; neither is committed.
+*.tflite
+app/src/main/assets/

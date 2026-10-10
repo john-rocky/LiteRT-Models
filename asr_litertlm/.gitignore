@@ -1,0 +1,10 @@
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+.gradle-user-home/
+# The .litertlm bundles are pushed to the phone (see README), never committed.
+*.litertlm
+# hf download --local-dir in the README writes the bundles (and its own metadata) here.
+bundles/

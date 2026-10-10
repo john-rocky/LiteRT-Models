@@ -1,0 +1,9 @@
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+# Model files, voice codes and generated audio are pushed to the device, never committed.
+*.tflite
+*.npy
+*.wav
