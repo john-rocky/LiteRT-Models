@@ -48,7 +48,7 @@ AUDIO="1001" VISION=1 ./scripts/install_to_device.sh "$HOME/Downloads/d1-omni-60
 adb shell am start -n com.d1omni/.MainActivity
 ```
 
-The app needs all eight files (`AUDIO="1001" VISION=1` with the default `BUCKETS`): it compiles the five graphs at startup (about 9 s on the Galaxy S26).
+The app needs all eight files (`AUDIO="1001" VISION=1` with the default `BUCKETS`): it compiles the five graphs at startup (9–10 s on the Galaxy S26).
 
 The install script's argument defaults to the download directory above. `BUCKETS` names the decision graphs to copy (`"128 256"` by default; `BUCKETS="128 256 512 1024 2048"` copies five) and `AUDIO` the audio graphs (none by default; `AUDIO="1001"`, or any of 501 / 1001 / 2001 / 3001 for clips up to 5 / 10 / 20 / 30 s). It checks the size of every file against `contract.json` before it touches the device; a file already in the app's private `files/` with the contract's size and sha256 stays as it is, any other is copied through `/data/local/tmp/d1omni/` into `files/` with `run-as com.d1omni`, the temporary copy removed, and the copy's sha256 on the phone checked against `contract.json`. Install the debug APK before the files: `run-as` needs a debuggable package.
 
@@ -192,18 +192,18 @@ The same phone and build; each picture decoded on the phone; the decision graphs
 
 ### The app on the Galaxy S26
 
-Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, this app's debug build, airplane mode on, the phone at its lock screen (the app shows over it); one Decide per input as a person makes it, the taps and typing sent with adb. The numbers are the run JSON's, which the screen shows; each answer was checked against the model repository's Python host on the same input (and, for the recording, the provider's own float32 code): same ids, same argmax, max |Δp| ≤ 0.02.
+Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, this app's debug build, airplane mode on, the phone at its lock screen (the app shows over it); one Decide per input as a person makes it, the taps and typing sent with adb, the screen recorded (take r8t2, the clip of the model's announcement). The numbers are the run JSON's, which the screen shows; each answer was checked against the model repository's Python host on the same input (and, for the recording, the provider's own float32 code): same ids, same argmax, max |Δp| ≤ 0.02.
 
 | Input | Source | Question | Answer on screen | Probability | ms on screen |
 |---|---|---|---|---:|---|
-| Voice | a recording through the phone's microphone (the Mac's speaker played the sample line) | What is the customer asking for? | booking | 0.999 | 143 ms · L256 |
-| Photo | picked from Recent photos | What animal is in the photo? | dog | 1.000 | 212 ms · L128 |
+| Voice | a recording through the phone's microphone (the Mac's speaker played the sample line) | What is the customer asking for? | booking | 1.000 | 153 ms · L256 |
+| Photo | picked from Recent photos | What animal is in the photo? | dog | 1.000 | 211 ms · L128 |
 | Message | typed | Is the customer asking for a refund? | yes | 0.999 |  |
-|  |  | Which team should handle this? | billing | 0.939 | 110 ms · L128 |
+|  |  | Which team should handle this? | billing | 0.939 | 96 ms · L128 |
 
-- The recording: 9.50 s of 16 kHz mono from the phone's microphone (VOICE_RECOGNITION) while the Mac's built-in speaker played the sample line in the same room (the distance was not measured); the phone's answer P(booking) 0.998819, the Python host on the same wav 0.998809.
-- Recent photos showed 4 pictures (img_dogs_01.png, img_03.png, img_02.png, img_bike_03.png), the four the smoke had just copied to the phone; the dogs' photo is 384 × 216, so the app used it unchanged.
-- Engine load (five graphs compiled on the GPU) 8,541 ms and 8,832 ms in the two launches, then one untimed pass over the sample; MemAvailable at ready 3,744,472 kB and 4,087,128 kB.
+- The recording: 8.30 s of 16 kHz mono from the phone's microphone (VOICE_RECOGNITION) while the Mac's built-in speaker played the sample line in the same room (the distance was not measured); the phone's answer P(booking) 0.999558, the Python host on the same wav 0.999557.
+- Recent photos showed 4 pictures (img_dogs_01.png, img_03.png, img_02.png, img_bike_03.png), the four the harness had copied to the phone; the dogs' photo is 384 × 216, so the app used it unchanged.
+- Engine load (five graphs compiled on the GPU) 10,421 ms in the take's launch, then one untimed pass over the sample; MemAvailable at ready 4,275,556 kB. The three other takes of the same slot loaded in 9,809, 9,253, 10,459 ms (their run JSONs under demo/device/r8/).
 - Each ms on screen is the input's whole work: from its samples, file bytes or text to the last answer (the mel and the audio graph, or the decoding and the vision graphs, then the encoding and one decision call per question).
 
 Not measured: FP32 with the text timing protocol, text rows over 256 positions, picture rows over 256 positions at FP32, the audio graphs other than T1001, recordings and photos other than the ones above, the app's steady state over many Decides, other phones.
