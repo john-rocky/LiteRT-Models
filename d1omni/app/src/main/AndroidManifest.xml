@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The microphone, for the voice screen's Record (asked the first time Record is tapped); the phone's
+         pictures, for the photo screen's Recent photos (asked the first time Pick photo is tapped: READ_MEDIA_IMAGES
+         from Android 13, READ_EXTERNAL_STORAGE before). Browse… (the system photo picker) and the WAV file picker
+         need no permission. No network permission: every graph runs on the phone. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- The tokenizer (4.7 MB of JSON, 64k entries) is built on the Java heap. -->
+    <application
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.D1Omni">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
