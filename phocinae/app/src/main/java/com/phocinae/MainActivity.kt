@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.phocinae
 
+import android.content.pm.ApplicationInfo
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -17,8 +20,10 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     val launchedAtNs = System.nanoTime()
     super.onCreate(savedInstanceState)
+    val gate = BuildConfig.DEBUG && intent.getBooleanExtra("gate", false)
+    keepVisible(gate)
     viewModel.start(
-      gate = BuildConfig.DEBUG && intent.getBooleanExtra("gate", false),
+      gate = gate,
       accelerator = intent.getStringExtra("accel"),
       requestedWindow = intent.getStringExtra("window"),
       requestedStorage = intent.getStringExtra("storage"),
@@ -37,5 +42,20 @@ class MainActivity : ComponentActivity() {
         )
       }
     }
+  }
+
+  /**
+   * On a locked test phone the measured process must stay in the foreground (top-app): in the debug build, and for
+   * every gate launch, show above the keyguard, turn the screen on and keep it on. A normal launch of the release
+   * build is unchanged.
+   */
+  private fun keepVisible(gate: Boolean) {
+    val debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    if (!debuggable && !gate) return
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      setShowWhenLocked(true)
+      setTurnScreenOn(true)
+    }
+    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
   }
 }

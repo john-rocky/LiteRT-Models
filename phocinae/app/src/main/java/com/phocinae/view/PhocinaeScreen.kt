@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -32,6 +33,7 @@ import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +63,12 @@ fun PhocinaeScreen(
   onRun: () -> Unit,
 ) {
   val editable = !state.busy && !state.gateMode
+  val listState = rememberLazyListState()
+  // When a run finishes, bring the run summary and the answer cards into view (the editor above them is taller than
+  // the screen once a state text is pasted). Item order: preset, state text, accelerator, calibration, Decide, summary.
+  LaunchedEffect(state.runTotalMs, state.answers.size) {
+    if (state.runTotalMs != null && state.answers.isNotEmpty()) listState.animateScrollToItem(RUN_SUMMARY_ITEM)
+  }
   Scaffold(
     modifier = Modifier.statusBarsPadding().navigationBarsPadding().imePadding(),
     topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
@@ -68,6 +76,7 @@ fun PhocinaeScreen(
     Column(modifier = Modifier.fillMaxSize().padding(insets)) {
       StatusHeader(state, onAccelerator)
       LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -303,3 +312,6 @@ private fun AnswerCard(result: AnswerUiRow) {
     }
   }
 }
+
+/** The run-summary item of the editor list (preset, state text, accelerator, calibration, Decide, summary). */
+private const val RUN_SUMMARY_ITEM = 5

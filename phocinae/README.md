@@ -120,7 +120,28 @@ the UI. `app_gate_score.py` in the model repository's `conversion/` scores a rep
 
 ## Verified on
 
-(filled from the device gate reports: see the section below)
+Galaxy S26 (SM-S942Q, Android 16, LiteRT 2.2.0), 2026-10-11, this sample's debug gate at the 384-token window: the
+1,597 public test decisions of the window (`gate_rows_s384.json`), each prepared by the app's own tokenizer and builder
+and run through the installed graphs; the reference is the publisher's fp32 PyTorch runtime (phocinae-server). Token ids
+and marker positions reproduced the fixture on 1,597/1,597 rows on every accelerator. The bar: the answer (argmax of the
+post-temperature probabilities) equal on every row whose reference top-2 gap is above 0.02, max |Δp| ≤ 0.02 and mean
+|Δp| ≤ 0.002 over all rows.
+
+| Accelerator | Answer equal (non-near-tie rows) | near ties | max \|Δp\| | mean \|Δp\| | per question (warm median, write + run + readback) | compile |
+|---|---|---|---|---|---|---|
+| NPU (Hexagon, LiteRT JIT, one partition) | 1,552 / 1,552 | 43 / 45 | 0.0032 | 0.0004 | 19.8 ms (min 19.0, max 21.7) | 0.15 s from the JIT cache (11 s on the first launch) |
+| GPU FP16 | 1,552 / 1,552 | 42 / 45 | 0.0158 | 0.0011 | 22.9 ms (min 21.2, max 58.9) | 0.9 s |
+| GPU FP32 | 1,552 / 1,552 | 45 / 45 | 0.0008 | 0.00005 | 68.8 ms (min 40.8, max 88.9) | 0.9 s |
+
+All three pass the bar (the NPU report's own `status` reads `PASS`; `app_gate_score.py` in the model repository's
+`conversion/` gives the same counts). The per-question medians are from these 1,597-row legs: the GPU legs heat the
+phone and the GPU clock drops inside the leg (the FP32 leg's minimum, 40.8 ms, is the rested value; the model card's
+timing legs on a rested phone give 42.1 ms FP32, 22.4 ms FP16 and 19.7 ms NPU at this window). The editor's own run
+on the NPU, the bundled support ticket (three questions, 430 tokens across the rows), reported 114 ms end to end in the
+header, including tokenization, embedding lookup and decoding.
+
+The near ties (45 rows whose reference top-2 gap is 0.02 or less) are reported, not counted: on those rows a probability
+shift inside the bar can flip the answer, and the FP16 paths flip 2–3 of them; FP32 flips none.
 
 ## NPU
 

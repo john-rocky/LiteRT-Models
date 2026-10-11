@@ -99,26 +99,34 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
           detail["call_ms"] = raw.callMs
           if (raw.finite) {
             val decodeStarted = System.nanoTime()
+            // The fixture's probabilities are the publisher's post-temperature probabilities (phocinae-server), so the
+            // app's are decoded with the installed rl_agent_config.json temperatures; a fixture may also carry the
+            // publisher's answer dict (official_answer), compared when present.
             val actual =
               PhocinaeDecoder.decode(
                 raw.markerLogits,
                 raw.actLogits,
                 sequence.question,
-                PhocinaeCalibration.identity(),
+                engine.calibration,
               )
-            val official = PhocinaeJson.asObject(row["official_answer"])
-            val probabilities = PhocinaeDecoder.softmax(raw.markerLogits)
+            val official = row["official_answer"]?.let { PhocinaeJson.asObject(it) }
+            val probabilities =
+              PhocinaeDecoder.probabilities(raw.markerLogits, sequence.question, engine.calibration)
             val referenceProbabilities = floats(row["probabilities"])
             detail["decode_ms"] = ms(System.nanoTime() - decodeStarted)
             detail["answer"] = actual
-            detail["official_answer"] = official
-            detail["official_dict_exact"] = jsonEqual(actual, official)
+            if (official != null) {
+              detail["official_answer"] = official
+              detail["official_dict_exact"] = jsonEqual(actual, official)
+              detail["answer_max_numeric_error"] = numericError(actual, official)
+            }
             detail["probabilities"] = probabilities.toList()
             detail["argmax"] = argmax(probabilities)
             detail["reference_argmax"] = argmax(referenceProbabilities)
             detail["argmax_exact"] = argmax(probabilities) == argmax(referenceProbabilities)
+            detail["near_tie"] = topTwoGap(referenceProbabilities) <= NEAR_TIE_GAP
             detail["probability_max_abs_error"] = maxError(probabilities, referenceProbabilities)
-            detail["answer_max_numeric_error"] = numericError(actual, official)
+            detail["probability_mean_abs_error"] = meanError(probabilities, referenceProbabilities)
           } else {
             detail["error"] =
               "Nonfinite model values; action/decode may be skipped; see tensor scales"
@@ -147,6 +155,22 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
           results
             .mapNotNull { (it["probability_max_abs_error"] as? Number)?.toDouble() }
             .maxOrNull(),
+        "probability_mean_abs_error" to
+          results
+            .mapNotNull { (it["probability_mean_abs_error"] as? Number)?.toDouble() }
+            .takeIf { it.isNotEmpty() }
+            ?.average(),
+        "near_tie_rows" to results.count { it["near_tie"] == true },
+        "argmax_exact_non_near_tie" to
+          results.count { it["near_tie"] == false && it["argmax_exact"] == true },
+        "argmax_exact_near_tie" to
+          results.count { it["near_tie"] == true && it["argmax_exact"] == true },
+        "bar" to
+          linkedMapOf(
+            "argmax" to "equal on every row whose reference top-2 gap is above $NEAR_TIE_GAP",
+            "probability_max_abs_error" to BAR_MAX_ABS_DP,
+            "probability_mean_abs_error" to BAR_MEAN_ABS_DP,
+          ),
         "cold_first_call" to
           results
             .firstOrNull { it["cold_first_call"] == true }
@@ -166,6 +190,10 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
               .mapNotNull { (it["write_run_read_ms"] as? Number)?.toDouble() }
           ),
       )
+    // PASS = the lane's bar: every row's ids and markers reproduce the fixture, every row finite, the argmax equal on
+    // every non-near-tie row, max |dp| <= BAR_MAX_ABS_DP and mean |dp| <= BAR_MEAN_ABS_DP over all rows.
+    val maxDp = (summary["probability_max_abs_error"] as? Number)?.toDouble()
+    val meanDp = (summary["probability_mean_abs_error"] as? Number)?.toDouble()
     val status =
       if (
         setupError != null ||
@@ -175,7 +203,14 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
           }
       )
         "FAIL"
-      else "MEASURED"
+      else if (
+        results.all { it["finite"] == true } &&
+          results.none { it["near_tie"] == false && it["argmax_exact"] != true } &&
+          maxDp != null && maxDp <= BAR_MAX_ABS_DP &&
+          meanDp != null && meanDp <= BAR_MEAN_ABS_DP
+      )
+        "PASS"
+      else "FAIL"
     report["status"] = status
     report["summary"] = summary
     report["error"] = setupError
@@ -188,7 +223,10 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
       "rows" to results.size, "ids_exact" to summary["ids_exact"],
       "markers_exact" to summary["markers_exact"], "finite_rows" to summary["finite_rows"],
       "argmax_exact" to summary["argmax_exact"],
-      "max_delta_p" to summary["probability_max_abs_error"], "file" to output.name,
+      "argmax_exact_non_near_tie" to summary["argmax_exact_non_near_tie"],
+      "near_tie_rows" to summary["near_tie_rows"],
+      "max_delta_p" to summary["probability_max_abs_error"],
+      "mean_delta_p" to summary["probability_mean_abs_error"], "file" to output.name,
       "error" to setupError,
     ))}",
     )
@@ -255,6 +293,19 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
       ?: 0.0
   }
 
+  private fun meanError(actual: FloatArray, reference: FloatArray): Double {
+    require(actual.size == reference.size) { "Probability/vector length mismatch" }
+    if (actual.isEmpty()) return 0.0
+    return actual.indices.sumOf { abs(actual[it].toDouble() - reference[it].toDouble()) } / actual.size
+  }
+
+  /** The reference's top-1 minus top-2 probability: a row at or under NEAR_TIE_GAP is a near tie. */
+  private fun topTwoGap(reference: FloatArray): Double {
+    if (reference.size < 2) return 1.0
+    val sorted = reference.map { it.toDouble() }.sortedDescending()
+    return sorted[0] - sorted[1]
+  }
+
   private fun argmax(values: FloatArray): Int {
     require(values.isNotEmpty())
     var best = 0
@@ -299,5 +350,9 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
 
   companion object {
     const val TAG = "PHOCINAE_GATE"
+    /** The lane bar on the post-temperature probabilities (phocinae_work/scripts/common.py BAR). */
+    const val NEAR_TIE_GAP = 0.02
+    const val BAR_MAX_ABS_DP = 0.02
+    const val BAR_MEAN_ABS_DP = 0.002
   }
 }
