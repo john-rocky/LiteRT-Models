@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "model": "litert-community/Phocinae-Largha-150M-LiteRT",
+  "windows": [
+    256,
+    384,
+    512
+  ],
+  "files": [
+    {
+      "name": "phocinae_largha_150m_L256_fp16fc_embeds.tflite",
+      "size_bytes": 92680128,
+      "sha256": "2ba31415bd13dbbdfec6f99241cedc3fc7539a68ffbaab5230953e3db404e4fa"
+    },
+    {
+      "name": "phocinae_largha_150m_L384_fp16fc_embeds.tflite",
+      "size_bytes": 93400928,
+      "sha256": "8a836463fe3cb7bf4231728013726b81aa50bbac9e7859d0a38b9f04639331e6"
+    },
+    {
+      "name": "phocinae_largha_150m_L512_fp16fc_embeds.tflite",
+      "size_bytes": 94384064,
+      "sha256": "22276e030e2ce624643d4708d712293772e37dfb2b8286159a5a31fe6cf357d2"
+    },
+    {
+      "name": "phocinae_act_head_fp32.tflite",
+      "size_bytes": 402560,
+      "sha256": "426805e2be750b7b4579a06facc55bc8cf27542f45622bc11afc277440682619"
+    },
+    {
+      "name": "rl_agent_config.json",
+      "size_bytes": 596,
+      "sha256": "52870da8651d1baa87fa9d3475f8fcee5fc59e2c7024e6a761055870e137b52d"
+    },
+    {
+      "name": "tokenizer.json",
+      "size_bytes": 34363188,
+      "sha256": "609d8f4c067cd3950f88594c5a802616cea245823836ef5848ee4fc40aab5b6f"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size_bytes": 553,
+      "sha256": "cb01c24cdc73e85640cb6bcde2469cc4b05b7c184664cb57f6ccfc7b5a45d779"
+    },
+    {
+      "name": "tok_embeddings_fp16.bin",
+      "size_bytes": 196608000,
+      "sha256": "1143f2e3beca07f29b9e7e94d6e336cfd36961d90fb3dd90ebf675955c2d1fdb"
+    },
+    {
+      "name": "tok_embeddings.json",
+      "size_bytes": 833,
+      "sha256": "0515f7a03fccdd9fcd9eba9597dafe0ed425276f715de3d468289ee076820955"
+    },
+    {
+      "name": "gate_rows_s256.json",
+      "size_bytes": 2063083,
+      "sha256": "fd993f7d8b7c644c18a06259619e76e7ee0b634e75703ffdc5c52b0facb547ed",
+      "role": "debug gate rows (validation data, not part of the app download)"
+    },
+    {
+      "name": "gate_rows_s384.json",
+      "size_bytes": 7306666,
+      "sha256": "ac3f3031dd03cf2ce25824e2ba55c3364a79be05c6d779655174c46d965e799f",
+      "role": "debug gate rows (validation data, not part of the app download)"
+    }
+  ]
+}

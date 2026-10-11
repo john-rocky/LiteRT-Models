@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Phocinae decide</string>
+  <string name="status_loading_tokenizer">Loading tokenizer…</string>
+  <string name="status_compiling_gpu">Compiling GPU…</string>
+  <string name="status_compiling_npu">Compiling NPU… (about 4 s at window 256 on the first launch only)</string>
+  <string name="status_loading_cpu">Loading CPU model…</string>
+  <string name="status_warming_up">Warming up the full pipeline…</string>
+  <string name="status_gpu_ready">Ready · GPU FP32</string>
+  <string name="status_gpu_fp16_ready">Ready · GPU FP16</string>
+  <string name="status_npu_ready">Ready · NPU</string>
+  <string name="status_cpu_ready">Ready · CPU</string>
+  <string name="status_running">Deciding…</string>
+  <string name="status_error">Model unavailable</string>
+  <string name="status_not_installed">Model not installed</string>
+  <string name="status_gate_running">Running debug fixture gate…</string>
+  <string name="status_gate_measured">Gate measurements saved for review</string>
+  <string name="status_gate_failed">Debug fixture gate failed</string>
+  <string name="gate_file">Report: %1$s</string>
+  <string name="error_message">%1$s</string>
+  <string name="missing_model_file">Missing %1$s. Run scripts/install_to_device.sh, then relaunch.</string>
+  <string name="error_nonfinite">The model returned a nonfinite value. Try the other accelerator.</string>
+  <string name="launch_to_ready">Launch to Ready: %1$.0f ms</string>
+  <string name="accelerator_title">Accelerator</string>
+  <string name="accelerator_gpu">GPU FP32</string>
+  <string name="accelerator_gpu_fp16">GPU FP16</string>
+  <string name="accelerator_npu">NPU</string>
+  <string name="accelerator_cpu">CPU</string>
+  <string name="use_cpu">Use CPU</string>
+  <string name="preset_deploy">Deploy gate</string>
+  <string name="preset_support">Support ticket</string>
+  <string name="preset_invoice">Invoice check</string>
+  <string name="preset_security">Security alert</string>
+  <string name="preset_selected">Questions: %1$s</string>
+  <string name="state_label">State (edit it, then Decide)</string>
+  <string name="example_deploy">Deploy run #4471 for the payments service: the agent pulled the latest tag, ran the migration on the staging database, then restarted the API pods. Health check: 200 OK after 11 s. One warning in the logs: \"connection pool near limit (94/100)\". No customer-facing errors in the last 30 minutes. The on-call engineer is asleep (02:40 local).</string>
+  <string name="example_support">Ticket #48213 from Mara Quellen: \"I ordered the Thistlebeam desk lamp (order TB-20931) on September 14 and was charged twice. The lamp arrived and works. Please refund the duplicate charge before my card statement closes on Friday.\" Account: 3 years, no previous tickets. Payment log shows two captures of $84.00 within one minute.</string>
+  <string name="example_invoice">Invoice INV-2026-0912 from Northwind Supplies: 40 cartons of A4 paper at $31.50 = $1,260.00, dated October 2. Purchase order PO-7781: 40 cartons at $31.50. Delivery note signed October 4: 38 cartons received, 2 cartons damaged and returned. No earlier invoice references PO-7781.</string>
+  <string name="example_security">Alert SEC-5520: user j.okafor signed in from Lagos at 09:12 and from Warsaw at 09:40 the same morning, both with the correct password and a passed MFA prompt. The Warsaw session downloaded 212 files from the finance share, three times the user\'s daily average. The user is on the HR travel list for Poland this week.</string>
+  <string name="calibration_title">Probability calibration</string>
+  <string name="calibrated">temperatures from rl_agent_config.json</string>
+  <string name="uncalibrated">T=1 (uncalibrated)</string>
+  <string name="run">Decide</string>
+  <string name="run_summary">%1$d questions in %2$.0f ms · %3$d tokens</string>
+  <string name="token_count_hint">Tokens across all question rows, excluding padding.</string>
+  <string name="results_title">Answers</string>
+  <string name="answer_probability" translatable="false">%1$.0f%%</string>
+  <string name="answer_true">Yes</string>
+  <string name="answer_false">No</string>
+  <string name="answer_level">Level %1$d</string>
+  <string name="other_options">Other options: %1$s</string>
+  <string name="result_confidence">Confidence %1$.2f</string>
+  <string name="result_timing" translatable="false">%1$.1f ms</string>
+</resources>
