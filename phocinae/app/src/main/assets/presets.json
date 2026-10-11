@@ -1,0 +1,119 @@
+{
+  "deploy": {
+    "next_step": {
+      "type": "choice",
+      "instructions": "What should the release system do now?",
+      "criteria": {
+        "continue": "Let the deployment proceed to production.",
+        "hold": "Keep it on staging and wait for a human.",
+        "rollback": "Revert to the previous tag now."
+      }
+    },
+    "wake_oncall": {
+      "type": "noul",
+      "instructions": "The on-call engineer should be paged now.",
+      "criteria": {
+        "true": "Something needs a human within minutes.",
+        "false": "It can wait until the morning."
+      }
+    },
+    "risk": {
+      "type": "score",
+      "instructions": "How risky is the current state of the service?",
+      "criteria": [
+        "Routine: nothing unusual.",
+        "Watch: a warning sign, no impact yet.",
+        "Degraded: users are affected.",
+        "Critical: outage or data at risk."
+      ]
+    }
+  },
+  "support": {
+    "action": {
+      "type": "choice",
+      "instructions": "What should the support desk do with this ticket?",
+      "criteria": {
+        "refund": "Refund or reverse a charge.",
+        "fix": "Hand it to engineering as a defect.",
+        "explain": "Reply with an explanation or instructions.",
+        "escalate": "Escalate to a manager or the security team."
+      }
+    },
+    "needs_human": {
+      "type": "noul",
+      "instructions": "A human agent should answer this ticket rather than an automated reply.",
+      "criteria": {
+        "true": "The case needs judgment or access only a person has.",
+        "false": "A standard reply or self-service step settles it."
+      }
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this ticket?",
+      "criteria": [
+        "No time pressure; answer in the normal queue.",
+        "Should be answered today.",
+        "Blocking the customer right now.",
+        "Money or data is at risk this hour."
+      ]
+    }
+  },
+  "invoice": {
+    "disposition": {
+      "type": "choice",
+      "instructions": "What should accounts payable do with this invoice?",
+      "criteria": {
+        "pay": "Approve it for payment as billed.",
+        "hold": "Hold it until the discrepancy is resolved with the vendor.",
+        "reject": "Reject it and ask the vendor for a corrected invoice."
+      }
+    },
+    "duplicate": {
+      "type": "noul",
+      "instructions": "This invoice duplicates one that was already paid.",
+      "criteria": {
+        "true": "The same goods or period were already billed and paid.",
+        "false": "It bills something not paid before."
+      }
+    },
+    "discrepancy_severity": {
+      "type": "score",
+      "instructions": "How serious is the mismatch between the invoice, the order and the delivery?",
+      "criteria": [
+        "None: everything matches.",
+        "Minor: a small difference inside the usual tolerance.",
+        "Material: a difference that changes what is owed.",
+        "Severe: the invoice bills goods or services that were not received."
+      ]
+    }
+  },
+  "security": {
+    "disposition": {
+      "type": "choice",
+      "instructions": "What should the security team do with this alert?",
+      "criteria": {
+        "close": "Close it as benign or a false positive.",
+        "investigate": "Open an investigation and gather more evidence.",
+        "contain": "Isolate the host or disable the account now."
+      }
+    },
+    "credential_compromise": {
+      "type": "noul",
+      "instructions": "An account credential has been compromised.",
+      "criteria": {
+        "true": "Someone other than the owner is using the credential.",
+        "false": "The activity is the owner's own."
+      }
+    },
+    "severity": {
+      "type": "score",
+      "instructions": "How severe is this incident?",
+      "criteria": [
+        "Informational: no harm possible.",
+        "Low: contained, no sensitive access.",
+        "Medium: sensitive access possible, not confirmed.",
+        "High: confirmed access to sensitive systems or data."
+      ]
+    }
+  }
+}

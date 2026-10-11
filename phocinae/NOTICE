@@ -1,0 +1,28 @@
+Phocinae decide — Android sample
+
+This sample runs Phocinae-Largha-150M-v1 (the Phocinae project, Apache License 2.0;
+https://huggingface.co/Phocinae/Phocinae-Largha-150M-v1, v1.1, model.safetensors sha256
+b6472511…) as LiteRT graphs from https://huggingface.co/litert-community/Phocinae-Largha-150M-LiteRT.
+The publisher's NOTICE is retained in licenses/Phocinae-NOTICE.txt.
+
+The host side (Gemma-style BPE tokenizer with Metaspace and byte fallback, the typed-question
+prompt builder, the marker decoder and the temperature lookup) is the Kotlin port written for the
+Laya multilingual sample in this repository; its protocol follows Laya 0.3.4 by Convai Innovations
+(Apache License 2.0, https://huggingface.co/convaiinnovations/laya), which Phocinae-Largha-150M-v1's
+own runtime (phocinae-server) implements as well. That port is retained with its attribution in
+licenses/Laya-APACHE-2.0.txt.
+
+Model conversion changes: static windows (256 / 384 / 512 tokens), explicit attention and
+rotary-position constants, LayerNorm computed on inputs scaled by a power of two (exact in fp32,
+finite in fp16), a separate action head, host-side token embedding lookup from the checkpoint's
+float16 rows, and FP16 storage of fully connected weights. The checkpoint tokenizer and
+rl_agent_config.json (the publisher's temperatures) are used unchanged.
+
+The encoder derives from mmBERT-small, declared MIT by its model card.
+Attribution: Marc Marone, Orion Weller, William Fleshman, Eugene Yang, Dawn Lawrie, and
+Benjamin Van Durme; Johns Hopkins Center for Language and Speech Processing and collaborators.
+https://huggingface.co/jhu-clsp/mmBERT-small
+
+The invented example states and the four question sets in presets.json are this sample's own;
+the question shapes follow the typed-decisions protocol (LocalLLaMA/typed-decisions, Apache-2.0).
+ModernBERT, Transformers and tokenizers license texts are retained under licenses/.
