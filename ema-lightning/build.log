@@ -1,0 +1,3 @@
+quiet_wait: window open (qi21t-demo-r7 timing pid 30320 since 2026-10-11T21:55:06+0900) — waiting
+quiet_wait: waited 60 s, running: ./gradlew -q assembleDebug --console=plain
+BUILD_EXIT 0

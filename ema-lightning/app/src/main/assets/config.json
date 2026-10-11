@@ -1,0 +1,205 @@
+{
+ "model": "canberkkkkkk/ema-lightning",
+ "package": "ema-lightning 1.1.2",
+ "sample_rate": 48000,
+ "hop": 1920,
+ "latent_dim": 64,
+ "d": 224,
+ "times": [
+  0.0,
+  0.25,
+  0.5,
+  0.75
+ ],
+ "vocab": [
+  "<pad>",
+  "<unk>",
+  " ",
+  "!",
+  "\"",
+  "%",
+  "&",
+  "'",
+  "(",
+  ")",
+  ",",
+  "-",
+  ".",
+  "/",
+  ":",
+  ";",
+  "?",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "ç",
+  "ö",
+  "ü",
+  "ğ",
+  "ı",
+  "ş"
+ ],
+ "text_buckets": [
+  32,
+  64,
+  128,
+  256
+ ],
+ "sound_buckets": [
+  [
+   32,
+   48
+  ],
+  [
+   64,
+   96
+  ],
+  [
+   128,
+   192
+  ],
+  [
+   256,
+   384
+  ],
+  [
+   256,
+   512
+  ]
+ ],
+ "decoder_buckets": [
+  48,
+  120
+ ],
+ "decoder_stage_lengths": {
+  "48": [
+   48,
+   384,
+   2304,
+   11521,
+   23042,
+   46084,
+   92168
+  ],
+  "120": [
+   120,
+   960,
+   5760,
+   28801,
+   57602,
+   115204,
+   230408
+  ]
+ },
+ "aligner": {
+  "heads": 4,
+  "pos_scale": 4.0,
+  "lookback": 1,
+  "lookahead": 1
+ },
+ "windows": {
+  "first": 25,
+  "later": 100,
+  "context": 8
+ },
+ "limits": {
+  "letters_per_piece": 250,
+  "max_word_frames": 250,
+  "max_frames": 3000
+ },
+ "split": true,
+ "multi": true,
+ "forms": {
+  "text": "fp32",
+  "sound": "fp32",
+  "decoder": "fp16"
+ },
+ "files": [
+  {
+   "file": "ema_text_multi_fp32.tflite",
+   "kind": "text",
+   "form": "fp32",
+   "bytes": 4907192,
+   "sha256": "fbef33f9a96b4cd9f2bd68f4615421f0a0fcd99b75e1d7fcf7956665dc2ab8e6",
+   "signatures": [
+    "ema_text_L32",
+    "ema_text_L64",
+    "ema_text_L128",
+    "ema_text_L256"
+   ]
+  },
+  {
+   "file": "ema_align_multi_fp32.tflite",
+   "kind": "align",
+   "form": "fp32",
+   "bytes": 659484,
+   "sha256": "c80117ce7fcf38e7f872b80cc35237adaa290342187239e1fee0ca2433f3a6b4",
+   "signatures": [
+    "ema_align_L32_T48",
+    "ema_align_L64_T96",
+    "ema_align_L128_T192",
+    "ema_align_L256_T384",
+    "ema_align_L256_T512"
+   ]
+  },
+  {
+   "file": "ema_step_multi_fp32.tflite",
+   "kind": "step",
+   "form": "fp32",
+   "bytes": 15317440,
+   "sha256": "71b98f74248127f25f6bd0f236f5c99cac729595a044be7a14701be76c091a5b",
+   "signatures": [
+    "ema_step_T48",
+    "ema_step_T96",
+    "ema_step_T192",
+    "ema_step_T384",
+    "ema_step_T512"
+   ]
+  },
+  {
+   "file": "ema_decoder_multi_fp16.tflite",
+   "kind": "decoder",
+   "form": "fp16",
+   "bytes": 6353648,
+   "sha256": "d94569d7b3eebf12cbaebdf4248d3bb8dd10c604ac75e59fdcde56dd6cd902b3",
+   "signatures": [
+    "ema_decoder_P48",
+    "ema_decoder_P120"
+   ]
+  },
+  {
+   "file": "ema_step_table.npz",
+   "kind": "table",
+   "form": "fp32",
+   "bytes": 29424,
+   "sha256": "eb6f5ee686833e752d0dbf6c4a6eccd57e8d5c03b92c225013e0b37b1c7c3834"
+  }
+ ],
+ "source": {
+  "ema_pt_sha256": "95aec03dafbe0e1d69bca774ab597c779464729a14bc99bfcb52480090c7dfe6",
+  "decoder_pt_sha256": "9595819b173f411340f63d11332695121a97f8bf1f6d8b6fef0b21cf99c7ad67"
+ }
+}

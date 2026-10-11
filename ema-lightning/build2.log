@@ -1,0 +1,2 @@
+quiet_wait: waited 0 s, running: ./gradlew -q assembleDebug --console=plain
+BUILD_EXIT 0
