@@ -976,6 +976,25 @@ Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN tim
 
 **Original project**: [shivammehta25/Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS) | [MIT](https://github.com/shivammehta25/Matcha-TTS/blob/main/LICENSE)
 
+### EMA Lightning (Turkish TTS, 8.6M)
+
+EMA Lightning: a 5.6M flow-matching DiT distilled to **four steps** + a 3.0M **HiFi-GAN** decoder, one Turkish voice, 48 kHz (the author reports 0.92 % WER on Freya-TR-Eval). Four static-shape graphs, each file holding every length bucket as a **signature** (one copy of the weights); the integer bookkeeping (word timeline, aligner window, decoder masks, the four Euler steps) runs on the host.
+
+| Model | Download Link | Size | Input | Output | API |
+| ----- | ------------- | ---- | ----- | ------ | --- |
+| Text encoder | [ema_text_multi_fp32.tflite](https://huggingface.co/litert-community/EMA-Lightning-LiteRT) | 4.9 MB | ids i32 [1,L] + mask [1,L], L ∈ {32,64,128,256} | h [1,L,224] + frames per letter [1,L] | CompiledModel CPU |
+| Aligner | [ema_align_multi_fp32.tflite](https://huggingface.co/litert-community/EMA-Lightning-LiteRT) | 0.7 MB | h, letter / frame positions, window [1,1,T,L] | cond [1,T,224] | CompiledModel CPU |
+| DiT step (×4) | [ema_step_multi_fp32.tflite](https://huggingface.co/litert-community/EMA-Lightning-LiteRT) | 15.3 MB | x [1,T,64] + cond + step vectors, T ∈ {48,…,512} | v [1,T,64] | CompiledModel CPU |
+| HiFi-GAN decoder | [ema_decoder_multi_fp16.tflite](https://huggingface.co/litert-community/EMA-Lightning-LiteRT) | 6.4 MB | z [1,64,P] + 7 length masks, P ∈ {48,120} | wav [1,P·1920] | CompiledModel GPU (fp16) |
+
+**Measured** (Galaxy S26, LiteRT 2.2.0, 2026-10-11, rested timing legs): text 0.7 ms · aligner 0.2 ms · one DiT step 2.5 ms (CPU) · decoder 14.6 ms per 1.9 s window, 31 ms per 4.8 s window (GPU fp16). One 3.5 s sentence: 56.5 ms, first audio 25.5 ms; the sample's own screen for a 2.4 s sentence: 49 ms, first audio 33 ms.
+
+**Conversion** (litert-torch 0.9.4): `ConvTranspose1d(k 10, s 5, p 2)` as VALID + crop; the aligner's `expand` replaced by a broadcast through the RoPE multiply; the ConvNeXt layer scale folded into the following linear; one DiT step per graph (an unrolled 4-step graph duplicates the weights in the file). Dynamic int8 fails parity on the distilled DiT (the whole set stays fp32 / fp16).
+
+**Sample app**: [ema-lightning/](ema-lightning/) — type Turkish, tap Speak, hear it (the graphs download once from the Hub). Numbers and abbreviations must be written out in words: the package's Rust normalizer is not in the app.
+
+**Original project**: [canberkkkkkk/ema-lightning](https://huggingface.co/canberkkkkkk/ema-lightning) · [canberk7/ema-lightning](https://github.com/canberk7/ema-lightning) | Apache-2.0
+
 ### Dia2-1B (dialogue)
 
 Dia2-1B: two-speaker **dialogue** TTS built as a Moshi-style **RQ-Transformer** — the first dialogue TTS and the first RQ-Transformer in this zoo. Once per 12.5 Hz frame a 30-layer *temporal* transformer emits a word-timing action plus Mimi codebook 0; a 3-layer *depformer* then autoregressively fills the remaining 31 codebooks for that same frame. Mimi (32 quantizers) decodes the codes to 24 kHz audio.
