@@ -1,4 +1,4 @@
-# ASR LiteRT-LM — speech to text on Android with three LiteRT-LM bundles
+# ASR LiteRT-LM — speech to text on Android with four LiteRT-LM bundles
 
 Hold the button, speak for up to 30 s, and the app writes what you said. On the CPU of a Galaxy S26
 (4 threads, measured 2026-10-09), Qwen3-ASR-1.7B turned a 6.4 s English clip into text in 2.49 s and
@@ -11,10 +11,13 @@ runs on the phone; the app asks for the microphone and nothing else (no network 
 | Model | Hugging Face | File | Size | License | Languages |
 |---|---|---|---|---|---|
 | Qwen3-ASR-1.7B | [litert-community/Qwen3-ASR-1.7B](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) | `Qwen3-ASR-1.7B.litertlm` | 2,693,064,192 B | Apache-2.0 | 30 languages (the card scores English, Mandarin, Japanese) |
+| Qwen3-ASR-1.7B-15s | [litert-community/Qwen3-ASR-1.7B](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) | `Qwen3-ASR-1.7B-15s.litertlm` | 2,701,438,880 B | Apache-2.0 | the same as Qwen3-ASR-1.7B |
 | Fun-ASR-Nano-2512 | [litert-community/Fun-ASR-Nano-2512](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) | `Fun-ASR-Nano-2512.litertlm` | 1,255,894,736 B | Apache-2.0 | Chinese, English, Japanese |
 | Confucius4-R2T2 | [mlboydaisuke/Confucius4-R2T2-LiteRT](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT) | `Confucius4-R2T2.litertlm` | 2,693,064,192 B | [NetEase Youdao Model Use License Agreement](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT/blob/main/MODEL_LICENSE) | Chinese, English; a fine-tune of Qwen3-ASR-1.7B |
 
-Each file holds the audio encoder, the language model, the tokenizer and the prompt template. Read
+Each file holds the audio encoder, the language model, the tokenizer and the prompt template. The two
+Qwen3-ASR-1.7B files hold the same weights; `Qwen3-ASR-1.7B-15s.litertlm` encodes audio in 15 s windows
+instead of one 30 s window (see [Microphone](#microphone)). Read
 the Confucius4-R2T2 agreement before you use that file: it has user-count and revenue thresholds
 (clause 2.2) and limits on using the model to improve other models (clause 3.4).
 
@@ -23,7 +26,7 @@ the Confucius4-R2T2 agreement before you use that file: it has user-count and re
 From this directory, with the phone connected over adb:
 
 ```bash
-hf download litert-community/Qwen3-ASR-1.7B Qwen3-ASR-1.7B.litertlm --local-dir bundles
+hf download litert-community/Qwen3-ASR-1.7B Qwen3-ASR-1.7B.litertlm Qwen3-ASR-1.7B-15s.litertlm --local-dir bundles
 hf download litert-community/Fun-ASR-Nano-2512 Fun-ASR-Nano-2512.litertlm --local-dir bundles
 hf download mlboydaisuke/Confucius4-R2T2-LiteRT Confucius4-R2T2.litertlm --local-dir bundles
 ./gradlew :app:installDebug && adb shell am start -n com.asrlitertlm/.MainActivity
@@ -33,7 +36,7 @@ adb push bundles/*.litertlm /sdcard/Android/data/com.asrlitertlm/files/
 Reopen the app, tap a model in the picker and hold **Hold to talk**. The first launch creates the
 folder the push writes to. One bundle is enough; the picker marks the others `missing`.
 
-- Storage: the three files take 6.6 GB. The first load of each file writes a runtime cache into the
+- Storage: the four files take 9.3 GB. The first load of each file writes a runtime cache into the
   app's cache directory: 3.0 GB for each Qwen3-ASR file, 1.5 GB for Fun-ASR.
 - Run `adb shell touch /sdcard/Android/data/com.asrlitertlm/files/*.litertlm` after the push. adb push
   writes whole-second modification times, and with those a later launch can miss the runtime cache
@@ -79,7 +82,7 @@ in three languages (below).
 
 ## How the app calls a model
 
-The three bundles share one path ([`AsrEngine.kt`](app/src/main/kotlin/com/asrlitertlm/AsrEngine.kt)):
+The four bundles share one path ([`AsrEngine.kt`](app/src/main/kotlin/com/asrlitertlm/AsrEngine.kt)):
 one `Engine`, a new `Conversation` per clip, and one user message that holds only the audio file. Each
 bundle's template adds the rest: Fun-ASR's default instruction `语音转写：`, Qwen3-ASR's audio markers.
 
@@ -115,7 +118,8 @@ splits the Qwen3-ASR answer at `<asr_text>` and shows the named language; Fun-AS
 ## Microphone
 
 Hold **Hold to talk** and speak; releasing the button ends the recording, and so does the 30 s limit.
-Each model reads one window of about 30 s per message, so the app sends at most 30 s. The app records
+The app sends at most 30 s per message: one encoder window of about 30 s for most files, two 15 s windows
+for `Qwen3-ASR-1.7B-15s.litertlm` (a recording of up to 15 s takes one). The app records
 16 kHz mono 16-bit PCM (the `VOICE_RECOGNITION` source) and writes it as a WAV file for the runtime.
 A recording quieter than −60 dBFS RMS is reported as "No speech heard" and is not sent to the model.
 Without the microphone permission the app shows a sentence that says how to allow it; the clips still work.
@@ -157,7 +161,7 @@ For recordings and tests; the app works without them.
 
 | Extra | Effect |
 |---|---|
-| `--es model <id>` | `qwen3-asr-1.7b`, `fun-asr-nano-2512` or `confucius4-r2t2` (default: the model used last) |
+| `--es model <id>` | `qwen3-asr-1.7b`, `qwen3-asr-1.7b-15s`, `fun-asr-nano-2512` or `confucius4-r2t2` (default: the model used last) |
 | `--es backend gpu` | language model on the GPU; the audio encoder stays on the CPU |
 | `--ez autoplay true` | after loading: clips zh, en, ja, each played and then transcribed (`--ei delay_ms`, `--ei gap_ms`) |
 | `--ei mic_test_ms 9000` | after loading and `delay_ms`: record that long, then transcribe (`--ez mic_test_play true` plays clip en meanwhile) |
@@ -170,7 +174,7 @@ under the tag `AsrLitertlm`.
 | File | Role |
 |---|---|
 | `app/src/main/kotlin/com/asrlitertlm/AsrEngine.kt` | Engine and one Conversation per clip: load, transcribe (cut at 30 s), release (safe twice) |
-| `app/src/main/kotlin/com/asrlitertlm/ModelProfile.kt` | the three bundles: file name, Hugging Face id, answer format |
+| `app/src/main/kotlin/com/asrlitertlm/ModelProfile.kt` | the four bundles: file name, Hugging Face id, answer format |
 | `app/src/main/kotlin/com/asrlitertlm/AsrSession.kt` | the app's one engine on one worker thread, events for the screen, the no-speech check |
 | `app/src/main/kotlin/com/asrlitertlm/MainActivity.kt` | picker, hold to talk, clip buttons, launch extras |
 | `app/src/main/kotlin/com/asrlitertlm/MicRecorder.kt` | 16 kHz mono recording, up to 30 s |

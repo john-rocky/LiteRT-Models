@@ -400,7 +400,12 @@ class AsrDeviceCheck {
 
     /** Bundles in the order the check loads them. */
     val ORDER =
-      listOf(ModelProfile.QWEN3_ASR_1_7B, ModelProfile.CONFUCIUS4_R2T2, ModelProfile.FUN_ASR_NANO_2512)
+      listOf(
+        ModelProfile.QWEN3_ASR_1_7B,
+        ModelProfile.QWEN3_ASR_1_7B_15S,
+        ModelProfile.CONFUCIUS4_R2T2,
+        ModelProfile.FUN_ASR_NANO_2512,
+      )
 
     /**
      * The expected sentences: Qwen3-ASR-1.7B's answers on the Mac CPU (litert-lm-api 0.17.1), which the S26 app runs

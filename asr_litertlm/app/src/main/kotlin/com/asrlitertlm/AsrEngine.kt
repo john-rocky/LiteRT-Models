@@ -108,7 +108,7 @@ class AsrEngine(private val cacheDir: File) : AutoCloseable {
 
   /**
    * Transcribes a 16 kHz mono 16-bit wav. Audio longer than [MAX_AUDIO_SECONDS] is cut there first ([scratch] holds
-   * the cut copy): each model reads one window of about 30 s per message.
+   * the cut copy): 30 s is one encoder window of most bundles and two of [ModelProfile.QWEN3_ASR_1_7B_15S].
    */
   fun transcribe(wav: File, scratch: File): Transcript {
     val currentEngine = engine ?: throw AsrException("No model is loaded.")

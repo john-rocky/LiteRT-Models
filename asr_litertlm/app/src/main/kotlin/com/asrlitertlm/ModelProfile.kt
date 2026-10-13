@@ -13,7 +13,7 @@ enum class AnswerFormat {
 data class Answer(val language: String, val text: String)
 
 /**
- * One bundle's contract with this app. All three bundles go through the same calls: one Engine, a new Conversation per
+ * One bundle's contract with this app. Every bundle goes through the same calls: one Engine, a new Conversation per
  * clip, one user message holding only the audio (each bundle's own template adds the rest: Fun-ASR's default
  * instruction `语音转写：`, Qwen3-ASR's audio markers), greedy sampling and [maxOutputTokens]. Only the shape of the
  * answer differs ([answerFormat]).
@@ -55,6 +55,19 @@ data class ModelProfile(
         answerFormat = AnswerFormat.LANGUAGE_TAGGED,
       )
 
+    /** [QWEN3_ASR_1_7B]'s weights with a 15 s encoder window: audio over 15 s takes two windows. */
+    val QWEN3_ASR_1_7B_15S =
+      ModelProfile(
+        id = "qwen3-asr-1.7b-15s",
+        displayName = "Qwen3-ASR-1.7B-15s",
+        fileName = "Qwen3-ASR-1.7B-15s.litertlm",
+        hubRepo = "litert-community/Qwen3-ASR-1.7B",
+        hubBytes = 2_701_438_880L,
+        license = "Apache-2.0",
+        languages = "30 languages",
+        answerFormat = AnswerFormat.LANGUAGE_TAGGED,
+      )
+
     val FUN_ASR_NANO_2512 =
       ModelProfile(
         id = "fun-asr-nano-2512",
@@ -80,7 +93,7 @@ data class ModelProfile(
       )
 
     /** The picker's rows, in screen order. */
-    val ALL = listOf(QWEN3_ASR_1_7B, FUN_ASR_NANO_2512, CONFUCIUS4_R2T2)
+    val ALL = listOf(QWEN3_ASR_1_7B, QWEN3_ASR_1_7B_15S, FUN_ASR_NANO_2512, CONFUCIUS4_R2T2)
 
     fun byId(id: String?): ModelProfile? = ALL.firstOrNull { it.id == id }
 
