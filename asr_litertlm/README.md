@@ -1,10 +1,11 @@
 # ASR LiteRT-LM — speech to text on Android with four LiteRT-LM bundles
 
 Hold the button, speak for up to 30 s, and the app writes what you said. On the CPU of a Galaxy S26
-(4 threads, measured 2026-10-09), Qwen3-ASR-1.7B turned a 6.4 s English clip into text in 2.49 s and
-Fun-ASR-Nano-2512 in 1.19 s. The app runs three speech recognition models in the LiteRT-LM `.litertlm`
-format through one code path: pick a model, then talk or play one of three bundled clips. Everything
-runs on the phone; the app asks for the microphone and nothing else (no network permission).
+(4 threads), Qwen3-ASR-1.7B turned a 6.4 s English clip into text in 2.49 s (2026-10-09), its 15 s-window
+file Qwen3-ASR-1.7B-15s in 1.79 s (2026-10-14) and Fun-ASR-Nano-2512 in 1.19 s. The app runs four
+LiteRT-LM `.litertlm` bundles of three speech recognition models through one code path: pick a model,
+then talk or play one of three bundled clips. Everything runs on the phone; the app asks for the
+microphone and nothing else (no network permission).
 
 ## Models
 
@@ -45,40 +46,50 @@ folder the push writes to. One bundle is enough; the picker marks the others `mi
 ## Galaxy S26 numbers
 
 Galaxy S26 (SM-S942Q, Android 16), `litertlm-android` 0.17.1, language model and audio encoder on the
-CPU with 4 threads, 2026-10-09. "Transcribe" is the wall time of `sendMessage()`, from sending the
-clip to the full answer; RTF is that time over the clip's length. The three clips are the same sentence
-in three languages (below).
+CPU with 4 threads, 2026-10-09 (the Qwen3-ASR-1.7B-15s rows 2026-10-14). "Transcribe" is the wall
+time of `sendMessage()`, from sending the clip to the full answer; RTF is that time over the clip's
+length. The three clips are the same sentence in three languages (below).
 
 | Model | zh, 9.7 s | en, 6.4 s | ja, 11.0 s | Microphone, 9 s | CPU limit at the start (big / prime cores) |
 |---|---|---|---|---|---|
 | Qwen3-ASR-1.7B | 2.38 s, RTF 0.25 | 2.49 s, RTF 0.39 | 3.56 s, RTF 0.32 | 2.97 s, CER 0 | 3.51 / 4.19 GHz |
+| Qwen3-ASR-1.7B-15s | 2.32 s, RTF 0.24 | 1.79 s, RTF 0.28 | 2.62 s, RTF 0.24 | 2.22 s, CER 0 | 3.63 / 4.74 GHz (no limit) |
 | Confucius4-R2T2 | 3.48 s, RTF 0.36 | 2.59 s, RTF 0.40 | 3.54 s, RTF 0.32 | 3.17 s, CER 0 | 3.63 / 4.74 GHz (no limit) |
 | Fun-ASR-Nano-2512 | 1.95 s, RTF 0.20 | 1.19 s, RTF 0.19 | 1.83 s, RTF 0.17 | 1.44 s, CER 0 | 3.63 / 4.74 GHz (no limit) |
 
 | Model | Engine load, first (writes the cache) | Engine load, cache in place | Runtime cache | Peak resident memory, first load |
 |---|---|---|---|---|
 | Qwen3-ASR-1.7B | 7.35 s | 0.72 s | 3.0 GB | 5.6 GB |
+| Qwen3-ASR-1.7B-15s | 4.38 s | 1.06 s | 3.0 GB | 5.3 GB |
 | Confucius4-R2T2 | 4.27 s | 1.33 s | 3.0 GB | 5.7 GB |
 | Fun-ASR-Nano-2512 | 1.39 s | 1.13 s | 1.5 GB | 3.5 GB |
 
 - Every clip's text equals the Mac CPU answer of the same file (LiteRT-LM 0.17.1, Python) after
-  removing punctuation and spaces. The three models write the same sentences for these clips.
+  removing punctuation and spaces. The four files write the same sentences for these clips.
 - The last column is the CPU limit at the start of the run (the maximum is 3.63 / 4.74 GHz; a warm phone
   lowers it). The Confucius4-R2T2 and Fun-ASR rows are a second run of the check on the same day with no
   limit (Confucius4-R2T2 at thermal status 0, Fun-ASR at status 1, each file pushed alone). The first run,
   with the limit lowered by heat, gave Confucius4-R2T2 4.03 / 3.06 / 3.83 s at 2.75 / 2.67 GHz and
   Fun-ASR 1.26 / 1.60 / 2.29 s at 2.23 / 2.23 GHz. Confucius4-R2T2 has the same architecture and file
   size as Qwen3-ASR-1.7B. In a run that started at the maximum, Qwen3-ASR-1.7B took 2.13 / 2.14 / 3.19 s
-  for the three clips.
+  for the three clips. The Qwen3-ASR-1.7B-15s row is one run at the maximum (thermal status 1, the file
+  pushed alone, 2026-10-14).
 - "Engine load" is `Engine.initialize()` plus the first conversation, which creates the audio encoder.
-  The Qwen3-ASR-1.7B cached load is a new launch; the other two are a second load in the same process.
+  The Qwen3-ASR-1.7B and Qwen3-ASR-1.7B-15s cached loads are new launches (the 15 s file: 1.15 and 1.06 s in
+  two launches right after its GPU run, the CPU limit lowered by heat to 2.75 / 2.67 GHz; a second load in
+  the same process took 1.60 s); the other two are a second load in the same process.
 - Microphone: the phone plays clip en through its speaker and records it with its microphone
   (media volume 3 of 15), then transcribes the recording. CER is the character error rate against
-  the clip's sentence.
+  the clip's sentence. The Qwen3-ASR-1.7B-15s recording was 8.9 s.
 - Language model on the GPU (launch extra `--es backend gpu`), Fun-ASR-Nano-2512: 1.69 / 1.68 / 2.29 s,
   the same text. All nodes of the prefill and decode graphs ran on the GPU (LITERT_CL); the audio
   encoder stays on the CPU (the model cards: the GPU delegate does not take it). Engine load 2.61 s.
   It was not faster than the CPU here.
+- Language model on the GPU, Qwen3-ASR-1.7B-15s (2026-10-14, right after its CPU run, with the CPU limit
+  at 2.23 / 2.23 GHz at the start): 3.59 / 2.27 / 3.14 s, the same text. The prefill (128 and 256 tokens)
+  and decode graphs ran on the GPU in full (LITERT_CL, 1298 / 1298 / 1244 nodes), the audio encoder on
+  the CPU. Engine load 5.22 s (first, writes the cache), 7.49 s for a second load in the same process.
+  Slower than its CPU row, which ran with no CPU limit.
 
 ## How the app calls a model
 
@@ -119,7 +130,9 @@ splits the Qwen3-ASR answer at `<asr_text>` and shows the named language; Fun-AS
 
 Hold **Hold to talk** and speak; releasing the button ends the recording, and so does the 30 s limit.
 The app sends at most 30 s per message: one encoder window of about 30 s for most files, two 15 s windows
-for `Qwen3-ASR-1.7B-15s.litertlm` (a recording of up to 15 s takes one). The app records
+for `Qwen3-ASR-1.7B-15s.litertlm` (a recording of up to 15 s takes one; on the Galaxy S26 the device check
+sent a 33.6 s clip cut to 30 s through that file in 5.20 s on the CPU, and the answer was the clip's
+Mandarin and Japanese sentences, 2026-10-14). The app records
 16 kHz mono 16-bit PCM (the `VOICE_RECOGNITION` source) and writes it as a WAV file for the runtime.
 A recording quieter than −60 dBFS RMS is reported as "No speech heard" and is not sent to the model.
 Without the microphone permission the app shows a sentence that says how to allow it; the clips still work.
