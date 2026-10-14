@@ -120,6 +120,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
 | [SmolLM3-3B](#smollm3-3b) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~22.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/SmolLM3-3B-LiteRT) |
 | [Qwen3-ASR-1.7B](asr_litertlm/) | Speech recognition, 30 languages (LiteRT-LM) | Galaxy S26 (CPU) | 2.49 s for a 6.4 s clip (RTF 0.39) | [🤗 HF](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) |
+| [Qwen3-ASR-1.7B-15s](asr_litertlm/) | Speech recognition, 30 languages, the same weights with a 15 s encoder window (LiteRT-LM) | Galaxy S26 (CPU) | 1.79 s for a 6.4 s clip (RTF 0.28) | [🤗 HF](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) |
 | [Fun-ASR-Nano-2512](asr_litertlm/) | Speech recognition, zh / en / ja (LiteRT-LM) | Galaxy S26 (CPU) | 1.19 s for a 6.4 s clip (RTF 0.19) | [🤗 HF](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) |
 | [Confucius4-R2T2](asr_litertlm/) | Speech recognition, zh / en, a Qwen3-ASR-1.7B fine-tune (LiteRT-LM) | Galaxy S26 (CPU) | 2.59 s for a 6.4 s clip (RTF 0.40) | [🤗 HF](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT) |
 
