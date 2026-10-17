@@ -14,18 +14,25 @@ import java.util.concurrent.Executors
 /**
  * Android orchestration of the published `host_runtime.py:HostRuntime.prepare/decode` contract,
  * whose tokenizer and sparse math come from gliner2 2.0.0. Five float32 inputs enter LiteRT:
- * embeddings `[1,N,384]`, attention `[1,N]`, text routing `[1,T,N]`, query routing `[1,5,N]` and
- * text mask `[1,T]`; one `[1,1,1,1108*T+4574]` float32 buffer returns to the host decoder.
+ * embeddings `[1,N,hidden]`, attention `[1,N]`, text routing `[1,T,N]`, query routing `[1,5,N]`
+ * and text mask `[1,T]`; one packed float32 buffer returns to the host decoder. [model] selects
+ * GLiNER2.5 Small (hidden 384, `[1,1,1,1108*T+4574]`) or Multi (hidden 768, `[1,1,1,1492*T+6494]`).
  *
- * GPU FP32 precision is mandatory: default GPU precision produces NaN for this graph. Windows N/T =
- * 128/48, 256/192 and 512/384 are selected without truncation. All native buffers live on one
- * worker thread behind a process-wide Environment; callers use the ViewModel's confined dispatcher.
- * Compiled windows stay resident until close, with no accelerator fallback.
+ * GPU FP32 precision is mandatory: default GPU precision produces NaN for the Small graph and
+ * changes Multi span sets. Windows N/T = 128/48, 256/192 and 512/384 are selected without
+ * truncation. All native buffers live on one worker thread behind a process-wide Environment;
+ * callers use the ViewModel's confined dispatcher. Compiled windows stay resident until close, with
+ * no accelerator fallback.
  *
- * The three graph-contract JSON files are read from filesDir. The small, unchanged checkpoint
- * config is bundled as `gliner_config.json`. Result offsets count Unicode code points.
+ * Small files are read from filesDir and its unchanged checkpoint config is bundled as
+ * `gliner_config.json`; Multi files, its config included, are read from `filesDir/multi`. Result
+ * offsets count Unicode code points.
  */
-class GlinerExtractor(context: Context, private val profileDecoder: Boolean = false) : Closeable {
+class GlinerExtractor(
+  context: Context,
+  private val profileDecoder: Boolean = false,
+  val model: GlinerModel = GlinerModel.SMALL,
+) : Closeable {
   /** Explicit LiteRT execution policy; GPU always requests FP32 to avoid nonfinite graph output. */
   enum class Backend(val accelerator: Accelerator, val precision: String) {
     /** Mandatory FP32 GPU computation; model storage can still use float16 weights. */
@@ -62,6 +69,8 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
     val textWords: Int,
     val timing: Timing,
     val decoderStagesMs: Map<String, Double> = emptyMap(),
+    val model: GlinerModel = GlinerModel.SMALL,
+    val splitter: GlinerInputs.Splitter = GlinerInputs.Splitter.WHITESPACE,
   )
 
   private data class Key(val window: Int, val backend: Backend)
@@ -81,7 +90,14 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
     }
   }
 
-  private val filesDir = context.applicationContext.filesDir
+  private val filesDir =
+    context.applicationContext.filesDir.let {
+      if (model.directory.isEmpty()) {
+        it
+      } else {
+        File(it, model.directory)
+      }
+    }
   private val graphs = linkedMapOf<Key, Graph>()
   private val inputBuilder: GlinerInputs
   private val decoder: GlinerDecoder
@@ -89,16 +105,27 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
   private var closed = false
 
   init {
-    // Check the complete installation, including lazy windows, before opening resources.
-    REQUIRED_FILES.forEach { requireFile(it) }
-    val embeddings = requireFile("word_embeddings_fp32.bin")
-    require(embeddings.length() == 196_624_896L) {
-      "Invalid word_embeddings_fp32.bin size. Run scripts/install_to_device.sh."
+    // Check the installation before opening resources: Small includes its lazy windows; Multi's
+    // s256/s512 graphs are optional downloads, checked when a text first needs them.
+    model.requiredFiles.forEach { requireFile(it) }
+    val embeddings = requireFile(model.tableFile)
+    require(embeddings.length() == model.tableBytes) {
+      "Invalid ${model.tableFile} size. Run ${model.installCommand}."
     }
-    inputBuilder = GlinerInputs(GlinerTokenizer(requireFile("tokenizer.json")))
-    val config = context.assets.open("gliner_config.json").bufferedReader().use { it.readText() }
-    decoder = GlinerDecoder(filesDir, config, profileDecoder)
-    embeddingTable = GlinerInputs.EmbeddingTable(embeddings)
+    inputBuilder =
+      GlinerInputs(GlinerTokenizer(requireFile("tokenizer.json")), model.appendsTerminalPeriod)
+    val config =
+      model.configAsset?.let { asset ->
+        context.assets.open(asset).bufferedReader().use { it.readText() }
+      } ?: requireFile("config.json").readText()
+    decoder = GlinerDecoder(filesDir, config, profileDecoder, model.hiddenSize)
+    embeddingTable =
+      GlinerInputs.EmbeddingTable(
+        embeddings,
+        model.vocabularySize,
+        model.hiddenSize,
+        model.halfPrecisionTable,
+      )
   }
 
   /**
@@ -117,9 +144,12 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
    * runs outside timing, so inspecting N/T = 128/48, 256/192 or 512/384 never inflates graph
    * latency.
    */
-  fun inspectInputs(text: String): GlinerInputs.Prepared = ProcessRuntime.call {
+  fun inspectInputs(
+    text: String,
+    splitter: GlinerInputs.Splitter = GlinerInputs.Splitter.WHITESPACE,
+  ): GlinerInputs.Prepared = ProcessRuntime.call {
     checkOpen()
-    inputBuilder.prepare(text)
+    inputBuilder.prepare(text, splitter = checkSplitter(splitter))
   }
 
   /**
@@ -127,9 +157,13 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
    * Explicit validation callers can warm each text; normal extraction only warms each compiled
    * window/backend once. GPU uses mandatory FP32 precision throughout both paths.
    */
-  fun warmUp(text: String, backend: Backend) = ProcessRuntime.call {
+  fun warmUp(
+    text: String,
+    backend: Backend,
+    splitter: GlinerInputs.Splitter = GlinerInputs.Splitter.WHITESPACE,
+  ) = ProcessRuntime.call {
     checkOpen()
-    val prepared = inputBuilder.prepare(text)
+    val prepared = inputBuilder.prepare(text, splitter = checkSplitter(splitter))
     val inputs = tensors(prepared)
     val graph = graph(prepared.window, backend)
     val packed = runGraph(graph, inputs).first
@@ -139,13 +173,17 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
 
   /**
    * Repeats the full `HostRuntime.prepare/decode` path before interactive readiness. Call after
-   * [initialize], on the confined model dispatcher, using the bundled English worked sentence. Each
+   * [initialize], on the confined model dispatcher, using the model's bundled worked sentence. Each
    * pass tokenizes, reads embedding rows, runs the FP32 graph and exercises persistent decoder
    * workers; its results are discarded. Returns total warm-up wall time, excluding compilation.
    */
-  fun warmUpForInteraction(text: String, backend: Backend): Double {
+  fun warmUpForInteraction(
+    text: String,
+    backend: Backend,
+    splitter: GlinerInputs.Splitter = GlinerInputs.Splitter.WHITESPACE,
+  ): Double {
     val start = System.nanoTime()
-    repeat(STARTUP_WARMUP_ITERATIONS) { warmUp(text, backend) }
+    repeat(STARTUP_WARMUP_ITERATIONS) { warmUp(text, backend, splitter) }
     return ms(System.nanoTime() - start)
   }
 
@@ -154,12 +192,17 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
    * smallest N/T = 128/48, 256/192 or 512/384 window must fit both encoded tokens and words.
    * Tokenize/embed, graph through readback, and sparse decode are timed separately; one untimed
    * warm-up per compiled window/backend is excluded. Returned spans use Unicode code points.
+   * [splitter] must be one of [GlinerModel.splitters]; Small accepts only whitespace.
    */
-  fun extract(text: String, backend: Backend = Backend.GPU): Result = ProcessRuntime.call {
+  fun extract(
+    text: String,
+    backend: Backend = Backend.GPU,
+    splitter: GlinerInputs.Splitter = GlinerInputs.Splitter.WHITESPACE,
+  ): Result = ProcessRuntime.call {
     checkOpen()
     require(text.isNotBlank()) { "Enter text before extracting entities." }
     val start = System.nanoTime()
-    val prepared = inputBuilder.prepare(text)
+    val prepared = inputBuilder.prepare(text, splitter = checkSplitter(splitter))
     val inputs = tensors(prepared)
     val preparedAt = System.nanoTime()
     val graph = graph(prepared.window, backend)
@@ -169,7 +212,9 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
     }
     val (packed, graphTimes) = runGraph(graph, inputs)
     val decodeStart = System.nanoTime()
-    require(packed.size == prepared.window.packedFloatCount) { "Unexpected packed output size" }
+    require(packed.size == model.packedFloatCount(prepared.window.textCapacity)) {
+      "Unexpected packed output size"
+    }
     val spans = decoder.decode(packed, prepared)
     val finished = System.nanoTime()
     Result(
@@ -188,8 +233,15 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
         graphTimes[2],
       ),
       decoder.profileMilliseconds(),
+      model,
+      splitter,
     )
   }
+
+  private fun checkSplitter(splitter: GlinerInputs.Splitter): GlinerInputs.Splitter =
+    splitter.also {
+      require(it in model.splitters) { "${model.id} does not support the ${it.id} splitter" }
+    }
 
   private fun tensors(prepared: GlinerInputs.Prepared): List<FloatArray> =
     listOf(
@@ -212,7 +264,7 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
             cpuOptions = CompiledModel.CpuOptions(numThreads = 4)
           }
         }
-      val path = requireFile("gliner25_small_s${window.sequenceLength}_wfp16.tflite")
+      val path = requireFile(model.graphFile(window.sequenceLength))
       val model = CompiledModel.create(path.absolutePath, options, ProcessRuntime.environment())
       val inputs = linkedMapOf<String, TensorBuffer>()
       val outputs = linkedMapOf<String, TensorBuffer>()
@@ -247,7 +299,7 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
 
   private fun requireFile(name: String): File =
     File(filesDir, name).also {
-      check(it.isFile) { "Missing $name. Run scripts/install_to_device.sh, then retry." }
+      check(it.isFile) { "Missing $name. Run ${model.installCommand}, then retry." }
     }
 
   private fun checkOpen() = check(!closed) { "Extractor is closed" }
@@ -276,18 +328,6 @@ class GlinerExtractor(context: Context, private val profileDecoder: Boolean = fa
      */
     const val STARTUP_WARMUP_ITERATIONS = 12
     private const val SIGNATURE = "serving_default"
-    val REQUIRED_FILES =
-      listOf(
-        "gliner25_small_s128_wfp16.tflite",
-        "gliner25_small_s256_wfp16.tflite",
-        "gliner25_small_s512_wfp16.tflite",
-        "word_embeddings_fp32.bin",
-        "tokenizer.json",
-        "sparse_decoder_fp32.safetensors",
-        "graph_contract_s128.json",
-        "graph_contract_s256.json",
-        "graph_contract_s512.json",
-      )
 
     private fun ms(nanoseconds: Long) = nanoseconds / 1_000_000.0
   }

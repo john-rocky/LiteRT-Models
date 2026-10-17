@@ -1,20 +1,28 @@
-# GLiNER2.5 Small — Android entity extraction
+# GLiNER2.5 Small and Multi — Android entity extraction
 
-Enter English text to find people, organizations, locations, products and dates on your phone.
-Choose GPU or CPU and tap **Extract** for highlighted spans, confidence, Unicode offsets and timings.
-For the prefilled sentence, “Maya Chen from Orvane Robotics demonstrated the Veltrix 9 in Lisbon
-on March 12, 2025.”, the five entities are Maya Chen, Orvane Robotics, Veltrix 9, Lisbon and
-March 12, 2025.
+Enter text to find people, organizations, locations, products and dates on your phone.
+Choose the model (Small for English, Multi for English and Japanese), the Multi word splitter,
+GPU or CPU, and tap **Extract** for highlighted spans, confidence, Unicode offsets and timings.
+For the prefilled Small sentence, “Maya Chen from Orvane Robotics demonstrated the Veltrix 9 in
+Lisbon on March 12, 2025.”, the five entities are Maya Chen, Orvane Robotics, Veltrix 9, Lisbon
+and March 12, 2025. Multi opens with the Japanese worked sentence of its card,
+「星瀬澄香は京都で霧灯研究社の新製品『星糸端末』を紹介した。」, and finds 星瀬澄香 (person),
+京都 (location), 霧灯研究社 (organization) and 星糸端末 (product); the names are invented.
 
 ## Model and requirements
 
-- Model: [litert-community/GLiNER2.5-Small-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Small-LiteRT),
+- Small: [litert-community/GLiNER2.5-Small-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Small-LiteRT),
   model/host assets from revision `fc3a084765b555f82b9fc4652a60d049e75ac8c5`.
-- Upstream: [fastino/gliner2.5-small-v1](https://huggingface.co/fastino/gliner2.5-small-v1), Apache-2.0.
+  Upstream: [fastino/gliner2.5-small-v1](https://huggingface.co/fastino/gliner2.5-small-v1), Apache-2.0.
+- Multi: [litert-community/GLiNER2.5-Multi-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Multi-LiteRT),
+  model/host assets from revision `7a2ae39a8271eb71f6166f5a81c8ae6965ad89be`.
+  Upstream: [fastino/gliner2.5-multi-v1](https://huggingface.co/fastino/gliner2.5-multi-v1), Apache-2.0
+  (encoder [microsoft/mdeberta-v3-base](https://huggingface.co/microsoft/mdeberta-v3-base), MIT).
 - Android: arm64-v8a, Android 8.0 / API 26 or newer; compile/target SDK 35.
 - Runtime: LiteRT **2.2.0** `CompiledModel`; Material 1 Compose with MVVM.
 
-**Explicit GPU FP32 precision is mandatory:** default GPU precision produces NaN on this graph.
+**Explicit GPU FP32 precision is mandatory:** default GPU precision produces NaN on the Small
+graph and, per the Multi card, changes one of 70 span sets at s128.
 The app uses `CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP32)`.
 `wfp16` describes stored weights; host tensors and computation remain float32.
 
@@ -41,6 +49,24 @@ files before contacting the device, pushes through `/data/local/tmp/gliner25/`, 
 It uses plain `adb`, including its optional `ANDROID_SERIAL` selection. Install the debug APK first;
 `run-as` requires a debuggable package. Model files are external and are not needed to build the APK.
 
+For Multi, download the s128 graph and the host assets without the 768 MB float32 table, then
+install them into `files/multi/` with `--multi`. Then choose **Multi** in the app.
+
+```bash
+hf download litert-community/GLiNER2.5-Multi-LiteRT gliner25_multi_s128_wfp16.tflite \
+  --local-dir "$HOME/Downloads/GLiNER2.5-Multi-LiteRT"
+hf download litert-community/GLiNER2.5-Multi-LiteRT --include "host_assets/*" \
+  --exclude "host_assets/word_embeddings_fp32.bin" "host_assets/runtime/*" \
+  --local-dir "$HOME/Downloads/GLiNER2.5-Multi-LiteRT"
+./scripts/install_to_device.sh --multi "$HOME/Downloads/GLiNER2.5-Multi-LiteRT"
+```
+
+s128 holds 128 encoded tokens and 48 text slots: a Japanese sentence of up to 47 characters
+before the appended period (the token limit can bind first), or English of up to 48 words and
+punctuation marks, an appended period included. For longer text, add
+`gliner25_multi_s256_wfp16.tflite gliner25_multi_s512_wfp16.tflite` to the first download command;
+the installer copies them when they are present, and the app compiles them on first use.
+
 ## External files
 
 The app loads graphs by path and memory-maps the embedding table. The installer flattens
@@ -60,6 +86,22 @@ The app loads graphs by path and memory-maps the embedding table. The installer 
 
 The 3,152-byte checkpoint configuration is bundled as `app/src/main/assets/gliner_config.json`.
 
+Multi files go to `files/multi/`; the eight files of the s128 installation total
+**592,962,252 bytes**, and the two optional larger graphs bring it to 1,054,379,244 bytes.
+
+| Downloaded file (Multi) | Bytes | Purpose |
+|---|---:|---|
+| `gliner25_multi_s128_wfp16.tflite` | 191,876,560 | 128 encoded slots / 48 text slots |
+| `gliner25_multi_s256_wfp16.tflite` (optional) | 211,168,608 | 256 encoded slots / 192 text slots |
+| `gliner25_multi_s512_wfp16.tflite` (optional) | 250,248,384 | 512 encoded slots / 384 text slots |
+| `host_assets/word_embeddings_fp16.bin` | 384,172,032 | Float16 `[250112,768]` table; selected rows upcast to float32 |
+| `host_assets/tokenizer.json` | 16,035,853 | mDeBERTa SentencePiece Unigram vocabulary and normalization |
+| `host_assets/sparse_decoder_fp32.safetensors` | 862,708 | 16 sparse-decoder tensors |
+| `host_assets/config.json` | 3,151 | Checkpoint configuration |
+| `host_assets/graph_contract_s128.json` | 3,956 | 17 packed output slices |
+| `host_assets/graph_contract_s256.json` | 3,994 | 17 packed output slices |
+| `host_assets/graph_contract_s512.json` | 3,998 | 17 packed output slices |
+
 ## Architecture and limits
 
 ```text
@@ -69,25 +111,34 @@ Text + five-label schema → Kotlin word splitter / Unigram tokenizer
   → Kotlin sparse candidate pooling / scoring / decoding → spans and Compose highlights
 ```
 
-The host ports follow gliner2 2.0.0 and the published
-[host contract](https://huggingface.co/litert-community/GLiNER2.5-Small-LiteRT/blob/main/HOST_CONTRACT.md).
+The host ports follow gliner2 2.0.0 and the published host contracts
+([Small](https://huggingface.co/litert-community/GLiNER2.5-Small-LiteRT/blob/main/HOST_CONTRACT.md),
+[Multi](https://huggingface.co/litert-community/GLiNER2.5-Multi-LiteRT/blob/main/HOST_CONTRACT.md)).
 `MainActivity` observes immutable state; `MainViewModel` owns the helper and confined dispatcher.
 One LiteRT Environment is shared per process. s128 loads at startup; s256/s512 compile on first use
-and remain resident. Each window/backend receives an untimed warm-up. Graph timing includes the
+and remain resident. Switching models closes the previous model's graphs and table before the other
+model loads. Each window/backend receives an untimed warm-up. Graph timing includes the
 first input-buffer write through output readback because `run()` is asynchronous.
-Before Ready, the app shows Warming up while repeating the bundled sentence through tokenization,
-embedding lookup, the graph and sparse decoding on its model worker; displayed extraction timings
-still measure the actual request, and lazy windows retain their untimed graph-and-decode pass.
+Before Ready, the app shows Warming up while repeating the model's bundled sentence through
+tokenization, embedding lookup, the graph and sparse decoding on its model worker; displayed
+extraction timings still measure the actual request, and lazy windows retain their untimed
+graph-and-decode pass.
 Sparse scoring uses flat buffers and three persistent workers plus the calling thread. Each dot
 product and erf series retains its reduction order; primitive stable sorts preserve duplicate
-and tie handling. There is no JNI, float16 host arithmetic or additional runtime dependency.
+and tie handling. There is no JNI, float16 host arithmetic or additional runtime dependency; the
+Multi table's float16 rows are converted to float32 bit-exactly before the graph.
 
-English and the five fixed labels are supported: person, organization, location, product, date.
+Small supports English and the five fixed labels: person, organization, location, product, date.
+Multi supports the same labels in English with the `whitespace` splitter and in Japanese with the
+`char` splitter. You choose the splitter; there is no language detection. `char` gives each
+non-space character its own slot and keeps ASCII letter/digit runs together. As in gliner2 2.0.0,
+Multi appends `.` to text that does not end in `.`, `!` or `?`, so a sentence ending in `。` uses
+one more slot; highlights stop at the end of the typed text.
 The smallest fitting N/T window is chosen from 128/48, 256/192, 512/384. Both schema-plus-text encoded
 length and text word count must fit; input above **512 encoded tokens / 384 words** is rejected
 without truncation. Offsets are half-open Unicode code-point indices, not UTF-16 indices. Confidence
-threshold is 0.5. Overlapping highlights prefer higher confidence. Arbitrary schemas, multilingual
-quality, batching and NPU execution are outside the validated configuration.
+threshold is 0.5. Overlapping highlights prefer higher confidence. Arbitrary schemas, other
+languages, batching and NPU execution are outside the validated configuration.
 
 ## Reproduce parity and profiling
 
@@ -107,6 +158,29 @@ private `files/gate/gate_GPU.json` / `gate_CPU.json`, or `gate_f1_GPU.json` / `g
 Completion lines use `GLINER_GATE`. Span sets must match, confidence differences must be <= `5e-3`,
 and every packed output must be finite. A normal launch without extras opens the interactive UI.
 
+For Multi, append `--es model multi`. The gate checks the two worked sentences of the card's
+`host_assets/example.json` (English with `whitespace`, Japanese with `char`): exact encoded IDs and
+first-subword / `[E]` positions, then one warm-up + five timed runs with the same span and
+confidence rules. Reports land in `files/gate/gate_multi_GPU.json` / `gate_multi_CPU.json`.
+
+```bash
+adb shell am force-stop com.gliner25
+adb shell am start -W -n com.gliner25/.MainActivity --ez gate true --es model multi --es accel GPU
+adb exec-out run-as com.gliner25 cat files/gate/gate_multi_GPU.json > gate_multi_GPU.json
+```
+
+The debug APK also accepts `--es model small|multi`, `--es splitter whitespace|char` and
+`--es text "<sentence>"`, which only places the sentence in the text field. `adb shell input text`
+types ASCII only; for Japanese, quote the sentence for the device shell:
+
+```bash
+adb shell am start -n com.gliner25/.MainActivity --es model multi --es splitter char \
+  --es text "'星瀬澄香は京都で霧灯研究社の新製品『星糸端末』を紹介した。'"
+```
+
+Each interactive extraction in the debug APK logs one `GLINER_RESULT` line with the text, model,
+splitter, backend, window, timings and spans.
+
 For decoder stages, add `--ez profile true` to the F1 command: this selects five timed runs and
 records stage medians in JSON and `GLINER_GATE`. Profiling is otherwise off. To compare ART modes,
 `./gradlew :app:assembleBenchmark` builds a non-debuggable, non-minified APK signed with the local
@@ -114,11 +188,19 @@ debug key. Install `app/build/outputs/apk/benchmark/app-benchmark.apk` with `adb
 this sample, then run the same profiling command. Read stage lines with `adb logcat -d -s GLINER_GATE:I`.
 Restore the debug APK to export the full private JSON with `run-as`; model files stay installed.
 
-The six JVM tests skip unless `-Pgliner.fixtures=/path/to/data` (or `-Dgliner.fixtures=...`) is set.
+The six Small JVM tests skip unless `-Pgliner.fixtures=/path/to/data` (or `-Dgliner.fixtures=...`) is set.
 [scripts/TEST_DATA.md](scripts/TEST_DATA.md) describes downloaded host assets and regenerated packed
 references, which are not distributed. Reports stay under `app/build/`. With fixtures: six pass,
 80 files / 70 unique texts / 225 input checks, 195/195 decoder pairs. Maximum confidence difference
 is `4.172325134277344e-7` versus Python on identical packed data, `0.002693772315979004` versus fp32.
+
+The four Multi parity tests skip unless `-Pgliner.multiFixtures=/path/to/data` points at the Multi
+download (captured inputs and packed outputs are optional, see TEST_DATA.md); four Multi host tests
+need no data. With the 2026-10-02 Galaxy S26 GPU FP32 packed outputs of the conversion run: both
+worked sentences match exactly; 80 captured inputs (35 English, 45 Japanese) match at all 225
+fitting windows; decoding gives 70/70, 75/75 and 80/80 span sets at s128/s256/s512, with maximum
+confidence difference `7.152557373046875e-7` versus Python on the same bytes and
+`0.0014157295227050781` versus the official fp32 spans.
 
 ## Verified on
 

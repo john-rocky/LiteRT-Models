@@ -10,10 +10,16 @@ import kotlin.math.abs
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Debug-asset gate, called only on the ViewModel's model dispatcher. */
+/**
+ * Debug-asset gate, called only on the ViewModel's model dispatcher. Small checks the ten bundled
+ * English texts. Multi checks the two worked sentences of the published `host_assets/example.json`
+ * (English with the whitespace splitter, Japanese with the char splitter), including their exact
+ * encoded IDs and first-subword / `[E]` positions.
+ */
 class GlinerGateRunner(
   private val context: Context,
   private val extractor: () -> GlinerExtractor,
+  private val model: GlinerModel = GlinerModel.SMALL,
 ) {
   data class Summary(val backend: String, val passed: Boolean, val path: String, val error: String?)
 
@@ -28,16 +34,31 @@ class GlinerGateRunner(
         listOf(GlinerExtractor.Backend.valueOf(requestedAccelerator.uppercase(Locale.ROOT)))
       }
     val fixtureRoot =
-      context.assets.open("gate_fixtures.json").bufferedReader().use {
-        JSONObject(it.readText())
-      }
+      context.assets.open(fixtureAsset()).bufferedReader().use { JSONObject(it.readText()) }
     val fixtures = fixtureRoot.getJSONArray("fixtures")
-    check(fixtures.length() == 10)
+    check(fixtures.length() == fixtureCount())
     return backends.map { runBackend(it, fixtures) }
   }
 
+  private fun fixtureAsset() =
+    when (model) {
+      GlinerModel.SMALL -> "gate_fixtures.json"
+      GlinerModel.MULTI -> "gate_multi_fixtures.json"
+    }
+
+  private fun fixtureCount() =
+    when (model) {
+      GlinerModel.SMALL -> 10
+      GlinerModel.MULTI -> 2
+    }
+
   private fun runBackend(backend: GlinerExtractor.Backend, fixtures: JSONArray): Summary {
-    val destination = File(context.filesDir, "gate/gate_${backend.name}.json")
+    val prefix =
+      when (model) {
+        GlinerModel.SMALL -> "gate_"
+        GlinerModel.MULTI -> "gate_multi_"
+      }
+    val destination = File(context.filesDir, "gate/$prefix${backend.name}.json")
     destination.parentFile?.mkdirs()
     val rows = JSONArray()
     val header =
@@ -66,6 +87,12 @@ class GlinerGateRunner(
         .put("compile_message", "Not attempted")
         .put("graph_timing", "First input write through synchronized output readback")
         .put("fixtures", rows)
+    if (model != GlinerModel.SMALL) {
+      header
+        .put("model", model.id)
+        .put("embedding_table", "${model.tableFile}, selected rows upcast to float32")
+        .put("input_comparison", "Encoded IDs, first-subword and [E] positions, padding, window")
+    }
     write(destination, header)
     var failureText: String? = null
     var matches = 0
@@ -82,13 +109,27 @@ class GlinerGateRunner(
         val row = JSONObject().put("id", fixture.getInt("index")).put("text", text)
         rows.put(row)
         try {
-          helper.warmUp(text, backend)
-          val runs = (0 until 5).map { helper.extract(text, backend) }
+          val splitter =
+            if (model == GlinerModel.SMALL) {
+              GlinerInputs.Splitter.WHITESPACE
+            } else {
+              GlinerInputs.Splitter.fromId(fixture.getString("splitter"))
+            }
+          // Multi rows also compare host inputs, outside the timed runs.
+          val inputs =
+            if (model == GlinerModel.SMALL) {
+              null
+            } else {
+              GlinerGateFixtures.compareInputs(fixture, helper.inspectInputs(text, splitter))
+            }
+          inputs?.let { row.put("splitter", splitter.id).put("inputs", it) }
+          helper.warmUp(text, backend, splitter)
+          val runs = (0 until 5).map { helper.extract(text, backend, splitter) }
           completedRuns += runs.size
           val comparisons = runs.map { compare(it.spans, fixture.getJSONArray("spans")) }
           val identical = comparisons.all { it.first }
           val difference = comparisons.maxOf { it.second }
-          val passed = identical && difference <= 5e-3
+          val passed = identical && difference <= 5e-3 && inputs?.getBoolean("identical") != false
           if (passed) {
             matches++
           }
@@ -159,7 +200,8 @@ class GlinerGateRunner(
         .put("compile_status", "FAIL")
         .put("compile_message", "Native runtime load failed: $failureText")
     }
-    val passed = matches == 10 && completedRuns == 50 && failureText == null
+    val passed =
+      matches == fixtures.length() && completedRuns == fixtures.length() * 5 && failureText == null
     header
       .put(
         "status",
@@ -180,7 +222,7 @@ class GlinerGateRunner(
         .put("accelerator", backend.name)
         .put("status", header.getString("status"))
         .put("oracle_matching_fixtures", matches)
-        .put("fixture_count", 10)
+        .put("fixture_count", fixtures.length())
         .put("max_confidence_diff", maxDifference)
         .put("path", destination.absolutePath)
         .put("error", failureText ?: JSONObject.NULL)

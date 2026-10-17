@@ -6,6 +6,8 @@ import androidx.compose.runtime.Immutable
 @Immutable
 data class UiState(
   val inputText: String,
+  val model: GlinerModel = GlinerModel.SMALL,
+  val splitter: GlinerInputs.Splitter = GlinerInputs.Splitter.WHITESPACE,
   val accelerator: GlinerExtractor.Backend = GlinerExtractor.Backend.GPU,
   @param:StringRes val statusMessage: Int = R.string.status_loading,
   val busy: Boolean = false,
@@ -36,4 +38,6 @@ data class ExtractionUiResult(
   val tokenizeEmbedMs: Double,
   val graphMs: Double,
   val decodeMs: Double,
+  val model: GlinerModel = GlinerModel.SMALL,
+  val splitter: GlinerInputs.Splitter = GlinerInputs.Splitter.WHITESPACE,
 )

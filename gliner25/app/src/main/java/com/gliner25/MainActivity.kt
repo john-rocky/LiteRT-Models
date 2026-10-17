@@ -20,6 +20,10 @@ class MainActivity : ComponentActivity() {
       intent.getStringExtra("set"),
       intent.getBooleanExtra("profile", false),
       BuildConfig.DEBUG && intent.getBooleanExtra("firsttap", false),
+      // Debug-only: --es model small|multi, --es splitter whitespace|char, --es text "<sentence>".
+      intent.getStringExtra("model")?.takeIf { BuildConfig.DEBUG },
+      intent.getStringExtra("splitter")?.takeIf { BuildConfig.DEBUG },
+      intent.getStringExtra("text")?.takeIf { BuildConfig.DEBUG },
     )
     setContent {
       val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -27,6 +31,8 @@ class MainActivity : ComponentActivity() {
         GlinerScreen(
           state,
           viewModel::setInputText,
+          viewModel::selectModel,
+          viewModel::selectSplitter,
           viewModel::selectAccelerator,
           viewModel::extract,
         )

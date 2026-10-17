@@ -82,3 +82,36 @@ not an automatically downloaded fixture set:
    confidence tolerances are `1e-5` versus Python on the same packed bytes and `5e-3` versus the
    bundled fp32 reference. Different supported CPU runtimes may change the measured small error;
    do not regenerate reference spans from Kotlin or change tolerances to hide a mismatch.
+
+## GLiNER2.5 Multi
+
+`GlinerMultiHostTest` needs no data: the char and whitespace splitters on ten strings against
+gliner2 2.0.0's printed output, the terminal period, and the float16 upcast for all 65,536 bit
+patterns. `GlinerMultiParityTest` runs with `-Pgliner.multiFixtures=/path/to/multi-data` and skips
+without it. The Multi download of the main README is enough for the worked-sentence and table tests:
+
+```bash
+DATA="$HOME/Downloads/GLiNER2.5-Multi-LiteRT"
+./gradlew :app:testDebugUnitTest -Pgliner.multiFixtures="$DATA"
+```
+
+The other two tests read optional, regenerated data and skip when it is absent:
+
+```text
+multi-data/
+  host_assets/                        # HF download, including example.json and word_embeddings_fp16.bin
+  fixtures/
+    f1/captured/00.json ... 79.json   # Python HostRuntime captures, 35 English + 45 Japanese
+    packed/s128/<id>.bin              # Little-endian float32 packed output of each fitting input
+    packed/s128.json                  # {"fixtures": [{"id", "splitter", "decoded_spans", "oracle_spans"}]}
+    packed/s256/..., packed/s512/...  # Same layout for the larger windows
+```
+
+Each capture is `HostRuntime(DATA / "host_assets", table="fp16").prepare(text, seq, splitter)`
+from the download's `host_assets/runtime/`, serialized as for Small (`input_ids`,
+`attention_mask`, `text_word_indices`, `text_word_mask`, `query_marker_indices`,
+`query_marker_mask` as `values` lists) plus `text`, `splitter`, `text_tokens`, `start_mappings` and
+`end_mappings`. Packed files are graph outputs for those inputs at one window; `decoded_spans` is the
+Python host decode of the same bytes and `oracle_spans` the official fp32 spans. The test checks
+inputs at every fitting window (80 files, 225 pairs) and decodes each packed file in Kotlin: span
+sets must equal both references, with confidence within `1e-5` of Python and `5e-3` of fp32.

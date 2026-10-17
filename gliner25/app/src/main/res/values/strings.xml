@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">GLiNER2.5 Small</string>
+  <string name="app_name">GLiNER2.5</string>
+  <string name="model_small_title">GLiNER2.5 Small</string>
+  <string name="model_multi_title">GLiNER2.5 Multi</string>
+  <string name="model_small">Small</string>
+  <string name="model_multi">Multi</string>
+  <string name="status_line">%1$s · %2$s</string>
   <string name="status_loading">Loading model…</string>
   <string name="status_warming_up">Warming up…</string>
   <string name="status_gpu_ready">Ready · GPU FP32</string>
@@ -14,6 +19,10 @@
     Gate results are saved in the app’s private gate directory.
   </string>
   <string name="error_message">%1$s</string>
+  <string name="model_label">Model</string>
+  <string name="splitter_label">Splitter</string>
+  <string name="splitter_whitespace">whitespace</string>
+  <string name="splitter_char">char</string>
   <string name="accelerator_title">Run on</string>
   <string name="accelerator_gpu">GPU</string>
   <string name="accelerator_cpu">CPU</string>
@@ -21,6 +30,11 @@
   <string name="example_text">
     Maya Chen from Orvane Robotics demonstrated the Veltrix 9 in Lisbon on March 12, 2025.
   </string>
+  <!-- Worked sentences of the GLiNER2.5-Multi-LiteRT host contract; names are invented. -->
+  <string name="example_text_multi_en" translatable="false">
+    Mira Velsan presented the Lumenquill tablet for Asterfold Labs in Bristol on October 12.
+  </string>
+  <string name="example_text_multi_ja" translatable="false">星瀬澄香は京都で霧灯研究社の新製品『星糸端末』を紹介した。</string>
   <string name="label_person">person</string>
   <string name="label_organization">organization</string>
   <string name="label_location">location</string>
@@ -31,6 +45,9 @@
   <string name="no_entities">No entities found.</string>
   <string name="entity_row">%1$s · %2$s · %3$.4f · [%4$d,%5$d)</string>
   <string name="result_window">s%1$d · %2$d encoded tokens · %3$d text words · %4$s</string>
+  <string name="result_window_splitter">
+    s%1$d · %2$d encoded tokens · %3$d text slots · %4$s · %5$s splitter
+  </string>
   <string name="result_timing">
     Tokenize + embed: %1$.2f ms · Graph: %2$.2f ms · Decode: %3$.2f ms
   </string>

@@ -12,22 +12,25 @@ import kotlin.math.sqrt
 import org.json.JSONObject
 
 /**
- * Float32 host continuation for the published GLiNER2.5 Small shared-pool graph.
+ * Float32 host continuation for the published GLiNER2.5 Small and Multi shared-pool graphs.
  *
  * Ports gliner2 2.0.0 `models/boundary/pool.py:DocumentCandidatePool.forward` and
  * `SharedPoolScorer.forward`, `content.py:SpanContentPooler.pool`,
  * `engine.py:BoundaryExtractor._decode_entities` and `inference/overlap.py:resolve_overlaps`. The
- * checkpoint uses the shared pool, so the historical per-query proposer is not executed. Stable
+ * checkpoints use the shared pool, so the historical per-query proposer is not executed. Stable
  * top-k ordering, duplicate merging and float32 operations preserve its decisions.
  *
- * The graph returns `[1,1,1,1108*T+4574]` float32 values containing 17 logical tensors. Contracts
- * describe windows N/T = 128/48, 256/192 and 512/384; all five label queries share one pool.
- * Results use half-open Unicode code-point offsets, matching Python rather than UTF-16.
+ * The graph returns `[1,1,1,P]` float32 values containing 17 logical tensors (Small
+ * `P = 1108*T+4574`, Multi `P = 1492*T+6494`). Contracts describe windows N/T = 128/48, 256/192 and
+ * 512/384; all five label queries share one pool. Only `text_states` and `query_states` scale with
+ * the encoder width [hiddenSize], and the sparse continuation does not read them. Results use
+ * half-open Unicode code-point offsets, matching Python rather than UTF-16.
  */
 class GlinerDecoder(
   private val hostAssets: File,
   configJson: String = File(hostAssets, "config.json").readText(),
   private val profileEnabled: Boolean = false,
+  private val hiddenSize: Int = GlinerInputs.HIDDEN_SIZE,
 ) {
   /**
    * A `BoundaryExtractor._decode_entities` result: fixed label, original text, half-open Unicode
@@ -168,10 +171,16 @@ class GlinerDecoder(
     poolBoundaryTopK = config.getInt("pool_boundary_top_k")
     poolSize = config.getInt("pool_size")
     minPoolPerQuery = config.getInt("min_pool_per_query")
+    // text_states [1,T,hidden] carries the encoder width in every published contract.
+    layouts.values.forEach { slices ->
+      require(slices.getValue("text_states").shape.last() == hiddenSize) {
+        "Graph contract hidden size differs from $hiddenSize"
+      }
+    }
     val expected =
       mapOf(
-        "boundary_head.candidate_encoder.bias" to intArrayOf(384),
-        "boundary_head.candidate_encoder.weight" to intArrayOf(384, 256),
+        "boundary_head.candidate_encoder.bias" to intArrayOf(hiddenSize),
+        "boundary_head.candidate_encoder.weight" to intArrayOf(hiddenSize, 256),
         "${scorerPrefix}candidate_norm.bias" to intArrayOf(128),
         "${scorerPrefix}candidate_norm.weight" to intArrayOf(128),
         "${scorerPrefix}content_pooler.layer_norm.bias" to intArrayOf(64),

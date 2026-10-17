@@ -7,6 +7,8 @@ plugins {
 val debugKeystore = rootProject.file(".local/debug.keystore")
 val fixtureRoot = providers.gradleProperty("gliner.fixtures")
     .orElse(providers.systemProperty("gliner.fixtures"))
+val multiFixtureRoot = providers.gradleProperty("gliner.multiFixtures")
+    .orElse(providers.systemProperty("gliner.multiFixtures"))
 val prepareDebugKeystore by tasks.registering(Exec::class) {
     description = "Creates this isolated sample's debug signing key."
     outputs.file(debugKeystore)
@@ -76,6 +78,9 @@ android {
         unitTests.all {
             fixtureRoot.orNull?.takeIf { it.isNotBlank() }?.let { directory ->
                 it.systemProperty("gliner.fixtures", rootProject.file(directory).absolutePath)
+            }
+            multiFixtureRoot.orNull?.takeIf { it.isNotBlank() }?.let { directory ->
+                it.systemProperty("gliner.multiFixtures", rootProject.file(directory).absolutePath)
             }
             it.systemProperty("gliner.moduleRoot", rootProject.projectDir.absolutePath)
             it.systemProperty("gliner.buildDir", layout.buildDirectory.get().asFile.absolutePath)
