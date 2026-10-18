@@ -2174,9 +2174,13 @@ card, not offered as a validated path. CPU (XNNPACK): all spans identical.
 | ----- | -------- | ---- | -------------- | --------- |
 | GLiNER2.5 Multi s128 / s256 / s512 | [HF: litert-community/GLiNER2.5-Multi-LiteRT](https://huggingface.co/litert-community/GLiNER2.5-Multi-LiteRT) | 192 / 211 / 250 MB fp16-weight (364 / 383 / 422 MB fp32) + 384 MB fp16 embed table (768 MB fp32) | inputs_embeds [1,N,768] + mask + routing → packed [1,1,1,1492·T+6494] (17 logical outputs) → host sparse decode → spans | GPU (NPU measured) |
 
-**Sample app**: none yet — the HF repo ships the Python host runtime (`host_assets/runtime/`), the host contract and
-both worked examples; the Kotlin host of [gliner25/](gliner25/) needs a mDeBERTa tokenizer port and the char splitter
-before it can serve this checkpoint.
+**Sample app**: [gliner25/](gliner25/) — a model picker next to Small: Multi files go to `files/multi/`
+(`scripts/install_to_device.sh --multi`), the same Kotlin Unigram tokenizer reads the mDeBERTa `tokenizer.json`, the
+`char` splitter serves Japanese next to `whitespace`, and the float16 table's selected rows are upcast to float32. On
+the Galaxy S26 (LiteRT 2.2.0, debug build, 2026-10-18) the debug gate returns the official spans for both worked
+sentences on GPU FP32 and CPU (max confidence difference 4.4e-5); s128 graph medians are 23.4–24.8 ms on GPU and
+35.1–35.5 ms on CPU, and in the app the Japanese sentence came back with graph 24.11 ms (tokenize + embed 10.55 ms,
+decode 11.69 ms).
 Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) (2026-10-02 GLiNER2.5 Multi section).
 
 **Original project**: [fastino-ai/GLiNER2](https://github.com/fastino-ai/GLiNER2) (Apache-2.0); encoder

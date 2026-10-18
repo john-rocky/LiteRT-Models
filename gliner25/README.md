@@ -237,3 +237,24 @@ The non-debuggable variant removed about 72–73% of baseline decode time in thi
 comparison. After optimization, the debug build meets the 12 ms s128 / 20 ms s512 decode targets.
 Non-debuggable profiling ended at 36.1 °C / 99% battery. These are host-decode timings, not total
 application latency; CPU scheduling and temperature affect the other phases too.
+
+**GLiNER2.5 Multi, Samsung Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0**, 2026-10-18. Debug APK,
+s128 installation in `files/multi/`, airplane mode, thermal status 0 and battery 37.0–37.7 °C
+throughout. CPU frequency limits varied: 2.23 GHz on both clusters (of 3.63 / 4.74 GHz) right before
+each interactive run, full with the app stopped. The Multi gate ran one backend per launch, one
+warm-up + five timed runs per sentence; medians:
+
+| Backend | Sentence (splitter) | Encoded tokens / text slots | Tokenize + embed (ms) | Graph (ms) | Decode (ms) | Max confidence difference |
+|---|---|---:|---:|---:|---:|---:|
+| GPU FP32 | English (whitespace) | 49 / 15 | 3.223 | 24.778 | 5.691 | 4.4e-5 |
+| GPU FP32 | Japanese (char) | 79 / 30 | 7.193 | 23.444 | 8.007 | 2.4e-5 |
+| CPU, 4 threads | English (whitespace) | 49 / 15 | 3.591 | 35.488 | 5.485 | 4.4e-5 |
+| CPU, 4 threads | Japanese (char) | 79 / 30 | 4.033 | 35.143 | 5.290 | 2.4e-5 |
+
+Both sentences return the official span sets on both backends, with identical encoded IDs and
+first-subword / `[E]` positions. In the interactive app on GPU FP32, the Japanese sentence's first
+extraction after startup showed tokenize + embed / graph / decode **10.55 / 24.11 / 11.69 ms** and
+12.97 / 30.58 / 11.38 ms in a second launch, with the four official spans. Without the s256 graph, a
+60-slot English text shows “Missing gliner25_multi_s256_wfp16.tflite. Run scripts/install_to_device.sh
+--multi, then retry.” The Small debug gate on the same phone right after: 10/10 texts on GPU and on CPU
+(maximum confidence difference 2.4e-4).
