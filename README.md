@@ -2465,6 +2465,8 @@ Conversion scripts and steps: [conversion/](https://huggingface.co/litert-commun
 # Text Generation (LLM)
 
 > **Conversion recipes** (official `litert-torch` `export_hf`, no fork — blockwise int4 + OCTAV, `externalize_embedder`, simple chat templates): [`text-generation/`](text-generation/).
+>
+> **Android**: to run a model below in your own app, add `com.google.ai.edge.litertlm:litertlm-android` (the LiteRT-LM Kotlin API, [guide](https://ai.google.dev/edge/litert-lm/android)) and load its `model.litertlm`.
 
 ### Falcon3-3B-Instruct
 
