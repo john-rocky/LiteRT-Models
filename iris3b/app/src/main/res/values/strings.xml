@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">iris-3b</string>
+    <string name="title">iris-3b</string>
+    <string name="subtitle">Your prompt becomes a 768×768 image on this phone\'s GPU (LiteRT, FP32). Nothing leaves the phone.</string>
+
+    <string name="model_checking">Checking the model files…</string>
+    <string name="model_missing_title">The model is not installed</string>
+    <string name="model_missing_all">The model files are not on this phone yet. On your computer, in the iris3b folder of this repository, run:</string>
+    <string name="model_missing_some">%1$d model files are still missing (first: %2$s). On your computer, in the iris3b folder of this repository, run:</string>
+    <string name="install_command" translatable="false">./install_to_device.sh &lt;model folder&gt;</string>
+    <string name="model_missing_after">The model folder holds 24 files (13.7 GB): 20 LiteRT graphs, the embedding table, the host tensors, the tokenizer and iris3b_config.json. Then tap Check again.</string>
+    <string name="check_again">Check again</string>
+    <string name="model_failed">Could not open the model: %1$s</string>
+
+    <string name="prompt_label">Prompt</string>
+    <string name="prompt_empty">Type a prompt to enable Generate.</string>
+    <string name="prompt_tokens">%1$d / %2$d tokens</string>
+    <string name="prompt_cut">%1$d tokens: the text encoder reads only the first %2$d.</string>
+    <string name="examples_label">Examples</string>
+    <string name="example_apple">Apple</string>
+    <string name="example_cubes">Cubes &amp; spheres</string>
+    <string name="example_lighthouse">Lighthouse (Japanese)</string>
+    <string name="seed_label">Seed</string>
+    <string name="random_seed">Random seed</string>
+    <string name="generate">Generate</string>
+    <string name="stop">Stop</string>
+
+    <string name="stage_preparing">Preparing…</string>
+    <string name="stage_text_encoder">Text encoder %1$d / %2$d</string>
+    <string name="stage_adapter">Text adapter</string>
+    <string name="stage_denoise">Denoising step %1$d / %2$d</string>
+    <string name="stage_finishing">Finishing</string>
+    <string name="stage_stopping">Stopping after the current graph…</string>
+    <string name="elapsed">%1$d s</string>
+
+    <string name="result_info">768×768 in %1$.1f s · %2$s</string>
+    <string name="seed_value">seed %1$d</string>
+    <string name="reference_noise">reference noise</string>
+    <string name="result_cut">The prompt was cut to its first %1$d of %2$d tokens.</string>
+    <string name="image_description">Generated image</string>
+    <string name="save">Save to Pictures</string>
+    <string name="saved">Saved to %1$s</string>
+    <string name="save_failed">Could not save: %1$s</string>
+
+    <string name="stopped_by_user">Stopped.</string>
+    <string name="stopped_low_memory">Stopped: free memory fell to %1$d MB (the app stops below %2$d MB so Android does not close it). Close other apps and try again.</string>
+    <string name="failed">Generation failed: %1$s</string>
+</resources>

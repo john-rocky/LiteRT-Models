@@ -91,6 +91,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Real-ESRGAN x4v3](#real-esrgan-x4v3) | Super-resolution ×4 | Galaxy S26 | 12.30 ms (NPU 3.29) | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v1/real_esrgan_x4v3.tflite) |
 | [GFPGAN v1.4](#gfpgan-v14-blind-face-restoration) | Blind face restoration |  |  | [🤗 HF](https://huggingface.co/litert-community/GFPGAN-v1.4-LiteRT) |
 | [Bonsai Image 4B](bonsai_image/) | Text-to-image (ternary DiT, CPU) | Galaxy S26 (CPU) | 23.5 s per 256×256 image (app, 4 steps, 2026-10-09) | [🤗 HF](https://huggingface.co/litert-community/Bonsai-Image-ternary-4B) |
+| [iris-3b Turbo](#iris-3b-turbo) | Text-to-image (pixel-space DiT, GPU) | Galaxy S26 | 212.6 s per 768×768 image (app, 4 steps, first image after the install, 2026-10-21) | [🤗 HF](https://huggingface.co/litert-community/iris-3b-Turbo-LiteRT) |
 | [MoGe-2 ViT-S](#moge-2-vit-s) | Monocular geometry (points, normals, depth) | Pixel 8a | ~522 ms | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v3/moge.tflite) |
 | [Depth Anything 3 Small](#depth-anything-3-vit-s-small) | Monocular depth | Pixel 8a | ~1.8 s/image | [🤗 HF](https://huggingface.co/mlboydaisuke/Depth-Anything-3-Small-LiteRT) |
 | [Metric3D v2 ViT-S](#metric3d-v2-vit-s) | Metric depth | Pixel 8a | ~44 ms | [🤗 HF](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT) |
@@ -124,7 +125,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Fun-ASR-Nano-2512](asr_litertlm/) | Speech recognition, zh / en / ja (LiteRT-LM) | Galaxy S26 (CPU) | 1.19 s for a 6.4 s clip (RTF 0.19) | [🤗 HF](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) |
 | [Confucius4-R2T2](asr_litertlm/) | Speech recognition, zh / en, a Qwen3-ASR-1.7B fine-tune (LiteRT-LM) | Galaxy S26 (CPU) | 2.59 s for a 6.4 s clip (RTF 0.40) | [🤗 HF](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT) |
 
-Latency is the figure each model's section below records, on the device named; blank means this repository records no measurement. **Galaxy S26** rows (Snapdragon 8 Elite Gen 5) come from [npubench](npubench/): LiteRT 2.2.0 `CompiledModel` GPU, median of 50 runs after warm-up, `run()` plus output readback, thermal status NONE, 2026-08; the value in parentheses is the same phone's Hexagon NPU. 50 models were measured that way — see [Snapdragon NPU](#snapdragon-npu-hexagon). The Galaxy S26 (CPU) rows dated 2026-10 (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2, Bonsai Image 4B, Audio8-TTS-Preview-0.6b) are instead the sample apps' own device checks on the same phone, as their sections say. **Pixel 8a** (Tensor G3, Mali GPU, fp16) figures marked `~` come from each model's conversion notes; per [docs § Latency figures](docs/LITERT_CONVERSION_GUIDE.md#latency-figures-time-run--readback), figures recorded before 2026-08 may time only the asynchronous `run()` call (ormbg's earlier "~10 ms" re-measured at 246 ms with the readback). Camera FPS, RTF, tok/s and per-turn figures are end-to-end app measurements. The Model column links to the full entry: I/O shapes, preprocessing, license, conversion script and sample app.
+Latency is the figure each model's section below records, on the device named; blank means this repository records no measurement. **Galaxy S26** rows (Snapdragon 8 Elite Gen 5) come from [npubench](npubench/): LiteRT 2.2.0 `CompiledModel` GPU, median of 50 runs after warm-up, `run()` plus output readback, thermal status NONE, 2026-08; the value in parentheses is the same phone's Hexagon NPU. 50 models were measured that way — see [Snapdragon NPU](#snapdragon-npu-hexagon). The Galaxy S26 (CPU) rows dated 2026-10 (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2, Bonsai Image 4B, Audio8-TTS-Preview-0.6b) and the Galaxy S26 GPU row of iris-3b Turbo are instead the sample apps' own device checks on the same phone, as their sections say. **Pixel 8a** (Tensor G3, Mali GPU, fp16) figures marked `~` come from each model's conversion notes; per [docs § Latency figures](docs/LITERT_CONVERSION_GUIDE.md#latency-figures-time-run--readback), figures recorded before 2026-08 may time only the asynchronous `run()` call (ormbg's earlier "~10 ms" re-measured at 246 ms with the readback). Camera FPS, RTF, tok/s and per-turn figures are end-to-end app measurements. The Model column links to the full entry: I/O shapes, preprocessing, license, conversion script and sample app.
 
 # Run a model in 5 lines
 
@@ -1687,6 +1688,32 @@ GFPGAN (TencentARC): restores degraded / low-quality faces using a StyleGAN2 gen
 **Output format**: `[1, 3, 512, 512]` NCHW restored face in [-1,1] → denormalize `(x+1)*127.5`.
 
 **Preprocessing**: detect 5 face landmarks (YuNet), similarity-warp to the facexlib 512 template, then normalize to [-1,1] (`x/127.5 - 1`). See [litert-community/GFPGAN-v1.4-LiteRT](https://huggingface.co/litert-community/GFPGAN-v1.4-LiteRT).
+
+# Text-to-Image
+
+### iris-3b Turbo
+
+[iris-3b](https://huggingface.co/speridlabs/iris-3b) (Speridlabs, Apache-2.0) draws in **pixel space**: a 3B diffusion transformer with no VAE, its Turbo checkpoint distilled to 4 steps with no classifier-free guidance, conditioned on 12 hidden-state taps of the Qwen3-VL-4B-Instruct text encoder. Here every model stage is a LiteRT graph on `Accelerator.GPU` at FP32 — 12 text encoder graphs, the text adapter, and 7 graphs per step — and the phone makes a 768×768 image from a text prompt. In the sample app, the first image took **212.6 s** on a Galaxy S26 and **468.8 s** on a Pixel 8a (each the app's first image after the install, thermal status 0 at the start).
+
+<img src="iris3b/docs/app_pixel8a.png" width="300"> <br> *The sample app on a Pixel 8a: "a cozy wooden cabin in a snowy pine forest at night, warm light in the windows", seed 7, 508.3 s (its first image after the install, with the screen being recorded).*
+
+| Graph | Role | fp16-weight size | I/O |
+| ----- | ---- | ---- | --- |
+| `iris_te_c00..c11_f16w` | Qwen3-VL-4B decoder layers 1–2, then 3 per graph up to 35 (one tap each) | 0.40 / 0.61 GB (c00 / each other) | `[1,334,2560], [1,32,334,334], [1,1,334,128], [1,1,334,128] → [1,334,2560]` |
+| `iris_dit_adapter_f16w_dit` | text adapter: 12 taps → 300 tokens, once per prompt | 0.50 GB | `[1,1,3600,2560], [1,20,300,300], [1,300,2560] → [1,300,2560]` |
+| `iris_dit_dual0..2_f16w_dit` | 3 + 3 + 2 dual-stream blocks (dual0 embeds the patches) | 0.91 / 0.90 / 0.60 GB | dual0 `[1,1,2304,768], [1,300,2560], [1,2604,1,64], [1,2604,1,64], [1,36,2560] → [1,2304,2560], [1,300,2560]`; dual1 takes `[1,2304,2560]` first, the rest the same; dual2 takes `[1,2304,2560]` first and `[1,24,2560]` last, the rest the same |
+| `iris_dit_single0..2_f16w_dit` | 6 + 6 + 4 single-stream blocks | 0.90 / 0.90 / 0.60 GB | single0 / single1 `[1,2604,2560], [1,2604,1,64], [1,2604,1,64], [1,36,2560] → [1,2604,2560]`; single2 takes `[1,24,2560]` last, the rest the same |
+| `iris_dit_pixel_f16w_dit` | pixel stage: the velocity of every pixel | 0.47 GB | `[1,2304,2560], [1,1,2560], [1,2304,256,3], [1,2304,256,16], [1,2304,1,64], [1,2304,1,64] → [1,2304,256,3]` |
+
+The fully-connected weights are fp16 constants with a `DEQUANTIZE` in front (litert-torch's `full_fp16_recipe`), so the 20 graphs take 12.87 GB, half of fp32; activations stay fp32 and the GPU runs at FP32. The checkpoint is bf16, which fp16 holds exactly apart from values smaller than 2^-17 in magnitude and the adapter's attention-query rows (not bf16 values in the exported fp32 graph), which are rounded. The image matches the upstream PyTorch pipeline run entirely in fp32, from the same starting noise, through the sample app's Generate path: PSNR 106.84 / 74.02 / 72.57 dB on the Galaxy S26 and 106.76 / 70.92 / 73.09 dB on the Pixel 8a (an English, a punctuation-and-digits and a Japanese prompt).
+
+⭐ **Lower precision does not hold this model's image.** fp16 GPU compute, int8 weights, or an int8 text encoder each moved some prompts below the bar used here (PSNR ≥ 35 dB and SSIM ≥ 0.98 against the all-fp32 image), and so does upstream's own default (a bf16 text encoder). Only fp32 compute with the checkpoint's own weight values keeps all three prompts above it. On the NPU of the Galaxy S26, the float versions (fp32 weights) of the first text-encoder graph and of the pixel stage, a one-layer text-encoder probe and a one-block transformer probe each went on whole (one partition), but the NPU computes in fp16 and the transformer block's output had non-finite values, so there is no NPU path.
+
+⭐ **Memory on the Pixel 8a**: each graph is compiled for its run and closed again (one graph's weights in memory at a time). Free memory goes from 3.6–3.8 GiB before an image to 288–444 MiB at its lowest, and Android's low-memory killer closes 116–169 other processes during each image; the app was never killed. The app reads free memory every 200 ms and stops before the next graph below 200,000 kB (about 195 MiB).
+
+**Model files**: [litert-community/iris-3b-Turbo-LiteRT](https://huggingface.co/litert-community/iris-3b-Turbo-LiteRT) (24 files, 13.7 GB, with a one-file Python reference pipeline on LiteRT `CompiledModel`).
+
+**Sample app**: [iris3b/](iris3b/) — type a prompt (or tap an example), Generate; the tokenizer (Kotlin port), the embedding lookup, the masks and the sampler run on the host, every graph on the GPU. `install_to_device.sh` streams the 24 files into the app's private storage.
 
 # Monocular Geometry Estimation
 

@@ -1,0 +1,11 @@
+[versions]
+agp = "8.9.1"
+kotlin = "2.2.21"
+litert = "2.2.0"
+
+[libraries]
+litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
