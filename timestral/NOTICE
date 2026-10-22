@@ -1,0 +1,24 @@
+Timestral Forecast Android sample
+
+Model: Timestral-209M by Mistral AI (huggingface.co/mistralai/Timestral-209M, revision
+9874d252ab0aae16f7f7c999f98f98d6ad7d8365). The weights are licensed under the Modified MIT License
+(licenses/Timestral-209M-weights-Modified-MIT.txt; attribution notice: 2026 - Mistral AI). Its
+condition 2 withholds every right under that license from a user whose company, or employer, had a
+global consolidated monthly revenue above $20 million (or its equivalent in another currency) in
+the preceding month, and it applies to the model and to any derivatives, modifications or combined
+works based on it. The LiteRT graph files and host tables the app loads are converted from these
+weights and are installed on the device, not kept in this source tree.
+
+The forecast's host steps are Kotlin ports of the official inference code (github.com/mistralai/
+timestral, commit a534bdbd244d64f3d9d743f46c7bf6fc330ed4ff, Apache License 2.0;
+licenses/timestral-code-APACHE-2.0.txt): the causal scaler, the asinh normalization, the
+denormalization with clamp_nonfinite, the advancing refine frame of _refine_block, the quantile
+cap, the NaN check, symmetric averaging and non-negative clipping of TimestralForecaster.forecast,
+and the attention mask and positions of the forecast's two token streams. Changes include one decoder
+block of at most 32 patches (1,024 steps), a context of at most 8,192 steps, fixed graph shapes
+with left padding, and the context and its negation computed as the two rows of one graph call.
+
+The example series in app/src/main/assets/examples/ and the test vectors in
+app/src/test/resources/vectors/ are synthetic, made by scripts/make_test_vectors.py.
+
+Gradle wrapper files retain their upstream Apache License 2.0 headers.

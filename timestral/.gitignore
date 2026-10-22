@@ -1,0 +1,30 @@
+# Weights, environments, upstream checkout and build outputs stay local.
+upstream/
+.venv*/
+out/
+weights/
+cache/
+__pycache__/
+*.pyc
+*.tflite
+*.safetensors
+*.npy
+*.npz
+*.bin
+*.pt
+*.log
+.hf_cache/
+# Device-round harness (lane.env, plans, rows, scorers) and phone results stay private.
+device/
+results/
+# Android sample build state; the Qualcomm NPU libraries (scripts/fetch_npu_libs.sh) go into the APK only.
+.gradle/
+.kotlin/
+.local/
+build/
+app/build/
+local.properties
+.gradle-user-home/
+app/src/main/jniLibs/
+# A machine-local path file the scripts read (scripts/common.py), never committed.
+scripts/local_paths.json

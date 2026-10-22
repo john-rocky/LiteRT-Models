@@ -1,0 +1,88 @@
+{
+  "model": "Timestral-209M",
+  "host_tables": {
+    "forecast_query": "forecast_query.f32",
+    "rope_cos": "rope_cos.f32",
+    "rope_sin": "rope_sin.f32",
+    "rope_first_position": -1023
+  },
+  "graphs": [
+    {
+      "name": "c2048-h256",
+      "file": "timestral-209m-c2048-h256.tflite",
+      "context_patches": 64,
+      "horizon_patches": 8,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["gpu", "npu"]
+    },
+    {
+      "name": "c2048-h1024",
+      "file": "timestral-209m-c2048-h1024.tflite",
+      "context_patches": 64,
+      "horizon_patches": 32,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["gpu", "npu"]
+    },
+    {
+      "name": "c8192-h256",
+      "file": "timestral-209m-c8192-h256.tflite",
+      "context_patches": 256,
+      "horizon_patches": 8,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["gpu"]
+    },
+    {
+      "name": "c8192-h1024",
+      "file": "timestral-209m-c8192-h1024.tflite",
+      "context_patches": 256,
+      "horizon_patches": 32,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["gpu"]
+    },
+    {
+      "name": "c2048-h256-int8",
+      "file": "timestral-209m-c2048-h256-int8.tflite",
+      "context_patches": 64,
+      "horizon_patches": 8,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["cpu"]
+    },
+    {
+      "name": "c2048-h1024-int8",
+      "file": "timestral-209m-c2048-h1024-int8.tflite",
+      "context_patches": 64,
+      "horizon_patches": 32,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["cpu"]
+    },
+    {
+      "name": "c8192-h256-int8",
+      "file": "timestral-209m-c8192-h256-int8.tflite",
+      "context_patches": 256,
+      "horizon_patches": 8,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["cpu"]
+    },
+    {
+      "name": "c8192-h1024-int8",
+      "file": "timestral-209m-c8192-h1024-int8.tflite",
+      "context_patches": 256,
+      "horizon_patches": 32,
+      "rows": 2,
+      "mask": -3e4,
+      "backends": ["cpu"]
+    }
+  ],
+  "backends": {
+    "cpu": {"threads": 4},
+    "gpu": {"precision": "fp16"},
+    "npu": {}
+  }
+}

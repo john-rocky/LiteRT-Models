@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Timestral Forecast</string>
+  <string name="missing_files">%1$d model files are not installed yet. Run scripts/install_to_device.sh (README), then forecast.</string>
+  <string name="series_label">Series (numbers, or a CSV whose last column is the series)</string>
+  <string name="series_placeholder">12.1, 13.4, 15.0, NaN, 14.2, …</string>
+  <string name="open_file">Open file</string>
+  <string name="examples">Examples</string>
+  <string name="clear">Clear</string>
+  <string name="horizon_label">Horizon (steps, 1 to 1,024)</string>
+  <string name="accelerator">Accelerator</string>
+  <string name="backend_cpu">CPU</string>
+  <string name="backend_gpu">GPU</string>
+  <string name="backend_npu">NPU (Qualcomm HTP)</string>
+  <string name="forecast">Forecast</string>
+  <string name="legend_history">History</string>
+  <string name="legend_median">Median</string>
+  <string name="legend_band">10–90 %</string>
+</resources>
