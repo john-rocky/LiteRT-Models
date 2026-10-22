@@ -115,6 +115,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Kev-0.8B](#kev-08b-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text or JSON state, calibrated probabilities (EN) | Galaxy S26 | 102 ms per question at the 128-token window, a 3-question request in 367 ms (GPU); 66 ms and 298 ms (NPU) | [🤗 HF](https://huggingface.co/litert-community/Kev-0.8B-LiteRT) |
 | [d1-omni-600M](#d1-omni-600m-typed-decisions-about-text-photos-and-speech) | Typed decisions: yes-no / choice / score questions about a voice note, a photo or a text, a probability for every option | Galaxy S26 | an 8.3 s voice note and 1 question in 153 ms, a photo and 1 question in 211 ms, a text and 2 questions in 96 ms (sample app, GPU; decision graphs at FP32) | [🤗 HF](https://huggingface.co/litert-community/d1-omni-600M-LiteRT) |
 | [d1-3B](#d1-3b-typed-decisions-desktop) | Typed decisions: yes-no / choice / score questions about a text, a JSON value or a photo, a probability for every option | Apple M4 Max (Mac, Metal float32) | 3 questions in 153.9 ms, a photo and 1 question in 389.3 ms | [🤗 HF](https://huggingface.co/litert-community/d1-3B-LiteRT) |
+| [clef-flash](#clef-flash-typed-decisions-desktop) | Typed decisions: yes-no / choice / score questions about a text, a JSON value or a photo, every question answered at once with a probability for every option | Apple M4 Max (Mac, Metal float32) | a 236-token request in 360.7 ms, a 1,007-token request in 1,346.9 ms, a request with one photo (448 px tile, 688 tokens) in 1,493.8 ms | [🤗 HF](https://huggingface.co/litert-community/clef-flash-LiteRT) |
 | [Phocinae-Largha-150M](#phocinae-largha-150m-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text, calibrated probabilities (EN / ZH) | Galaxy S26 | 19.8 ms per question at 384 tokens (NPU), 22.9 ms (GPU FP16); a 3-question request in 114 ms (NPU, the editor) | [🤗 HF](https://huggingface.co/litert-community/Phocinae-Largha-150M-LiteRT) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
@@ -2489,6 +2490,23 @@ Conversion scripts and steps: [conversion/](https://huggingface.co/litert-commun
 
 **Original project**: [LiquidAI/d1-3B](https://huggingface.co/LiquidAI/d1-3B) and its base model [LiquidAI/LFM2.5-VL-3B](https://huggingface.co/LiquidAI/LFM2.5-VL-3B), by Liquid AI, under the LFM Open License v1.0, which limits commercial use by organizations with annual revenue of US$10 million or more. The LiteRT files are a community conversion and are not affiliated with Liquid AI. The sample's code is Apache-2.0.
 
+### clef-flash (typed decisions, desktop)
+
+[Cloudflare/clef-flash](https://huggingface.co/Cloudflare/clef-flash) is a decision model by Cloudflare, post-trained from [Qwen/Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B). It reads a state (text, a JSON value or a picture) and typed questions about it: yes/no (`noul`), a pick from named options (`choice`) and an ordered rating (`score`). A joint head reads the final hidden states of the whole request and scores every option of every question at once. It never generates text.
+
+**Conversion:** the Qwen3.5 text decoder (32 layers: 24 GatedDeltaNet and 8 gated full-attention) was exported with litert-torch 0.9.4 from the float32 weights, the GatedDeltaNet recurrence written as a chunked kernel of 64 positions and the rotary tables as inputs. ai-edge-quantizer 0.9.0 stores the FULLY_CONNECTED weights in float16, and activations stay float32. Five row graphs take requests of up to 256, 512, 1,024, 2,048 and 4,096 tokens: the request's embeddings and rotary tables in, the hidden states after the final norm out. Two vision towers read a picture at a 256 px or a 448 px square tile. A Python host without PyTorch builds the request's tokens, writes the embedding rows, computes the positions and runs the joint head in NumPy. On an Apple M4 Max on Metal at float32 precision, through the host and the files of the repository, every test question gave the provider's most likely option (545 of 545 questions that are not near ties, and all 5 near ties, on 243 runs), with probabilities within 1.08e-5 on text and 1.65e-3 with a picture.
+
+**On the Mac (Apple M4 Max, 128 GB, macOS 27.0, ai-edge-litert 2.2.0, Python CompiledModel API, Metal at float32 precision, 2026-10-21):** a request of 236 tokens takes a median 360.7 ms on the 256-token row graph, one of 1,007 tokens 1,346.9 ms on the 1,024-token one, and a request with one photo at the 448 px tile (688 tokens) 1,493.8 ms (medians of 20 requests, each covering the host's work, every graph call and the joint head). The files are for desktops and laptops: one row graph holds about 13.8 GB of float16 weights, and the model was not run on a phone.
+
+| Model | Download | Size | Input → Output | Delegate |
+|---|---|---|---|---|
+| clef-flash L256 / L512 / L1024 / L2048 / L4096, vision towers for 256 / 448 px tiles | [HF: litert-community/clef-flash-LiteRT](https://huggingface.co/litert-community/clef-flash-LiteRT) | 13,847,841,008 to 13,936,871,792 B per row graph; towers 907,587,008 / 907,891,136 B; + 2,034,237,544 / 2,034,237,536 B bfloat16 embedding and output tables, 243,538,016 B joint head, 19,989,325 B tokenizer.json | embeds [1,L,4096] + valid [1,L] + cos / sin [1,L,64] → hidden [1,L,4096]; tower: patches [1,4G²,1536] + pos [1,4G²,1152] → rows [1,G²,4096]; → host joint head | GPU (Metal) at float32 precision; CPU (XNNPACK); verified on an Apple M4 Max |
+
+**Sample app**: [clef-flash/](clef-flash/) — a Mac app in Python. Paste or type a state (text or JSON), add a photo and pick the tile it is read at, write the questions with their options and press Decide: every question comes back at once, with a probability for each option and the request time. It runs on Apple silicon; the default download is 20.0 GB (the 1,024-token row graph, both towers, the tables and the host), and the app process's peak memory footprint was 68.5 GB, 34.1 GB once its three graphs were compiled. Its scripts press every bundled example through the editor and hold the answers to the provider's float32 answers, and the app can play one scene by itself for a screen recording, checked against the run.
+Conversion scripts and steps: [conversion/](https://huggingface.co/litert-community/clef-flash-LiteRT/tree/main/conversion) and [REPRODUCE.md](https://huggingface.co/litert-community/clef-flash-LiteRT/blob/main/REPRODUCE.md) in the model repository.
+
+**Original project**: [Cloudflare/clef-flash](https://huggingface.co/Cloudflare/clef-flash) and its base model [Qwen/Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B), both under the Apache License 2.0. The LiteRT files are a community conversion and are not affiliated with Cloudflare. The sample's code is Apache-2.0.
+
 # Text Generation (LLM)
 
 > **Conversion recipes** (official `litert-torch` `export_hf`, no fork — blockwise int4 + OCTAV, `externalize_embedder`, simple chat templates): [`text-generation/`](text-generation/).
@@ -2559,6 +2577,6 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 
 # License
 
-MIT (sample apps; `kev/`, `julia1/` and `d1-3b/` carry their own Apache-2.0 `LICENSE`, and `d1omni/` the LFM Open License v1.0, as it ports the model provider's code). Model licenses follow their original projects.
+MIT (sample apps; `kev/`, `julia1/`, `d1-3b/` and `clef-flash/` carry their own Apache-2.0 `LICENSE`, and `d1omni/` the LFM Open License v1.0, as it ports the model provider's code). Model licenses follow their original projects.
 
 

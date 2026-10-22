@@ -1,0 +1,21 @@
+clef-flash Decide Mac sample
+
+The code in this directory (the app, its screen and its scripts) is licensed under the Apache License
+2.0 (LICENSE). It includes no third-party source code. The Python packages it uses are installed with
+pip from hub/host/requirements-host.txt and requirements-app.txt and are not part of this directory.
+
+Model: clef-flash by Cloudflare (huggingface.co/Cloudflare/clef-flash, revision
+f0b7d3cd65296abfe459e6c228b618f5d8b26d2f), post-trained from Qwen/Qwen3.5-9B. Both are licensed under the
+Apache License 2.0. The app runs litert-community/clef-flash-LiteRT
+(huggingface.co/litert-community/clef-flash-LiteRT, revision 419ecb59c3d65bcf4f9e3dfab004fdddf805da86), a
+LiteRT conversion of clef-flash under the same license. scripts/fetch_hub.sh downloads its files into hub/;
+they are not kept in this source tree. The app imports that repository's Python host (hub/host/clef_litert)
+as downloaded. The LiteRT files are a community conversion and are not affiliated with Cloudflare.
+
+Examples: app/examples.json holds four records of that repository's public test fixtures
+(hub/fixtures/requests_public.json: own_t01, own_j11, photo_04 and img_10), which were written for those
+fixtures and are free to use (CC0-1.0); people, organizations and products in them are invented. The record
+img_10 is also the example request of the model repository's card. Their pictures are downloaded into
+hub/fixtures/images/ and not kept here: photo_coffee.png is "Coffee cup and coffee bean" by mcfoodie
+(commons.wikimedia.org/wiki/File:Coffee_cup_and_coffee_bean.jpg), CC0-1.0, as hub/fixtures/photos.json
+records it; clock_3oclock_256x240.png is a drawing made with Pillow primitives (CC0-1.0).

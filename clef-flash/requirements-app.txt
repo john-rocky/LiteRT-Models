@@ -1,0 +1,12 @@
+# The app's window (pywebview on Cocoa), as tested with Python 3.14.6 on macOS 27.0 (arm64). The model's host and the
+# check scripts need hub/host/requirements-host.txt as well (scripts/fetch_hub.sh downloads it).
+pywebview==6.2.1
+bottle==0.13.4
+proxy_tools==0.1.0
+pyobjc-core==12.2.2
+pyobjc-framework-Cocoa==12.2.2
+pyobjc-framework-Quartz==12.2.2
+pyobjc-framework-Security==12.2.2
+pyobjc-framework-UniformTypeIdentifiers==12.2.2
+pyobjc-framework-WebKit==12.2.2
+typing_extensions==4.16.0

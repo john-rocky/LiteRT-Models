@@ -1,0 +1,178 @@
+{
+ "what": "The editor's bundled examples: four records of the model repository's public test fixtures (hub/fixtures/requests_public.json), each request as published there (the state and the questions, in their order). The ticket and the rooms list were written for those fixtures (people, organizations and products in them are invented); the coffee picture is a CC0 photograph from Wikimedia Commons (hub/fixtures/photos.json names its page and author); the clock is a drawing made with Pillow primitives (CC0-1.0) and its request is the model card's example. take: the editor of the recorded clip, the coffee example's state and two of its four questions, without the photo.",
+ "examples": [
+  {
+   "id": "ticket",
+   "title": "Ticket",
+   "record": "own_t01",
+   "state": "Ticket 4471 from Mara Ellison: Since this morning the DL-40 desk lamp I bought from Wendlecote Home will not turn on. I tried two different outlets and a different cable. It is still within the 90-day warranty. I would like it repaired or replaced, not refunded.",
+   "questions": {
+    "department": {
+     "type": "choice",
+     "instructions": "Which team should handle this ticket?",
+     "criteria": {
+      "billing": "Payments, invoices, charges and refunds",
+      "technical": "A product or service does not work: bugs, faults, outages",
+      "shipping": "Delivery, tracking, lost or damaged parcels",
+      "account": "Sign-in, profile and password problems"
+     }
+    },
+    "wants_refund": {
+     "type": "noul",
+     "instructions": "The customer asks for a refund."
+    },
+    "urgency": {
+     "type": "score",
+     "instructions": "How urgent is the ticket?",
+     "criteria": [
+      "Can wait",
+      "This week",
+      "Today",
+      "Immediately"
+     ]
+    }
+   }
+  },
+  {
+   "id": "rooms",
+   "title": "Rooms",
+   "record": "own_j11",
+   "state": [
+    {
+     "room": "A",
+     "capacity": 4,
+     "projector": true,
+     "free": [
+      "10:00",
+      "14:00"
+     ]
+    },
+    {
+     "room": "B",
+     "capacity": 12,
+     "projector": true,
+     "free": [
+      "14:00"
+     ]
+    },
+    {
+     "room": "C",
+     "capacity": 8,
+     "projector": false,
+     "free": [
+      "10:00",
+      "11:00",
+      "14:00"
+     ]
+    }
+   ],
+   "questions": {
+    "room": {
+     "type": "choice",
+     "instructions": "Which room fits eight people with a projector at 14:00?",
+     "criteria": {
+      "A": "Room A",
+      "B": "Room B",
+      "C": "Room C",
+      "none": "No room fits"
+     }
+    },
+    "slot_10": {
+     "type": "choice",
+     "instructions": "Which rooms are free at 10:00?",
+     "criteria": {
+      "A_C": "Rooms A and C",
+      "B": "Room B only",
+      "all": "All rooms",
+      "none": "No room"
+     }
+    },
+    "feasible": {
+     "type": "noul",
+     "instructions": "A room with a projector for eight people is free at 10:00."
+    }
+   }
+  },
+  {
+   "id": "coffee",
+   "title": "Coffee",
+   "record": "photo_04",
+   "picture": "fixtures/images/photo_coffee.png",
+   "state": "What is shown in the attached photo?",
+   "questions": {
+    "drink": {
+     "type": "choice",
+     "instructions": "Which drink is in the cup?",
+     "criteria": {
+      "tea": "Tea",
+      "coffee": "Coffee",
+      "milk": "Milk",
+      "juice": "Juice"
+     }
+    },
+    "milk_added": {
+     "type": "noul",
+     "instructions": "Milk has been added to the drink."
+    },
+    "cup_color": {
+     "type": "choice",
+     "instructions": "What color is the cup?",
+     "criteria": {
+      "white": "White",
+      "black": "Black",
+      "red": "Red",
+      "blue": "Blue"
+     }
+    },
+    "beans": {
+     "type": "score",
+     "instructions": "How many coffee beans are visible?",
+     "criteria": [
+      "none",
+      "a few",
+      "many"
+     ]
+    }
+   }
+  },
+  {
+   "id": "clock",
+   "title": "Clock",
+   "record": "img_10",
+   "picture": "fixtures/images/clock_3oclock_256x240.png",
+   "state": "The attached image shows a wall clock.",
+   "questions": {
+    "hour": {
+     "type": "choice",
+     "instructions": "What hour does the clock show?",
+     "criteria": {
+      "12": "twelve",
+      "3": "three",
+      "6": "six",
+      "9": "nine"
+     }
+    },
+    "minute_hand_up": {
+     "type": "noul",
+     "instructions": "The minute hand points straight up."
+    },
+    "confidence": {
+     "type": "score",
+     "instructions": "How clearly can the time be read?",
+     "criteria": [
+      "unclear",
+      "fairly clear",
+      "very clear"
+     ]
+    }
+   }
+  }
+ ],
+ "take": {
+  "from": "coffee",
+  "questions": [
+   "drink",
+   "milk_added"
+  ]
+ }
+}
