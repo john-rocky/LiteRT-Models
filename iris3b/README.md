@@ -12,6 +12,8 @@ needs 4 steps with no classifier-free guidance.
 
 *"a cozy wooden cabin in a snowy pine forest at night, warm light in the windows", seed 7, made in the app on a Pixel 8a in 508.3 s (its first image after the install, with the screen being recorded).*
 
+A 13.6 s video of this run (prompt, Generate, image; the middle sped up) is in the [model card's Demo section](https://huggingface.co/litert-community/iris-3b-Turbo-LiteRT#demo).
+
 | | |
 |---|---|
 | Model | `speridlabs/iris-3b` Turbo, rev `adc05b9` (Apache-2.0): 3B pixel-space DiT, 4 steps, no CFG |
