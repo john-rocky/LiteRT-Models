@@ -30,8 +30,8 @@ keyboard stays with the app you were using. It drives the editor through the pag
 tapping the buttons: the same handlers and the same Decide as a click), on triggers from the take script in
 --trigger-dir: <tag>.READY (written), then per scene <tag>.ARM_<s> -> <tag>.ARMED_<s>, <tag>.GO_<s> -> the scene ->
 <tag>.DONE_<s>, then <tag>.run.json; --stay keeps the window until <tag>.QUIT. Scene P: the editor opens with the
-coffee example's state and three of its questions (examples.json "take") and no photo; the coffee photo is placed in
-the drop zone, Decide, the three answers.
+coffee example's state and two of its questions (examples.json "take") and no photo; the coffee photo is placed in
+the drop zone, Decide, the two answers.
 
 Measuring next to other GPU work is optional: CLEF_WAIT_CMD (a command prefix run as `<prefix> -- <command>`; the app
 runs it before compiling and waits for it) and CLEF_LOCK_FILE (a lock file whose content is recorded during compile

@@ -8,7 +8,7 @@ The app opens with a support ticket and its three questions. Four examples are b
 
 ```bash
 cd clef-flash
-zsh scripts/fetch_hub.sh                 # 56 files, 20.0 GB, into hub/, checked against the repository's SHA256SUMS
+zsh scripts/fetch_hub.sh                 # 56 files, 20.0 GB, into hub/, checked against the repository's SHA256SUMS (resumable; about 17 minutes at 20 MB/s)
 python3.14 -m venv venv-demo
 venv-demo/bin/pip install -r hub/host/requirements-host.txt -r requirements-app.txt
 venv-demo/bin/python app/clef_demo.py    # the editor
@@ -49,23 +49,23 @@ Measured in this app on an Apple M4 Max (128 GB, macOS 27.0), ai-edge-litert 2.2
 
 In the recorded take below, the same 455-token request took 1,539.8 ms (the 1,540 ms of its footer): it was the first request after the warm-up, with the window recorder running.
 
-`--accel cpu` runs the same graphs on the CPU (XNNPACK, 8 threads): there the recorded scene's request took 6,212.2 ms (`scripts/cpu_reference.py`, its second call).
+`--accel cpu` runs the same graphs on the CPU (XNNPACK, 8 threads). `scripts/cpu_reference.py` runs the recorded scene's request that way through the app's model code: its second call took 6,212.2 ms (the first, 26.0 s, includes the two compiles).
 
 ## Memory
 
-On Metal at float32 the app process's peak memory footprint was 68.5 GB (`/usr/bin/time -l`), and it held 34.1 GB once its three graphs were compiled, 34.8 GB after the warm-up. The model card measured the same for one row graph: 67.5 to 69.2 GB during its compile. On the CPU, `scripts/cpu_reference.py` peaked at 32.3 GB. This was measured on a 128 GB Mac; Macs with less memory were not tried.
+On Metal at float32 the app process's peak memory footprint was 68.5 GB (`/usr/bin/time -l`), and it held 34.1 GB once its three graphs were compiled, 34.8 GB after the warm-up. The model card's own runs, one row graph at a time, peaked at 67.5 to 69.2 GB during the compile. On the CPU, `scripts/cpu_reference.py` peaked at 32.3 GB (`/usr/bin/time -l`). This was measured on a 128 GB Mac; Macs with less memory were not tried.
 
 ## Check the answers
 
 The four examples are records of the model repository's public test fixtures, and `hub/fixtures/reference_probs.json` holds the provider's own answers to them: its `systemone()` in float32 on the CPU. The app's answers can be checked against them:
 
 ```bash
-venv-demo/bin/python app/clef_demo.py --tag e1 &                     # the editor, scripted input accepted
+venv-demo/bin/python app/clef_demo.py --tag e1 &                     # the editor, scripted input accepted (the window appears at READY, top right, and ignores the mouse)
 venv-demo/bin/python -B scripts/press_examples.py e1                 # every example, both tiles for a picture
 venv-demo/bin/python -B scripts/check_examples.py out/e1_manual.run.json
 ```
 
-`press_examples.py` taps each example's button, the tile and Decide, as you would, five times each, then sends a state longer than the row graph, which the app refuses. `check_examples.py` passes when, on every question whose two most likely options are more than 0.02 apart, the most likely option is the provider's, and every probability is within 0.02 of the provider's. On the Apple M4 Max all six requests passed: each of their 20 questions gave the provider's most likely option, and the probabilities differed from the provider's by at most 2.4e-5 (the coffee photo at the 448 px tile; 3.6e-7 for the ticket). The five presses of each request gave the same probabilities to the last bit, and the 2,982-token state was refused with `RequestTooLong` and a red line.
+`press_examples.py` taps each example's button, the tile and Decide, as you would, five times each; then the recorded scene's request the same way (the coffee example with two of its four question cards removed); then it pastes a state longer than the row graph, which the app refuses. `check_examples.py` passes when, on every question whose two most likely options are more than 0.02 apart, the most likely option is the provider's, and every probability is within 0.02 of the provider's. On the Apple M4 Max all six requests passed: each of their 20 questions gave the provider's most likely option, and the probabilities differed from the provider's by at most 2.4e-5 (the coffee photo at the 448 px tile; 3.6e-7 for the ticket). The five presses of each request gave the same probabilities to the last bit, and the 2,982-token state was refused with `RequestTooLong` and a red line.
 
 `scripts/check_editor.py` checks the editor's rules and that each example is its fixture record, without the model.
 
@@ -76,11 +76,11 @@ The app can also play one scene by itself, for a recording. It places the photo 
 - Scene P: the editor opens with the coffee example's state, two of its questions (which drink is in the cup, a choice; whether milk was added, yes or no) and no photo; the photo is dropped in; Decide; the two answers.
 
 ```bash
-venv-demo/bin/python -B scripts/cpu_reference.py   # scene P's request on the CPU, from the same files: the line for the take
+venv-demo/bin/python -B scripts/cpu_reference.py   # scene P's request on the CPU, from the same files: the line for the take (run once: it refuses to overwrite out/cpu_ref_take.json, which every later take reads)
 zsh scripts/take.sh t1                             # the app with --scenes P, the scene recorded, then the checks
 ```
 
-`take.sh` records the app's window and nothing else (`scripts/record_window.swift`, ScreenCaptureKit's window filter, 30 frames per second, no sound) and needs the Screen Recording permission for your terminal. Each take needs a new tag. A take counts when its checks pass:
+`take.sh` records the app's window and nothing else (`scripts/record_window.swift`, ScreenCaptureKit's window filter, 30 frames per second, no sound) and needs the Screen Recording permission for your terminal and the Mac's screen unlocked: while it is locked the page paints nothing and the run stops with a `did not paint` / `no mark` error. Each take needs a new tag. A take counts when its checks pass:
 
 - `check_run.py`: scene P's probabilities against `cpu_reference.py` (the same most likely option on each question, every probability within 0.02; scene P's request is not a fixture record, so the provider's answers do not cover it); every string on screen is the rounding of the run's values, and each bar is drawn at its probability; the request time is at most twice the model card's median for a request with one photo at the 448 px tile (1,493.8 ms); the editor's content equals the request; no graph compiled after READY.
 - `check_frames.py`: the recording against the run. Only the app's window is in it, the photo appears after the drop and before Decide, and the answers appear after Decide no sooner than the request time allows.
@@ -95,8 +95,8 @@ On a Mac that runs other GPU work, three environment variables let the scripts w
 
 - A Mac with Apple silicon. Tested on an Apple M4 Max with 128 GB and macOS 27.0.
 - Python 3.14 (tested with 3.14.6), with the packages of `hub/host/requirements-host.txt` and `requirements-app.txt`.
-- Disk: 20.0 GB for the default download, 13.9 GB more for each other row graph.
-- Memory: see above.
+- Disk: 20.0 GB for the default download, 13.8 to 13.9 GB more for each other row graph.
+- Memory: 68.5 GB peak on Metal, 32.3 GB on the CPU (see Memory).
 - For recording only: the Screen Recording permission, the Xcode command line tools (`xcrun swiftc`) and ffmpeg.
 
 ## Files
