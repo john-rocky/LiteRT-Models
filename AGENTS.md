@@ -46,8 +46,8 @@ MediaPipe. Independent, not affiliated with Google.
 5. **One model call at a time.** Confine inference to `Dispatchers.Default.limitedParallelism(1)`;
    the helpers reuse native input and output buffers.
 6. **Numbers stay with their device.** A latency in the table is a measurement on the device its
-   row names (Pixel 8a, Galaxy S26, or an Apple M4 Max for the desktop sample `d1-3b/`); do not
-   extrapolate it to another phone or computer.
+   row names (Pixel 8a, Galaxy S26, or an Apple M4 Max for the desktop samples `d1-3b/` and
+   `clef-flash/`); do not extrapolate it to another phone or computer.
 7. **Fix a shared helper in `common/` first**, then `python tools/sync_common.py --apply`. Never
    patch one module's copy in place.
 
@@ -55,6 +55,6 @@ MediaPipe. Independent, not affiliated with Google.
 
 - LLMs and VLMs as `.litertlm` bundles → [hf-to-litertlm](https://github.com/john-rocky/hf-to-litertlm) to convert, [hfmodels-android](https://github.com/john-rocky/hfmodels-android) to run.
 - Which `.tflite` op runs on which delegate, measured per runtime version → [edge-compat](https://github.com/john-rocky/edge-compat).
-- iPhone and Mac → [coreai-model-zoo](https://github.com/john-rocky/coreai-model-zoo) (Core AI) or [CoreML-Models](https://github.com/john-rocky/CoreML-Models) (Core ML). One LiteRT desktop sample lives here: `d1-3b/` (Python, CompiledModel on Metal, a model that does not fit a 12 GB phone).
+- iPhone and Mac → [coreai-model-zoo](https://github.com/john-rocky/coreai-model-zoo) (Core AI) or [CoreML-Models](https://github.com/john-rocky/CoreML-Models) (Core ML). Two LiteRT desktop samples live here: `d1-3b/` and `clef-flash/` (Python, CompiledModel on Metal, models that do not fit a 12 GB phone).
 
 Maintainer: john-rocky (GitHub); litert-community and mlboydaisuke (Hugging Face). Issues: https://github.com/john-rocky/LiteRT-Models/issues
