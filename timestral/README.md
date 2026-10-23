@@ -5,13 +5,13 @@ Paste a series of numbers (or open a CSV file, or pick a bundled example), choos
 ## Model and requirements
 
 - Model: [mistralai/Timestral-209M](https://huggingface.co/mistralai/Timestral-209M), revision `9874d252ab0aae16f7f7c999f98f98d6ad7d8365`, weights under the Modified MIT License (see [License](#license)) — condition 2: no rights under the license if the global consolidated monthly revenue of your company or your employer exceeded $20 million in the preceding month; it covers the converted graphs too. Code: [github.com/mistralai/timestral](https://github.com/mistralai/timestral), commit `a534bdbd244d`, Apache-2.0.
-- Converted files (the graphs and tables the app loads): not distributed. Build them from the official checkpoint with the scripts in `scripts/`: [Rebuilding the graphs](#rebuilding-the-graphs) gives the commands and the file names the app expects, and [Files on the device](#files-on-the-device) lists the files the app loads.
+- Converted files (the graphs and tables the app loads): [mlboydaisuke/Timestral-209M-LiteRT](https://huggingface.co/mlboydaisuke/Timestral-209M-LiteRT) on Hugging Face; the next section has the download command, and the model card has their speed on phones and their accuracy against the official forecaster. To build them yourself from the official checkpoint, see [Rebuilding the graphs](#rebuilding-the-graphs); [Files on the device](#files-on-the-device) lists them.
 - What is forecast (the official defaults of `TimestralForecaster.forecast()` for one series without covariates): the forecast of the series averaged with the forecast of its negation, clipped at zero when no observed value is negative, quantiles capped near the range of your series (the context's range ± 10⁴ × its last scale), and one model pass of up to 1,024 steps (32 patches of 32 steps); the official forecaster's pass-by-pass loop for longer horizons is not part of this sample. Of a longer series the last 8,192 steps are the context (the official forecaster with `max_context=8192`).
 - Output: 21 quantiles per step (levels 0.01, 0.05, 0.1, 0.15, …, 0.9, 0.95, 0.99).
 - Android: arm64-v8a, Android 8.0 / API 26 or newer; compile/target SDK 35.
 - Runtime: LiteRT **2.2.0** `CompiledModel`; Material 1 Compose with MVVM.
 
-## Build and install
+## Download, build and install
 
 ```bash
 cd timestral/
@@ -22,7 +22,8 @@ cd timestral/
 ./gradlew :app:installDebug
 # Optional when several devices are connected:
 # export ANDROID_SERIAL=your-device-serial
-./scripts/install_to_device.sh /path/to/the/model/files
+hf download mlboydaisuke/Timestral-209M-LiteRT --local-dir ~/Downloads/Timestral-209M-LiteRT
+./scripts/install_to_device.sh ~/Downloads/Timestral-209M-LiteRT
 ```
 
 `install_to_device.sh` copies every file that `app/src/main/assets/timestral_forms.json` names from that directory into the app's private `files/` directory, one file at a time, checking each copy's size: the eight graphs and three small `.f32` tables the app reads (the decoder token and the two RoPE tables), 2.5 GB in all. To install the files of some accelerators only, name them:
@@ -32,7 +33,7 @@ cd timestral/
 # -int8 graphs and the three tables.
 FILES="timestral-209m-c2048-h256.tflite timestral-209m-c2048-h1024.tflite \
 timestral-209m-c8192-h256.tflite timestral-209m-c8192-h1024.tflite \
-forecast_query.f32 rope_cos.f32 rope_sin.f32" ./scripts/install_to_device.sh /path/to/the/model/files
+forecast_query.f32 rope_cos.f32 rope_sin.f32" ./scripts/install_to_device.sh ~/Downloads/Timestral-209M-LiteRT
 ```
 
 The screen counts the files that are not installed yet, and a forecast whose graph or tables are missing names them instead of running.
