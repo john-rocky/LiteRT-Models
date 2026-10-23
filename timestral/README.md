@@ -2,6 +2,8 @@
 
 Paste a series of numbers (or open a CSV file, or pick a bundled example), choose how many steps to forecast (up to 1,024) and the accelerator (CPU, GPU, or the Qualcomm NPU), and tap **Forecast**. The app draws the end of your series, the forecast's median and its 10–90 % band, and shows how long the model call took. Everything runs on the phone: the whole model as one LiteRT graph, and in Kotlin the pre- and post-processing of the official Python forecaster (scaling the series, un-scaling and capping the forecast, averaging it with the forecast of the negated series, clipping at zero), which the JVM tests below check against the Python reference.
 
+<img src="https://huggingface.co/mlboydaisuke/Timestral-209M-LiteRT/resolve/main/assets/demo.gif" width="300"> <br> *On a Galaxy S26: 56 days of synthetic daily orders (the end of the bundled example) pasted in, a 14-day forecast on the NPU, graph call 17.7 ms. It is the app's second forecast after the install; the first compiled the graph for the NPU in 16.3 s in this run. One cut, in a pause before the Forecast tap.*
+
 ## Model and requirements
 
 - Model: [mistralai/Timestral-209M](https://huggingface.co/mistralai/Timestral-209M), revision `9874d252ab0aae16f7f7c999f98f98d6ad7d8365`, weights under the Modified MIT License (see [License](#license)) — condition 2: no rights under the license if the global consolidated monthly revenue of your company or your employer exceeded $20 million in the preceding month; it covers the converted graphs too. Code: [github.com/mistralai/timestral](https://github.com/mistralai/timestral), commit `a534bdbd244d`, Apache-2.0.
