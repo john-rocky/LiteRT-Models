@@ -1,0 +1,1608 @@
+{
+ "what": "dev commands: the form of the state and the questions was settled on these (app/form.py); each maps one scenario of the provider's home appliance benchmark onto this Mac's devices; gold written before any model call on them, by the benchmark's own rules (the target set is the devices of the request's operations, none for a clarifying question; a post answer is the value after correct handling)",
+ "commands": [
+  {
+   "id": "d01",
+   "scenario": "exact_toggle",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Could you quit Calculator?"
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "calculator"
+    ],
+    "changes": {
+     "calculator.running": false
+    }
+   }
+  },
+  {
+   "id": "d02",
+   "scenario": "room_except",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Quit every app except the TV app, and keep the music playing."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "calculator",
+     "draft_1",
+     "draft_2"
+    ],
+    "changes": {
+     "calculator.running": false,
+     "draft_1.open": false,
+     "draft_2.open": false
+    }
+   }
+  },
+  {
+   "id": "d03",
+   "scenario": "named_group",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": false,
+      "memory_mb": 0
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": false
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Start the evening group, please."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "tv",
+     "music"
+    ],
+    "changes": {
+     "tv.running": true,
+     "music.playing": true
+    }
+   }
+  },
+  {
+   "id": "d04",
+   "scenario": "duplicate_name",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": false,
+      "memory_mb": 0
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Close Draft."
+   },
+   "gold": {
+    "resolution": "clarify",
+    "targets": [],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d05",
+   "scenario": "already_satisfied",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Leave the music playing."
+   },
+   "gold": {
+    "resolution": "no_change",
+    "targets": [
+     "music"
+    ],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d06",
+   "scenario": "range_reject",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Set the volume to 150%."
+   },
+   "gold": {
+    "resolution": "unsupported",
+    "targets": [
+     "sound"
+    ],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d07",
+   "scenario": "future_schedule",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "At 10:15 tonight, quit the TV app."
+   },
+   "gold": {
+    "resolution": "schedule",
+    "targets": [
+     "tv"
+    ],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d08",
+   "scenario": "context_pronoun",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Quit it too."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "calculator"
+    ],
+    "changes": {
+     "calculator.running": false
+    }
+   }
+  },
+  {
+   "id": "d09",
+   "scenario": "missing_device",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Open the spreadsheet app."
+   },
+   "gold": {
+    "resolution": "clarify",
+    "targets": [],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d10",
+   "scenario": "security_policy",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Lock the screen."
+   },
+   "gold": {
+    "resolution": "blocked",
+    "targets": [
+     "screen"
+    ],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d11",
+   "scenario": "group_exception",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Close the work group, but keep the calculator as it is."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "draft_1",
+     "draft_2"
+    ],
+    "changes": {
+     "draft_1.open": false,
+     "draft_2.open": false
+    }
+   }
+  },
+  {
+   "id": "d12",
+   "scenario": "power_filter",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Quit the apps using more than 300 MB of memory."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "tv"
+    ],
+    "changes": {
+     "tv.running": false
+    }
+   }
+  },
+  {
+   "id": "d13",
+   "scenario": "relative_level",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Make the sound 20 points louder."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "sound"
+    ],
+    "changes": {
+     "sound.volume": 45
+    }
+   }
+  },
+  {
+   "id": "d14",
+   "scenario": "status_query",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "What's the volume right now?"
+   },
+   "gold": {
+    "resolution": "query",
+    "targets": [
+     "sound"
+    ],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d15",
+   "scenario": "exact_toggle",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Stop the music."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "music"
+    ],
+    "changes": {
+     "music.playing": false
+    }
+   }
+  },
+  {
+   "id": "d16",
+   "scenario": "conditional_rule",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": false
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Whenever the music starts playing, set the volume to 30%."
+   },
+   "gold": {
+    "resolution": "rule",
+    "targets": [
+     "sound"
+    ],
+    "changes": {}
+   }
+  },
+  {
+   "id": "d17",
+   "scenario": "exact_toggle",
+   "state": {
+    "now": "2026-10-23T20:00:00+09:00",
+    "devices": [
+     {
+      "id": "tv",
+      "name": "TV",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 412
+     },
+     {
+      "id": "calculator",
+      "name": "Calculator",
+      "kind": "app",
+      "available": true,
+      "running": true,
+      "memory_mb": 61
+     },
+     {
+      "id": "draft_1",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "draft_2",
+      "name": "Draft",
+      "kind": "document",
+      "available": true,
+      "app": "TextEdit",
+      "open": true
+     },
+     {
+      "id": "music",
+      "name": "Music",
+      "kind": "player",
+      "available": true,
+      "playing": true
+     },
+     {
+      "id": "sound",
+      "name": "Sound",
+      "kind": "speaker",
+      "available": true,
+      "muted": false,
+      "volume": 25,
+      "min_volume": 0,
+      "max_volume": 100
+     },
+     {
+      "id": "screen",
+      "name": "Screen",
+      "kind": "lock",
+      "available": true,
+      "locked": false
+     }
+    ],
+    "groups": {
+     "evening": [
+      "tv",
+      "music"
+     ],
+     "work": [
+      "draft_1",
+      "draft_2",
+      "calculator"
+     ]
+    },
+    "policy": {
+     "multi_action": "best_effort",
+     "allow_partial": true,
+     "security_mode": "presenting",
+     "presenting_lock": "blocked"
+    },
+    "schedules": [],
+    "rules": [],
+    "device_context": "calculator",
+    "request": "Set the volume to 40%."
+   },
+   "gold": {
+    "resolution": "execute",
+    "targets": [
+     "sound"
+    ],
+    "changes": {
+     "sound.volume": 40
+    }
+   }
+  }
+ ]
+}

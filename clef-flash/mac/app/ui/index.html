@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1060, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>clef-flash mac</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <span id="pill" class="pill idle"><span class="dot">●</span> on-device</span>
+    <span id="status" class="status">LOADING</span>
+    <span id="model" class="model">clef-flash mac</span>
+    <span id="device" class="device"></span>
+  </header>
+  <div class="main">
+    <section class="stage">
+      <div class="mac-head">
+        <span class="label">This Mac</span>
+        <span id="mac-time" class="mac-time"></span>
+        <span id="mac-source" class="mac-source"></span>
+      </div>
+      <div id="way" class="way">
+        <div class="way-top"><span id="way-word" class="way-word"></span><span id="way-p" class="way-p"></span></div>
+        <div id="way-detail" class="way-detail"></div>
+      </div>
+      <div id="rows" class="rows"></div>
+      <div id="mac-note" class="mac-note"></div>
+    </section>
+    <section class="side">
+      <div class="tabs">
+        <button id="tab-command" class="tab on" type="button" data-tab="command">Command</button>
+        <button id="tab-edit" class="tab" type="button" data-tab="edit">State &amp; questions</button>
+      </div>
+      <div id="pane-command" class="pane on">
+        <textarea id="command" rows="2" spellcheck="false" autocomplete="off" placeholder="A command, e.g. Close Draft."></textarea>
+        <div id="command-note" class="command-note"></div>
+        <div id="commands" class="commands"></div>
+        <div class="crow">
+          <button id="scene" class="add" type="button">Open the demo's devices</button>
+          <label class="apply"><input id="apply" type="checkbox" checked> Apply to this Mac</label>
+        </div>
+      </div>
+      <div id="pane-edit" class="pane">
+        <div class="erow">
+          <span class="label">State</span>
+          <span id="state-kind" class="kind"></span>
+          <button id="read-mac" class="add" type="button">Read this Mac</button>
+        </div>
+        <textarea id="state" rows="1" spellcheck="false" placeholder="The Mac as JSON: now, devices, groups, policy, device_context and the request"></textarea>
+        <div class="erow qhead">
+          <span class="label">Questions</span>
+          <span id="q-kind" class="kind"></span>
+          <button id="rebuild-q" class="add" type="button">Rebuild questions</button>
+          <button id="add-q" class="add" type="button">+ Add question</button>
+        </div>
+        <div id="questions"></div>
+      </div>
+      <div class="actions">
+        <button id="decide" class="decide" type="button" disabled>Decide</button>
+        <div id="error" class="error"></div>
+      </div>
+      <div class="foot">
+        <div id="time-big" class="time-big"></div>
+        <div id="foot-note" class="foot-note"></div>
+      </div>
+    </section>
+  </div>
+</div>
+<div id="caret"></div>
+<script src="app.js"></script>
+</body>
+</html>

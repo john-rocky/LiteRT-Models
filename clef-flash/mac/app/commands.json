@@ -1,0 +1,23 @@
+{
+ "what": "The bundled commands of the Mac app: each button writes its command into the command line (the state's \"request\"); the state is read from this Mac (\"Open the demo's devices\" opens the TV app, Calculator and both drafts, plays the music and sets the volume to 25, so every command has something to act on). \"take\" lists the commands of the recorded scene, in order. The same commands, each with a fixed state and the answers written down before the model ran, are eval/dev.json.",
+ "take": ["quit_apps", "close_draft"],
+ "commands": [
+  {"id": "quit_apps", "title": "Quit every app but TV", "request": "Quit every app except the TV app, and keep the music playing."},
+  {"id": "close_draft", "title": "Close Draft", "request": "Close Draft."},
+  {"id": "quit_calculator", "title": "Quit Calculator", "request": "Could you quit Calculator?"},
+  {"id": "evening", "title": "Evening group", "request": "Start the evening group, please."},
+  {"id": "leave_music", "title": "Leave the music", "request": "Leave the music playing."},
+  {"id": "volume_150", "title": "Volume 150 %", "request": "Set the volume to 150%."},
+  {"id": "later", "title": "At 10:15 tonight", "request": "At 10:15 tonight, quit the TV app."},
+  {"id": "it_too", "title": "Quit it too", "request": "Quit it too."},
+  {"id": "spreadsheet", "title": "Spreadsheet app", "request": "Open the spreadsheet app."},
+  {"id": "lock", "title": "Lock the screen", "request": "Lock the screen."},
+  {"id": "work_group", "title": "Work group but Calculator", "request": "Close the work group, but keep the calculator as it is."},
+  {"id": "big_apps", "title": "Apps over 300 MB", "request": "Quit the apps using more than 300 MB of memory."},
+  {"id": "louder", "title": "20 points louder", "request": "Make the sound 20 points louder."},
+  {"id": "what_volume", "title": "What volume?", "request": "What's the volume right now?"},
+  {"id": "stop_music", "title": "Stop the music", "request": "Stop the music."},
+  {"id": "rule", "title": "Whenever music plays", "request": "Whenever the music starts playing, set the volume to 30%."},
+  {"id": "volume_40", "title": "Volume 40 %", "request": "Set the volume to 40%."}
+ ]
+}

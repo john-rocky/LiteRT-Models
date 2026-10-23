@@ -1,0 +1,4041 @@
+{
+ "what": "the set's requests through the app's Model.decide, held to the set's gold",
+ "set": "eval/heldout.json",
+ "set_sha256": "10959fa65121b1882b1cf92264b6301506034b4e1107e0a9889eb0ba8325de1c",
+ "form_py_sha256": "5e307c752078bed781b5c506254d77d4056a84a3327871623299d0030fac3c60",
+ "started_at": "2026-10-24T00:03:38+0900",
+ "accelerator": "cpu (XNNPACK, 8 threads)",
+ "length": 2048,
+ "repeat": 1,
+ "sort_questions": false,
+ "load_host_seconds": 0.692,
+ "compile": {
+  "file": "clef-flash_rowprefill_embeds_L2048_fp16fc.tflite",
+  "kind": "row L2048",
+  "seconds": 7.428,
+  "fully_accelerated": false,
+  "options": {
+   "accelerator": "cpu",
+   "backend": "CPU (XNNPACK)",
+   "num_threads": 8
+  },
+  "phys_footprint_after": 30566924664
+ },
+ "near_tie": 0.02,
+ "total": {
+  "commands": 10,
+  "questions": 150,
+  "questions_matched": 141,
+  "per_question": 0.94,
+  "cases_exact": 2
+ },
+ "commands": [
+  {
+   "id": "h01",
+   "scenario": "relative_level",
+   "request_text": "Make the sound 15 points quieter.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T21:10:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 398
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": true
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 60,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": null,
+     "request": "Make the sound 15 points quieter."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "60": "60",
+       "15": "15",
+       "75": "75",
+       "45": "45",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "24f0550c1b52b8d79eb23d3930a2161beaf9068ac4ec930dfc0d683abe327604",
+   "tokens": 1905,
+   "length": 2048,
+   "ms": 10525.754,
+   "probs": {
+    "resolution": {
+     "blocked": 0.013075079768896103,
+     "clarify": 0.010738493874669075,
+     "execute": 0.7553918957710266,
+     "execute_partial": 0.17052526772022247,
+     "no_change": 0.015043197199702263,
+     "query": 0.011526926420629025,
+     "rule": 0.008123001083731651,
+     "schedule": 0.00754708843305707,
+     "unsupported": 0.008029111661016941
+    },
+    "target_member:tv": {
+     "no": 0.988868236541748,
+     "yes": 0.01113172434270382
+    },
+    "target_member:calculator": {
+     "no": 0.9979426264762878,
+     "yes": 0.002057407982647419
+    },
+    "target_member:draft_1": {
+     "no": 0.9975376129150391,
+     "yes": 0.0024624259676784277
+    },
+    "target_member:draft_2": {
+     "no": 0.998119056224823,
+     "yes": 0.0018809734610840678
+    },
+    "target_member:music": {
+     "no": 0.789923906326294,
+     "yes": 0.21007610857486725
+    },
+    "target_member:sound": {
+     "no": 0.01866304874420166,
+     "yes": 0.9813370108604431
+    },
+    "target_member:screen": {
+     "no": 0.9984012246131897,
+     "yes": 0.0015987814404070377
+    },
+    "post:tv.running": {
+     "false": 0.02570413053035736,
+     "na": 0.0499841533601284,
+     "true": 0.9243117570877075
+    },
+    "post:calculator.running": {
+     "false": 0.8635345697402954,
+     "na": 0.13067308068275452,
+     "true": 0.005792329087853432
+    },
+    "post:draft_1.open": {
+     "false": 0.02180592156946659,
+     "na": 0.03245876729488373,
+     "true": 0.9457353353500366
+    },
+    "post:draft_2.open": {
+     "false": 0.9038867950439453,
+     "na": 0.08774905651807785,
+     "true": 0.008364123292267323
+    },
+    "post:music.playing": {
+     "false": 0.06224352493882179,
+     "na": 0.06998467445373535,
+     "true": 0.8677718043327332
+    },
+    "post:sound.volume": {
+     "15": 0.006367047782987356,
+     "45": 0.9827955365180969,
+     "60": 0.0038866978138685226,
+     "75": 0.004203506279736757,
+     "na": 0.0027471554931253195
+    },
+    "post:screen.locked": {
+     "false": 0.9687636494636536,
+     "na": 0.02480112761259079,
+     "true": 0.006435174494981766
+    }
+   },
+   "picked": {
+    "resolution": "execute",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "no",
+    "target_member:draft_2": "no",
+    "target_member:music": "no",
+    "target_member:sound": "yes",
+    "target_member:screen": "no",
+    "post:tv.running": "true",
+    "post:calculator.running": "false",
+    "post:draft_1.open": "true",
+    "post:draft_2.open": "false",
+    "post:music.playing": "true",
+    "post:sound.volume": "45",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "execute",
+    "targets": [
+     "sound"
+    ],
+    "posts": {
+     "tv.running": true,
+     "calculator.running": false,
+     "draft_1.open": true,
+     "draft_2.open": false,
+     "music.playing": true,
+     "sound.volume": 45,
+     "screen.locked": false
+    },
+    "changes": [
+     {
+      "device": "sound",
+      "prop": "volume",
+      "from": 60,
+      "to": 45
+     }
+    ],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "execute",
+    "target_member:tv": "no",
+    "post:tv.running": "true",
+    "target_member:calculator": "no",
+    "post:calculator.running": "false",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "true",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "false",
+    "target_member:music": "no",
+    "post:music.playing": "true",
+    "target_member:sound": "yes",
+    "post:sound.volume": "45",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": true,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": true
+  },
+  {
+   "id": "h02",
+   "scenario": "room_except",
+   "request_text": "Quit every app except Calculator.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T19:40:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 421
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 58
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": false
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 30,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": "tv",
+     "request": "Quit every app except Calculator."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "30": "30",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "ea83391c3588872a73e714d9ff13a6b20d32394e08c14b9f41a2b3c65ba66cee",
+   "tokens": 1849,
+   "length": 2048,
+   "ms": 9583.164,
+   "probs": {
+    "resolution": {
+     "blocked": 0.04406127706170082,
+     "clarify": 0.03776053339242935,
+     "execute": 0.46268215775489807,
+     "execute_partial": 0.3553064167499542,
+     "no_change": 0.03614993765950203,
+     "query": 0.017690706998109818,
+     "rule": 0.013854061253368855,
+     "schedule": 0.007705664727836847,
+     "unsupported": 0.024789249524474144
+    },
+    "target_member:tv": {
+     "no": 0.07427667081356049,
+     "yes": 0.9257233738899231
+    },
+    "target_member:calculator": {
+     "no": 0.965970516204834,
+     "yes": 0.034029483795166016
+    },
+    "target_member:draft_1": {
+     "no": 0.023965492844581604,
+     "yes": 0.9760345220565796
+    },
+    "target_member:draft_2": {
+     "no": 0.01997831091284752,
+     "yes": 0.9800216555595398
+    },
+    "target_member:music": {
+     "no": 0.4769604504108429,
+     "yes": 0.5230395197868347
+    },
+    "target_member:sound": {
+     "no": 0.9897058010101318,
+     "yes": 0.010294129140675068
+    },
+    "target_member:screen": {
+     "no": 0.9943625926971436,
+     "yes": 0.005637445952743292
+    },
+    "post:tv.running": {
+     "false": 0.9305988550186157,
+     "na": 0.04306703060865402,
+     "true": 0.02633405663073063
+    },
+    "post:calculator.running": {
+     "false": 0.007299898192286491,
+     "na": 0.015183123759925365,
+     "true": 0.9775170087814331
+    },
+    "post:draft_1.open": {
+     "false": 0.7933605313301086,
+     "na": 0.19941166043281555,
+     "true": 0.007227795198559761
+    },
+    "post:draft_2.open": {
+     "false": 0.5793999433517456,
+     "na": 0.4150010347366333,
+     "true": 0.005599025171250105
+    },
+    "post:music.playing": {
+     "false": 0.7271336317062378,
+     "na": 0.2652043104171753,
+     "true": 0.007662021089345217
+    },
+    "post:sound.volume": {
+     "30": 0.9624674916267395,
+     "na": 0.03753253072500229
+    },
+    "post:screen.locked": {
+     "false": 0.915098249912262,
+     "na": 0.08009384572505951,
+     "true": 0.004807823803275824
+    }
+   },
+   "picked": {
+    "resolution": "execute",
+    "target_member:tv": "yes",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "yes",
+    "target_member:draft_2": "yes",
+    "target_member:music": "yes",
+    "target_member:sound": "no",
+    "target_member:screen": "no",
+    "post:tv.running": "false",
+    "post:calculator.running": "true",
+    "post:draft_1.open": "false",
+    "post:draft_2.open": "false",
+    "post:music.playing": "false",
+    "post:sound.volume": "30",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "execute",
+    "targets": [
+     "tv",
+     "draft_1",
+     "draft_2",
+     "music"
+    ],
+    "posts": {
+     "tv.running": false,
+     "calculator.running": true,
+     "draft_1.open": false,
+     "draft_2.open": false,
+     "music.playing": false,
+     "sound.volume": 30,
+     "screen.locked": false
+    },
+    "changes": [
+     {
+      "device": "tv",
+      "prop": "running",
+      "from": true,
+      "to": false
+     },
+     {
+      "device": "draft_1",
+      "prop": "open",
+      "from": true,
+      "to": false
+     },
+     {
+      "device": "draft_2",
+      "prop": "open",
+      "from": true,
+      "to": false
+     }
+    ],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "execute",
+    "target_member:tv": "yes",
+    "post:tv.running": "false",
+    "target_member:calculator": "no",
+    "post:calculator.running": "true",
+    "target_member:draft_1": "yes",
+    "post:draft_1.open": "false",
+    "target_member:draft_2": "yes",
+    "post:draft_2.open": "false",
+    "target_member:music": "no",
+    "post:music.playing": "false",
+    "target_member:sound": "no",
+    "post:sound.volume": "30",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": true,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": false,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": false
+  },
+  {
+   "id": "h03",
+   "scenario": "named_group",
+   "request_text": "Start the work group.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T09:05:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": false
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 35,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": null,
+     "request": "Start the work group."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "35": "35",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "2f1aaa84f44052068f105191afa72837caf21d816ae20244fcadde9bd193717e",
+   "tokens": 1845,
+   "length": 2048,
+   "ms": 9567.293,
+   "probs": {
+    "resolution": {
+     "blocked": 0.015935387462377548,
+     "clarify": 0.014030725695192814,
+     "execute": 0.6287962794303894,
+     "execute_partial": 0.30104461312294006,
+     "no_change": 0.014227214269340038,
+     "query": 0.005970335099846125,
+     "rule": 0.0046753110364079475,
+     "schedule": 0.006386886350810528,
+     "unsupported": 0.008933234959840775
+    },
+    "target_member:tv": {
+     "no": 0.9958041310310364,
+     "yes": 0.004195839632302523
+    },
+    "target_member:calculator": {
+     "no": 0.03681475669145584,
+     "yes": 0.9631853103637695
+    },
+    "target_member:draft_1": {
+     "no": 0.02137027494609356,
+     "yes": 0.9786297678947449
+    },
+    "target_member:draft_2": {
+     "no": 0.02795853279531002,
+     "yes": 0.9720414876937866
+    },
+    "target_member:music": {
+     "no": 0.9961315393447876,
+     "yes": 0.0038684832397848368
+    },
+    "target_member:sound": {
+     "no": 0.9958167672157288,
+     "yes": 0.004183197394013405
+    },
+    "target_member:screen": {
+     "no": 0.9950537085533142,
+     "yes": 0.004946340341120958
+    },
+    "post:tv.running": {
+     "false": 0.9286046028137207,
+     "na": 0.06446197628974915,
+     "true": 0.006933489348739386
+    },
+    "post:calculator.running": {
+     "false": 0.22778047621250153,
+     "na": 0.23631678521633148,
+     "true": 0.535902738571167
+    },
+    "post:draft_1.open": {
+     "false": 0.14668008685112,
+     "na": 0.08598103374242783,
+     "true": 0.7673389315605164
+    },
+    "post:draft_2.open": {
+     "false": 0.7964416742324829,
+     "na": 0.09881026297807693,
+     "true": 0.10474806278944016
+    },
+    "post:music.playing": {
+     "false": 0.7954890131950378,
+     "na": 0.19984020292758942,
+     "true": 0.00467086024582386
+    },
+    "post:sound.volume": {
+     "35": 0.9892961382865906,
+     "na": 0.010703841224312782
+    },
+    "post:screen.locked": {
+     "false": 0.9490854144096375,
+     "na": 0.04311380535364151,
+     "true": 0.007800815626978874
+    }
+   },
+   "picked": {
+    "resolution": "execute",
+    "target_member:tv": "no",
+    "target_member:calculator": "yes",
+    "target_member:draft_1": "yes",
+    "target_member:draft_2": "yes",
+    "target_member:music": "no",
+    "target_member:sound": "no",
+    "target_member:screen": "no",
+    "post:tv.running": "false",
+    "post:calculator.running": "true",
+    "post:draft_1.open": "true",
+    "post:draft_2.open": "false",
+    "post:music.playing": "false",
+    "post:sound.volume": "35",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "execute",
+    "targets": [
+     "calculator",
+     "draft_1",
+     "draft_2"
+    ],
+    "posts": {
+     "tv.running": false,
+     "calculator.running": true,
+     "draft_1.open": true,
+     "draft_2.open": false,
+     "music.playing": false,
+     "sound.volume": 35,
+     "screen.locked": false
+    },
+    "changes": [
+     {
+      "device": "calculator",
+      "prop": "running",
+      "from": false,
+      "to": true
+     },
+     {
+      "device": "draft_1",
+      "prop": "open",
+      "from": false,
+      "to": true
+     }
+    ],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "execute",
+    "target_member:tv": "no",
+    "post:tv.running": "false",
+    "target_member:calculator": "yes",
+    "post:calculator.running": "true",
+    "target_member:draft_1": "yes",
+    "post:draft_1.open": "true",
+    "target_member:draft_2": "yes",
+    "post:draft_2.open": "true",
+    "target_member:music": "no",
+    "post:music.playing": "false",
+    "target_member:sound": "no",
+    "post:sound.volume": "35",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": true,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": false,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": false
+  },
+  {
+   "id": "h04",
+   "scenario": "duplicate_name",
+   "request_text": "Open Draft.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T14:20:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 64
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": false
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": true,
+       "volume": 50,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": "calculator",
+     "request": "Open Draft."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "50": "50",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "12e3738bf3d39efd71bbb2fa553e4d4886c6821bbea8b2fba2ad8e2fc2301e31",
+   "tokens": 1844,
+   "length": 2048,
+   "ms": 9554.417,
+   "probs": {
+    "resolution": {
+     "blocked": 0.01014250423759222,
+     "clarify": 0.808151125907898,
+     "execute": 0.04981571063399315,
+     "execute_partial": 0.07969512790441513,
+     "no_change": 0.01085946150124073,
+     "query": 0.015563498251140118,
+     "rule": 0.0019992042798548937,
+     "schedule": 0.0028193809557706118,
+     "unsupported": 0.020954059436917305
+    },
+    "target_member:tv": {
+     "no": 0.9975563287734985,
+     "yes": 0.0024436006788164377
+    },
+    "target_member:calculator": {
+     "no": 0.9161882996559143,
+     "yes": 0.08381172269582748
+    },
+    "target_member:draft_1": {
+     "no": 0.10010804235935211,
+     "yes": 0.8998919129371643
+    },
+    "target_member:draft_2": {
+     "no": 0.7492691278457642,
+     "yes": 0.2507309019565582
+    },
+    "target_member:music": {
+     "no": 0.9974228143692017,
+     "yes": 0.0025772242806851864
+    },
+    "target_member:sound": {
+     "no": 0.9957821369171143,
+     "yes": 0.004217854700982571
+    },
+    "target_member:screen": {
+     "no": 0.9953193068504333,
+     "yes": 0.004680732265114784
+    },
+    "post:tv.running": {
+     "false": 0.9335815906524658,
+     "na": 0.062253907322883606,
+     "true": 0.004164533689618111
+    },
+    "post:calculator.running": {
+     "false": 0.2873106002807617,
+     "na": 0.3405340015888214,
+     "true": 0.3721553683280945
+    },
+    "post:draft_1.open": {
+     "false": 0.4783254563808441,
+     "na": 0.16996896266937256,
+     "true": 0.35170549154281616
+    },
+    "post:draft_2.open": {
+     "false": 0.8493692874908447,
+     "na": 0.1363372951745987,
+     "true": 0.014293432235717773
+    },
+    "post:music.playing": {
+     "false": 0.8877934217453003,
+     "na": 0.10931642353534698,
+     "true": 0.0028901537880301476
+    },
+    "post:sound.volume": {
+     "50": 0.9148147702217102,
+     "na": 0.08518527448177338
+    },
+    "post:screen.locked": {
+     "false": 0.9765242338180542,
+     "na": 0.019814958795905113,
+     "true": 0.0036607924848794937
+    }
+   },
+   "picked": {
+    "resolution": "clarify",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "yes",
+    "target_member:draft_2": "no",
+    "target_member:music": "no",
+    "target_member:sound": "no",
+    "target_member:screen": "no",
+    "post:tv.running": "false",
+    "post:calculator.running": "true",
+    "post:draft_1.open": "false",
+    "post:draft_2.open": "false",
+    "post:music.playing": "false",
+    "post:sound.volume": "50",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "clarify",
+    "targets": [
+     "draft_1"
+    ],
+    "posts": {
+     "tv.running": false,
+     "calculator.running": true,
+     "draft_1.open": false,
+     "draft_2.open": false,
+     "music.playing": false,
+     "sound.volume": 50,
+     "screen.locked": false
+    },
+    "changes": [],
+    "candidates": [
+     "draft_1",
+     "draft_2"
+    ]
+   },
+   "gold": {
+    "resolution": "clarify",
+    "target_member:tv": "no",
+    "post:tv.running": "false",
+    "target_member:calculator": "no",
+    "post:calculator.running": "true",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "false",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "false",
+    "target_member:music": "no",
+    "post:music.playing": "false",
+    "target_member:sound": "no",
+    "post:sound.volume": "50",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": true,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": false,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": false
+  },
+  {
+   "id": "h05",
+   "scenario": "range_reject",
+   "request_text": "Set the volume to 120%.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T22:45:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 405
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": true
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 70,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": "music",
+     "request": "Set the volume to 120%."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "70": "70",
+       "120": "120",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "c029317aaf5c6c00706ce1ac2380b393ad8b85e71d4ff4b373a5a9fdea726ed5",
+   "tokens": 1872,
+   "length": 2048,
+   "ms": 9546.389,
+   "probs": {
+    "resolution": {
+     "blocked": 0.03350331634283066,
+     "clarify": 0.023838385939598083,
+     "execute": 0.007842853665351868,
+     "execute_partial": 0.03345760330557823,
+     "no_change": 0.04182552173733711,
+     "query": 0.0077266208827495575,
+     "rule": 0.0026976761873811483,
+     "schedule": 0.0023797613102942705,
+     "unsupported": 0.8467282652854919
+    },
+    "target_member:tv": {
+     "no": 0.9799168109893799,
+     "yes": 0.02008325792849064
+    },
+    "target_member:calculator": {
+     "no": 0.9967545866966248,
+     "yes": 0.0032454081811010838
+    },
+    "target_member:draft_1": {
+     "no": 0.9976657629013062,
+     "yes": 0.0023342897184193134
+    },
+    "target_member:draft_2": {
+     "no": 0.9971070885658264,
+     "yes": 0.0028929407708346844
+    },
+    "target_member:music": {
+     "no": 0.3845032751560211,
+     "yes": 0.6154966950416565
+    },
+    "target_member:sound": {
+     "no": 0.03737933933734894,
+     "yes": 0.962620735168457
+    },
+    "target_member:screen": {
+     "no": 0.9978044629096985,
+     "yes": 0.0021954940166324377
+    },
+    "post:tv.running": {
+     "false": 0.020673612132668495,
+     "na": 0.05829553306102753,
+     "true": 0.9210308194160461
+    },
+    "post:calculator.running": {
+     "false": 0.8572508692741394,
+     "na": 0.14033973217010498,
+     "true": 0.002409343607723713
+    },
+    "post:draft_1.open": {
+     "false": 0.9429565072059631,
+     "na": 0.04911194369196892,
+     "true": 0.007931637577712536
+    },
+    "post:draft_2.open": {
+     "false": 0.01617318019270897,
+     "na": 0.022768136113882065,
+     "true": 0.9610586166381836
+    },
+    "post:music.playing": {
+     "false": 0.0339210219681263,
+     "na": 0.05332791805267334,
+     "true": 0.9127510786056519
+    },
+    "post:sound.volume": {
+     "120": 0.0784565657377243,
+     "70": 0.8492634296417236,
+     "na": 0.07227993756532669
+    },
+    "post:screen.locked": {
+     "false": 0.9655212759971619,
+     "na": 0.029705075547099113,
+     "true": 0.004773586057126522
+    }
+   },
+   "picked": {
+    "resolution": "unsupported",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "no",
+    "target_member:draft_2": "no",
+    "target_member:music": "yes",
+    "target_member:sound": "yes",
+    "target_member:screen": "no",
+    "post:tv.running": "true",
+    "post:calculator.running": "false",
+    "post:draft_1.open": "false",
+    "post:draft_2.open": "true",
+    "post:music.playing": "true",
+    "post:sound.volume": "70",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "unsupported",
+    "targets": [
+     "music",
+     "sound"
+    ],
+    "posts": {
+     "tv.running": true,
+     "calculator.running": false,
+     "draft_1.open": false,
+     "draft_2.open": true,
+     "music.playing": true,
+     "sound.volume": 70,
+     "screen.locked": false
+    },
+    "changes": [],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "unsupported",
+    "target_member:tv": "no",
+    "post:tv.running": "true",
+    "target_member:calculator": "no",
+    "post:calculator.running": "false",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "false",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "true",
+    "target_member:music": "no",
+    "post:music.playing": "true",
+    "target_member:sound": "yes",
+    "post:sound.volume": "70",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": true,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": false,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": false
+  },
+  {
+   "id": "h06",
+   "scenario": "future_schedule",
+   "request_text": "At 11:30 tonight, stop the music.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T20:30:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 417
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": true
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 40,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": null,
+     "request": "At 11:30 tonight, stop the music."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "40": "40",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "17b80a51230081e0538df27d197d739383642b2f88a5efe51e921c7e5927206d",
+   "tokens": 1855,
+   "length": 2048,
+   "ms": 9572.98,
+   "probs": {
+    "resolution": {
+     "blocked": 0.004877910949289799,
+     "clarify": 0.00629772711545229,
+     "execute": 0.006628488190472126,
+     "execute_partial": 0.005667608696967363,
+     "no_change": 0.006148948799818754,
+     "query": 0.003986774943768978,
+     "rule": 0.11454404890537262,
+     "schedule": 0.8470595479011536,
+     "unsupported": 0.004788813181221485
+    },
+    "target_member:tv": {
+     "no": 0.9917786717414856,
+     "yes": 0.00822134967893362
+    },
+    "target_member:calculator": {
+     "no": 0.9980229139328003,
+     "yes": 0.001977137988433242
+    },
+    "target_member:draft_1": {
+     "no": 0.9961477518081665,
+     "yes": 0.003852266352623701
+    },
+    "target_member:draft_2": {
+     "no": 0.9974948167800903,
+     "yes": 0.002505209529772401
+    },
+    "target_member:music": {
+     "no": 0.027491668239235878,
+     "yes": 0.9725083708763123
+    },
+    "target_member:sound": {
+     "no": 0.992750883102417,
+     "yes": 0.007249117363244295
+    },
+    "target_member:screen": {
+     "no": 0.9983970522880554,
+     "yes": 0.0016028891550377011
+    },
+    "post:tv.running": {
+     "false": 0.034256260842084885,
+     "na": 0.05758506804704666,
+     "true": 0.9081586599349976
+    },
+    "post:calculator.running": {
+     "false": 0.904636561870575,
+     "na": 0.08916459232568741,
+     "true": 0.006198831833899021
+    },
+    "post:draft_1.open": {
+     "false": 0.024118544533848763,
+     "na": 0.03046862594783306,
+     "true": 0.945412814617157
+    },
+    "post:draft_2.open": {
+     "false": 0.9220475554466248,
+     "na": 0.06836195290088654,
+     "true": 0.00959048792719841
+    },
+    "post:music.playing": {
+     "false": 0.12172150611877441,
+     "na": 0.08969288319349289,
+     "true": 0.7885856032371521
+    },
+    "post:sound.volume": {
+     "40": 0.9882287979125977,
+     "na": 0.011771184392273426
+    },
+    "post:screen.locked": {
+     "false": 0.9687813520431519,
+     "na": 0.02482691779732704,
+     "true": 0.006391813512891531
+    }
+   },
+   "picked": {
+    "resolution": "schedule",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "no",
+    "target_member:draft_2": "no",
+    "target_member:music": "yes",
+    "target_member:sound": "no",
+    "target_member:screen": "no",
+    "post:tv.running": "true",
+    "post:calculator.running": "false",
+    "post:draft_1.open": "true",
+    "post:draft_2.open": "false",
+    "post:music.playing": "true",
+    "post:sound.volume": "40",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "schedule",
+    "targets": [
+     "music"
+    ],
+    "posts": {
+     "tv.running": true,
+     "calculator.running": false,
+     "draft_1.open": true,
+     "draft_2.open": false,
+     "music.playing": true,
+     "sound.volume": 40,
+     "screen.locked": false
+    },
+    "changes": [],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "schedule",
+    "target_member:tv": "no",
+    "post:tv.running": "true",
+    "target_member:calculator": "no",
+    "post:calculator.running": "false",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "true",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "false",
+    "target_member:music": "yes",
+    "post:music.playing": "true",
+    "target_member:sound": "no",
+    "post:sound.volume": "40",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": true,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": true
+  },
+  {
+   "id": "h07",
+   "scenario": "context_pronoun",
+   "request_text": "Stop it too.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T18:15:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 59
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": true
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 55,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": "music",
+     "request": "Stop it too."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "55": "55",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "c43abfbebed828e550efb802af51a853e47017ad01f51f8cbe71f654f46b318a",
+   "tokens": 1845,
+   "length": 2048,
+   "ms": 10471.009,
+   "probs": {
+    "resolution": {
+     "blocked": 0.022401273250579834,
+     "clarify": 0.24308434128761292,
+     "execute": 0.2609237730503082,
+     "execute_partial": 0.36680617928504944,
+     "no_change": 0.054471589624881744,
+     "query": 0.014145930297672749,
+     "rule": 0.005178395658731461,
+     "schedule": 0.004552027676254511,
+     "unsupported": 0.02843647077679634
+    },
+    "target_member:tv": {
+     "no": 0.9720118641853333,
+     "yes": 0.027988146990537643
+    },
+    "target_member:calculator": {
+     "no": 0.9665120244026184,
+     "yes": 0.0334879569709301
+    },
+    "target_member:draft_1": {
+     "no": 0.9857590198516846,
+     "yes": 0.014241022989153862
+    },
+    "target_member:draft_2": {
+     "no": 0.991100013256073,
+     "yes": 0.008900003507733345
+    },
+    "target_member:music": {
+     "no": 0.09644467383623123,
+     "yes": 0.9035553932189941
+    },
+    "target_member:sound": {
+     "no": 0.7177566289901733,
+     "yes": 0.28224337100982666
+    },
+    "target_member:screen": {
+     "no": 0.9968839287757874,
+     "yes": 0.0031160644721239805
+    },
+    "post:tv.running": {
+     "false": 0.9438068270683289,
+     "na": 0.05193864181637764,
+     "true": 0.004254529252648354
+    },
+    "post:calculator.running": {
+     "false": 0.09730054438114166,
+     "na": 0.09357859194278717,
+     "true": 0.8091208934783936
+    },
+    "post:draft_1.open": {
+     "false": 0.03322678804397583,
+     "na": 0.04853742569684982,
+     "true": 0.9182357788085938
+    },
+    "post:draft_2.open": {
+     "false": 0.05350133776664734,
+     "na": 0.08465869724750519,
+     "true": 0.8618399500846863
+    },
+    "post:music.playing": {
+     "false": 0.9299132823944092,
+     "na": 0.050805531442165375,
+     "true": 0.019281264394521713
+    },
+    "post:sound.volume": {
+     "55": 0.9105602502822876,
+     "na": 0.0894397422671318
+    },
+    "post:screen.locked": {
+     "false": 0.9691897630691528,
+     "na": 0.02619778737425804,
+     "true": 0.004612486343830824
+    }
+   },
+   "picked": {
+    "resolution": "execute_partial",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "no",
+    "target_member:draft_2": "no",
+    "target_member:music": "yes",
+    "target_member:sound": "no",
+    "target_member:screen": "no",
+    "post:tv.running": "false",
+    "post:calculator.running": "true",
+    "post:draft_1.open": "true",
+    "post:draft_2.open": "true",
+    "post:music.playing": "false",
+    "post:sound.volume": "55",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "execute_partial",
+    "targets": [
+     "music"
+    ],
+    "posts": {
+     "tv.running": false,
+     "calculator.running": true,
+     "draft_1.open": true,
+     "draft_2.open": true,
+     "music.playing": false,
+     "sound.volume": 55,
+     "screen.locked": false
+    },
+    "changes": [
+     {
+      "device": "music",
+      "prop": "playing",
+      "from": true,
+      "to": false
+     }
+    ],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "execute",
+    "target_member:tv": "no",
+    "post:tv.running": "false",
+    "target_member:calculator": "no",
+    "post:calculator.running": "true",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "true",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "true",
+    "target_member:music": "yes",
+    "post:music.playing": "false",
+    "target_member:sound": "no",
+    "post:sound.volume": "55",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": false,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": false
+  },
+  {
+   "id": "h08",
+   "scenario": "missing_device",
+   "request_text": "Turn on the printer.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T10:50:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 62
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": false
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 20,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": "draft_1",
+     "request": "Turn on the printer."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "20": "20",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "7e7be43553cb489c093c2b131a38547c76ddceeaca2a8d297ef02e7a3c78b793",
+   "tokens": 1848,
+   "length": 2048,
+   "ms": 9597.358,
+   "probs": {
+    "resolution": {
+     "blocked": 0.026737557724118233,
+     "clarify": 0.06181582808494568,
+     "execute": 0.008893110789358616,
+     "execute_partial": 0.00929166004061699,
+     "no_change": 0.019582679495215416,
+     "query": 0.01891481690108776,
+     "rule": 0.004335555247962475,
+     "schedule": 0.0062364693731069565,
+     "unsupported": 0.8441923260688782
+    },
+    "target_member:tv": {
+     "no": 0.9975071549415588,
+     "yes": 0.0024928522761911154
+    },
+    "target_member:calculator": {
+     "no": 0.9969394207000732,
+     "yes": 0.003060587216168642
+    },
+    "target_member:draft_1": {
+     "no": 0.9952865839004517,
+     "yes": 0.004713389556854963
+    },
+    "target_member:draft_2": {
+     "no": 0.9980534315109253,
+     "yes": 0.001946604228578508
+    },
+    "target_member:music": {
+     "no": 0.997099757194519,
+     "yes": 0.0029002949595451355
+    },
+    "target_member:sound": {
+     "no": 0.9972980618476868,
+     "yes": 0.0027018915861845016
+    },
+    "target_member:screen": {
+     "no": 0.9969545602798462,
+     "yes": 0.0030453987419605255
+    },
+    "post:tv.running": {
+     "false": 0.8680267333984375,
+     "na": 0.12417743355035782,
+     "true": 0.0077957999892532825
+    },
+    "post:calculator.running": {
+     "false": 0.031146200373768806,
+     "na": 0.06939198821783066,
+     "true": 0.8994617462158203
+    },
+    "post:draft_1.open": {
+     "false": 0.020659584552049637,
+     "na": 0.04293913394212723,
+     "true": 0.9364012479782104
+    },
+    "post:draft_2.open": {
+     "false": 0.8883534669876099,
+     "na": 0.1080721914768219,
+     "true": 0.0035743159241974354
+    },
+    "post:music.playing": {
+     "false": 0.8270986080169678,
+     "na": 0.16911080479621887,
+     "true": 0.0037905792705714703
+    },
+    "post:sound.volume": {
+     "20": 0.985112726688385,
+     "na": 0.014887245371937752
+    },
+    "post:screen.locked": {
+     "false": 0.9559696912765503,
+     "na": 0.03968187794089317,
+     "true": 0.004348549526184797
+    }
+   },
+   "picked": {
+    "resolution": "unsupported",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "no",
+    "target_member:draft_2": "no",
+    "target_member:music": "no",
+    "target_member:sound": "no",
+    "target_member:screen": "no",
+    "post:tv.running": "false",
+    "post:calculator.running": "true",
+    "post:draft_1.open": "true",
+    "post:draft_2.open": "false",
+    "post:music.playing": "false",
+    "post:sound.volume": "20",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "unsupported",
+    "targets": [],
+    "posts": {
+     "tv.running": false,
+     "calculator.running": true,
+     "draft_1.open": true,
+     "draft_2.open": false,
+     "music.playing": false,
+     "sound.volume": 20,
+     "screen.locked": false
+    },
+    "changes": [],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "clarify",
+    "target_member:tv": "no",
+    "post:tv.running": "false",
+    "target_member:calculator": "no",
+    "post:calculator.running": "true",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "true",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "false",
+    "target_member:music": "no",
+    "post:music.playing": "false",
+    "target_member:sound": "no",
+    "post:sound.volume": "20",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": false,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": false
+  },
+  {
+   "id": "h09",
+   "scenario": "security_policy",
+   "request_text": "Please lock the screen, I'm stepping out.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T15:35:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": false,
+       "memory_mb": 0
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": true
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": false
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": true,
+       "volume": 45,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": null,
+     "request": "Please lock the screen, I'm stepping out."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "45": "45",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "eac1c968bd59583554f58a8f9c184893ff6a8a04c491a9cb6b1dbc027966cb5f",
+   "tokens": 1850,
+   "length": 2048,
+   "ms": 9616.206,
+   "probs": {
+    "resolution": {
+     "blocked": 0.1807999610900879,
+     "clarify": 0.03573988005518913,
+     "execute": 0.23149438202381134,
+     "execute_partial": 0.2521173655986786,
+     "no_change": 0.1788116991519928,
+     "query": 0.03301911801099777,
+     "rule": 0.013304454274475574,
+     "schedule": 0.013090811669826508,
+     "unsupported": 0.061622340232133865
+    },
+    "target_member:tv": {
+     "no": 0.9946098327636719,
+     "yes": 0.0053902072831988335
+    },
+    "target_member:calculator": {
+     "no": 0.9953481554985046,
+     "yes": 0.004651807714253664
+    },
+    "target_member:draft_1": {
+     "no": 0.992976725101471,
+     "yes": 0.007023252081125975
+    },
+    "target_member:draft_2": {
+     "no": 0.9940156936645508,
+     "yes": 0.00598425418138504
+    },
+    "target_member:music": {
+     "no": 0.9930946826934814,
+     "yes": 0.006905299611389637
+    },
+    "target_member:sound": {
+     "no": 0.9719142913818359,
+     "yes": 0.028085654601454735
+    },
+    "target_member:screen": {
+     "no": 0.01807278022170067,
+     "yes": 0.981927216053009
+    },
+    "post:tv.running": {
+     "false": 0.9187396764755249,
+     "na": 0.07583246380090714,
+     "true": 0.005427801050245762
+    },
+    "post:calculator.running": {
+     "false": 0.7854043841362,
+     "na": 0.2110203504562378,
+     "true": 0.003575266571715474
+    },
+    "post:draft_1.open": {
+     "false": 0.026763420552015305,
+     "na": 0.04533769190311432,
+     "true": 0.9278989434242249
+    },
+    "post:draft_2.open": {
+     "false": 0.019213618710637093,
+     "na": 0.04583021253347397,
+     "true": 0.9349561333656311
+    },
+    "post:music.playing": {
+     "false": 0.8889020681381226,
+     "na": 0.10566354542970657,
+     "true": 0.005434303544461727
+    },
+    "post:sound.volume": {
+     "45": 0.8262397646903992,
+     "na": 0.17376025021076202
+    },
+    "post:screen.locked": {
+     "false": 0.013437893241643906,
+     "na": 0.011146759614348412,
+     "true": 0.9754153490066528
+    }
+   },
+   "picked": {
+    "resolution": "execute_partial",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "no",
+    "target_member:draft_2": "no",
+    "target_member:music": "no",
+    "target_member:sound": "no",
+    "target_member:screen": "yes",
+    "post:tv.running": "false",
+    "post:calculator.running": "false",
+    "post:draft_1.open": "true",
+    "post:draft_2.open": "true",
+    "post:music.playing": "false",
+    "post:sound.volume": "45",
+    "post:screen.locked": "true"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "execute_partial",
+    "targets": [
+     "screen"
+    ],
+    "posts": {
+     "tv.running": false,
+     "calculator.running": false,
+     "draft_1.open": true,
+     "draft_2.open": true,
+     "music.playing": false,
+     "sound.volume": 45,
+     "screen.locked": true
+    },
+    "changes": [
+     {
+      "device": "screen",
+      "prop": "locked",
+      "from": false,
+      "to": true
+     }
+    ],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "blocked",
+    "target_member:tv": "no",
+    "post:tv.running": "false",
+    "target_member:calculator": "no",
+    "post:calculator.running": "false",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "true",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "true",
+    "target_member:music": "no",
+    "post:music.playing": "false",
+    "target_member:sound": "no",
+    "post:sound.volume": "45",
+    "target_member:screen": "yes",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": false,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": false
+   },
+   "case_exact": false
+  },
+  {
+   "id": "h10",
+   "scenario": "group_exception",
+   "request_text": "Shut down the evening group, but keep the TV app as it is.",
+   "request": {
+    "model": "clef-flash",
+    "state": {
+     "now": "2026-10-23T23:05:00+09:00",
+     "devices": [
+      {
+       "id": "tv",
+       "name": "TV",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 433
+      },
+      {
+       "id": "calculator",
+       "name": "Calculator",
+       "kind": "app",
+       "available": true,
+       "running": true,
+       "memory_mb": 60
+      },
+      {
+       "id": "draft_1",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "draft_2",
+       "name": "Draft",
+       "kind": "document",
+       "available": true,
+       "app": "TextEdit",
+       "open": false
+      },
+      {
+       "id": "music",
+       "name": "Music",
+       "kind": "player",
+       "available": true,
+       "playing": true
+      },
+      {
+       "id": "sound",
+       "name": "Sound",
+       "kind": "speaker",
+       "available": true,
+       "muted": false,
+       "volume": 65,
+       "min_volume": 0,
+       "max_volume": 100
+      },
+      {
+       "id": "screen",
+       "name": "Screen",
+       "kind": "lock",
+       "available": true,
+       "locked": false
+      }
+     ],
+     "groups": {
+      "evening": [
+       "tv",
+       "music"
+      ],
+      "work": [
+       "draft_1",
+       "draft_2",
+       "calculator"
+      ]
+     },
+     "policy": {
+      "multi_action": "best_effort",
+      "allow_partial": true,
+      "security_mode": "presenting",
+      "presenting_lock": "blocked"
+     },
+     "schedules": [],
+     "rules": [],
+     "device_context": "tv",
+     "request": "Shut down the evening group, but keep the TV app as it is."
+    },
+    "questions": {
+     "resolution": {
+      "type": "choice",
+      "instructions": "How should the assistant handle the request?",
+      "criteria": {
+       "execute": "execute now",
+       "execute_partial": "execute available parts now",
+       "schedule": "schedule for later",
+       "rule": "save an automation rule",
+       "clarify": "ask a clarifying question",
+       "no_change": "make no change because already satisfied",
+       "unsupported": "reject as unsupported",
+       "blocked": "block under household policy",
+       "query": "answer a state query"
+      }
+     },
+     "target_member:tv": {
+      "type": "choice",
+      "instructions": "Is tv in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:calculator": {
+      "type": "choice",
+      "instructions": "Is calculator in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_1": {
+      "type": "choice",
+      "instructions": "Is draft_1 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:draft_2": {
+      "type": "choice",
+      "instructions": "Is draft_2 in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:music": {
+      "type": "choice",
+      "instructions": "Is music in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:sound": {
+      "type": "choice",
+      "instructions": "Is sound in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "target_member:screen": {
+      "type": "choice",
+      "instructions": "Is screen in the justified device target set for this request?",
+      "criteria": {
+       "yes": "yes, this device is in the justified target set",
+       "no": "no, this device is not in the justified target set"
+      }
+     },
+     "post:tv.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for tv?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:calculator.running": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is running for calculator?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_1.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_1?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:draft_2.open": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is open for draft_2?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:music.playing": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is playing for music?",
+      "criteria": {
+       "true": "true",
+       "false": "false",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:sound.volume": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is volume for sound?",
+      "criteria": {
+       "65": "65",
+       "na": "not applicable or not listed"
+      }
+     },
+     "post:screen.locked": {
+      "type": "choice",
+      "instructions": "Immediately after correct handling, what is locked for screen?",
+      "criteria": {
+       "false": "false",
+       "true": "true",
+       "na": "not applicable or not listed"
+      }
+     }
+    }
+   },
+   "request_sha256": "8cef0368715f39d87a7adc6796de2cfd5fee1c32fa51bff564f8b60d05130c1f",
+   "tokens": 1859,
+   "length": 2048,
+   "ms": 9565.383,
+   "probs": {
+    "resolution": {
+     "blocked": 0.029171312227845192,
+     "clarify": 0.05963883921504021,
+     "execute": 0.15996003150939941,
+     "execute_partial": 0.5942106246948242,
+     "no_change": 0.0714561715722084,
+     "query": 0.013786698691546917,
+     "rule": 0.015091510489583015,
+     "schedule": 0.006073480471968651,
+     "unsupported": 0.050611432641744614
+    },
+    "target_member:tv": {
+     "no": 0.9842893481254578,
+     "yes": 0.01571064628660679
+    },
+    "target_member:calculator": {
+     "no": 0.9936394095420837,
+     "yes": 0.006360565312206745
+    },
+    "target_member:draft_1": {
+     "no": 0.9783762693405151,
+     "yes": 0.02162376046180725
+    },
+    "target_member:draft_2": {
+     "no": 0.9751635193824768,
+     "yes": 0.024836525321006775
+    },
+    "target_member:music": {
+     "no": 0.04155360162258148,
+     "yes": 0.9584464430809021
+    },
+    "target_member:sound": {
+     "no": 0.9868009090423584,
+     "yes": 0.013199049979448318
+    },
+    "target_member:screen": {
+     "no": 0.9948704242706299,
+     "yes": 0.005129570607095957
+    },
+    "post:tv.running": {
+     "false": 0.01105043850839138,
+     "na": 0.020226404070854187,
+     "true": 0.9687231779098511
+    },
+    "post:calculator.running": {
+     "false": 0.16160453855991364,
+     "na": 0.19950811564922333,
+     "true": 0.638887345790863
+    },
+    "post:draft_1.open": {
+     "false": 0.7712627649307251,
+     "na": 0.22500845789909363,
+     "true": 0.0037287792656570673
+    },
+    "post:draft_2.open": {
+     "false": 0.6674273014068604,
+     "na": 0.3309214115142822,
+     "true": 0.0016512847505509853
+    },
+    "post:music.playing": {
+     "false": 0.9185436367988586,
+     "na": 0.06771164387464523,
+     "true": 0.013744739815592766
+    },
+    "post:sound.volume": {
+     "65": 0.954658031463623,
+     "na": 0.04534190893173218
+    },
+    "post:screen.locked": {
+     "false": 0.9616266489028931,
+     "na": 0.03472740575671196,
+     "true": 0.0036460126284509897
+    }
+   },
+   "picked": {
+    "resolution": "execute_partial",
+    "target_member:tv": "no",
+    "target_member:calculator": "no",
+    "target_member:draft_1": "no",
+    "target_member:draft_2": "no",
+    "target_member:music": "yes",
+    "target_member:sound": "no",
+    "target_member:screen": "no",
+    "post:tv.running": "true",
+    "post:calculator.running": "true",
+    "post:draft_1.open": "false",
+    "post:draft_2.open": "false",
+    "post:music.playing": "false",
+    "post:sound.volume": "65",
+    "post:screen.locked": "false"
+   },
+   "near_tie": {
+    "resolution": false,
+    "target_member:tv": false,
+    "target_member:calculator": false,
+    "target_member:draft_1": false,
+    "target_member:draft_2": false,
+    "target_member:music": false,
+    "target_member:sound": false,
+    "target_member:screen": false,
+    "post:tv.running": false,
+    "post:calculator.running": false,
+    "post:draft_1.open": false,
+    "post:draft_2.open": false,
+    "post:music.playing": false,
+    "post:sound.volume": false,
+    "post:screen.locked": false
+   },
+   "response_is_its_probs": true,
+   "decision": {
+    "resolution": "execute_partial",
+    "targets": [
+     "music"
+    ],
+    "posts": {
+     "tv.running": true,
+     "calculator.running": true,
+     "draft_1.open": false,
+     "draft_2.open": false,
+     "music.playing": false,
+     "sound.volume": 65,
+     "screen.locked": false
+    },
+    "changes": [
+     {
+      "device": "music",
+      "prop": "playing",
+      "from": true,
+      "to": false
+     }
+    ],
+    "candidates": []
+   },
+   "gold": {
+    "resolution": "execute",
+    "target_member:tv": "no",
+    "post:tv.running": "true",
+    "target_member:calculator": "no",
+    "post:calculator.running": "true",
+    "target_member:draft_1": "no",
+    "post:draft_1.open": "false",
+    "target_member:draft_2": "no",
+    "post:draft_2.open": "false",
+    "target_member:music": "yes",
+    "post:music.playing": "false",
+    "target_member:sound": "no",
+    "post:sound.volume": "65",
+    "target_member:screen": "no",
+    "post:screen.locked": "false"
+   },
+   "match": {
+    "resolution": false,
+    "target_member:tv": true,
+    "post:tv.running": true,
+    "target_member:calculator": true,
+    "post:calculator.running": true,
+    "target_member:draft_1": true,
+    "post:draft_1.open": true,
+    "target_member:draft_2": true,
+    "post:draft_2.open": true,
+    "target_member:music": true,
+    "post:music.playing": true,
+    "target_member:sound": true,
+    "post:sound.volume": true,
+    "target_member:screen": true,
+    "post:screen.locked": true
+   },
+   "case_exact": false
+  }
+ ],
+ "phys_footprint": 32557386864,
+ "env": {
+  "python": "3.14.6",
+  "executable": "venv-demo/bin/python",
+  "packages": {
+   "ai-edge-litert": "2.2.0",
+   "pywebview": "6.2.1",
+   "pyobjc-core": "12.2.2",
+   "pyobjc-framework-WebKit": "12.2.2",
+   "numpy": "2.5.3",
+   "tokenizers": "0.23.2"
+  },
+  "macos": {
+   "ProductName": "macOS",
+   "ProductVersion": "27.0",
+   "BuildVersion": "26A428"
+  },
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "chip": "Apple M4 Max",
+  "memory_bytes": 137438953472,
+  "hub": "../hub"
+ }
+}
