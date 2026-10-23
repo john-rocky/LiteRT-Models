@@ -4,6 +4,8 @@ Paste a support ticket, a note or a JSON value, add a photo if you like, and wri
 
 The app opens with a support ticket and its three questions. Four examples are bundled: the ticket, a list of meeting rooms as JSON, a photo of a cup of coffee, and a drawn clock.
 
+A second app, [home/](home/), gives the same model one job: a house written as JSON (its devices, the weather, the time) and a wish in a few words, such as "Movie night". Decide sets the living room light, the curtains, the TV, the air conditioner and the front door at once, and a drawing of the house changes to match. It runs every request on the 512-token row graph (704.9 to 723.4 ms per bundled wish on an Apple M4 Max, the median of five presses each), and its own `scripts/fetch_hub.sh` downloads into this `hub/` what it needs: the 512-token row graph and the tables, head, tokenizer and host that this app's download also holds.
+
 ## Run it
 
 ```bash

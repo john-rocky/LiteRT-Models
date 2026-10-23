@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=960, initial-scale=1">
+<title>clef-flash home</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <span id="pill" class="pill idle"><span class="dot">●</span> on-device</span>
+    <span id="status" class="status">LOADING</span>
+    <span id="model" class="model">clef-flash home</span>
+    <span id="device" class="device"></span>
+  </header>
+  <div class="main">
+    <section class="stage">
+      <svg id="house" viewBox="0 0 600 440" role="img" aria-label="The house"
+           data-light="bright" data-curtains="open" data-tv="off" data-aircon="off" data-door="locked" data-sky="day">
+        <defs>
+          <linearGradient id="sky-day" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5FB4EE"/><stop offset="1" stop-color="#B9E2FA"/>
+          </linearGradient>
+          <linearGradient id="sky-dusk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3B3266"/><stop offset="0.6" stop-color="#B0577A"/><stop offset="1" stop-color="#F0A060"/>
+          </linearGradient>
+          <linearGradient id="sky-night" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#050B1C"/><stop offset="1" stop-color="#14254A"/>
+          </linearGradient>
+          <linearGradient id="screen-on" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2E8BC0"/><stop offset="0.55" stop-color="#7A5CC8"/><stop offset="1" stop-color="#E0607E"/>
+          </linearGradient>
+          <radialGradient id="lamp-glow" cx="0.5" cy="0" r="1">
+            <stop offset="0" stop-color="#FFE3A3" stop-opacity="0.9"/><stop offset="1" stop-color="#FFE3A3" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="room-clip"><rect x="40" y="118" width="380" height="270"/></clipPath>
+          <clipPath id="window-clip"><rect x="74" y="168" width="118" height="100"/></clipPath>
+        </defs>
+        <!-- the house -->
+        <polygon points="18,122 300,22 582,122" fill="#262D38"/>
+        <rect x="30" y="112" width="540" height="290" fill="#202733"/>
+        <rect x="40" y="118" width="380" height="270" fill="#2B3442"/>
+        <rect x="432" y="118" width="128" height="270" fill="#252D39"/>
+        <rect x="30" y="388" width="540" height="14" fill="#3A414C"/>
+        <!-- the window and the sky -->
+        <g clip-path="url(#window-clip)">
+          <rect class="sky sky-day" x="74" y="168" width="118" height="100" fill="url(#sky-day)"/>
+          <circle class="sky sky-day" cx="160" cy="196" r="13" fill="#FFE07A"/>
+          <rect class="sky sky-dusk" x="74" y="168" width="118" height="100" fill="url(#sky-dusk)"/>
+          <circle class="sky sky-dusk" cx="150" cy="262" r="16" fill="#FFB36B"/>
+          <rect class="sky sky-night" x="74" y="168" width="118" height="100" fill="url(#sky-night)"/>
+          <g class="sky sky-night" fill="#E8EEF8">
+            <circle cx="96" cy="186" r="1.6"/><circle cx="122" cy="205" r="1.2"/><circle cx="176" cy="184" r="1.4"/>
+            <circle cx="108" cy="236" r="1.1"/><circle cx="182" cy="226" r="1.2"/>
+            <path d="M156 188 a14 14 0 1 0 14 20 a11 11 0 1 1 -14 -20z" fill="#F4EBC3"/>
+          </g>
+        </g>
+        <rect x="74" y="168" width="118" height="100" fill="none" stroke="#C9D1D9" stroke-width="4"/>
+        <line x1="133" y1="168" x2="133" y2="268" stroke="#C9D1D9" stroke-width="3"/>
+        <line x1="62" y1="160" x2="204" y2="160" stroke="#8B949E" stroke-width="4" stroke-linecap="round"/>
+        <!-- the curtains: drawn to the sides (open) or across the window (closed) -->
+        <g id="curtains">
+          <rect class="curtain left" x="62" y="161" width="72" height="116" rx="3" fill="#B0603E"/>
+          <rect class="curtain right" x="132" y="161" width="72" height="116" rx="3" fill="#B0603E"/>
+        </g>
+        <!-- furniture -->
+        <rect x="64" y="318" width="150" height="26" rx="9" fill="#46566A"/>
+        <rect x="58" y="338" width="162" height="34" rx="10" fill="#52647A"/>
+        <rect x="64" y="370" width="10" height="18" fill="#3A4656"/><rect x="204" y="370" width="10" height="18" fill="#3A4656"/>
+        <rect x="262" y="338" width="148" height="50" rx="4" fill="#3C3F45"/>
+        <rect x="270" y="252" width="132" height="80" rx="5" fill="#0A0C10" stroke="#4A515C" stroke-width="2"/>
+        <rect x="326" y="332" width="20" height="7" fill="#4A515C"/>
+        <!-- the air conditioner -->
+        <rect x="296" y="132" width="110" height="38" rx="8" fill="#DDE2E8"/>
+        <rect x="302" y="160" width="98" height="5" rx="2" fill="#B9C0C8"/>
+        <!-- how lit the room is -->
+        <rect id="dark" x="40" y="118" width="380" height="270" fill="#02040A"/>
+        <polygon id="cone" points="200,158 250,158 340,388 110,388" fill="url(#lamp-glow)" clip-path="url(#room-clip)"/>
+        <!-- what glows over the dark -->
+        <rect id="screen" x="276" y="258" width="120" height="68" rx="2" fill="url(#screen-on)"/>
+        <g id="screen-scene">
+          <circle cx="352" cy="283" r="9" fill="#FFE9A8" opacity="0.85"/>
+          <path d="M276 312 L304 290 L326 306 L350 286 L396 314 L396 326 L276 326 Z" fill="#1D3B5C" opacity="0.8"/>
+        </g>
+        <rect id="ac-panel" x="336" y="140" width="62" height="18" rx="4" fill="#1B2028"/>
+        <text id="ac-word" x="367" y="154" text-anchor="middle" class="ac-word">OFF</text>
+        <g id="airflow" fill="none" stroke-width="3" stroke-linecap="round">
+          <path d="M310 178 q8 10 0 20 q-8 10 0 20"/><path d="M340 178 q8 10 0 20 q-8 10 0 20"/>
+          <path d="M370 178 q8 10 0 20 q-8 10 0 20"/>
+        </g>
+        <line x1="225" y1="118" x2="225" y2="142" stroke="#8B949E" stroke-width="2"/>
+        <path d="M203 158 L211 142 L239 142 L247 158 Z" fill="#9AA4B0"/>
+        <circle id="bulb" cx="225" cy="160" r="6"/>
+        <!-- the front door -->
+        <rect x="462" y="236" width="74" height="152" rx="3" fill="#7A5236" stroke="#4A3020" stroke-width="2"/>
+        <rect x="472" y="248" width="54" height="58" rx="2" fill="none" stroke="#5E3E28" stroke-width="2"/>
+        <rect x="472" y="316" width="54" height="60" rx="2" fill="none" stroke="#5E3E28" stroke-width="2"/>
+        <circle cx="524" cy="314" r="4.5" fill="#E8C35A"/>
+        <g id="lock" transform="translate(499 196)">
+          <path id="shackle" d="M-9 0 v-9 a9 9 0 0 1 18 0 v9" fill="none" stroke-width="4"/>
+          <rect id="lock-body" x="-13" y="-1" width="26" height="20" rx="4"/>
+        </g>
+        <text id="lock-word" x="499" y="232" text-anchor="middle" class="lock-word">LOCKED</text>
+        <!-- what the state says as written -->
+        <text id="time" x="52" y="140" class="wall">Sat 20:30</text>
+        <text id="inside" x="410" y="192" text-anchor="end" class="wall">23 °C</text>
+        <!-- device names -->
+        <text x="225" y="182" text-anchor="middle" class="tag" data-device="light">Light</text>
+        <text x="133" y="292" text-anchor="middle" class="tag" data-device="curtains">Curtains</text>
+        <text x="336" y="246" text-anchor="middle" class="tag" data-device="tv">TV</text>
+        <text x="351" y="126" text-anchor="middle" class="tag" data-device="aircon">Air conditioner</text>
+        <text x="499" y="406" text-anchor="middle" class="tag door-tag" data-device="door">Front door</text>
+        <g id="unknown" class="unknown"></g>
+      </svg>
+    </section>
+    <section class="side">
+      <div class="tabs">
+        <button id="tab-wish" class="tab on" type="button" data-tab="wish">Wish</button>
+        <button id="tab-edit" class="tab" type="button" data-tab="edit">House &amp; questions</button>
+      </div>
+      <div id="pane-wish" class="pane on">
+        <input id="wish" type="text" spellcheck="false" autocomplete="off" placeholder="Your wish, e.g. Movie night">
+        <div id="wish-note" class="wish-note"></div>
+        <div id="wishes" class="wishes"></div>
+        <div id="devices" class="devices"></div>
+      </div>
+      <div id="pane-edit" class="pane">
+        <div class="row">
+          <span class="label">State</span>
+          <span id="state-kind" class="kind"></span>
+        </div>
+        <textarea id="state" rows="1" spellcheck="false" placeholder="The house as JSON: light, curtains, tv, aircon, door, outside, inside, time and the request"></textarea>
+        <div class="row qhead">
+          <span class="label">Questions</span>
+          <button id="add-q" class="add" type="button">+ Add question</button>
+        </div>
+        <div id="questions"></div>
+      </div>
+      <div class="actions">
+        <button id="decide" class="decide" type="button" disabled>Decide</button>
+        <div id="error" class="error"></div>
+      </div>
+      <div class="foot">
+        <div id="time-big" class="time-big"></div>
+        <div id="foot-note" class="foot-note"></div>
+      </div>
+    </section>
+  </div>
+</div>
+<div id="caret"></div>
+<script src="app.js"></script>
+</body>
+</html>

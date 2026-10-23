@@ -1,0 +1,37 @@
+{
+ "what": "The bundled wishes of the home app: a house (a JSON state whose \"request\" is the wish) and the same five questions for every wish, one per device. \"expected\" is the setting each device was expected to get, written down before the model answered any of these requests. \"take\" is the wish of the recorded scene.",
+ "questions": {
+  "light": {"type": "choice", "instructions": "How bright should the living room light be?", "criteria": {"off": "Off", "dim": "Dimmed", "bright": "Full brightness"}},
+  "curtains": {"type": "noul", "instructions": "The curtains should be closed.", "criteria": {"true": "Closed", "false": "Open"}},
+  "tv": {"type": "noul", "instructions": "The TV should be on.", "criteria": {"true": "On", "false": "Off"}},
+  "aircon": {"type": "choice", "instructions": "What should the air conditioner do?", "criteria": {"off": "Off", "cool": "Cool the room", "heat": "Heat the room"}},
+  "door": {"type": "noul", "instructions": "The front door should be locked.", "criteria": {"true": "Locked", "false": "Unlocked"}}
+ },
+ "wishes": [
+  {"id": "movie", "title": "Movie night",
+   "state": {"time": "Sat 20:30", "outside": "dark, 19 °C", "inside": "23 °C", "light": "bright", "curtains": "open", "tv": "off", "aircon": "off", "door": "locked", "request": "Movie night"},
+   "expected": {"light": "dim", "curtains": "true", "tv": "true", "aircon": "off", "door": "true"}},
+  {"id": "leaving", "title": "Leaving for work",
+   "state": {"time": "Mon 08:10", "outside": "sunny, 27 °C", "inside": "25 °C", "light": "bright", "curtains": "closed", "tv": "on", "aircon": "cool", "door": "unlocked", "request": "I'm leaving for work"},
+   "expected": {"light": "off", "curtains": "true", "tv": "false", "aircon": "off", "door": "true"}},
+  {"id": "night", "title": "Good night",
+   "state": {"time": "Thu 23:30", "outside": "dark, 12 °C", "inside": "20 °C", "light": "bright", "curtains": "open", "tv": "on", "aircon": "off", "door": "unlocked", "request": "Good night"},
+   "expected": {"light": "off", "curtains": "true", "tv": "false", "aircon": "off", "door": "true"}},
+  {"id": "cold", "title": "It's freezing",
+   "state": {"time": "Sun 19:00", "outside": "dark, -3 °C", "inside": "14 °C", "light": "bright", "curtains": "closed", "tv": "on", "aircon": "off", "door": "locked", "request": "It's freezing in here"},
+   "expected": {"light": "bright", "curtains": "true", "tv": "true", "aircon": "heat", "door": "true"}},
+  {"id": "guests", "title": "Guests at the door",
+   "state": {"time": "Sat 18:30", "outside": "dusk, 15 °C", "inside": "21 °C", "light": "dim", "curtains": "closed", "tv": "off", "aircon": "off", "door": "locked", "request": "Our guests are at the door"},
+   "expected": {"light": "bright", "curtains": "true", "tv": "false", "aircon": "off", "door": "false"}},
+  {"id": "read", "title": "Reading",
+   "state": {"time": "Wed 21:00", "outside": "dark, 16 °C", "inside": "22 °C", "light": "dim", "curtains": "closed", "tv": "on", "aircon": "off", "door": "locked", "request": "I want to read a book"},
+   "expected": {"light": "bright", "curtains": "true", "tv": "false", "aircon": "off", "door": "true"}},
+  {"id": "hot", "title": "Too hot",
+   "state": {"time": "Sat 14:00", "outside": "sunny, 34 °C", "inside": "31 °C", "light": "off", "curtains": "closed", "tv": "off", "aircon": "off", "door": "locked", "request": "It's too hot in here"},
+   "expected": {"light": "off", "curtains": "true", "tv": "false", "aircon": "cool", "door": "true"}},
+  {"id": "sunshine", "title": "Sunshine",
+   "state": {"time": "Sun 10:00", "outside": "sunny, 22 °C", "inside": "22 °C", "light": "off", "curtains": "closed", "tv": "off", "aircon": "off", "door": "locked", "request": "Let the sunshine in"},
+   "expected": {"light": "off", "curtains": "false", "tv": "false", "aircon": "off", "door": "true"}}
+ ],
+ "take": "movie"
+}
