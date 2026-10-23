@@ -4,7 +4,7 @@
 
 LiteRT is Google's on-device ML runtime for Android and the successor to TensorFlow Lite (renamed 2024-09): PyTorch models are converted with Google's `litert-torch` into `.tflite` files that run every op on the phone's GPU through [`CompiledModel`](https://ai.google.dev/edge/litert) (ML Drift), e.g. DINOv2 ViT-S/14 at 448² runs in 53.6 ms on a Galaxy S26 GPU ([npubench](npubench/), LiteRT 2.2.0, median of 50 runs, 2026-08).
 
-This repository is the model zoo for that path: **91 converted models** (as of 2026-09-08), each with its download, input/output shapes, preprocessing, the conversion script that produced it, and a standalone Android sample app (Kotlin). No MediaPipe and no vendor SDK: the `.tflite` graphs run on `CompiledModel` GPU with every op delegated (no CPU fallback), and the four 3B chat models run on LiteRT-LM. The GPU-compatibility rewrites these conversions need are catalogued in [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) and packaged in [`litert_gpu_toolkit/`](litert_gpu_toolkit/).
+This repository is the model zoo for that path: **91 converted models** (as of 2026-09-08), each with its download, input/output shapes, preprocessing, the conversion script that produced it, and a standalone Android sample app (Kotlin). No MediaPipe and no vendor SDK: the `.tflite` graphs run on `CompiledModel` GPU with every op delegated (no CPU fallback), and the chat models run on LiteRT-LM. The GPU-compatibility rewrites these conversions need are catalogued in [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) and packaged in [`litert_gpu_toolkit/`](litert_gpu_toolkit/).
 
 **If you like this repository, please give it a star.**
 
@@ -122,6 +122,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
 | [SmolLM3-3B](#smollm3-3b) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~22.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/SmolLM3-3B-LiteRT) |
+| [Qwen3.8-27B](#qwen38-27b-mac-chat-app) | LLM chat (LiteRT-LM), a 27B model in a Mac app ([litertlm-chat-mac](litertlm-chat-mac/)) | Apple M4 Max (Mac, GPU) | ~18.4 tok/s | [🤗 HF](https://huggingface.co/litert-community/Qwen3.8-27B) |
 | [Qwen3-ASR-1.7B](asr_litertlm/) | Speech recognition, 30 languages (LiteRT-LM) | Galaxy S26 (CPU) | 2.49 s for a 6.4 s clip (RTF 0.39) | [🤗 HF](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) |
 | [Qwen3-ASR-1.7B-15s](asr_litertlm/) | Speech recognition, 30 languages, the same weights with a 15 s encoder window (LiteRT-LM) | Galaxy S26 (CPU) | 1.79 s for a 6.4 s clip (RTF 0.28) | [🤗 HF](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) |
 | [Fun-ASR-Nano-2512](asr_litertlm/) | Speech recognition, zh / en / ja (LiteRT-LM) | Galaxy S26 (CPU) | 1.19 s for a 6.4 s clip (RTF 0.19) | [🤗 HF](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) |
@@ -2575,6 +2576,20 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 **HF model**: [mlboydaisuke/SmolLM3-3B-LiteRT](https://huggingface.co/mlboydaisuke/SmolLM3-3B-LiteRT)
 
 **Original project**: [HuggingFaceTB/SmolLM3-3B](https://huggingface.co/HuggingFaceTB/SmolLM3-3B) | Apache-2.0
+
+### Qwen3.8-27B (Mac chat app)
+
+[Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B) as one 15.4 GB **LiteRT-LM** (`.litertlm`) file, run by a SwiftUI chat app on the Mac's GPU through Google's LiteRT-LM Swift package (0.18.1) — no Python, no server. In the app on a Mac Studio M4 Max it decodes at about 18.4 tokens per second, the engine using up to 25 GB of memory, and it gives the model card's answers to its eight check questions and its three-turn conversation word for word. Text only, thinking off.
+
+| Type | Model | Size | Quant | Runs on | Source | License |
+|---|---|---|---|---|---|---|
+| LLM | [Qwen3.8-27B_mixed_int4.litertlm](https://huggingface.co/litert-community/Qwen3.8-27B/resolve/main/Qwen3.8-27B_mixed_int4.litertlm) | 15.4 GB | int4 blockwise-128 + int8 embedding and lm_head | Apple Silicon Mac, 32 GB of memory or more | [Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B) | Apache-2.0 |
+
+**Sample app**: [litertlm-chat-mac/](litertlm-chat-mac/) — open the `.litertlm`, ask; one engine process per conversation (macOS, SwiftUI, XcodeGen).
+
+**HF model**: [litert-community/Qwen3.8-27B](https://huggingface.co/litert-community/Qwen3.8-27B)
+
+**Original project**: [Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B) | Apache-2.0
 
 # License
 

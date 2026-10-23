@@ -1,0 +1,14 @@
+{
+  "name": "card-8q",
+  "quit_when_done": true,
+  "conversations": [
+    {"turns": [{"text": "What is 17 + 25? Answer briefly.", "expect": "\\b42\\b"}]},
+    {"turns": [{"text": "What is the capital of Japan? Answer briefly.", "expect": "tokyo"}]},
+    {"turns": [{"text": "What is the opposite of \"hot\"? Answer briefly.", "expect": "\\bcold\\b"}]},
+    {"turns": [{"text": "How many days are in a week? Answer briefly.", "expect": "\\bseven\\b|\\b7\\b"}]},
+    {"turns": [{"text": "How do you say \"thank you\" in French? Answer briefly.", "expect": "merci"}]},
+    {"turns": [{"text": "What is 8 times 7? Answer briefly.", "expect": "\\b56\\b"}]},
+    {"turns": [{"text": "Which is larger: 0.9 or 0.11? Answer briefly.", "expect": "0\\.9"}]},
+    {"turns": [{"text": "Complete the rhyme: \"Roses are red, violets are ___\" Answer briefly.", "expect": "\\bblue\\b"}]}
+  ]
+}

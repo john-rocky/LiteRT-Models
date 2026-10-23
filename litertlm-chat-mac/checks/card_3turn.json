@@ -1,0 +1,11 @@
+{
+  "name": "card-3turn",
+  "quit_when_done": true,
+  "conversations": [
+    {"turns": [
+      {"text": "Give me one word that means 'very big'.", "expect": "^Enormous$"},
+      {"text": "Use it in a short sentence.", "expect": "^The elephant was enormous\\.$"},
+      {"text": "Now make that sentence a question.", "expect": "^Was the elephant enormous\\?$"}
+    ]}
+  ]
+}

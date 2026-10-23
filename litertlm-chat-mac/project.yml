@@ -1,0 +1,40 @@
+name: LiteRTLMChat
+options:
+  bundleIdPrefix: com.litertlmchat
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  # Google's LiteRT-LM Swift package. On macOS it links one prebuilt dylib
+  # (CLiteRTLM_mac.xcframework) with the WebGPU GPU accelerator built in.
+  LiteRTLM:
+    url: https://github.com/google-ai-edge/LiteRT-LM
+    exactVersion: 0.18.1
+targets:
+  LiteRTLMChat:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+    dependencies:
+      - package: LiteRTLM
+        product: LiteRTLM
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.litertlmchat.app
+        PRODUCT_NAME: LiteRTLMChat
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: LiteRT-LM Chat
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        # Apple Silicon only: the GPU path is Metal under WebGPU.
+        ARCHS: arm64
+        # Signed to run locally; no Apple developer account needed.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: NO
+        # Not sandboxed: the app opens a model file from anywhere and starts itself as the
+        # engine process, which a sandbox would not let read that file.
+        ENABLE_APP_SANDBOX: NO
