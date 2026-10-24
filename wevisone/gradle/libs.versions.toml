@@ -1,0 +1,22 @@
+[versions]
+agp = "8.9.1"
+kotlin = "2.2.21"
+litert = "2.3.0"
+core = "1.15.0"
+activity = "1.10.1"
+gson = "2.11.0"
+junit = "4.13.2"
+orgjson = "20240303"
+
+[libraries]
+litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
+litert-gpu = { module = "com.google.ai.edge.litert:litert-gpu", version.ref = "litert" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+junit = { module = "junit:junit", version.ref = "junit" }
+org-json = { module = "org.json:json", version.ref = "orgjson" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

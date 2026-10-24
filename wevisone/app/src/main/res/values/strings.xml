@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WeVisOne Cut-out</string>
+    <string name="start_hint">Choose a photo, type what to cut out, tap Run.</string>
+    <string name="result_description">The photo with the boxes, points and cut-outs the model found</string>
+    <string name="photos">Photos</string>
+    <string name="camera">Camera</string>
+    <string name="example">Example</string>
+    <string name="run">Run</string>
+    <string name="stop">Stop</string>
+    <string name="save">Save PNG</string>
+</resources>

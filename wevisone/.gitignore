@@ -1,0 +1,12 @@
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+# Model files are installed on the device by scripts/install_to_device.sh, never committed.
+*.tflite
+*.litertlm
+tokenizer.json
+wevisone_embed_tokens_fp16.bin
+# The box encoding's log table is an app asset, not a model file (the root .gitignore drops *.bin).
+!app/src/main/assets/box_log_table.bin
