@@ -18,8 +18,8 @@ PKG=com.dia2
 DIR="${1:-.}"
 DEST="/sdcard/Android/data/$PKG/files"
 
-# Everything runs on CPU as fp32: the Mali ML Drift delegate rejects the language models'
-# FULLY_CONNECTED shapes, and fp16 collapses these deep stacks on ARM XNNPACK.
+# Everything runs on CPU as fp32 because fp16 collapses these deep stacks on ARM XNNPACK.
+# (The GPU is not the obstacle -- see the Device placement section of the README.)
 FILES=(
     dia2_temporal_fp32.tflite
     dia2_depformer_wi0_fp32.tflite
