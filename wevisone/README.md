@@ -4,7 +4,7 @@ Pick a photo and type a word: the phone draws the box around that thing and cuts
 
 [WeVisOne-VL-2B](https://huggingface.co/tencent/WeVisOne-VL-2B) (Tencent, Apache-2.0) is a 2B vision-language model that answers with boxes, points and text, and marks each object it should cut out with an `<OBJ>` token that a small alpha-matte decoder turns into a mask. This app runs the whole path as LiteRT graphs on `CompiledModel`: the vision encoder, the language model (greedy decoding with its KV cache), and the matte decoder. LiteRT-LM cannot return the `<OBJ>` hidden state the matte needs, so the app drives the raw graphs itself.
 
-![The app on a Galaxy S26: "the man on the left" cut out of a NASA photo](docs/app_galaxy_s26.jpg)
+<img src="https://huggingface.co/litert-community/WeVisOne-VL-2B/resolve/main/assets/demo.gif" width="300" alt="The app on a Galaxy S26: the kitten cut out of a photo of a kitten and a puppy"> <br> *On a Galaxy S26: a photo of a kitten and a puppy (by blende12 on Pixabay, CC0, from Wikimedia Commons), the words "the kitten", and the cut-out after 4.9 s. It is not the app's first run after the install, which builds the GPU graphs (35.6 s on this install; the table's 35.7 s is another install).*
 
 | Phone | Photo + words → cut-out | Steps | Memory |
 |---|---|---|---|
