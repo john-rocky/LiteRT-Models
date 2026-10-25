@@ -118,6 +118,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [clef-flash](#clef-flash-typed-decisions-desktop) | Typed decisions: yes-no / choice / score questions about a text, a JSON value or a photo, every question answered at once with a probability for every option | Apple M4 Max (Mac, Metal float32) | a 236-token request in 360.7 ms, a 1,007-token request in 1,346.9 ms, a request with one photo (448 px tile, 688 tokens) in 1,493.8 ms | [🤗 HF](https://huggingface.co/litert-community/clef-flash-LiteRT) |
 | [Phocinae-Largha-150M](#phocinae-largha-150m-typed-decisions) | Typed decisions: choice / score / yes-no questions about a text, calibrated probabilities (EN / ZH) | Galaxy S26 | 19.8 ms per question at 384 tokens (NPU), 22.9 ms (GPU FP16); a 3-question request in 114 ms (NPU, the editor) | [🤗 HF](https://huggingface.co/litert-community/Phocinae-Largha-150M-LiteRT) |
 | [Timestral-209M](timestral/) | Time-series forecasting: 21 quantiles for up to 1,024 steps of your own series (univariate, context up to 8,192 steps); weights: Mistral AI Modified MIT License (condition 2: no rights if the company's or employer's monthly revenue exceeds $20 million) | Galaxy S26 | 21.1 ms per forecast (NPU), 30.8 ms (GPU FP16), 57.5 ms (CPU int8, 4 threads): a 120-value series, 300-step horizon, median of 10 forecasts in the sample app's debug build | [🤗 HF](https://huggingface.co/mlboydaisuke/Timestral-209M-LiteRT) |
+| [WeVisOne-VL-2B](wevisone/) | Cut out what you name in a photo (alpha matte, transparent PNG), plus detection, pointing, counting and reading text, from one 2B vision-language model | Galaxy S26 | 4.7 s (a 640 × 480 picture) and 5.8 s (a 3000 × 2029 photo) from the picture and words to the cut-out (GPU) | [🤗 HF](https://huggingface.co/litert-community/WeVisOne-VL-2B) |
 | [Falcon3-3B-Instruct](#falcon3-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~27 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Falcon3-3B-Instruct-LiteRT) |
 | [Llama-3.2-3B-Instruct](#llama-32-3b-instruct) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~18.5 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT) |
 | [Ministral-3-3B-Instruct-2512](#ministral-3-3b-instruct-2512) | LLM chat (LiteRT-LM) | iPhone 17 Pro | ~17.6 tok/s | [🤗 HF](https://huggingface.co/mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT) |
@@ -2593,6 +2594,6 @@ Built with Llama. [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta
 
 # License
 
-MIT (sample apps; `kev/`, `julia1/`, `d1-3b/` and `clef-flash/` carry their own Apache-2.0 `LICENSE`, and `d1omni/` the LFM Open License v1.0, as it ports the model provider's code). Model licenses follow their original projects.
+MIT (sample apps; `kev/`, `julia1/`, `d1-3b/`, `clef-flash/` and `wevisone/` carry their own Apache-2.0 `LICENSE`, and `d1omni/` the LFM Open License v1.0, as it ports the model provider's code). Model licenses follow their original projects.
 
 
