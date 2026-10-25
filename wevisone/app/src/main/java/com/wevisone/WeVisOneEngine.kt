@@ -116,7 +116,12 @@ class WeVisOneEngine(
     private val table: ShortBuffer
     private val tableChannel: FileChannel
 
-    @Volatile var cancelled = false
+    /** The current run's Stop request, read between stages and between tokens (set by [predict]). */
+    private var stopRequested: () -> Boolean = { false }
+
+    private fun checkStop() {
+        if (stopRequested()) throw CancelledException()
+    }
 
     init {
         val file = File(modelDir, ModelFiles.EMBEDDINGS.name)
@@ -130,8 +135,13 @@ class WeVisOneEngine(
         fun stage(text: String)
     }
 
-    fun predict(rgb: ByteArray, width: Int, height: Int, instruction: String, progress: Progress): Prediction {
-        cancelled = false
+    /**
+     * [stop] is the caller's Stop request for this run: it is read, never reset, so a Stop pressed before this call
+     * (while the files were checked or the graphs built) still ends the run.
+     */
+    fun predict(rgb: ByteArray, width: Int, height: Int, instruction: String, stop: () -> Boolean, progress: Progress): Prediction {
+        stopRequested = stop
+        checkStop()
         val timing = LinkedHashMap<String, Any?>()
         val memory = ArrayList<Map<String, Any?>>()
         val t0 = System.nanoTime()
@@ -157,6 +167,7 @@ class WeVisOneEngine(
         val x512 = FloatArray(u8.size) { (u8[it].toInt() and 0xFF) * INV_255 }
         timing["resize_512_ms"] = ms(t)
         val (enc, ada) = visionGraphs(memory)
+        checkStop()
         progress.stage("Vision encoder")
         t = System.nanoTime()
         val encIn = enc.createInputBuffer("args_0", "serving_default")
@@ -186,10 +197,11 @@ class WeVisOneEngine(
         }
         timing["vision_adapter_ms"] = ms(t)
         check(imageRows.size == N_IMAGE * WIDTH) { "adapter output ${imageRows.size}" }
-        if (cancelled) throw CancelledException()
+        checkStop()
 
         // 3-5. decoder
         val dec = decoderGraph(memory)
+        checkStop()
         progress.stage("Answering")
         val gen = dec.generate(promptIds, imageRows, MAX_NEW, timing) { n -> progress.stage("Answering: $n tokens") }
         val response = tokenizer.decode(gen.newIds)
@@ -222,7 +234,7 @@ class WeVisOneEngine(
                 for (k in 0 until 4) inputs.getValue(names[k]).writeFloat(taps[k])
                 inputs.getValue("args_6").writeFloat(canvas)
                 for (i in 0 until count) {
-                    if (cancelled) throw CancelledException()
+                    checkStop()
                     val bins = answer.segBoxes[i]
                     val box = BoxFeatures.normalized(bins)
                     val tSeg = gen.objHidden[i]
@@ -536,7 +548,7 @@ class WeVisOneEngine(
                 stepMs.add(ms(t))
                 if (fed == OBJ && newIds.isNotEmpty()) objHidden.add(hidden)
                 if (newIds.size >= maxNew) break
-                if (cancelled) {
+                if (stopRequested()) {
                     stopped = true
                     break
                 }

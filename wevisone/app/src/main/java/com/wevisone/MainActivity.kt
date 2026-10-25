@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.WindowManager
 import android.widget.AdapterView
@@ -55,17 +56,23 @@ class MainActivity : ComponentActivity() {
         private set
     private var last: Prediction? = null
     private var exampleIndex = -1
-    private var cameraFile: File? = null
     @Volatile private var busy = false
 
+    /** The Stop request of the current run: cleared when a run starts, set by Stop, read by the model thread. */
+    @Volatile private var stopRequested = false
+
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) loadPhoto { Photo.fromUri(contentResolver, uri, uri.lastPathSegment ?: "photo") }
+        if (uri != null) loadPhoto { Photo.fromUri(contentResolver, uri, displayName(uri)) }
     }
 
     private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val file = cameraFile
-        if (ok && file != null) loadPhoto { Photo.fromFile(file) }
+        // the camera app can take enough memory for Android to stop this process while it is open; the activity is
+        // then created again for the result, so the photo's path is a fixed one, not a field
+        val file = cameraFile()
+        if (ok && file.isFile) loadPhoto { Photo.fromFile(file) }
     }
+
+    private fun cameraFile() = File(File(cacheDir, "camera"), "photo.jpg")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,15 +122,14 @@ class MainActivity : ComponentActivity() {
             pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
         findViewById<Button>(R.id.camera).setOnClickListener {
-            val file = File(File(cacheDir, "camera").apply { mkdirs() }, "photo.jpg")
-            cameraFile = file
+            val file = cameraFile().apply { parentFile?.mkdirs() }
             takePhoto.launch(FileProvider.getUriForFile(this, "$packageName.files", file))
         }
         findViewById<Button>(R.id.example).setOnClickListener { nextExample() }
         runButton.setOnClickListener {
             run(Task.entries[taskSpinner.selectedItemPosition], queryEdit.text.toString(), null, FORMS[formSpinner.selectedItemPosition], RunOptions()) {}
         }
-        stopButton.setOnClickListener { engine?.cancelled = true }
+        stopButton.setOnClickListener { stopRequested = true }
         saveButton.setOnClickListener { saveCutout() }
         statusText.text = "${DeviceInfo.displayName()} · LiteRT ${BuildConfig.LITERT_VERSION}"
         handleIntent(intent)
@@ -143,6 +149,14 @@ class MainActivity : ComponentActivity() {
     private fun isDebuggable() = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
 
     // ----------------------------------------------------------------------------------------------------- inputs
+    /** The picked photo's file name from the provider (the photo picker's URI ends in a MediaStore id). */
+    private fun displayName(uri: Uri): String =
+        runCatching {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                if (c.moveToFirst()) c.getString(0) else null
+            }
+        }.getOrNull() ?: uri.lastPathSegment ?: "photo"
+
     private fun loadPhoto(decode: () -> Photo) {
         if (busy) return
         answerText.text = "Opening the photo"
@@ -208,6 +222,7 @@ class MainActivity : ComponentActivity() {
         }
         val text = instruction ?: Prompts.instruction(task, query)
         busy = true
+        stopRequested = false
         runButton.isEnabled = false
         stopButton.isEnabled = true
         saveButton.isEnabled = false
@@ -254,6 +269,7 @@ class MainActivity : ComponentActivity() {
         lastPrep["file_check_ms"] = (System.nanoTime() - t) / 1e6
         saveVerified()
         if (problems.isNotEmpty()) throw MissingFilesException(problems)
+        if (stopRequested) throw CancelledException()
         t = System.nanoTime()
         val tok = tokenizer ?: QwenBpeTokenizer.fromFile(File(dir, ModelFiles.TOKENIZER.name)).also {
             tokenizer = it
@@ -267,7 +283,9 @@ class MainActivity : ComponentActivity() {
             e = WeVisOneEngine(dir, cacheDir, tok, box, form, options)
             engine = e
         }
-        return e.predict(p.rgb, p.width, p.height, instruction) { stage -> runOnUiThread { answerText.text = stage } }
+        return e.predict(p.rgb, p.width, p.height, instruction, { stopRequested }) { stage ->
+            runOnUiThread { answerText.text = stage }
+        }
     }
 
     private fun finish(outcome: Outcome, task: Task?, done: (Outcome) -> Unit) {

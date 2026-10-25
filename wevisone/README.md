@@ -8,17 +8,19 @@ Pick a photo and type a word: the phone draws the box around that thing and cuts
 
 | Phone | Photo + words → cut-out | Steps | Memory |
 |---|---|---|---|
-| Galaxy S26 (12 GB), GPU | **4.5 s** (640 × 480 photo), 6.1 s (3000 × 2029 photo) | vision encoder 0.53 s, adapter 0.05 s, prompt 296 tokens 1.15 s, answer 13 tokens 1.17 s (90 ms a token), matte decoder 1.40 s, matte to photo size 0.04 s | all three graphs loaded: free memory 6.9 → 1.6 GB, app peak 6.1 GB |
-| Galaxy S26, first run after install | 42.5 s | building the graphs: vision 9.0 s, language model 25.7 s, matte decoder 2.2 s | |
+| Galaxy S26 (12 GB), GPU | **4.7 s** (640 × 480 synthetic picture), 5.8 s (3000 × 2029 photo) | vision encoder 0.54 s, adapter 0.06 s, prompt 296 tokens 1.17 s, answer 13 tokens 1.19 s (91 ms a token), matte decoder 1.57 s, matte to photo size 0.04 s | all three graphs loaded: free memory 6.6 → 1.6 GB, app peak 6.1 GB |
+| Galaxy S26, first run after install | 35.7 s | building the graphs: vision 8.6 s, language model 20.3 s, matte decoder 1.6 s | |
 | Pixel 8a (8 GB) | does not run | the app stops before loading anything: 3.3 GB free, 4.1 GB needed (an earlier build that checked one stage at a time started the vision graphs, and they alone took the free memory from 3.0 to 0.3 GB on this phone's GPU) | |
 
-Galaxy S26 SM-S942Q (Android 16), LiteRT 2.3.0, 2026-10-25: the median of four runs after the first, every graph on the GPU (OpenCL); the language model with int8 weights and float32 arithmetic (`GPU (int8 weights, fp32)`, the app's default). Memory is in GB of 2^30 bytes, the unit of the app's messages. With fp16 weights the language model takes 4.5 GB instead of 3.0 GB, the vision graphs no longer fit beside it and are rebuilt for every photo: 15.7 s per cut-out (measured with an earlier build of the app, the same graphs). On the CPU (XNNPACK unpacks the fp16 weights to float32) the app refuses the language model on a Galaxy S26 (8.7 GB needed, 7.3 GB free); with the check turned off it gives the reference's answer token for token but takes 132 s, 5.4 s a token, while the phone swaps.
+Galaxy S26 SM-S942Q (Android 16), LiteRT 2.3.0, 2026-10-25: the median of four runs after the first, every graph on the GPU (OpenCL); the language model with int8 weights and float32 arithmetic (`GPU (int8 weights, fp32)`, the app's default). Memory is in GB of 2^30 bytes, the unit of the app's messages. With fp16 weights the language model takes 4.5 GB instead of 3.0 GB, the vision graphs no longer fit beside it and are rebuilt for every photo: 15.7 s per cut-out. On the CPU (XNNPACK unpacks the fp16 weights to float32) the app refuses the language model on a Galaxy S26 (8.7 GB needed, 7.3 GB free); with the check turned off it gives the reference's answer token for token but takes 132 s, 5.4 s a token, while the phone swaps. The fp16 number was measured with an earlier build of the app (the same graphs), the CPU and Pixel 8a numbers with the first version of this sample; the app's model code is unchanged since, and only the Stop button, the name shown for a picked photo and the way the app finds the camera's photo again after Android has restarted it changed.
 
 ## Use
 
-1. Build and install the app (below), then copy the model files to the phone: `./scripts/install_to_device.sh <dir with the files>` (the int8 language model by default, `FORM=fp16` the fp16 one, `FORM=both` both; the script also downloads three NASA example photos unless `EXAMPLES=0`).
-2. Open **WeVisOne Cut-out**. Choose a photo (**Photos**, **Camera**, or **Example**, which also fills in a task and words), pick a task, type the words, tap **Run**.
-3. Boxes, points and labels appear on the photo; a cut-out is tinted. Tap the photo to see the cut-out alone on a checkerboard, **Save PNG** writes it with its transparency to `Pictures/WeVisOne`.
+1. Build and install the debug build of the app (below).
+2. Download the model files (Files, below).
+3. Copy them to the phone: `./scripts/install_to_device.sh`. It reads `~/Downloads/WeVisOne-VL-2B-LiteRT/cutout` unless you give another directory, installs the int8 language model (`FORM=fp16` the fp16 one, `FORM=both` both), and downloads three NASA example photos unless `EXAMPLES=0`.
+4. Open **WeVisOne Cut-out**. Choose a photo (**Photos**, **Camera**, or **Example**, which also fills in a task and words), pick a task, type the words, tap **Run**.
+5. Boxes, points and labels appear on the photo; a cut-out is tinted. Tap the photo to see the cut-out alone on a checkerboard, **Save PNG** writes it with its transparency to `Pictures/WeVisOne`.
 
 | Task | Type | The instruction the model gets (the authors' `build_prompt`) |
 |---|---|---|
@@ -50,7 +52,18 @@ Graphs stay loaded while there is memory for them: before each stage the app rea
 
 ## Files
 
-files: <the download location is set when the files are published>
+The files are in the [`cutout/`](https://huggingface.co/litert-community/WeVisOne-VL-2B/tree/main/cutout) folder of [litert-community/WeVisOne-VL-2B](https://huggingface.co/litert-community/WeVisOne-VL-2B); the `.litertlm` file at the top of that repository is the LiteRT-LM build of the model (boxes, points, counts and text, no cut-outs) and is not used by this app. The default install (the int8 language model, 3,257,599,697 bytes):
+
+```bash
+export HF_HUB_DISABLE_XET=1
+hf download litert-community/WeVisOne-VL-2B \
+  cutout/tokenizer.json cutout/wevisone_embed_tokens_fp16.bin \
+  cutout/wevisone_vision_encoder_512_fp16.tflite cutout/wevisone_vision_adapter_512_fp16.tflite \
+  cutout/wevisone_mask_decoder_gs16.tflite cutout/wevisone_decoder_b_int8.tflite \
+  --local-dir "$HOME/Downloads/WeVisOne-VL-2B-LiteRT"
+```
+
+Add `cutout/wevisone_decoder_b_fp16.tflite` to the list for `FORM=fp16` or `FORM=both`.
 
 | File | Bytes | SHA-256 |
 |---|---|---|

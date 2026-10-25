@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Copy the WeVisOne-VL-2B files into the app's private files/models/ and the example photos into files/examples/.
 # Usage: ./scripts/install_to_device.sh [dir-with-the-model-files]
-# The directory holds the files below side by side (their download location is in the README). FORM selects the
+# The directory holds the files below side by side: the cutout/ folder of litert-community/WeVisOne-VL-2B on Hugging
+# Face, which the README's hf download command puts at ~/Downloads/WeVisOne-VL-2B-LiteRT/cutout (the default). FORM selects the
 # language model file: "int8" (wevisone_decoder_b_int8.tflite, the app's default GPU form, default), "fp16"
 # (wevisone_decoder_b_fp16.tflite, the GPU fp16 and CPU forms) or "both". EXAMPLES=0 skips the NASA example photos (downloaded
 # from images.nasa.gov with their SHA-256 checked; public domain, credit NASA). Every file is checked by size before
@@ -13,7 +14,7 @@ if [[ $# -gt 1 ]]; then
     printf 'Usage: %s [dir-with-the-model-files]\n' "$0" >&2
     exit 2
 fi
-SOURCE_DIR="${1:-$HOME/Downloads/WeVisOne-VL-2B-LiteRT}"
+SOURCE_DIR="${1:-$HOME/Downloads/WeVisOne-VL-2B-LiteRT/cutout}"
 PACKAGE=com.wevisone
 TEMP_DIR=/data/local/tmp/wevisone_install
 
