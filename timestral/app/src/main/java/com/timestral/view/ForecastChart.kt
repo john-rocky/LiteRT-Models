@@ -19,8 +19,9 @@ import com.timestral.ForecastChartData
 import com.timestral.MainViewModel
 
 /**
- * The series' last values (gray, gaps where values are missing), then the forecast: the 10–90 %
- * band and the median. The y axis covers every value drawn; three labeled grid lines.
+ * The series' last values (gray, gaps where values are missing), then the forecast: the median and
+ * the 10–90 % band start at the last observed value (the band at zero width), and the dashed line
+ * marks the series' last step. The y axis covers every value drawn; three labeled grid lines.
  */
 @Composable
 fun ForecastChart(data: ForecastChartData, modifier: Modifier = Modifier) {
@@ -55,26 +56,33 @@ fun ForecastChart(data: ForecastChartData, modifier: Modifier = Modifier) {
 
     drawGrid(lo, hi, left, right, ::y)
     val start = history.size
-    val divider = x(start) - (x(1) - x(0)) / 2f
-    drawLine(
-      Color.LightGray,
-      Offset(divider, top),
-      Offset(divider, bottom),
-      strokeWidth = 1.dp.toPx(),
-      pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)),
-    )
+    if (start > 0) {
+      val now = x(start - 1)
+      drawLine(
+        Color.LightGray,
+        Offset(now, top),
+        Offset(now, bottom),
+        strokeWidth = 1.dp.toPx(),
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)),
+      )
+    }
+    // The last observed value: the band and the median line start there, across any missing steps.
+    val last = history.indexOfLast { it.isFinite() }
+    val anchor = if (last >= 0) Offset(x(last), y(history[last])) else null
     val band = Path()
+    anchor?.let { band.moveTo(it.x, it.y) }
     for (i in data.high.indices) {
-      if (i == 0) band.moveTo(x(start + i), y(data.high[i])) else band.lineTo(x(start + i), y(data.high[i]))
+      if (i == 0 && anchor == null) band.moveTo(x(start), y(data.high[0]))
+      else band.lineTo(x(start + i), y(data.high[i]))
     }
     for (i in data.low.indices.reversed()) band.lineTo(x(start + i), y(data.low[i]))
     band.close()
     drawPath(band, bandBlue)
-    if (data.median.size == 1) {
+    if (data.median.size == 1 && anchor == null) {
       drawLine(medianBlue, Offset(x(start), y(data.low[0])), Offset(x(start), y(data.high[0])), 2.dp.toPx())
     }
     drawSeries(history, 0, historyGray, ::x, ::y)
-    drawSeries(data.median, start, medianBlue, ::x, ::y)
+    drawSeries(data.median, start, medianBlue, ::x, ::y, from = anchor)
   }
 }
 
@@ -84,9 +92,11 @@ private fun DrawScope.drawSeries(
   color: Color,
   x: (Int) -> Float,
   y: (Float) -> Float,
+  from: Offset? = null,
 ) {
   val path = Path()
-  var open = false
+  from?.let { path.moveTo(it.x, it.y) }
+  var open = from != null
   var points = 0
   for (i in values.indices) {
     val v = values[i]
@@ -99,7 +109,7 @@ private fun DrawScope.drawSeries(
     points++
   }
   drawPath(path, color, style = Stroke(width = 1.5.dp.toPx()))
-  if (points == 1) {
+  if (points == 1 && from == null) {
     val i = values.indexOfFirst { it.isFinite() }
     drawCircle(color, 3.dp.toPx(), Offset(x(offset + i), y(values[i])))
   }
