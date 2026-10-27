@@ -1,0 +1,17 @@
+# Conversion environment for scripts/ (Python 3.12): the versions the shipped files were exported with.
+# pip resolves the remaining dependencies.
+litert-torch==0.9.4
+litert-converter==0.4.0
+ai-edge-litert==2.2.0
+ai-edge-quantizer==0.9.0
+torch==2.11.0
+torchao==0.18.0
+jax==0.12.0.1
+jaxlib==0.12.0.1
+numpy==2.2.6
+ml-dtypes==0.6.0
+flatbuffers==25.12.19
+protobuf==7.36.2
+safetensors==0.8.0
+regex==2026.9.29
+huggingface-hub==2.3.0

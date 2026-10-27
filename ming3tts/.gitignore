@@ -1,0 +1,20 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+# conversion outputs and the upstream checkpoint (links to a work dir), never committed;
+# the model files reach the phone through scripts/install_to_device.sh
+/out
+/work
+*.tflite
+*.bin
+# Qualcomm runtime libraries: copied into app/src/main/jniLibs before the build, never committed
+*.so
