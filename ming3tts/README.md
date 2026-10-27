@@ -2,6 +2,8 @@
 
 Type text, and the phone speaks it in a 44.1 kHz voice generated on the device, with no network. [Ming-3.0-tts-0.5B](https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B) (inclusionAI, MIT) runs here as LiteRT graphs: on a Galaxy S26 the language model and the aggregator run on the GPU at FP32, the flow head on the Qualcomm NPU and the decoder on the GPU, at 0.93× real time with the first audio after 1.87 s. A switch in the app runs every graph on the NPU instead: 1.35× real time and the first audio after 1.10 s, at lower precision ([below](#faster-placement-every-graph-on-the-npu)).
 
+<a href="https://huggingface.co/litert-community/Ming-3.0-tts-0.5B/resolve/main/assets/demo.mp4"><img src="https://huggingface.co/litert-community/Ming-3.0-tts-0.5B/resolve/main/assets/demo.jpg" width="360" alt="Demo clip: the app on a Galaxy S26 in airplane mode reads a short story aloud on the NPU"></a> <br> *On a Galaxy S26 in airplane mode, with the switch on (every graph on the NPU), the app reads a 57-word story aloud. The app times it from the start of generation, just after the tap: the first audio chunk after 1.31 s, 17.0 s of speech generated in 14.7 s. Unlike the sentence in the speed tables below, the text is longer and a screen recorder was running. The clip has sound: click the picture to play it.*
+
 | | |
 |---|---|
 | Model | [inclusionAI/Ming-3.0-tts-0.5B](https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B) @ `8d66b70a`, code [inclusionAI/Ming-3.0-tts](https://github.com/inclusionAI/Ming-3.0-tts) @ `028c1eac` (MIT) |
