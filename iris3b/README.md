@@ -5,8 +5,11 @@ on the phone's GPU through LiteRT `CompiledModel`. No upload, no account, no ser
 not request the `INTERNET` permission.
 
 All 20 graphs — the Qwen3-VL-4B text encoder, the text adapter and the pixel-space DiT — run as
-`Accelerator.GPU` graphs at FP32 precision. iris-3b draws pixels directly (no VAE), and Turbo
-needs 4 steps with no classifier-free guidance.
+`Accelerator.GPU` graphs, at FP32 precision by default. The int8 transformer setting (install step 3)
+runs the DiT's six trunk graphs with int8 weights, and the trunk and the pixel stage at the GPU's
+default precision: on a Galaxy S26 its two images took 130.4 s on average against 232.6 s
+at FP32 (two images each, the two settings taking turns in one session). iris-3b draws pixels directly
+(no VAE), and Turbo needs 4 steps with no classifier-free guidance.
 
 <img src="docs/app_pixel8a.png" width="300" alt="The app on a Pixel 8a after generating an image from an English prompt">
 
@@ -18,11 +21,12 @@ A 13.6 s video of this run (prompt, Generate, image; the middle sped up) is in t
 |---|---|
 | Model | `speridlabs/iris-3b` Turbo, rev `adc05b9` (Apache-2.0): 3B pixel-space DiT, 4 steps, no CFG |
 | Text encoder | `Qwen/Qwen3-VL-4B-Instruct`, rev `ebb281e` (Apache-2.0): text only, 12 hidden-state taps |
-| Graphs | 20 LiteRT graphs, 12.87 GB: fp16 weights (`DEQUANTIZE`) with fp32 activations; largest 909 MB |
-| On the phone | 24 files, 13.7 GB (graphs, bf16 embedding table, host tensors, tokenizer, config) |
+| Graphs | 20 LiteRT graphs, 12.87 GB: fp16 weights (`DEQUANTIZE`) with fp32 activations; largest 909 MB. The int8 setting swaps six of them for int8-weight graphs (2.43 GB) |
+| On the phone | 24 files, 13.7 GB (graphs, bf16 embedding table, host tensors, tokenizer, config); 11.3 GB with the int8 setting |
 | Output | 768 × 768: the smallest of the sizes tried with the upstream PyTorch pipeline (256², 512², 768², 1024²) that comes out clean; 512² and 256² break up |
 | First image in this app | Galaxy S26: 212.6 s (text encoder 27.2 s compile + 2.2 s run, adapter 5.6 + 0.9 s, DiT 100.1 s compile + 74.4 s run, closing graphs 1.6 s). Pixel 8a: 468.8 s (38.0 + 5.6 s, 5.1 + 2.0 s, 267.1 + 141.5 s, closing 7.8 s). Each the app's first image after the install, thermal status 0 at the start |
 | Quality vs PyTorch | all-fp32 upstream pipeline, same noise, 3 prompts, through this app's Generate path: Galaxy S26 106.84 / 74.02 / 72.57 dB PSNR, SSIM ≥ 0.99999; Pixel 8a 106.76 / 70.92 / 73.09 dB, SSIM 1.0 |
+| Int8 setting (Galaxy S26) | the apple prompt in 132.6 s and 128.3 s against 201.2 s and 264.0 s at FP32, the settings taking turns in one session through the app's `BenchActivity` (measured 2026-10-31); 12 prompts, 40 yes/no questions about what each asks for, answered by Qwen3-VL-4B-Instruct from the image: 39 pass, as with the all-fp32 images; the images differ (PSNR 12.8–27.6 dB vs the all-fp32 image). Not measured on the Pixel 8a |
 
 ## Install
 
@@ -32,7 +36,7 @@ A 13.6 s video of this run (prompt, Generate, image; the middle sped up) is in t
    ./gradlew :app:installDebug
    ```
 
-2. Download the model folder (24 files, 13.7 GB) from
+2. Download the model folder (31 files, 16.1 GB: both settings) from
    [litert-community/iris-3b-Turbo-LiteRT](https://huggingface.co/litert-community/iris-3b-Turbo-LiteRT):
 
    ```bash
@@ -44,6 +48,17 @@ A 13.6 s video of this run (prompt, Generate, image; the middle sped up) is in t
    ```bash
    ./install_to_device.sh iris-3b-Turbo-LiteRT/model
    ```
+
+   or, for the int8 transformer setting (measured on a Galaxy S26 only):
+
+   ```bash
+   CONFIG=iris3b_config_dit_int8_fp16.json ./install_to_device.sh iris-3b-Turbo-LiteRT/model
+   ```
+
+   which copies that config as `iris3b_config.json` (the name the app reads) and its six int8 trunk
+   graphs instead of the six fp16-weight ones. If you switch settings later, the other setting's six
+   trunk graphs stay on the phone (it then holds 16.1 GB; `adb uninstall com.iris3b` removes
+   everything).
 
    The script reads the phone's free space first and stops when the files plus 3 GB do not fit. It
    streams each file straight into the app (`adb exec-in` + `run-as`), so nothing is staged on the
@@ -73,8 +88,10 @@ Each graph is compiled for its run and closed again, so only one graph's weights
 at a time. The weights are the checkpoint's bf16 values stored as fp16 constants (litert-torch's
 `full_fp16_recipe`), computed in fp32: half the size of fp32 graphs, with the image at
 70.92–106.84 dB PSNR (SSIM ≥ 0.99999) against the all-fp32 PyTorch image on both phones.
-Lower precision does not hold the image: fp16 GPU compute, int8 weights, or an int8 text encoder each
-change the fine detail of some prompts.
+Lower precision changes the image (fp16 GPU compute, int8 weights, or an int8 text encoder each do,
+for some prompts). On the 12 prompts tested, the int8 transformer setting kept what each asked for:
+its Galaxy S26 images answered 39 of the 40 yes/no questions like the all-fp32 images did, at
+12.8–27.6 dB PSNR against them (the same seed gives a different picture).
 
 Memory: on a Pixel 8a, free memory (MemAvailable) was 3.6–3.8 GiB before an image and
 288–444 MiB at its lowest during one, and Android's low-memory killer closed 116–169 other
