@@ -4,7 +4,7 @@ Model: d1-Omni-2B by Liquid AI, Inc. (huggingface.co/LiquidAI/d1-Omni-2B, revisi
 431f1d667de5afcc9b0c58b2d9c170a7b38b358b), licensed under the LFM Open License v1.0 (LICENSE,
 unchanged). The LiteRT graphs, the embedding table and the provider files the app loads come from
 the model repository litert-community/d1-Omni-2B-LiteRT, a converted and modified Derivative Work of
-that model whose NOTICE lists the changes. They are copied to the phone, not kept in this source tree.
+that model whose README lists the changes. They are copied to the phone, not kept in this source tree.
 
 The host is a Kotlin port of the Python code that ships with the model (same revision, LFM Open
 License v1.0), as the model repository's host (host/d1_host.py, host/d1_audio_features.py) runs it,
