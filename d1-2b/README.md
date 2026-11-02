@@ -18,8 +18,8 @@ Up to 16 questions share one sequence with the state; more questions take anothe
 - Model: [litert-community/d1-2B-LiteRT](https://huggingface.co/litert-community/d1-2B-LiteRT) (decision graphs per sequence length, picture towers per canvas, the embedding table, and the model's own `tokenizer.json`, `config.json` and `calibration.json` under `provider/`).
 - Upstream: [LiquidAI/d1-2B](https://huggingface.co/LiquidAI/d1-2B) revision `10e7671d`, LFM Open License v1.0.
 - Android: arm64-v8a, Android 8.0 / API 26 or newer; compile SDK 36, target SDK 35.
-- Runtime: LiteRT 2.3.0 `CompiledModel` (`litert` and `litert-gpu`) on the GPU at FP32 with constant tensor sharing (one copy of the weights on the GPU; without it the 2B graph did not finish compiling on a Pixel 11 Pro). Material Compose.
-- Memory: a phone with 16 GB runs the eight-signature file (all lengths in one 3.0 GB file, tested on a Pixel 11 Pro). On a phone with 12 GB that file does not fit: copy the per-length files you need instead (tested on a Galaxy S26); the app loads one at a time, and switching lengths compiles the next one. On a 12 GB phone the app refuses states longer than 4,096 tokens, with the reason on screen. Before it compiles anything the app reads MemAvailable: it needs 9.3 GB free for the eight-signature file and 6.3 GB for a per-length file (what the load took on those two phones, plus 0.8 GB), and 0.8 GB before the picture tower's first compile; with less it shows how much is free and loads nothing.
+- Runtime: LiteRT 2.3.0 `CompiledModel` (`litert` and `litert-gpu`) on the GPU at FP32 with constant tensor sharing (one copy of the weights on the GPU; without it, a test app on a Pixel 11 Pro peaked at 10.7 to 10.9 GiB compiling a per-length file, over its 8 GiB memory limit, and was killed). Material Compose.
+- Memory: a phone with 16 GB runs the eight-signature file (one 3.0 GB file with the seven length graphs and the graph that runs eight sequences of up to 128 tokens in one call, over one copy of the weights; tested on a Pixel 11 Pro). On a phone with 12 GB that file does not fit: copy the per-length files you need instead (tested on a Galaxy S26); the app loads one at a time, and switching lengths compiles the next one. On a 12 GB phone the app refuses states longer than 4,096 tokens, with the reason on screen. Before it compiles anything the app reads MemAvailable: it needs 9.3 GB free for the eight-signature file and 6.3 GB for a per-length file (what the load took on those two phones, plus 0.8 GB), and 0.8 GB before the picture tower's first compile; with less it shows how much is free and loads nothing.
 - No network permission: the app reads the model from its own folder on the phone.
 
 ## Download, build and install
@@ -41,7 +41,7 @@ scripts/push_model.sh "$HOME/Downloads/d1-2B-LiteRT"
 
 That is the set for a 16 GB phone. For a 12 GB phone, download the per-length files instead of `d1-2b_decide_multi8_fp16fc.tflite`, for example `d1-2b_decide_L256_fp16fc.tflite` and `d1-2b_decide_L512_fp16fc.tflite` (the Appointment text needs L256; the Delivery notice and the Water bill L512; the Order record L512 and L1024; the Photo L2048).
 
-Open the app once before the push: it creates its folder and says which files are missing. `scripts/push_model.sh` copies the provider files, the table and every `d1-2b_*.tflite` of the folder to `/sdcard/Android/data/com.d1_2b/files/model/` and checks each file's size on the phone. Then close the app and open it again: it compiles the decision graph on the GPU (the status line says when it is ready; about 25 s for the eight-signature file on a Pixel 11 Pro).
+Open the app once before the push: it creates its folder and says which files are missing. `scripts/push_model.sh` copies the provider files, the table and every `d1-2b_*.tflite` of the folder to `/sdcard/Android/data/com.d1_2b/files/model/` and checks each file's size on the phone. Then close the app and open it again: it compiles the decision graph on the GPU (the status line says when it is ready; about 26 s for the eight-signature file on a Pixel 11 Pro).
 
 ## External files
 
@@ -51,7 +51,7 @@ Open the app once before the push: it creates its folder and says which files ar
 | `provider/config.json` | 2,903 | `ffdc4c99…1d6f332` | Special tokens, codes, the set size |
 | `provider/calibration.json` | 4,924 | `e5344644…d884d69` | Temperatures and the calibration tables of the answers |
 | `tables/embed_table.npy` | 524,288,128 | `e8d0c746…63fc07a` | The embedding rows, bfloat16 bits `[128000, 2048]` (looked up on the host) |
-| `d1-2b_decide_multi8_fp16fc.tflite` | 2,998,830,272 | `afeea7f2…a5845a1` | All lengths as signatures of one file (16 GB phones) |
+| `d1-2b_decide_multi8_fp16fc.tflite` | 2,998,830,272 | `afeea7f2…a5845a1` | The seven lengths and the eight-sequence graph as signatures of one file (16 GB phones) |
 | `d1-2b_decide_L128_fp16fc.tflite` | 2,934,923,056 | `51cb7b9a…727cd52` | Up to 128 tokens, one length per file (12 GB phones) |
 | `d1-2b_decide_L256_fp16fc.tflite` | 2,935,382,112 | `175147ab…20a0a84` | Up to 256 tokens |
 | `d1-2b_decide_L512_fp16fc.tflite` | 2,938,800,160 | `62dccd24…66d293c` | Up to 512 tokens |
@@ -114,9 +114,9 @@ python -B scripts/make_fixtures.py --repo /path/to/d1-2B-LiteRT --out /tmp/d1-fi
 ## Measured
 
 - **The Kotlin host against the model's Python host** (Apple M4 Max; the fixtures from `make_fixtures.py` on the GPU through Metal at FP32; `HostParityTest`): on 8 requests — the five examples, the appointment with its first question changed, a state with special-token text and a photo resized to 384 × 216 — the 9 sequences' token ids, state lengths, question tags and slot positions are identical, the pixel values of both pictures are identical, and the answers agree within 1.5e-6 on the options' probabilities (mean 9.8e-8 over 28 options), 5.0e-7 on P(found), and exactly on every span, value and box edge.
-- **The decision graph on the phones** (the conversion's device runs on the same files, a harness app on LiteRT 2.2.0, GPU at FP32 with constant tensor sharing; one graph call, from the input writes to the read-back of the output): Galaxy S26 (12 GB), the per-length files — 366.4 ms at L128, 645.7 ms at L256 (the tower at 24 × 24 patches 112.2 ms), compile 20.9 s at L256. Pixel 11 Pro (16 GB), the eight-signature file — 736.8 ms at L128, 1,047.0 ms at L256 (the tower 274.4 ms), all eight signatures compiled in 25.2 s.
+- **The decision graph on the phones** (the conversion's device runs on the shipped files and a seven-signature file of the same graphs, a harness app on LiteRT 2.2.0, GPU at FP32 with constant tensor sharing; one graph call, from the input writes to the read-back of the output): Galaxy S26 (12 GB), the per-length files — 366.4 ms at L128, 645.7 ms at L256 (the tower at 24 × 24 patches 112.2 ms), compile 20.9 s at L256. Pixel 11 Pro (16 GB) — 736.8 ms at L128 and 1,047.0 ms at L256 on the seven-signature file, which gives the same outputs as the eight-signature file; the tower 274.4 ms; the eight-signature file compiled all eight signatures in 25.2 s.
 
-Not measured in this README: the app's own times (the status line gives them for each call), states over 256 tokens on the phones, other phones.
+Not measured in this README: the app's own times (the status line gives them for each call) and other phones. On the Galaxy S26 the app ran only the 256-token file.
 
 ## Files
 
