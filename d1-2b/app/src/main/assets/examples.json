@@ -1,0 +1,303 @@
+{
+  "examples": [
+    {
+      "id": "appointment",
+      "title": "Appointment text",
+      "state": "Bright Smile Dental: Hi Sam, your cleaning has moved from Tuesday, November 10, 2026 to Thursday, November 12, 2026 at 3:30 pm. The $40 deposit you paid on October 28, 2026 stays on file; the remaining $85 is due at the visit.",
+      "questions": {
+        "when": {
+          "type": "date",
+          "instructions": "When is the appointment now?"
+        },
+        "time": {
+          "type": "text",
+          "instructions": "At what time is it?"
+        },
+        "left": {
+          "type": "number",
+          "instructions": "How much is left to pay?"
+        },
+        "address": {
+          "type": "text",
+          "instructions": "What is the clinic's street address?"
+        },
+        "calendar": {
+          "type": "choice",
+          "instructions": "What should I do with my calendar entry?",
+          "criteria": {
+            "keep": "Keep it as it is",
+            "move": "Move it to the new date",
+            "delete": "Delete it"
+          }
+        }
+      }
+    },
+    {
+      "id": "delivery",
+      "title": "Delivery notice",
+      "state": "Northwind Books: we could not deliver your parcel (order NW-58213) on Monday, November 2, 2026. We will try again on Wednesday, November 4, 2026 between 9 am and 1 pm, or you can collect it from the Elm Street Post Office. A customs fee of £4.80 is due on delivery.",
+      "questions": {
+        "next_try": {
+          "type": "date",
+          "instructions": "When will they try to deliver again?"
+        },
+        "window": {
+          "type": "text",
+          "instructions": "Between what times?"
+        },
+        "fee": {
+          "type": "number",
+          "instructions": "How much do I have to pay?"
+        },
+        "pickup": {
+          "type": "text",
+          "instructions": "Where can I collect it?"
+        },
+        "order": {
+          "type": "text",
+          "instructions": "What is the order number?"
+        },
+        "tracking": {
+          "type": "text",
+          "instructions": "What is the tracking number?"
+        }
+      }
+    },
+    {
+      "id": "bill",
+      "title": "Water bill",
+      "state": "Northside Water - October 2026 bill for account 7731-0042. Amount due: $86.40 by November 20, 2026. A late fee of $12.00 applies after that date. We received your last payment of $79.15 on October 18, 2026. Questions? Call 415-555-0199.",
+      "questions": {
+        "due": {
+          "type": "date",
+          "instructions": "By when must it be paid?"
+        },
+        "amount": {
+          "type": "number",
+          "instructions": "How much is due?"
+        },
+        "late_fee": {
+          "type": "number",
+          "instructions": "How much is the late fee?"
+        },
+        "account": {
+          "type": "text",
+          "instructions": "What is the account number?"
+        },
+        "last_paid": {
+          "type": "date",
+          "instructions": "When was the last payment received?"
+        },
+        "meter": {
+          "type": "number",
+          "instructions": "What is the meter reading?"
+        }
+      }
+    },
+    {
+      "id": "order",
+      "title": "Order record (JSON)",
+      "state": {
+        "order_id": "SO-2026-00981",
+        "placed_at": "2026-08-03T14:22:05Z",
+        "customer": {
+          "name": "Ines Moravec",
+          "email": "ines.moravec@example.net",
+          "tier": "gold"
+        },
+        "shipping": {
+          "method": "standard",
+          "address": "17 Quarry Lane, Brindlemoor, BX4 9QT",
+          "requested_date": "2026-08-07"
+        },
+        "items": [
+          {
+            "sku": "TB-110",
+            "name": "Trail bottle 750 ml",
+            "qty": 2,
+            "unit_price": 18.5
+          },
+          {
+            "sku": "HK-204",
+            "name": "Head torch, 300 lumen",
+            "qty": 1,
+            "unit_price": 42.0
+          },
+          {
+            "sku": "SK-031",
+            "name": "Merino socks (pair)",
+            "qty": 3,
+            "unit_price": 14.25
+          },
+          {
+            "sku": "MP-900",
+            "name": "Folding map case",
+            "qty": 1,
+            "unit_price": 9.99
+          }
+        ],
+        "discount_code": "SUMMIT10",
+        "discount_pct": 10,
+        "subtotal": 131.74,
+        "shipping_fee": 4.95,
+        "total": 123.52,
+        "currency": "GBP",
+        "status": "paid",
+        "notes": "Leave with the neighbour at number 19 if out."
+      },
+      "questions": {
+        "customer": {
+          "type": "text",
+          "instructions": "Who placed the order?"
+        },
+        "email": {
+          "type": "text",
+          "instructions": "What is the customer's email address?"
+        },
+        "order_id": {
+          "type": "text",
+          "instructions": "What is the order number?"
+        },
+        "address": {
+          "type": "text",
+          "instructions": "Where is the order to be delivered?"
+        },
+        "total": {
+          "type": "number",
+          "instructions": "What is the order total?"
+        },
+        "fee": {
+          "type": "number",
+          "instructions": "How much is the shipping fee?"
+        },
+        "torch_price": {
+          "type": "number",
+          "instructions": "What is the unit price of the head torch?"
+        },
+        "discount": {
+          "type": "number",
+          "instructions": "What discount percentage was applied?"
+        },
+        "refund": {
+          "type": "number",
+          "instructions": "How much was refunded?"
+        },
+        "placed": {
+          "type": "date",
+          "instructions": "When was the order placed?"
+        },
+        "requested": {
+          "type": "date",
+          "instructions": "On what date does the customer want the delivery?"
+        },
+        "shipped": {
+          "type": "date",
+          "instructions": "On what date was the order shipped?"
+        },
+        "products_n": {
+          "type": "number",
+          "instructions": "How many different products are in the order?",
+          "range": [
+            0,
+            10
+          ],
+          "step": 1
+        },
+        "units_n": {
+          "type": "number",
+          "instructions": "How many units were ordered in total?",
+          "range": [
+            0,
+            20
+          ],
+          "step": 1
+        },
+        "products": {
+          "type": "choice",
+          "multiple": true,
+          "instructions": "Which products are in the order?",
+          "criteria": {
+            "bottle": "A water bottle",
+            "torch": "A head torch",
+            "socks": "Socks",
+            "tent": "A tent",
+            "stove": "A camping stove",
+            "map_case": "A map case"
+          }
+        },
+        "paid": {
+          "type": "noul",
+          "instructions": "Has the order been paid?"
+        },
+        "method": {
+          "type": "choice",
+          "instructions": "Which shipping method was chosen?",
+          "criteria": {
+            "standard": "Standard delivery",
+            "express": "Express delivery",
+            "pickup": "Store pickup"
+          }
+        },
+        "tier": {
+          "type": "score",
+          "instructions": "What loyalty tier is the customer in?",
+          "criteria": [
+            "bronze",
+            "silver",
+            "gold",
+            "platinum"
+          ]
+        }
+      }
+    },
+    {
+      "id": "photo",
+      "title": "Photo",
+      "state": null,
+      "picture": "bike.png",
+      "questions": {
+        "bicycle": {
+          "type": "box",
+          "instructions": "Where is the bicycle?"
+        },
+        "saddle": {
+          "type": "box",
+          "instructions": "Where is the bicycle's saddle?"
+        },
+        "wheels": {
+          "type": "boxes",
+          "instructions": "Every wheel of the bicycle."
+        },
+        "cars": {
+          "type": "boxes",
+          "instructions": "Every car."
+        },
+        "bicycles_n": {
+          "type": "number",
+          "instructions": "How many bicycles are there?",
+          "range": [
+            0,
+            10
+          ],
+          "step": 1
+        },
+        "seen": {
+          "type": "choice",
+          "multiple": true,
+          "instructions": "Which of these are in the photo?",
+          "criteria": {
+            "bicycle": "A bicycle",
+            "snow": "Snow",
+            "pole": "A pole",
+            "car": "A car",
+            "person": "A person"
+          }
+        },
+        "snow": {
+          "type": "noul",
+          "instructions": "Is there snow on the ground?"
+        }
+      }
+    }
+  ]
+}
