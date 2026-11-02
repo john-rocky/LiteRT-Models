@@ -1,0 +1,14 @@
+.gradle/
+.kotlin/
+.local/
+build/
+app/build/
+local.properties
+.gradle-user-home/
+.DS_Store
+*.iml
+.idea/
+# The model files are downloaded and copied to the phone (scripts/push_model.sh), never committed;
+# the parity fixtures are made by scripts/make_fixtures.py.
+*.tflite
+*.npy

@@ -1,0 +1,36 @@
+d1-2B Decide Android sample
+
+Model: d1-2B by Liquid AI, Inc. (huggingface.co/LiquidAI/d1-2B, revision
+10e7671d44e4b37700020b1eed3f594c5f2af0b4), licensed under the LFM Open License v1.0 (LICENSE,
+unchanged). The LiteRT graphs, the embedding table and the provider files the app loads come from
+the model repository litert-community/d1-2B-LiteRT, a converted and modified Derivative Work of that
+model whose NOTICE lists the changes. They are copied to the phone, not kept in this source tree.
+
+The host is a Kotlin port of the Python code that ships with the model (same revision, LFM Open
+License v1.0), so the app builds the same prompts and reads the same answers as the model's own
+code; each ported file carries a notice that it was ported and changed:
+- Prompt.kt: prompt.py, grid.py and parts of attention.py
+- Answers.kt: api.py, box.py, calibration.py, json_spans.py and parts of pointer.py
+- Parsing.kt: parsing.py
+- Host.kt: the sequence packing of attention.py, the slot reading of runner.py, the pointer reads
+  of pointer.py and the readouts of prompt.py
+- Pictures.kt: smart_resize of the model's image processor (image_processing_lfm3_vl.py)
+Changes: Kotlin instead of Python; one request per call with at most one picture; the language
+model and the picture tower run as LiteRT graphs on the GPU at FP32 (the conversion in
+litert-community/d1-2B-LiteRT), with the embedding rows looked up on the host and the output rows
+read only for each question's options.
+
+Tokenizer.kt implements byte-level BPE as the Hugging Face tokenizers library does (Apache License
+2.0, licenses/Tokenizers-APACHE-2.0.txt): https://github.com/huggingface/tokenizers
+
+Pictures.kt ports PyTorch's antialiased bicubic resize of uint8 images
+(aten/src/ATen/native/cpu/UpSampleKernel.cpp), BSD-3-Clause (licenses/PyTorch-BSD-3-Clause.txt):
+https://github.com/pytorch/pytorch
+
+app/src/main/assets/bike.png: "Bike on a snowy street in Quebec City at night" by Wilfredor,
+CC0 1.0 (public domain dedication), Wikimedia Commons:
+https://commons.wikimedia.org/wiki/File:Bike_on_a_snowy_street_in_Quebec_City_at_night.jpg
+Resized to 384 x 256 pixels.
+
+The texts, the JSON record and the questions of app/src/main/assets/examples.json were written for
+this sample; their people, businesses, addresses and numbers are invented.
