@@ -1,0 +1,73 @@
+d1-Omni-2B Decide Android sample
+
+Model: d1-Omni-2B by Liquid AI, Inc. (huggingface.co/LiquidAI/d1-Omni-2B, revision
+431f1d667de5afcc9b0c58b2d9c170a7b38b358b), licensed under the LFM Open License v1.0 (LICENSE,
+unchanged). The LiteRT graphs, the embedding table and the provider files the app loads come from
+the model repository litert-community/d1-Omni-2B-LiteRT, a converted and modified Derivative Work of
+that model whose NOTICE lists the changes. They are copied to the phone, not kept in this source tree.
+
+The host is a Kotlin port of the Python code that ships with the model (same revision, LFM Open
+License v1.0), as the model repository's host (host/d1_host.py, host/d1_audio_features.py) runs it,
+so the app builds the same prompts, the same clip features and reads the same answers as the
+model's own code; each ported file carries a notice that it was ported and changed:
+- Prompt.kt: prompt.py, grid.py and parts of attention.py and media.py (a spoken question's place)
+- Answers.kt: api.py, box.py, calibration.py, json_spans.py and parts of pointer.py
+- Parsing.kt: parsing.py
+- Host.kt: the sequence packing of attention.py, the slot reading of runner.py, the pointer reads
+  of pointer.py, the readouts of prompt.py and the media markup of media.Reader
+- Pictures.kt: smart_resize of the model's image processor (image_processing_lfm3_vl.py)
+- Audio.kt: media.read_audio and media.resampled, and the vendored Lfm3OmniFeatureExtractor
+Changes: Kotlin instead of Python; one request per call with at most one picture; WAV files are read
+as 16-bit PCM only; a clip at a rate whose resampling filter would exceed 1,000,000 values is refused;
+the language model, the picture tower and the audio encoder run as LiteRT graphs (the conversion in
+litert-community/d1-Omni-2B-LiteRT), on the GPU at FP32 or, for the decision graph on a Galaxy S26,
+on its NPU, with the embedding rows looked up on the host and the output rows read only for each
+question's options.
+
+Audio.kt follows the float32 arithmetic of the libraries the provider's code runs on:
+- the mel filters of transformers' audio_utils.mel_filter_bank (Apache License 2.0,
+  licenses/Transformers-APACHE-2.0.txt): https://github.com/huggingface/transformers
+- the real FFT of pocketfft as PyTorch runs it (BSD-3-Clause, Copyright (C) 2010-2019
+  Max-Planck-Society, licenses/pocketfft-BSD-3-Clause.txt): https://gitlab.mpcdf.mpg.de/mtr/pocketfft
+- the float32 sine, cosine and base-10 logarithm of SLEEF (Boost Software License 1.0,
+  licenses/SLEEF-BSL-1.0.txt): https://github.com/shibatch/sleef
+- PyTorch's periodic Hann window and strided convolution (BSD-3-Clause,
+  licenses/PyTorch-BSD-3-Clause.txt): https://github.com/pytorch/pytorch
+
+Tokenizer.kt implements byte-level BPE as the Hugging Face tokenizers library does (Apache License
+2.0, licenses/Tokenizers-APACHE-2.0.txt): https://github.com/huggingface/tokenizers
+
+Pictures.kt ports PyTorch's antialiased bicubic resize of uint8 images
+(aten/src/ATen/native/cpu/UpSampleKernel.cpp), BSD-3-Clause (licenses/PyTorch-BSD-3-Clause.txt):
+https://github.com/pytorch/pytorch
+
+Recorder.kt records the microphone at 16 kHz mono 16-bit PCM and plays clips back, adapted from this
+repository's d1omni sample (D1Recorder.kt, D1AudioPlayer.kt).
+
+app/src/main/assets/beeps.wav: the recording of the source model card (three 880 Hz beeps over quiet
+noise, made by the card's own numpy code), written as a 16 kHz 16-bit PCM WAV file by
+scripts/make_beeps.py.
+
+app/src/main/assets/q_beeps.wav and q_speech.wav: speech synthesised with Kokoro-82M
+(hexgrad/Kokoro-82M, revision f3ff3571791e39611d31c381e3a41a3af07b4987, Apache License 2.0,
+licenses/Kokoro-82M-APACHE-2.0.txt) in the voice af_heart, from the questions "How many beeps are
+there?" and "Does someone speak in the recording?"; copied unchanged from the model repository's
+check set (fixtures/media/).
+
+app/src/main/assets/shop_voicemail.wav: a voicemail to an invented bike shop, speech synthesised with
+Kokoro-82M (same revision and license) in the voice am_adam, from a text written for this sample ("Hi, I picked
+up my bike from you on Friday, and I was charged twice on my card. Could you refund one of the payments?
+Thanks."); 16 kHz 16-bit PCM, 6.81 s.
+
+app/src/main/assets/shop_voicemail_radio.wav: another voicemail synthesised with Kokoro-82M (same revision and
+license) in the voice af_sarah, from a text written for this sample ("Hello, the back brake on my bike has
+stopped working. Could I bring it in on Monday morning? Please call me back."), mixed at the same loudness with
+17.8 s to 26.4 s of the song "Frozen Whispers" by szegvari (https://freesound.org/people/szegvari/sounds/732895/,
+Creative Commons 0 1.0 https://creativecommons.org/publicdomain/zero/1.0/; its page says it was generated with
+Suno AI), cut from the sound's HQ MP3 preview; the mix then passed as a whole through a telephone band (300 Hz
+to 3,400 Hz, resampled to 8 kHz and back to 16 kHz); 16 kHz 16-bit PCM, 8.6 s.
+
+The shop, its record and the callers of the voicemail examples are invented. The questions and states of
+app/src/main/assets/examples.json were written for this sample.
+
+Gradle wrapper files retain their upstream Apache License 2.0 headers.
