@@ -1,0 +1,45 @@
+{
+  "examples": [
+    {
+      "id": "beeps",
+      "title": "Three beeps",
+      "state": null,
+      "clips": ["beeps.wav"],
+      "questions": {
+        "beeps": {"type": "number", "instructions": "How many beeps are there?", "range": [0, 10], "step": 1},
+        "speech": {"type": "noul", "instructions": "Does someone speak in the recording?"}
+      }
+    },
+    {
+      "id": "beeps_spoken",
+      "title": "Asked aloud",
+      "state": null,
+      "clips": ["beeps.wav"],
+      "questions": {
+        "beeps": {"type": "number", "instructions": {"type": "audio", "path": "q_beeps.wav"}, "range": [0, 10], "step": 1},
+        "speech": {"type": "noul", "instructions": {"type": "audio", "path": "q_speech.wav"}}
+      }
+    },
+    {
+      "id": "shop_voicemail",
+      "title": "Voicemail",
+      "state": {"shop": "Spoke and Chain Cycles", "open": "Tuesday to Saturday, 9 am to 6 pm", "closed": ["Sunday", "Monday"], "teams": {"workshop": "repairs and servicing", "sales": "selling bikes and parts", "billing": "payments and refunds"}},
+      "clips": ["shop_voicemail.wav"],
+      "questions": {
+        "team": {"type": "choice", "instructions": "Which team should handle this voicemail?", "criteria": {"workshop": "Repairs and servicing", "sales": "Selling bikes and parts", "billing": "Payments and refunds"}},
+        "callback": {"type": "noul", "instructions": "Does the caller ask to be called back?"},
+        "closed": {"type": "noul", "instructions": "Does the caller want to come in on a day when the shop is closed?"}
+      }
+    },
+    {
+      "id": "shop_voicemail_radio",
+      "title": "Voicemail, radio on",
+      "state": {"shop": "Spoke and Chain Cycles", "open": "Tuesday to Saturday, 9 am to 6 pm", "closed": ["Sunday", "Monday"], "teams": {"workshop": "repairs and servicing", "sales": "selling bikes and parts", "billing": "payments and refunds"}},
+      "clips": ["shop_voicemail_radio.wav"],
+      "questions": {
+        "team": {"type": "choice", "instructions": "Which team should handle this voicemail?", "criteria": {"workshop": "Repairs and servicing", "sales": "Selling bikes and parts", "billing": "Payments and refunds"}},
+        "callback": {"type": "noul", "instructions": "Does the caller ask to be called back?"}
+      }
+    }
+  ]
+}
