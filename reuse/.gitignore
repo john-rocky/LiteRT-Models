@@ -1,0 +1,7 @@
+.gradle/
+.kotlin/
+.idea/
+build/
+app/build/
+local.properties
+app/src/main/assets/*.tflite
