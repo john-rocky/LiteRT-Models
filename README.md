@@ -52,9 +52,9 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Places365 ResNet18](#places365-resnet18-scene-recognition) | Scene recognition | Pixel 8a | ~2 ms | [🤗 HF](https://huggingface.co/litert-community/Places365-ResNet18-LiteRT) |
 | [DINOv2 ViT-S/14](#dinov2-vit-s14) | Dense features (PCA visualization) | Galaxy S26 | 53.58 ms (NPU 86.00) | [🤗 HF](https://huggingface.co/litert-community/DINOv2-ViT-S14-LiteRT) |
 | [DSINE](#dsine) | Surface normal estimation |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/dsine.tflite) |
-| [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc) | Speech recognition | Pixel 8a | ~0.4 s per 16 s window | [🤗 HF](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT) |
+| [Parakeet (FastConformer-CTC)](#parakeet-fastconformer-ctc) | Speech recognition | Pixel 8a | ~0.4 s per 16 s window | [scripts](parakeet/) |
 | [Whisper-tiny](#whisper-tiny) | Speech recognition |  |  | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v2/whisper_encoder.tflite) |
-| [wav2vec2-CTC](#wav2vec2-ctc-fully-gpu-single-pass) | Speech recognition (CTC, single pass) | Pixel 8a | ~22 ms per 10 s clip | [🤗 HF](https://huggingface.co/litert-community/wav2vec2-base-960h-CTC-LiteRT) |
+| [wav2vec2-CTC](#wav2vec2-ctc-fully-gpu-single-pass) | Speech recognition (CTC, single pass) | Pixel 8a | ~22 ms per 10 s clip | [scripts](asr/) |
 | [Kokoro-82M](#kokoro-82m) | Text-to-speech (EN / JA) | Pixel 8a (CPU) | RTF 0.60 | [🤗 HF](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_fp16.onnx) |
 | [Matcha-TTS](#matcha-tts) | Text-to-speech (FFT-free) | Pixel 8a | RTF ~0.8 | [🤗 HF](https://huggingface.co/litert-community/Matcha-TTS) |
 | [Dia2-1B](#dia2-1b-dialogue) | Dialogue text-to-speech | Pixel 8a (CPU) | ~190 s per 4 s utterance | [scripts](dia2/) |
@@ -897,7 +897,7 @@ Converted via **litert-torch**: RelPositionMultiHeadAttention re-authored as man
 
 | Model | Download Link | Size | Input | Output | API |
 | ----- | ------------- | ---- | ----- | ------ | --- |
-| Encoder + CTC | [parakeet_ship_fp16.tflite](https://huggingface.co/litert-community/Parakeet-tdt-ctc-110m-LiteRT) | 226 MB | mel [1, 80, 1601] + frame mask [1, 201] | CTC logits [1, 201, 1025] | CompiledModel GPU |
+| Encoder + CTC | `parakeet_ship_fp16.tflite` (build: [`parakeet/scripts/build_parakeet_ship.py`](parakeet/scripts/build_parakeet_ship.py); not on Hugging Face) | 226 MB | mel [1, 80, 1601] + frame mask [1, 201] | CTC logits [1, 201, 1025] | CompiledModel GPU |
 
 **Preprocessing**: 16 kHz mono → NeMo log-mel (80 bins, preemphasis 0.97, 512-pt FFT, slaney filterbank, per-feature norm), computed in Kotlin. Audio up to 16 s is padded to the fixed window.
 
@@ -934,7 +934,7 @@ Re-authorings (all numerically-equivalent): GELU → tanh-GELU; feature-extracto
 
 | Model | Download Link | Size | Input | Output | API |
 | ----- | ------------- | ---- | ----- | ------ | --- |
-| wav2vec2-CTC | [w2v2_ctc_fp16.tflite](https://huggingface.co/litert-community/wav2vec2-base-960h-CTC-LiteRT) | 190 MB FP16 | waveform [1, 160000] @ 16 kHz | logits [1, 499, 32] | CompiledModel GPU |
+| wav2vec2-CTC | `w2v2_ctc_fp16.tflite` (build: [`asr/scripts/build_w2v2_ctc.py`](asr/scripts/build_w2v2_ctc.py); not on Hugging Face, where [litert-community/wav2vec2-base-960h-LiteRT](https://huggingface.co/litert-community/wav2vec2-base-960h-LiteRT) holds the 2-graph 16 s build) | 190 MB FP16 | waveform [1, 160000] @ 16 kHz | logits [1, 499, 32] | CompiledModel GPU |
 
 **Preprocessing**: mono 16 kHz, zero-mean / unit-variance, padded/truncated to 10 s. **Decoding**: CTC greedy (argmax per frame → collapse repeats → drop blanks) in Kotlin.
 
