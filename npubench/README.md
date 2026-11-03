@@ -54,6 +54,18 @@ ssdlite before we pinned it. `@FixMethodOrder` alone does not fix it: pinning th
 first corrected the NPU and made the GPU 29% slower instead. The `d01`–`d03` methods
 exist to measure that drift directly.
 
+**Read every output back, warm-ups included.** On the GPU `run()` returns before the
+work is done (on the CPU it returns when done; the NPU was not checked), so
+`NpuBenchmark` reads all outputs back after every warm-up and every timed call. A
+warm-up loop without the read-back leaves forwards queued, and the first timed call
+pays for them: with the 1 s graphs of the `reuse/` speech model (15,102–56,562 nodes)
+on the GPU (LiteRT 2.2.0, 5 warm-ups), the first timed call took as long as about 6
+forwards on a Pixel 11 Pro, 4 on a Galaxy S26 and 1.1–1.5 on a Pixel 8a. If your own
+harness skips the read-back, time at least 2 iterations and quote the second.
+
 ⛔ **A run that produces output has not necessarily used the NPU.** LiteRT logs a
 warning and continues on CPU when the dispatch library directory is missing. Judge from
-`NPU accelerator registered.` in logcat.
+`Replacing N out of M node(s) with delegate (DispatchDelegate)` in logcat, with N
+equal to M. `NPU accelerator registered.` is not enough: it also appears on a Pixel 11
+Pro, which has no Qualcomm NPU, and on a Galaxy S26 run whose NPU compile had failed
+and whose 15,102 nodes all went to XNNPACK.

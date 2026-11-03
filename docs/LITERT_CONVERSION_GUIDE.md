@@ -1811,3 +1811,60 @@ writes a kill as `Reclaim '<package>' (<pid>) … oom_score_adj …`, followed b
 (pid N) has died`; a check that looks only for `lowmemorykiller` or `Kill '<package>'` misses it and reports a
 timeout instead. Evidence: `ROUND1.md` §2, `ROUND2.md` §1–2, `ROUND5.md`,
 `device/r5_autoplay_long.logcat_all_grep.txt`.
+
+## 2026-11-03 追記 — NVIDIA NemotronLabs RE-USE (universal speech enhancement, 30 bidirectional Mamba blocks) on phone GPUs and the Galaxy S26 NPU
+
+Model repo: `litert-community/NVIDIA-NemotronLabs-RE-USE-LiteRT` (fixed 2 s float32 graphs at 16 kHz:
+`reuse_16k_2s_fp32.tflite`, 91,014 ops, and `reuse_16k_2s_fastload_fp32.tflite`, 33,114 ops); Android sample `reuse/`
+(LiteRT 2.2.0, CompiledModel GPU).
+
+**Mamba scans: the scan form decides the speed.** All three forms below are exact rewrites of the same scan (each
+within 2.29e-5 of the PyTorch reference scan). A Hillis-Steele (log-depth parallel prefix) scan is bandwidth-bound; a
+time-sequential scan or a two-pass scan over blocks of 8 steps moves far less memory. 1 s graphs at the GPU's default
+precision; phones: the 2nd of 2 timed calls after 5 warm-ups (the 1st also pays for queued warm-ups, see
+`npubench/README.md`); Mac: the median of 7 runs after a first run; ×N = speed-up over Hillis-Steele:
+
+| scan form (time axis / frequency axis) | Galaxy S26 | Pixel 11 Pro | Pixel 8a | Mac Studio M4 Max (Metal) |
+|---|---|---|---|---|
+| Hillis-Steele / Hillis-Steele | 10,446 ms | 16,385 ms | 17,785 ms | 1,598.7 ms |
+| blocks of 8 / blocks of 8 (the fastload file's form) | 2,974 ms (×3.51) | 4,157 ms (×3.94) | 5,007 ms (×3.55) | 460.3 ms (×3.47) |
+| sequential / blocks of 8 (the main file's form) | 2,076 ms (×5.03) | 3,533 ms (×4.64) | 3,978 ms (×4.47) | 399.8 ms (×4.00) |
+
+On Metal keep the block at 8 steps or fewer: ML Drift fuses the first pass of a 16-step block (the in-block recurrence
+h ← e·h + b over 16 steps) into one kernel with 33 buffers, and the compile fails
+(`'buffer' attribute parameter is out of bounds: must be between 0 and 30`); the OpenCL argument limit on the phones
+was not checked. The sequential form costs ops and load time (2 s graphs: 91,014 vs 33,114 ops; in npubench the
+Galaxy S26 loads `reuse_16k_2s_fp32.tflite` in 95–99 s and `reuse_16k_2s_fastload_fp32.tflite` in 15 s), so the repo
+ships the blocks-of-8 file next to the main one as the fast-loading choice.
+
+**A graph that compiles whole on the desktop GPU can fail on Android before the GPU sees it.** LiteRT 2.2.0 prepares
+every node with the builtin CPU kernels before the GPU delegate takes them (on Android and on the Mac alike), and only
+mobile builds (Android and iOS, `IsMobilePlatform()`) then refuse a dilated convolution whose float32 im2col buffer
+reaches 1 GiB: `Dilated im2col buffer size overflowed.` → `Node number 137 (CONV_2D) failed to prepare.` →
+`Failed to create compiled model` (RE-USE 2 s: dilation (8, 1), input [1, 403, 323, 256], filter [64, 3, 3, 256],
+1,144 MiB; Galaxy S26 and Pixel 11 Pro). The macOS wheel never runs that check. Before a device run, compute
+out_h·out_w·kh·kw·C_in·4 B for every dilated CONV_2D in the flatbuffer. Over 1 GiB, run the conv over output-row
+tiles: each tile takes the input rows it needs (including the extra rows the dilated kernel reaches) and the conv's
+own padding, and its output is cropped to its own rows before the tiles are concatenated. Here both the dilation-8
+conv (1,144 MiB) and the dilation-4 conv (858 MiB) were split in two, to stay near the 576 MiB the phones had already
+prepared: +12 ops, no TRANSPOSE or PAD, and the Metal output stayed bit-identical. A whole-tensor PAD before the tiles
+made litert-torch 0.9.4 add 6 TRANSPOSEs (on a graph this large its layout pass runs greedily and has no NHWC rule for
+`constant_pad_nd`), and splitting C_in changes the fp16 sum order. A shorter chunk also passes (1 s: 576 MiB).
+
+**Qualcomm HTP (NPU): clamp EXP arguments.** The HTP runs this float graph in fp16, and its EXP returns wrong values
+with no error and a normal `Replacing 1 out of 1 node(s) with delegate (DispatchDelegate)` line. On a Galaxy S26
+(QAIRT 2.47, compiled ahead of time with `--qualcomm_optimization_level=O2`), one block's EXP got 4,616,192
+arguments: all 492 that fell in [−186.625, −88.125] came back NaN, −Inf or a negative finite value instead of about 0,
+while every argument above that band and the 16 seen between −251.875 and −189.75 came back right, so it is a band,
+not a floor (Mamba's block decay exp(λA) reaches about −600 in this network). Clamp every EXP argument, not only the
+decay's: `exp(max(x, −16))` changes exp(x) by less than 1.2e-7 (in PyTorch the clamped block's output stays within
+9.5e-7 of the unclamped one) and removed the NaNs on the phone.
+
+**GPU program cache: measure it before turning it on.** With `CompiledModel.GpuOptions` serialization
+(`serializationDir`, `modelCacheKey`, `serializeProgramCache = true`) on LiteRT 2.2.0 and 2.3.0, the 91,014-op graph's
+first load wrote `<modelCacheKey>_mldrift_program_cache.bin`, about 167 MB. The second load, in a new process, logged
+`Deserialization failed: DATA_LOSS`, compiled again, appended about 167 MB more and took longer than the first load.
+On 2.2.0 it also took longer than a load with the cache off (in the sample app: Galaxy S26 97.5 s and Pixel 11 Pro
+160.9 s, against 68.9 s and 73.6 s). Judge a cache by that log line and the load time, not by the file being there.
+[LiteRT-LM #4178](https://github.com/google-ai-edge/LiteRT-LM/issues/4178) traces the same log line on LLM graphs to
+the table limit of ML Drift's flatbuffers Verifier; this graph was not checked against that cause.
