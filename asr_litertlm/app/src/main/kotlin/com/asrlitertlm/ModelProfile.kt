@@ -74,7 +74,7 @@ data class ModelProfile(
         displayName = "Fun-ASR-Nano-2512",
         fileName = "Fun-ASR-Nano-2512.litertlm",
         hubRepo = "litert-community/Fun-ASR-Nano-2512",
-        hubBytes = 1_255_894_736L,
+        hubBytes = 1_255_948_288L,
         license = "Apache-2.0",
         languages = "zh / en / ja",
         answerFormat = AnswerFormat.PLAIN,

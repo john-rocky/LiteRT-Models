@@ -13,7 +13,7 @@ microphone and nothing else (no network permission).
 |---|---|---|---|---|---|
 | Qwen3-ASR-1.7B | [litert-community/Qwen3-ASR-1.7B](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) | `Qwen3-ASR-1.7B.litertlm` | 2,693,064,192 B | Apache-2.0 | 30 languages (the card scores English, Mandarin, Japanese) |
 | Qwen3-ASR-1.7B-15s | [litert-community/Qwen3-ASR-1.7B](https://huggingface.co/litert-community/Qwen3-ASR-1.7B) | `Qwen3-ASR-1.7B-15s.litertlm` | 2,701,438,880 B | Apache-2.0 | the same as Qwen3-ASR-1.7B |
-| Fun-ASR-Nano-2512 | [litert-community/Fun-ASR-Nano-2512](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) | `Fun-ASR-Nano-2512.litertlm` | 1,255,894,736 B | Apache-2.0 | Chinese, English, Japanese |
+| Fun-ASR-Nano-2512 | [litert-community/Fun-ASR-Nano-2512](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) | `Fun-ASR-Nano-2512.litertlm` | 1,255,948,288 B | Apache-2.0 | Chinese, English, Japanese |
 | Confucius4-R2T2 | [mlboydaisuke/Confucius4-R2T2-LiteRT](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT) | `Confucius4-R2T2.litertlm` | 2,693,064,192 B | [NetEase Youdao Model Use License Agreement](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT/blob/main/MODEL_LICENSE) | Chinese, English; a fine-tune of Qwen3-ASR-1.7B |
 
 Each file holds the audio encoder, the language model, the tokenizer and the prompt template. The two
@@ -21,6 +21,8 @@ Qwen3-ASR-1.7B files hold the same weights; `Qwen3-ASR-1.7B-15s.litertlm` encode
 instead of one 30 s window (see [Microphone](#microphone)). Read
 the Confucius4-R2T2 agreement before you use that file: it has user-count and revenue thresholds
 (clause 2.2) and limits on using the model to improve other models (clause 3.4).
+
+Since 2026-10-30, `Fun-ASR-Nano-2512.litertlm` on the Hub keeps its weights in TFLiteWeights sections at the end of the file (LiteRT's external weights) instead of inside the model graphs. The app's runtime, `litertlm-android` 0.17.1, loads this file: on a Pixel 11 Pro (Android 17, 2026-11-03) the three clips gave the same text as the Mac CPU, apart from one clip's punctuation and letter case, with the language model on the CPU and on the GPU. The Galaxy S26 numbers in this README were measured with the earlier file (1,255,894,736 B, the same weights inside the graphs), which stays at revision [`a5ab745`](https://huggingface.co/litert-community/Fun-ASR-Nano-2512/tree/a5ab745). Do not move `litertlmVersion` to 0.18.0 or 0.18.1 with this file: the model card reports that the Android GPU engine of those two builds crashes on files with external weights ([LiteRT-LM #3986](https://github.com/google-ai-edge/LiteRT-LM/issues/3986)).
 
 ## Run it in 5 lines
 
