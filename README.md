@@ -79,6 +79,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Nemotron-3-Diarization](#nemotron-3-diarization-streaming-sortformer-8-speakers) | Speaker diarization (streaming, up to 8 speakers) | Galaxy S26 | 171 ms per 0.72 s step (RTF 0.24, FP32) | [🤗 HF](https://huggingface.co/litert-community/Nemotron-3-Diarization-LiteRT) |
 | [CMGAN](#cmgan-noise-suppression) | Speech enhancement | Pixel 8a | ~20 ms per 2 s chunk | [🤗 HF](https://huggingface.co/litert-community) |
 | [RE-USE](#re-use-universal-speech-restoration) | Speech restoration (noise, reverb, clipping, band limit, codec) | Galaxy S26 | 2.448 s per second of audio (GPU) | [🤗 HF](https://huggingface.co/litert-community/NVIDIA-NemotronLabs-RE-USE-LiteRT) |
+| [RE-USE-laughter](#re-use-universal-speech-restoration) | Speech restoration that keeps laughter (RE-USE's laughter-preserving weights) | Galaxy S26 | 2.384 s per second of audio (GPU) | [🤗 HF](https://huggingface.co/litert-community/NVIDIA-NemotronLabs-RE-USE-laughter-LiteRT) |
 | [Basic Pitch](#basic-pitch-audio-to-midi) | Music transcription (audio → MIDI) | Pixel 8a | ~4.4 ms per 2 s window | [🤗 HF](https://huggingface.co/litert-community) |
 | [XFeat](#xfeat-local-features) | Image matching (local features) | Pixel 8a | ~0.4 ms per 640×480 image | [🤗 HF](https://huggingface.co/litert-community) |
 | [CLIPSeg](#clipseg) | Text-prompted segmentation | Pixel 8a | ~8.7 ms text + ~8.2 ms vision | [🤗 HF](https://huggingface.co/litert-community) |
@@ -1458,6 +1459,7 @@ VoiceBank-DEMAND
 | Model | Download | Size | Input → Output | Placement |
 | ----- | -------- | ---- | -------------- | --------- |
 | RE-USE (NVIDIA NemotronLabs) | [HF: litert-community/NVIDIA-NemotronLabs-RE-USE-LiteRT](https://huggingface.co/litert-community/NVIDIA-NemotronLabs-RE-USE-LiteRT) | 54.2 MB (main), 44.3 MB (fastload), 2 s chunk, FP32 | log1p\|X\| + angle [1, 2, 401, 321] → magnitude + phase [1, 3, 401, 321] | CompiledModel GPU ([reuse/](reuse/)) |
+| RE-USE-laughter (NVIDIA NemotronLabs) | [HF: litert-community/NVIDIA-NemotronLabs-RE-USE-laughter-LiteRT](https://huggingface.co/litert-community/NVIDIA-NemotronLabs-RE-USE-laughter-LiteRT) | 54.2 MB (main), 44.3 MB (fastload), 2 s chunk, FP32 | log1p\|X\| + angle [1, 2, 401, 321] → magnitude + phase [1, 3, 401, 321] | same graph layout and signature as RE-USE: the [reuse/](reuse/) app with the asset name changed (not yet run on a phone with these files) |
 
 # Music Transcription
 
