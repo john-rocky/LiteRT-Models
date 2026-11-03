@@ -115,6 +115,49 @@ quality scores and the Mac numbers are on the [model card](https://huggingface.c
 - No GPU accelerator: "GPU unavailable: LiteRT found no GPU accelerator on this phone (available: …). Choose CPU to run
   the model there, much slower."
 
+## Conversion
+
+`scripts/` holds the script that exported both `.tflite` files, `export_reuse_r6.py`, and every module it imports,
+copied without changes from the conversion work: the module and class names and the order of the ops end up in the
+file's bytes. The `_r3` / `_r6` in the file names and the r1, r3, r4 and r6 in the comments are steps of that work.
+`scripts/requirements.txt` pins the 72 packages of the environment the files were exported in.
+
+| file on Hugging Face | config | SHA-256 |
+|---|---|---|
+| `reuse_16k_2s_fp32.tflite` | `F2x/F1pq8@tilecrop` | `e413bbd992ed1fbb44d5206abdc040f14da6458ad5ffaa16810079395be68281` |
+| `reuse_16k_2s_fastload_fp32.tflite` | `F1pq8/F1pq8@tilecrop` | `ff1511ac75057b36cd741fcb3f83a1e623571a243ba1b7b31b5f8e74051d0407` |
+
+Run from a clean directory on a Mac (M4 Max, 2026-11-03), these commands gave both files byte for byte, with the
+SHA-256 above:
+
+```bash
+cd reuse
+uv venv --python 3.12.11 && source .venv/bin/activate
+uv pip install -r scripts/requirements.txt
+hf download nvidia/NVIDIA-NemotronLabs-RE-USE config.json model.safetensors \
+  --revision 31f82f2efad1095034492f236e8dac9239ba713b --local-dir ~/models/reuse/src
+JAX_NAMES=counter python -I scripts/export_reuse_r6.py out 2 'F2x/F1pq8@tilecrop'
+JAX_NAMES=counter python -I scripts/export_reuse_r6.py out 2 'F1pq8/F1pq8@tilecrop'
+```
+
+- The export also reads `~/models/reuse/clips/vbd_p232_021.wav` as its trace input. Any 16 kHz mono WAV of at least
+  2 s works there: its samples do not reach the file (seeded noise in its place gave the same bytes).
+- The two runs write `out/reuse_16k_2000ms_F2x_F1pq8_tilecrop_fp32.tflite` (main) and
+  `out/reuse_16k_2000ms_F1pq8_F1pq8_tilecrop_fp32.tflite` (fastload), renamed on Hugging Face, each with a `.json`:
+  the op table, the im2col size of every `CONV_2D` and a `CompiledModel` CPU check against the torch form
+  (`NO_CPU=1` skips the check). The main run took 9.9 min and 8.2 GB of memory, the fastload run 3.2 min and 4.5 GB.
+- `JAX_NAMES=counter` numbers the functions that litert-torch lowers through JAX. Without it they get 8 random hex
+  digits, and with tens of thousands of ops two names can collide: the export then fails with
+  `redefinition of symbol named 'jax_lowering_…'`. The names do not reach the file.
+- The config is `<time scan>/<frequency scan>@<encoder fix>`: `F2x` runs the Mamba scan step by step, `F1pq8` in
+  blocks of 8 steps (`scan_forms_r3.py`), and `tilecrop` runs the 2 dilated encoder convolutions in tiles
+  (`reuse_gpu_r6.py`).
+- The GPU form (`reuse_gpu_r6.py` on `reuse_gpu_r3.py` on `reuse_gpu.py`) re-authors the model at a fixed shape and
+  reads the checkpoint's own weights; every rewrite is exact in real arithmetic. `reuse_ref.py` loads the checkpoint
+  into NVIDIA's model code (`nv_models/`, unmodified copies at 31f82f2, OpenMDW-1.1) with `mamba_ref.py` in place
+  of the `mamba_ssm` package, which is a CUDA build: a pure-torch copy of its `Mamba` slow path and reference scan
+  (Apache-2.0).
+
 ## License
 
 The `.tflite` files are under OpenMDW-1.1, the checkpoint's license: keep the `LICENSE` and `NOTICE` of the Hugging
