@@ -196,14 +196,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       host = h
       decide = d
       _state.update { it.copy(status = "Compiling the decision graph on the GPU…") }
-      val bucket = withContext(worker) {
-        val b = d.bucketFor(256)
-        d.prepare(b)
-        b
-      }
-      val graphs = if (d.form.startsWith("8")) "all lengths" else "L$bucket"
+      val (graphs, compileMs) = withContext(worker) { prepareFor(h, d) }
       _state.update {
-        it.copy(ready = true, status = "Ready · ${Build.MODEL} · GPU FP32 · $graphs (${(d.lastLoadMs / 1000).format(1)} s to compile)")
+        it.copy(ready = true, status = "Ready · ${Build.MODEL} · GPU FP32 · $graphs (${(compileMs / 1000).format(1)} s to compile)")
       }
       loaded.complete(true)
     } catch (failure: Throwable) {
@@ -211,6 +206,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       _state.update { it.copy(status = "Model unavailable", error = failure.message ?: failure.toString()) }
       loaded.complete(false)
     }
+  }
+
+  /**
+   * Compiles what the example on screen needs, so that its first Decide does not wait for a compile:
+   * the decision graph of its longest sequence (else the 256-token one) and, with a photo, the picture
+   * tower. Returns the status line's graph words and the compile time in milliseconds.
+   */
+  private fun prepareFor(h: Host, d: LiteRtDecide): Pair<String, Double> {
+    val s = _state.value
+    val photo = if (s.photo != null) picture else null
+    val longest =
+      runCatching {
+          val (stateValue, questions) = request(s)
+          h.sequences(stateValue, h.named(questions).values.toList(), photo).maxOf { it.ids.size }
+        }
+        .getOrDefault(256)
+    val bucket = runCatching { d.bucketFor(longest) }.getOrElse { d.bucketFor(256) }
+    d.prepare(bucket)
+    var compileMs = d.lastLoadMs
+    var graphs = if (d.form.startsWith("8")) "all lengths" else "L$bucket"
+    val t = tower
+    if (photo != null && t != null) {
+      try {
+        t.prepare(photo)
+        compileMs += t.lastLoadMs
+        graphs += " + picture tower"
+      } catch (failure: Exception) {
+        // Not fatal: the first photo request compiles it, or says why it cannot.
+        Log.w(TAG, "the picture tower is left for the first photo request: ${failure.message}")
+      }
+    }
+    return graphs to compileMs
   }
 
   // ---------------------------------------------------------------------------------- editor
@@ -368,6 +395,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       val loadMs = result.timing.loadMs
       val answered = Answered(byKey, text, result.inputTokens, d.lastBucket, result.timing.totalMs - loadMs, loadMs)
       _state.update { it.copy(busy = false, answered = answered, stateText = if (s.stateIsJson) text else it.stateText) }
+      // The Decide line's numbers, and where the time went, in the log (adb logcat -s D1Decide).
+      val tm = result.timing
+      Log.i(
+        TAG,
+        "Answered in ${answered.totalMs.format(0)} ms · ${answered.tokens} tokens · L${answered.bucket} graph " +
+          "(prep ${tm.prepMs.format(1)}, tower ${tm.towerMs.format(1)}, decide ${tm.decideMs.format(1)}, " +
+          "readout ${tm.readoutMs.format(1)}, compile ${loadMs.format(1)} ms; total ${answered.totalMs.format(1)} ms)",
+      )
       linkedMapOf(
         "device" to Build.MODEL,
         "form" to d.form,
