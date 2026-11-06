@@ -2,14 +2,16 @@
 
 Paste a message or a JSON record, or add a photo, write the questions you want answered, and tap **Decide**: d1-2B answers every question in one forward pass on the phone's GPU. A read returns the value typed (an ISO date, a number with its unit, a text), the span of the state it came from — highlighted in the state in the question's color — and the probability that the value is there at all; a value the state does not hold comes back as absent instead of a guess. Next to the reads, a question can ask for yes or no, one or several of your options, a level on your scale, a number in a range, or boxes in the photo. The model generates no tokens: each answer is read from the model's output at the question's slots. Everything runs on the phone, offline: a Kotlin tokenizer and prompt, the model's answer readers ported to Kotlin, LiteRT graphs on the GPU.
 
-**Appointment text** (the first example) is a dentist's text that moves a cleaning from one date to another, with five questions: when the appointment is now (a date), at what time (a text), how much is left to pay (a number), the clinic's street address (not in the text) and what to do with the calendar entry (a choice: keep / move / delete). Change the first question to *When was the appointment before?* and tap Decide again: the answer moves to the other date in the same text, and so does its highlight.
+**Photo** (the first example) is a bicycle in the snow with four questions: every wheel of the bicycle (boxes), where its saddle is (a box), how many bicycles there are (a number) and whether there is a car (yes / no). Tap Decide: the boxes appear on the photo in each question's color, and each question's row gets its answer and probability. The car comes back as *No* with its P(yes), and nothing is drawn for it.
+
+**Appointment text** is a dentist's text that moves a cleaning from one date to another, with five questions: when the appointment is now (a date), at what time (a text), how much is left to pay (a number), the clinic's street address (not in the text) and what to do with the calendar entry (a choice: keep / move / delete). Change the first question to *When was the appointment before?* and tap Decide again: the answer moves to the other date in the same text, and so does its highlight.
 
 ## Try it
 
-- **Examples**: Appointment text, Delivery notice, Water bill, Order record (JSON, 18 questions), Photo. Each fills the state and the questions; replace any of it with your own.
+- **Examples**: Photo, Appointment text, Delivery notice, Water bill, Order record (JSON, 18 questions). Each fills the state and the questions; replace any of it with your own.
 - **State**: paste a message or a note, or switch to **JSON** and paste a record (a read then also gives the path of the value). **Add a photo** opens the system photo picker; the photo is shrunk to 384 pixels on its long side before the model sees it, so it fits the smallest picture graph. A state can be text, a photo, or both.
 - **Questions**: each card shows its name, its type and the question. **Edit** opens the name, the type — Yes / no, Choice, Several choices, Score, Text, Number, Number in a range, Date, Box, Boxes — the options of a choice (a name and what it means), the levels of a score (2 to 10, from the lowest), the range and step of a number in a range, a unit, and the most boxes to read (1 to 16). **Add question** adds a card; **Remove this question** removes one.
-- **Decide**: every card gets its answer underneath — the value and P(found) for a read (*Not in the text* when it is absent), the option and its probability for a choice, P(yes) for a yes / no, the level for a score, the median and interval for a number in a range, boxes drawn on the photo in the card's color. The line under the button gives the time of the call on the phone, the tokens it read and the graph length it ran on (`Answered in … ms on this phone · 253 tokens · L256 graph` for the Appointment text); the first call on a new length adds the graph's compile time.
+- **Decide**: with a photo, the photo comes first, then Decide and one row per question with its answer (tap a row to edit its question). Every card gets its answer underneath — the value and P(found) for a read (*Not in the text* when it is absent), the option and its probability for a choice, P(yes) for a yes / no, the level for a score, the median and interval for a number in a range, boxes drawn on the photo in the card's color. The line under the button gives the time of the call on the phone, the tokens it read and the graph length it ran on (`Answered in … ms on this phone · 253 tokens · L256 graph` for the Appointment text); the first call on a new length adds the graph's compile time.
 
 Up to 16 questions share one sequence with the state; more questions take another sequence. Nothing is cached between calls: every Decide sends the state and the questions as they are on the screen.
 
@@ -39,9 +41,9 @@ adb shell am start -n com.d1_2b/.MainActivity
 scripts/push_model.sh "$HOME/Downloads/d1-2B-LiteRT"
 ```
 
-That is the set for a 16 GB phone. For a 12 GB phone, download the per-length files instead of `d1-2b_decide_multi8_fp16fc.tflite`, for example `d1-2b_decide_L256_fp16fc.tflite` and `d1-2b_decide_L512_fp16fc.tflite` (the Appointment text needs L256; the Delivery notice and the Water bill L512; the Order record L512 and L1024; the Photo L2048).
+That is the set for a 16 GB phone. For a 12 GB phone, download the per-length files instead of `d1-2b_decide_multi8_fp16fc.tflite`, for example `d1-2b_decide_L256_fp16fc.tflite` and `d1-2b_decide_L512_fp16fc.tflite` (the Photo, the Delivery notice and the Water bill need L512; the Appointment text L256; the Order record L512 and L1024).
 
-Open the app once before the push: it creates its folder and says which files are missing. `scripts/push_model.sh` copies the provider files, the table and every `d1-2b_*.tflite` of the folder to `/sdcard/Android/data/com.d1_2b/files/model/` and checks each file's size on the phone. Then close the app and open it again: it compiles the decision graph on the GPU (the status line says when it is ready; about 26 s for the eight-signature file on a Pixel 11 Pro).
+Open the app once before the push: it creates its folder and says which files are missing. `scripts/push_model.sh` copies the provider files, the table and every `d1-2b_*.tflite` of the folder to `/sdcard/Android/data/com.d1_2b/files/model/` and checks each file's size on the phone. Then close the app and open it again: it compiles the decision graph the first example needs, and its picture tower, on the GPU (the status line says when it is ready; about 26 s for the eight-signature file on a Pixel 11 Pro).
 
 ## External files
 
@@ -113,17 +115,18 @@ python -B scripts/make_fixtures.py --repo /path/to/d1-2B-LiteRT --out /tmp/d1-fi
 
 ## Measured
 
-- **The Kotlin host against the model's Python host** (Apple M4 Max; the fixtures from `make_fixtures.py` on the GPU through Metal at FP32; `HostParityTest`): on 8 requests — the five examples, the appointment with its first question changed, a state with special-token text and a photo resized to 384 × 216 — the 9 sequences' token ids, state lengths, question tags and slot positions are identical, the pixel values of both pictures are identical, and the answers agree within 1.5e-6 on the options' probabilities (mean 9.8e-8 over 28 options), 5.0e-7 on P(found), and exactly on every span, value and box edge.
+- **The Kotlin host against the model's Python host** (Apple M4 Max; the fixtures from `make_fixtures.py` on the GPU through Metal at FP32; `HostParityTest`): on 8 requests — the five examples, the appointment with its first question changed, a state with special-token text and a photo resized to 384 × 216 — the 9 sequences' token ids, state lengths, question tags and slot positions are identical, the pixel values of both pictures are identical, and the answers agree within 4.9e-7 on the options' probabilities (mean 2.6e-8 over 23 options), 5.1e-7 on P(found), and exactly on every span, value and box edge.
 - **The decision graph on the phones** (the conversion's device runs on the shipped files and a seven-signature file of the same graphs, a harness app on LiteRT 2.2.0, GPU at FP32 with constant tensor sharing; one graph call, from the input writes to the read-back of the output): Galaxy S26 (12 GB), the per-length files — 366.4 ms at L128, 645.7 ms at L256 (the tower at 24 × 24 patches 112.2 ms, timed without sharing), compile 20.9 s at L256. Pixel 11 Pro (16 GB) — 736.8 ms at L128 and 1,047.0 ms at L256 on the seven-signature file, which gives the same outputs as the eight-signature file; the tower 274.4 ms, timed without sharing; the eight-signature file compiled all eight signatures in 25.2 s.
+- **The app on the Galaxy S26** (this app with the L512 file and the 24 × 24 tower, GPU at FP32; the Photo example, 423 tokens; the time the app shows for a Decide: the input, the tower, the decision graph and reading the answers): 1,709.8 ms median over 10 Decides after one warm-up (1,650.5 to 1,986.7 ms); the tower's median 153.6 ms, the decision graph's 1,458.0 ms. At start the app compiled the L512 file and the tower in 24.3 s. The phone's answers match the model's Python host on the same request (the Photo fixture of the test above): identical token ids, answers within 2.2e-7.
 
-Not measured in this README: the app's own times (the status line gives them for each call) and other phones. On the Galaxy S26 the app ran only the 256-token file.
+Not measured in this README: the app's own times for the text examples, and on phones other than the Galaxy S26.
 
 ## Files
 
 | Path | Role |
 |---|---|
 | `app/src/main/java/com/d1_2b/MainActivity.kt`, `MainViewModel.kt` | Compose host (the system photo picker, `--es run`); the screen's state, the examples, the editor's questions, the decide call on a worker thread, the run files |
-| `app/src/main/java/com/d1_2b/Screen.kt` | The examples, the state with its highlights, the photo with its boxes, the question cards and their editor, the answers, the Decide line |
+| `app/src/main/java/com/d1_2b/Screen.kt` | The examples, the state with its highlights, the photo with its boxes and its question rows, the question cards and their editor, the answers, the Decide line |
 | `app/src/main/java/com/d1_2b/Tokenizer.kt` | Byte-level BPE read from `tokenizer.json`, with offsets |
 | `app/src/main/java/com/d1_2b/Prompt.kt` | The model's prompt: questions, codes, slots, the state block, grids |
 | `app/src/main/java/com/d1_2b/Host.kt` | Sequences of up to 16 questions, embedding rows, the slots' readouts and pointer reads |

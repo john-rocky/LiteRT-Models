@@ -256,19 +256,24 @@ class LiteRtTower(private val dir: File) : TowerBackend, Closeable {
   val available: Boolean
     get() = files.isNotEmpty()
 
-  override fun tower(picture: Picture): FloatArray {
+  /** Compiles the canvas [picture] needs unless it is the one loaded; [lastLoadMs] = the compile time (0 if none). */
+  fun prepare(picture: Picture) {
     val canvas = Picture.canvasFor(picture, files.keys.toList())
     lastLoadMs = 0.0
-    if (loaded != canvas) {
-      close()
-      Memory.ensure("picture tower", Memory.TOWER_NEED_MB, "Close other apps and press Decide again.")
-      val start = System.nanoTime()
-      val compiled = CompiledModel.create(files.getValue(canvas).absolutePath, Graphs.gpuOptions(), Graphs.environment())
-      model = compiled
-      signature = Signature(compiled, "tower", listOf("patches", "valid"), listOf("features"))
-      loaded = canvas
-      lastLoadMs = (System.nanoTime() - start) / 1e6
-    }
+    if (loaded == canvas) return
+    close()
+    Memory.ensure("picture tower", Memory.TOWER_NEED_MB, "Close other apps and press Decide again.")
+    val start = System.nanoTime()
+    val compiled = CompiledModel.create(files.getValue(canvas).absolutePath, Graphs.gpuOptions(), Graphs.environment())
+    model = compiled
+    signature = Signature(compiled, "tower", listOf("patches", "valid"), listOf("features"))
+    loaded = canvas
+    lastLoadMs = (System.nanoTime() - start) / 1e6
+  }
+
+  override fun tower(picture: Picture): FloatArray {
+    prepare(picture)
+    val canvas = loaded!!
     val (patches, valid) = picture.canvas(canvas.first, canvas.second)
     val features = signature!!.run(mapOf("patches" to patches, "valid" to valid), "features")
     lastCanvas = canvas

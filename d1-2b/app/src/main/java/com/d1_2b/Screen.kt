@@ -3,6 +3,7 @@ package com.d1_2b
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -87,17 +89,23 @@ fun ExtractionScreen(state: UiState, model: MainViewModel, onPickPhoto: () -> Un
       ) {
         item { Header(state) }
         item { Examples(state, model) }
-        item { StateCard(state, model, onPickPhoto) }
-        items(state.questions, key = { it.key }) { draft ->
-          val index = state.questions.indexOf(draft)
-          QuestionCard(draft, index, state.answered?.answers?.get(draft.key), model)
-        }
-        item {
-          Row(modifier = Modifier.padding(horizontal = 12.dp)) {
-            OutlinedButton(onClick = model::addQuestion) { Text("Add question") }
+        if (state.photo != null) {
+          // A photo leads: the photo with its boxes, Decide, then one row per question with its answer,
+          // so the photo and every answer fit one screen; the text field and the photo buttons follow.
+          item { PhotoWithBoxes(state, Modifier.padding(horizontal = 12.dp)) }
+          item { DecideBar(state, model) }
+          item { QuestionRows(state, model) }
+          item { AddQuestion(model) }
+          item { StateCard(state, model, onPickPhoto) }
+        } else {
+          item { StateCard(state, model, onPickPhoto) }
+          items(state.questions, key = { it.key }) { draft ->
+            val index = state.questions.indexOf(draft)
+            QuestionCard(draft, index, state.answered?.answers?.get(draft.key), model)
           }
+          item { AddQuestion(model) }
+          item { DecideBar(state, model) }
         }
-        item { DecideBar(state, model) }
         item { Spacer(Modifier.height(24.dp)) }
       }
     }
@@ -178,9 +186,8 @@ private fun StateCard(state: UiState, model: MainViewModel, onPickPhoto: () -> U
         maxLines = 12,
       )
       Spacer(Modifier.height(6.dp))
-      val photo = state.photo
-      if (photo != null) {
-        PhotoWithBoxes(state)
+      if (state.photo != null) {
+        // The photo itself is at the top of the screen (ExtractionScreen).
         Row {
           TextButton(onClick = onPickPhoto) { Text("Change photo") }
           TextButton(onClick = model::removePhoto) { Text("Remove photo") }
@@ -193,7 +200,14 @@ private fun StateCard(state: UiState, model: MainViewModel, onPickPhoto: () -> U
 }
 
 @Composable
-private fun PhotoWithBoxes(state: UiState) {
+private fun AddQuestion(model: MainViewModel) {
+  Row(modifier = Modifier.padding(horizontal = 12.dp)) {
+    OutlinedButton(onClick = model::addQuestion) { Text("Add question") }
+  }
+}
+
+@Composable
+private fun PhotoWithBoxes(state: UiState, modifier: Modifier = Modifier) {
   val photo = state.photo ?: return
   val boxes = ArrayList<Pair<Map<*, *>, Color>>()
   val answered = state.answered
@@ -204,7 +218,7 @@ private fun PhotoWithBoxes(state: UiState) {
       (answer["boxes"] as? List<*>)?.forEach { b -> ((b as Map<*, *>)["box"] as? Map<*, *>)?.let { boxes.add(it to mark(index)) } }
     }
   }
-  Box(modifier = Modifier.fillMaxWidth().aspectRatio(photo.width.toFloat() / photo.height)) {
+  Box(modifier = modifier.fillMaxWidth().aspectRatio(photo.width.toFloat() / photo.height)) {
     Image(bitmap = photo.asImageBitmap(), contentDescription = "The photo the questions are about", modifier = Modifier.fillMaxSize())
     Canvas(modifier = Modifier.fillMaxSize()) {
       for ((box, color) in boxes) {
@@ -242,6 +256,50 @@ private fun QuestionCard(draft: QuestionDraft, index: Int, answer: Map<String, A
       if (editing) QuestionDetails(draft, model)
       if (answer != null) AnswerView(answer, mark(index))
     }
+  }
+}
+
+/** The questions about a photo, one compact row each: the question in its color, its answer on one line under it. */
+@Composable
+private fun QuestionRows(state: UiState, model: MainViewModel) {
+  Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), elevation = 2.dp) {
+    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+      state.questions.forEachIndexed { index, draft ->
+        key(draft.key) { QuestionRow(draft, index, state.answered?.answers?.get(draft.key), model) }
+      }
+    }
+  }
+}
+
+@Composable
+private fun QuestionRow(draft: QuestionDraft, index: Int, answer: Map<String, Any?>?, model: MainViewModel) {
+  var editing by remember { mutableStateOf(false) }
+  val link = MaterialTheme.colors.primary
+  Column {
+    // One line per question (a tap on it opens its editor), so the photo and every answer fit one screen.
+    Row(modifier = Modifier.fillMaxWidth().clickable { editing = !editing }, verticalAlignment = Alignment.CenterVertically) {
+      Box(Modifier.size(12.dp).background(mark(index), CircleShape))
+      Spacer(Modifier.width(8.dp))
+      Text(
+        buildAnnotatedString {
+          append(draft.instructions.ifBlank { "(write the question)" })
+          withStyle(SpanStyle(color = link, fontSize = 13.sp)) { append(if (editing) "  Done" else "  Edit") }
+        },
+        fontSize = 15.sp,
+      )
+    }
+    if (editing) {
+      OutlinedTextField(
+        value = draft.instructions,
+        onValueChange = { text -> model.updateQuestion(draft.key) { it.copy(instructions = text) } },
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        textStyle = TextStyle(fontSize = 15.sp),
+        placeholder = { Text("The question") },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+      )
+      QuestionDetails(draft, model)
+    }
+    if (answer != null) AnswerView(answer, mark(index), oneLine = true)
   }
 }
 
@@ -338,9 +396,10 @@ private fun plainNumber(value: Any?): String =
     else -> value.toString()
   }
 
+/** One answer: the value in bold, its probabilities in gray; [oneLine] keeps it on one line (the photo's rows). */
 @Composable
-private fun AnswerView(answer: Map<String, Any?>, color: Color) {
-  val main: AnnotatedString
+private fun AnswerView(answer: Map<String, Any?>, color: Color, oneLine: Boolean = false) {
+  var main: AnnotatedString
   var detail: String? = null
   when (answer["type"]) {
     "noul" -> {
@@ -365,8 +424,14 @@ private fun AnswerView(answer: Map<String, Any?>, color: Color) {
     "box" -> main = if (answer["box"] == null) bold("Not in the photo", "  found ${p(answer["found"])}") else bold("Found", "  found ${p(answer["found"])} · confidence ${p(answer["confidence"])}")
     "boxes" -> {
       val n = answer["count"] as Int
-      main = bold(if (n == 0) "None" else "$n${if (answer["at_least"] == true) " or more" else ""}", "  boxes drawn on the photo")
-      detail = (answer["boxes"] as List<*>).joinToString(" · ") { "found ${p((it as Map<*, *>)["found"])}" }.ifEmpty { null }
+      val head = if (n == 0) "None" else "$n${if (answer["at_least"] == true) " or more" else ""}"
+      val found = (answer["boxes"] as List<*>).map { p((it as Map<*, *>)["found"]) }
+      if (oneLine) {
+        main = bold(head, if (found.isEmpty()) "" else "  found ${found.joinToString(" · ")}")
+      } else {
+        main = bold(head, "  boxes drawn on the photo")
+        detail = found.joinToString(" · ") { "found $it" }.ifEmpty { null }
+      }
     }
     "number" ->
       if (answer.containsKey("interval")) {
@@ -379,7 +444,11 @@ private fun AnswerView(answer: Map<String, Any?>, color: Color) {
     "date" -> main = readLine(answer, answer["date"] as String?)
     else -> main = readLine(answer, answer["text"] as String?)
   }
-  Row(modifier = Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+  if (oneLine && detail != null) {
+    main = main + bold("", "  ·  $detail")
+    detail = null
+  }
+  Row(modifier = Modifier.padding(top = if (oneLine) 2.dp else 6.dp), verticalAlignment = Alignment.CenterVertically) {
     Box(Modifier.size(width = 4.dp, height = 22.dp).background(color, RoundedCornerShape(2.dp)))
     Spacer(Modifier.width(8.dp))
     Column {

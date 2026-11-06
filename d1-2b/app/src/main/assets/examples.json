@@ -1,6 +1,36 @@
 {
   "examples": [
     {
+      "id": "photo",
+      "title": "Photo",
+      "state": null,
+      "picture": "bike.png",
+      "questions": {
+        "wheels": {
+          "type": "boxes",
+          "instructions": "Every wheel of the bicycle.",
+          "max": 4
+        },
+        "saddle": {
+          "type": "box",
+          "instructions": "Where is the bicycle's saddle?"
+        },
+        "bicycles": {
+          "type": "number",
+          "instructions": "How many bicycles are there?",
+          "range": [
+            0,
+            10
+          ],
+          "step": 1
+        },
+        "car": {
+          "type": "noul",
+          "instructions": "Is there a car?"
+        }
+      }
+    },
+    {
       "id": "appointment",
       "title": "Appointment text",
       "state": "Bright Smile Dental: Hi Sam, your cleaning has moved from Tuesday, November 10, 2026 to Thursday, November 12, 2026 at 3:30 pm. The $40 deposit you paid on October 28, 2026 stays on file; the remaining $85 is due at the visit.",
@@ -247,55 +277,6 @@
             "gold",
             "platinum"
           ]
-        }
-      }
-    },
-    {
-      "id": "photo",
-      "title": "Photo",
-      "state": null,
-      "picture": "bike.png",
-      "questions": {
-        "bicycle": {
-          "type": "box",
-          "instructions": "Where is the bicycle?"
-        },
-        "saddle": {
-          "type": "box",
-          "instructions": "Where is the bicycle's saddle?"
-        },
-        "wheels": {
-          "type": "boxes",
-          "instructions": "Every wheel of the bicycle."
-        },
-        "cars": {
-          "type": "boxes",
-          "instructions": "Every car."
-        },
-        "bicycles_n": {
-          "type": "number",
-          "instructions": "How many bicycles are there?",
-          "range": [
-            0,
-            10
-          ],
-          "step": 1
-        },
-        "seen": {
-          "type": "choice",
-          "multiple": true,
-          "instructions": "Which of these are in the photo?",
-          "criteria": {
-            "bicycle": "A bicycle",
-            "snow": "Snow",
-            "pole": "A pole",
-            "car": "A car",
-            "person": "A person"
-          }
-        },
-        "snow": {
-          "type": "noul",
-          "instructions": "Is there snow on the ground?"
         }
       }
     }
