@@ -1755,6 +1755,8 @@ Converted via **litert-torch** from re-authored modules, each checked against th
 
 **Sample app**: [idol/](idol/) — pick a photo or take one, watch each stage, then turn the splat around in a WebView viewer ([antimatter15/splat](https://github.com/antimatter15/splat), MIT).
 
+**Recipe**: [docs/IMAGE_TO_3D_ON_PHONE_GPU.md](docs/IMAGE_TO_3D_ON_PHONE_GPU.md) — one graph for a stack of same-shape blocks, and phone timings from the same starting temperature.
+
 **Original project**: [speridlabs/idol](https://huggingface.co/speridlabs/idol) | Apache-2.0 (DINOv3: DINOv3 License; BiRefNet: MIT)
 
 ### MoGe-2 ViT-S

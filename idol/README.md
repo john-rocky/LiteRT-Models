@@ -20,6 +20,8 @@ float32 arithmetic.
 Targets: Galaxy S26 (12 GB) and Pixel 11 Pro. arm64 only. The phone needs about 8.5 GB free to install the default
 form's models (8.2 GB for the `262k/` form).
 
+How the shared graphs work and how the phone timings were taken: [docs/IMAGE_TO_3D_ON_PHONE_GPU.md](../docs/IMAGE_TO_3D_ON_PHONE_GPU.md).
+
 ## Get the model files
 
 | Folder | Hugging Face repo | Files |
