@@ -33,3 +33,8 @@ device/*/x0_ps_*.txt
 contract/standin_bir/**/render/*.png
 # the card's hero image is rendered by scripts/make_hero_app.py and lives in the HF repo (assets/hero.png)
 card/assets/
+
+# run-control markers of the hold chains (not records)
+device/*/CHAIN_DONE
+device/*/HOLD_RELEASED
+device/*/RELEASE_HOLD
