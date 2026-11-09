@@ -1,0 +1,7 @@
+models/
+device/stage/
+device/fx/
+device/*/*.dump/
+device/*/out_*/
+ref/
+contract/*.npz
