@@ -1,0 +1,48 @@
+2026-11-09 16:05:50 bir: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6468152 kB, kgsl page_alloc 238460928 B
+  left alone: a system app
+2026-11-09 16:14:34 gs6: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6777216 kB, kgsl page_alloc 245497856 B
+  left alone: a system app
+2026-11-09 16:14:57 gs7: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6827100 kB, kgsl page_alloc 245497856 B
+  left alone: a system app
+2026-11-09 16:15:18 dj02: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6817768 kB, kgsl page_alloc 256471040 B
+  left alone: a system app
+2026-11-09 16:15:39 dj03: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6829056 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:15:58 dj04: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6790128 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:16:14 dj05: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6728600 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:16:33 dj06: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6745924 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:16:50 dj07: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6719036 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:17:06 dj08: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6757648 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:17:25 dj09: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6707188 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:17:42 dj10: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6740608 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:18:01 dj11: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6729724 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:18:18 dj12: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6734588 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:18:35 dj13: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6724620 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:18:55 dj14: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6734332 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:19:12 dj15: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6746964 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:19:31 dj16: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6759200 kB, kgsl page_alloc 256995328 B
+  left alone: a system app
+2026-11-09 16:19:50 dj17: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6708164 kB, kgsl page_alloc 256471040 B
+  left alone: a system app
+2026-11-09 16:20:07 dj18: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6732136 kB, kgsl page_alloc 256471040 B
+  left alone: a system app
+2026-11-09 16:20:27 dj19: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6725612 kB, kgsl page_alloc 256471040 B
+  left alone: a system app
+2026-11-09 16:20:44 dj20: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6769168 kB, kgsl page_alloc 256471040 B
+  left alone: a system app
+2026-11-09 16:21:01 dj21: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6745004 kB, kgsl page_alloc 256471040 B
+  left alone: a system app
+2026-11-09 16:21:20 dj22: front com.android.settings/.Settings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6761764 kB, kgsl page_alloc 256471040 B
+  left alone: a system app

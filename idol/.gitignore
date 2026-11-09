@@ -5,3 +5,31 @@ device/*/*.dump/
 device/*/out_*/
 ref/
 contract/*.npz
+# line results: keep the JSON and the side-by-side b_<input>.png; not the splats or the per-view renders
+contract/**/*.ply
+contract/**/view*_az*.png
+contract/**/input.png
+contract/**/alpha_*.png
+device/results/
+device/g1_run/
+# Android build output (the sample app)
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+.idea/
+*.apk
+# devicebench raw per-leg captures (leg JSON, delegate lines, runner output and samples stay)
+device/*/*.logcat_all.txt
+device/*/*.ps_before.txt
+device/*/*.ps_after.txt
+# DIS-route renders (their numbers stay in b.json); the shipped route's b_<input>.png stays
+contract/standin/**/render/*.png
+contract/standin_v1/**/render/*.png
+device/*/*.pid
+device/*/x0_ps_*.txt
+# superseded Mac stand-in (BiRefNet v2 graph set) renders; its numbers stay in b.json
+contract/standin_bir/**/render/*.png
+# the card's hero image is rendered by scripts/make_hero_app.py and lives in the HF repo (assets/hero.png)
+card/assets/

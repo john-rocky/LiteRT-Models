@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- the camera app writes the photo here -->
+    <cache-path name="camera" path="camera/" />
+    <!-- the .ply files "Share .ply" hands out -->
+    <files-path name="results" path="results/" />
+</paths>

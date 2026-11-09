@@ -1,0 +1,16 @@
+INFO: [environment.cc:36] Creating LiteRT environment with options
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400006e90e01710, name=NpuAccelerator
+INFO: [npu_registry.cc:30] NPU accelerator registered.
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_g2/libLiteRtGpuAccelerator.so).
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_g2/libLiteRtClGlAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400006e90e02740, name=LiteRT GPU
+INFO: [gpu_registry.cc:138] Dynamically loaded GPU accelerator(libLiteRtClGlAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400006e90e03a10, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [compiled_model.cc:829] Flatbuffer model initialized directly from incoming litert model.
+INFO: Initialized TensorFlow Lite runtime.
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+VERBOSE: Replacing 8054 out of 8637 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 121 partitions for subgraph 0 (main).
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400006e90e03a10, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400006e90e02740, name=LiteRT GPU
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400006e90e01710, name=NpuAccelerator

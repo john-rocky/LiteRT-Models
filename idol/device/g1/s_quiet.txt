@@ -1,0 +1,48 @@
+2026-11-09 16:01:54 inputs 7211470857 B: start; no window
+2026-11-09 16:02:53 inputs 7211470857 B: end, 16:01:54 to 16:02:53 (59 s); 0 s inside a window
+2026-11-09 16:03:10 setup 2020950364 B: start; no window
+2026-11-09 16:05:27 setup 2020950364 B: end, 16:03:10 to 16:05:27 (137 s); 0 s inside a window
+2026-11-09 16:05:28 graph bir.tflite 929601212 B: start; no window
+2026-11-09 16:05:50 graph bir.tflite 929601212 B: end, 16:05:28 to 16:05:50 (22 s); 0 s inside a window
+2026-11-09 16:06:12 graph dino_0.tflite 843659604 B: start; no window
+2026-11-09 16:06:29 graph dino_0.tflite 843659604 B: end, 16:06:12 to 16:06:29 (17 s); 0 s inside a window
+2026-11-09 16:06:46 graph dino_1.tflite 839694588 B: start; no window
+2026-11-09 16:07:03 graph dino_1.tflite 839694588 B: end, 16:06:46 to 16:07:03 (17 s); 0 s inside a window
+2026-11-09 16:07:19 graph dino_2.tflite 839694588 B: start; no window
+2026-11-09 16:07:37 graph dino_2.tflite 839694588 B: end, 16:07:19 to 16:07:37 (18 s); 0 s inside a window
+2026-11-09 16:07:53 graph dino_3.tflite 839710040 B: start; no window
+2026-11-09 16:08:10 graph dino_3.tflite 839710040 B: end, 16:07:53 to 16:08:10 (17 s); 0 s inside a window
+2026-11-09 16:08:53 pull vae0.dump 134217728 B: start; no window
+2026-11-09 16:08:57 pull vae0.dump 134217728 B: end, 16:08:53 to 16:08:57 (4 s); 0 s inside a window
+2026-11-09 16:09:14 pull vae1.dump 67108864 B: start; no window
+2026-11-09 16:09:17 pull vae1.dump 67108864 B: end, 16:09:14 to 16:09:16 (2 s); 0 s inside a window
+2026-11-09 16:10:00 graph den_ctx.tflite 117711308 B: start; no window
+2026-11-09 16:10:03 graph den_ctx.tflite 117711308 B: end, 16:10:00 to 16:10:03 (3 s); 0 s inside a window
+2026-11-09 16:10:12 graph den_in.tflite 146782524 B: start; no window
+2026-11-09 16:10:17 graph den_in.tflite 146782524 B: end, 16:10:12 to 16:10:17 (5 s); 0 s inside a window
+2026-11-09 16:11:08 graph oct.tflite 204247600 B: start; no window
+2026-11-09 16:11:14 graph oct.tflite 204247600 B: end, 16:11:08 to 16:11:14 (6 s); 0 s inside a window
+2026-11-09 16:11:21 graph oct.tflite 204247600 B: start; no window
+2026-11-09 16:11:22 graph oct.tflite 204247600 B: end, 16:11:21 to 16:11:22 (1 s); 0 s inside a window
+2026-11-09 16:11:34 graph oct.tflite 204247600 B: start; no window
+2026-11-09 16:11:35 graph oct.tflite 204247600 B: end, 16:11:34 to 16:11:35 (1 s); 0 s inside a window
+2026-11-09 16:11:47 graph oct.tflite 204247600 B: start; no window
+2026-11-09 16:11:48 graph oct.tflite 204247600 B: end, 16:11:47 to 16:11:48 (1 s); 0 s inside a window
+2026-11-09 16:12:04 graph oct.tflite 204247600 B: start; no window
+2026-11-09 16:12:05 graph oct.tflite 204247600 B: end, 16:12:04 to 16:12:05 (1 s); 0 s inside a window
+2026-11-09 16:12:25 graph gs_0.tflite 122497768 B: start; no window
+2026-11-09 16:12:28 graph gs_0.tflite 122497768 B: end, 16:12:25 to 16:12:28 (3 s); 0 s inside a window
+2026-11-09 16:12:45 graph gs_1.tflite 118281876 B: start; no window
+2026-11-09 16:12:48 graph gs_1.tflite 118281876 B: end, 16:12:45 to 16:12:48 (3 s); 0 s inside a window
+2026-11-09 16:13:05 graph gs_2.tflite 118281876 B: start; no window
+2026-11-09 16:13:08 graph gs_2.tflite 118281876 B: end, 16:13:05 to 16:13:08 (3 s); 0 s inside a window
+2026-11-09 16:13:24 graph gs_3.tflite 118281876 B: start; no window
+2026-11-09 16:13:28 graph gs_3.tflite 118281876 B: end, 16:13:24 to 16:13:28 (4 s); 0 s inside a window
+2026-11-09 16:13:45 graph gs_4.tflite 118281876 B: start; no window
+2026-11-09 16:13:48 graph gs_4.tflite 118281876 B: end, 16:13:45 to 16:13:48 (3 s); 0 s inside a window
+2026-11-09 16:14:07 graph gs_5.tflite 118281876 B: start; no window
+2026-11-09 16:14:11 graph gs_5.tflite 118281876 B: end, 16:14:07 to 16:14:10 (3 s); 0 s inside a window
+2026-11-09 16:14:30 graph gs_6.tflite 118281876 B: start; no window
+2026-11-09 16:14:34 graph gs_6.tflite 118281876 B: end, 16:14:30 to 16:14:33 (3 s); 0 s inside a window
+2026-11-09 16:14:53 graph gs_7.tflite 120252780 B: start; no window
+2026-11-09 16:14:57 graph gs_7.tflite 120252780 B: end, 16:14:53 to 16:14:57 (4 s); 0 s inside a window

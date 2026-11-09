@@ -1,0 +1,9 @@
+{
+ "comment": "CONTRACT.md (b), (c), (e): the whole pipeline from the armchair fixture's raw image with its noise arrays, run 0 = warm-up, runs 1-3 measured; graphs compiled before run 0 (preload).",
+ "reserve_mb": 2500,
+ "mem_check": true,
+ "handoff": "host",
+ "rows": [
+  {"id": "e2e_armchair", "kind": "e2e", "fixture": "fx/armchair", "runs": 4, "preload": true}
+ ]
+}

@@ -1,0 +1,8 @@
+2026-11-09 13:46:07 inputs 407959021 B: start; no window
+2026-11-09 13:46:13 inputs 407959021 B: end, 13:46:07 to 13:46:13 (6 s); 0 s inside a window
+2026-11-09 13:46:24 setup 166382664 B: start; no window
+2026-11-09 13:46:32 setup 166382664 B: end, 13:46:24 to 13:46:32 (8 s); 0 s inside a window
+2026-11-09 13:47:03 graph f0_dino_block_L4101_c1024.tflite 104948648 B: start; no window
+2026-11-09 13:47:06 graph f0_dino_block_L4101_c1024.tflite 104948648 B: end, 13:47:03 to 13:47:06 (3 s); 0 s inside a window
+2026-11-09 13:48:58 graph f0_vae_enc_1024_c1024.tflite 137959228 B: start; no window
+2026-11-09 13:49:01 graph f0_vae_enc_1024_c1024.tflite 137959228 B: end, 13:48:58 to 13:49:01 (3 s); 0 s inside a window

@@ -1,0 +1,2 @@
+octL8192.stderr.txt:VERBOSE: Replacing 2185 out of 2185 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 4 (L8192).
+11-09 16:12:11.914 27974 27974 I tflite  : Replacing 2185 out of 2185 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 4 (L8192).

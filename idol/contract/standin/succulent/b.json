@@ -1,0 +1,39 @@
+{
+ "box": [
+  -135,
+  -120,
+  1155,
+  1169
+ ],
+ "times": {
+  "preprocess": 1.4,
+  "dinov3": 247.73,
+  "vae": 16.57,
+  "denoiser": 166.75,
+  "octree": 10.37,
+  "gaussian_decoder": 69.47,
+  "ply": 0.34,
+  "generate_total": 511.88,
+  "all": 513.8
+ },
+ "box_reference": [
+  -87,
+  -45,
+  1107,
+  1150
+ ],
+ "tag": "succulent",
+ "psnr_db": 21.30375373563055,
+ "psnr_per_view_db": [
+  19.445729847190076,
+  21.35428227727937,
+  22.919002463209665,
+  22.33715674065794
+ ],
+ "line_db": 25.0,
+ "matting": "dis",
+ "dis_alpha_floor": 8,
+ "pass_": false,
+ "precision": "metal default (fp16)",
+ "models": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/models/v2"
+}

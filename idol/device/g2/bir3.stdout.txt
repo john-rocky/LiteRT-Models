@@ -1,0 +1,12 @@
+pid=15076 accel=cpu gpu_precision=fp32 burst=1 models=1 fixtures=1 warmup=0 rounds=1 ab_fixture=000 libdir=/data/local/tmp/idol_g2 cache_dir= dump=full signature=(0) profile=0 npu_vendor=qualcomm ref=- ref2=- stop_nonfinite=0 llm_chain_flags=0 wall_ms=1794210657595
+model[0] signature[0] serving_default
+model[0] input[0] sig_name=args_0 logical=args_0 type=1 bytes=12582912 rank=4 ext=.f32
+compile_start model[0] wall_ms=1794210657767
+compile_end model[0] wall_ms=1794210658360
+model[0]=/data/local/tmp/idol_g2/bir.tflite signature=serving_default index=0 inputs=1 outputs=1 out0_elems=1048576 compile_ms=593.4 fully_accelerated=false
+parity model[0] fixture 000 ms=6734.928 run_ms=6733.694 nonfinite=0 out0[0..3]=1.16851e-07,1.31485e-07,1.07957e-07,1.09141e-07 l2=653.352 maxabs=1
+parity_summary model[0] /data/local/tmp/idol_g2/bir.tflite fixtures=1 nonfinite_values=0 first_run_ms=7020.9 mean_ms=6734.928 outdir=/data/local/tmp/idol_g2/out_bir3/model0
+latency_start wall_ms=1794210672138
+round 0 model[0] write+run+readback_ms=7682.857 run_ms=7681.257
+summary model[0] /data/local/tmp/idol_g2/bir.tflite n=1 median=7682.857 min=7682.857 max=7682.857 nonfinite_rounds=0 compile_ms=593.4 fully_accelerated=false
+done wall_ms=1794210680122

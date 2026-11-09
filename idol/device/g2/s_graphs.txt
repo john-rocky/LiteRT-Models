@@ -1,0 +1,21 @@
+push bir.tflite rc=0 bytes 930410016/930410016 sha256 phone=42b98bf0e497dd596327c31883fec21fe7013a4c9f72d1f67ec8ff4d3f0dfd43 mac=42b98bf0e497dd596327c31883fec21fe7013a4c9f72d1f67ec8ff4d3f0dfd43 MATCH in 21s
+data free with bir.tflite: 80272343040 B
+removed graph bir.tflite 2026-11-09 16:51:26
+push vae_0.tflite rc=0 bytes 3036028/3036028 sha256 phone=a8c8b881165717d854bead656620f77bfccc71b5f7772c160753723c5f80c2d7 mac=a8c8b881165717d854bead656620f77bfccc71b5f7772c160753723c5f80c2d7 MATCH in 0s
+data free with vae_0.tflite: 81200549888 B
+removed graph vae_0.tflite 2026-11-09 16:51:44
+push vae_1.tflite rc=0 bytes 10858720/10858720 sha256 phone=07e357358a2e50a14462be77433f0c11ae2319d0912d320a65335d71fabfd48b mac=07e357358a2e50a14462be77433f0c11ae2319d0912d320a65335d71fabfd48b MATCH in 0s
+data free with vae_1.tflite: 81192718336 B
+removed graph vae_1.tflite 2026-11-09 16:51:58
+push vae_2.tflite rc=0 bytes 43164896/43164896 sha256 phone=203175990bbbf43a66263ae69ec8000f19bc943314226bf2e26b3d0b0b26eb3f mac=203175990bbbf43a66263ae69ec8000f19bc943314226bf2e26b3d0b0b26eb3f MATCH in 1s
+data free with vae_2.tflite: 81160462336 B
+removed graph vae_2.tflite 2026-11-09 16:52:09
+push vae_3.tflite rc=0 bytes 56792512/56792512 sha256 phone=d3375079a1558cdd4f4c3f96337830ce81d2f37089c2cd79e701cfc393ecc67e mac=d3375079a1558cdd4f4c3f96337830ce81d2f37089c2cd79e701cfc393ecc67e MATCH in 1s
+data free with vae_3.tflite: 81146814464 B
+removed graph vae_3.tflite 2026-11-09 16:52:27
+push vae_attn.tflite rc=0 bytes 4423776/4423776 sha256 phone=4bec7ec37ad58661abb63ee1e16ccb7646afc6d617acf3caa714721912237d88 mac=4bec7ec37ad58661abb63ee1e16ccb7646afc6d617acf3caa714721912237d88 MATCH in 0s
+data free with vae_attn.tflite: 81199235072 B
+removed graph vae_attn.tflite 2026-11-09 16:52:52
+push vae_4.tflite rc=0 bytes 20179348/20179348 sha256 phone=6ea00886e1fb2bebbd4be40b6591a04abea2208fd6d59e32a4d52310b0d35853 mac=6ea00886e1fb2bebbd4be40b6591a04abea2208fd6d59e32a4d52310b0d35853 MATCH in 1s
+data free with vae_4.tflite: 81183461376 B
+removed graph vae_4.tflite 2026-11-09 16:53:02

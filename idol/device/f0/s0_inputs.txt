@@ -1,0 +1,21 @@
+plan: /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/plan_f0.tsv
+den16                      gpu      fp16  f0_den_block_L12294_c512 fx_den_block_L12294_c512    1   2   5  000 -                         300 gate      
+dino16                     gpu      fp16  f0_dino_block_L4101_c1024 fx_dino_block_L4101_c1024    1   2   5  000 -                         300 gate      
+gs16                       gpu      fp16  f0_gs_block_A8192_c512 fx_gs_block_A8192_c512    1   2   5  000 -                         300 gate      
+oct16                      gpu      fp16  f0_oct_block_L8192_c512 fx_oct_block_L8192_c512    1   2   5  000 -                         300 gate      
+vae16                      gpu      fp16  f0_vae_enc_1024_c1024 fx_vae_enc_1024_c1024    1   2   5  000 -                         300 gate      
+den32                      gpu      fp32  f0_den_block_L12294_c512 fx_den_block_L12294_c512    1   1   3  000 -                         300 gate      
+den16a                     gpu      fp16acc32 f0_den_block_L12294_c512 fx_den_block_L12294_c512    1   1   3  000 -                         300 gate      
+inputs (sha256):
+  83498816daa198a9… 51767184 B models/f0/f0_den_block_L12294_c512.tflite
+  a615400df693b910… 104948648 B models/f0/f0_dino_block_L4101_c1024.tflite
+  de3288cd7f9f1bfa… 58988320 B models/f0/f0_gs_block_A8192_c512.tflite
+  ff361b81dc47cf03… 42155364 B models/f0/f0_oct_block_L8192_c512.tflite
+  4fe9d1318525608d… 137959228 B models/f0/f0_vae_enc_1024_c1024.tflite
+  runner 7e7539e5bd0c73ed… 3257376 B device/stage/r3_rt_runner
+  libs: 2/2 OK against /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/stage/libs230g/SHA256SUMS
+  fx_den_block_L12294_c512: 2 files, 50380800 B, concat sha256 72554aba28973bbb…
+  fx_dino_block_L4101_c1024: 3 files, 23096832 B, concat sha256 769f4a827eadcae4…
+  fx_gs_block_A8192_c512: 2 files, 34078720 B, concat sha256 a9f1196a29be135a…
+  fx_oct_block_L8192_c512: 3 files, 34103296 B, concat sha256 dfbe306ccfb26872…
+  fx_vae_enc_1024_c1024: 1 files, 12582912 B, concat sha256 17fbb3db1b3e30fd…

@@ -1,0 +1,16 @@
+pid=24813 accel=gpu gpu_precision=fp16acc32 burst=1 models=1 fixtures=1 warmup=1 rounds=3 ab_fixture=000 libdir=/data/local/tmp/idol_g1 cache_dir= dump=full signature=(0) profile=0 npu_vendor=qualcomm ref=- ref2=- stop_nonfinite=0 llm_chain_flags=0 wall_ms=1794208195682
+model[0] signature[0] serving_default
+model[0] input[0] sig_name=args_0 logical=args_0 type=1 bytes=33554432 rank=4 ext=.f32
+compile_start model[0] wall_ms=1794208195759
+INFO: Loaded OpenCL library with dlopen.
+compile_end model[0] wall_ms=1794208196151
+model[0]=/data/local/tmp/idol_g1/vae_4.tflite signature=serving_default index=0 inputs=1 outputs=1 out0_elems=1048576 compile_ms=392.7 fully_accelerated=true
+parity model[0] fixture 000 ms=48.693 run_ms=0.364 nonfinite=0 out0[0..3]=0.416504,0.882812,0.789062,0.890625 l2=1445.67 maxabs=7.71484
+parity_summary model[0] /data/local/tmp/idol_g1/vae_4.tflite fixtures=1 nonfinite_values=0 first_run_ms=58.2 mean_ms=48.693 outdir=/data/local/tmp/idol_g1/out_vae4/model0
+latency_start wall_ms=1794208196322
+warmup 0 model[0] 47.295 ms run_ms=0.236
+round 0 model[0] write+run+readback_ms=50.824 run_ms=0.261
+round 1 model[0] write+run+readback_ms=48.718 run_ms=0.174
+round 2 model[0] write+run+readback_ms=48.079 run_ms=0.151
+summary model[0] /data/local/tmp/idol_g1/vae_4.tflite n=3 median=48.718 min=48.079 max=50.824 nonfinite_rounds=0 compile_ms=392.7 fully_accelerated=true
+done wall_ms=1794208196553

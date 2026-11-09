@@ -1,0 +1,27 @@
+setup start 2026-11-09 16:49:46; data free before: 81543417856 B
+lib libLiteRt.so sha256 MATCH
+lib libLiteRtClGlAccelerator.so sha256 MATCH
+runner r3_rt_runner sha256 MATCH (7e7539e5bd0c73ed121a211a7021017e220757c526b6bca72a8d9089eefe68a1)
+push g1_bir files 1/1 concat sha256 phone=91b606ce2d8ae1f3d110012071d9c8dc1bf1529fca361f9a5ce5049da5bea3ba mac=91b606ce2d8ae1f3d110012071d9c8dc1bf1529fca361f9a5ce5049da5bea3ba MATCH in 1s
+push g1_vae_0 files 1/1 concat sha256 phone=bc5af53ee834b81603cf57f5376197d8428005d3acb38dd82745dcebea6a6aac mac=bc5af53ee834b81603cf57f5376197d8428005d3acb38dd82745dcebea6a6aac MATCH in 1s
+push g1_vae_1 files 1/1 concat sha256 phone=63ee282ed799e3399cc6f5e8193f7e59202e62401949607ed617e5a9e3f3d43e mac=63ee282ed799e3399cc6f5e8193f7e59202e62401949607ed617e5a9e3f3d43e MATCH in 7s
+push g1_vae_2 files 1/1 concat sha256 phone=a2cd7e011f3807cee9f2d9e6001db2083b15fe373db3d6c31de0fbf071649bb2 mac=a2cd7e011f3807cee9f2d9e6001db2083b15fe373db3d6c31de0fbf071649bb2 MATCH in 4s
+push g1_vae_3 files 1/1 concat sha256 phone=0481cd8d4c58fabf54d9948ed620d4011ec4c7371fcbad8e466e6ba7aa2b98ac mac=0481cd8d4c58fabf54d9948ed620d4011ec4c7371fcbad8e466e6ba7aa2b98ac MATCH in 3s
+push g1_vae_4 files 1/1 concat sha256 phone=74b8d64661cb2bbc223ace689de1700358156a040863b9c04ddd62d02bddbdc9 mac=74b8d64661cb2bbc223ace689de1700358156a040863b9c04ddd62d02bddbdc9 MATCH in 2s
+push g1_vae_attn files 1/1 concat sha256 phone=2d12b813ccdfd1f1a381a5637d095c066837a56af107df4ff556b9dfbbc24667 mac=2d12b813ccdfd1f1a381a5637d095c066837a56af107df4ff556b9dfbbc24667 MATCH in 2s
+device: SM-S942Q 16 BP4A.251205.006.S942QOPS1AZH9
+total 11904
+drwxrwxrwx  9 shell shell    3452 2026-11-09 16:50 .
+drwxrwx--x 11 shell shell   20480 2026-11-09 16:49 ..
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:49 g1_bir
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:49 g1_vae_0
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:49 g1_vae_1
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:50 g1_vae_2
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:50 g1_vae_3
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:50 g1_vae_4
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:50 g1_vae_attn
+-rw-rw-rw-  1 shell shell 5629696 2026-11-09 13:45 libLiteRt.so
+-rw-rw-rw-  1 shell shell 3253032 2026-11-09 13:45 libLiteRtClGlAccelerator.so
+-rwxr-xr-x  1 shell shell 3257376 2026-11-09 13:45 r3_rt_runner
+/dev/block/dm-73 221G 145G   76G  66% /data/user/0
+setup end 2026-11-09 16:50:12 in 26s; data free 81203683328 B; bad=0

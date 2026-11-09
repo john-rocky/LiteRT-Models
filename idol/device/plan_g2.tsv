@@ -1,0 +1,12 @@
+# g2: the graphs rebuilt after g1 on the S26 (graph set v3 = v2 + these): BiRefNet memory-lean form with chained
+# gather tiles (bir_lean.py; CPU; g1: OOM at the first call) and the VAE with the hierarchical GroupNorm max (g1: vae_0 8 s per call, killed). Same fixtures as g1
+# (same inputs). GRAPH_DIR = ~/code/idol_work/models_v3_parts. BiRefNet: the runner's CPU options do not reach
+# LiteRT 2.3.0 (one thread), so its time here is single-threaded; the leg is for its memory.
+# tag accel prec graph fx count warmup rounds ab cache compile_s ready extras
+bir3                   cpu   -          bir            g1_bir               1 0 1 000 - 300 gate rest=5
+vae0v3                 gpu   fp16acc32  vae_0          g1_vae_0             1 1 3 000 - 300 gate rest=5
+vae1v3                 gpu   fp16acc32  vae_1          g1_vae_1             1 1 3 000 - 300 gate rest=5
+vae2v3                 gpu   fp16acc32  vae_2          g1_vae_2             1 1 3 000 - 300 gate rest=5
+vae3v3                 gpu   fp16acc32  vae_3          g1_vae_3             1 1 3 000 - 300 gate rest=5
+vaeattnv3              gpu   fp16acc32  vae_attn       g1_vae_attn          1 1 3 000 - 300 gate rest=5
+vae4v3                 gpu   fp16acc32  vae_4          g1_vae_4             1 1 3 000 - 300 gate rest=5

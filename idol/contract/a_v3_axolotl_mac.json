@@ -1,0 +1,58 @@
+{
+ "models": "/Users/majimadaisuke/code/idol_work/models_v3",
+ "ref": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/axolotl",
+ "accel": "gpu",
+ "precision": "metal default (fp16)",
+ "matting": {
+  "iou": 1.0,
+  "line": 0.95,
+  "pass": true,
+  "box_birefnet": [
+   0,
+   2,
+   1023,
+   1024
+  ],
+  "box_dis": [
+   0,
+   2,
+   1023,
+   1024
+  ],
+  "box_corner_diff_px": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "alpha_nonzero_birefnet": 433889,
+  "alpha_nonzero_dis": 433889,
+  "app_matting": "birefnet",
+  "alpha_uint8_pixels_differing": 709,
+  "alpha_pixels": 1048576,
+  "alpha_uint8_max_abs_diff": 1
+ },
+ "vae moments (metered)": {
+  "cos": 0.9999333159924709,
+  "rel_l2": 0.011550817793678713,
+  "max_abs_diff": 0.23411017656326294,
+  "max_abs_ref": 6.938365936279297,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "vae latent tokens": {
+  "cos": 0.9999297866783181,
+  "rel_l2": 0.011860709705744269,
+  "max_abs_diff": 0.12947309017181396,
+  "max_abs_ref": 4.529397010803223,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "all_pass": true,
+ "wall_s": 9.6,
+ "stage_s": {
+  "vae": 1.94
+ }
+}

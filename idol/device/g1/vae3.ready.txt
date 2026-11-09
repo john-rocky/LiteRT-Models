@@ -1,0 +1,1 @@
+gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 5s since 16:09:25

@@ -1,0 +1,8 @@
+{
+ "comment": "CONTRACT.md (a): each part on the armchair fixture's reference input, outputs dumped as <id>.<name>.f32.",
+ "reserve_mb": 1000,
+ "mem_check": true,
+ "rows": [
+  {"id": "parity_armchair", "kind": "parity", "fixture": "fx/armchair"}
+ ]
+}

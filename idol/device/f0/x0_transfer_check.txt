@@ -1,0 +1,14 @@
+=== transfer check 2026-11-09 13:46:17
+host adb processes:
+  none
+phone:
+2127509.28 15963239.87
+/dev/block/dm-73 221G 145G   76G  66% /data/user/0
+    6 24-14:58:30 00:00:00 [kworker/R-sync_wq]
+ 1900 24-14:58:25 00:00:00 android.hardware.gatekeeper-service
+ 2386 24-14:58:24 00:01:59 installd
+ 2457 24-14:58:24 00:00:00 gatekeeperd
+25770    02:46:45 00:00:00 com.sec.spp.push
+top resumed:     topResumedActivity=ActivityRecord{153785014 u0 com.android.settings/.SubSettings t3127}
+our stage before setup: ls: /data/local/tmp/idol_f0: No such file or directory
+CPU TIME grown in 5 s (>= 2 s):

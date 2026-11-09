@@ -1,0 +1,7 @@
+# The versions the Mac checks ran with (CPython 3.12).
+ai-edge-litert==2.3.0
+ml_dtypes==0.6.0
+numpy==2.5.4
+pillow==13.0.0
+torch==2.14.1
+huggingface_hub==2.4.0

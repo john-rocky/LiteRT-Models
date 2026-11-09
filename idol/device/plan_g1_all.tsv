@@ -1,0 +1,53 @@
+# g1: every shipped graph once on the S26 (fp16acc32 GPU; BiRefNet CPU), real inputs from the Mac run of
+# armchair; parity fixture 000 dumped, warm-up 1, 3 timed rounds. GRAPH_DIR = models/v2.
+# tag accel prec graph fx count warmup rounds ab cache compile_s ready extras
+bir                    cpu   -          bir            g1_bir               1 1 3 000 - 300 gate rest=5
+dino0                  gpu   fp16acc32  dino_0         g1_dino_0            1 1 3 000 - 300 gate rest=5
+dino1                  gpu   fp16acc32  dino_1         g1_dino_1            1 1 3 000 - 300 gate rest=5
+dino2                  gpu   fp16acc32  dino_2         g1_dino_2            1 1 3 000 - 300 gate rest=5
+dino3                  gpu   fp16acc32  dino_3         g1_dino_3            1 1 3 000 - 300 gate rest=5
+vae0                   gpu   fp16acc32  vae_0          g1_vae_0             1 1 3 000 - 300 gate rest=5
+vae1                   gpu   fp16acc32  vae_1          g1_vae_1             1 1 3 000 - 300 gate rest=5
+vae2                   gpu   fp16acc32  vae_2          g1_vae_2             1 1 3 000 - 300 gate rest=5
+vae3                   gpu   fp16acc32  vae_3          g1_vae_3             1 1 3 000 - 300 gate rest=5
+vaeattn                gpu   fp16acc32  vae_attn       g1_vae_attn          1 1 3 000 - 300 gate rest=5
+vae4                   gpu   fp16acc32  vae_4          g1_vae_4             1 1 3 000 - 300 gate rest=5
+denctx                 gpu   fp16acc32  den_ctx        g1_den_ctx           1 1 3 000 - 300 gate rest=5
+denin                  gpu   fp16acc32  den_in         g1_den_in            1 1 3 000 - 300 gate rest=5
+dj00                   gpu   fp16acc32  den_joint_00   g1_den_joint_00      1 1 3 000 - 300 gate rest=5
+dj01                   gpu   fp16acc32  den_joint_01   g1_den_joint_01      1 1 3 000 - 300 gate rest=5
+dj02                   gpu   fp16acc32  den_joint_02   g1_den_joint_02      1 1 3 000 - 300 gate rest=5
+dj03                   gpu   fp16acc32  den_joint_03   g1_den_joint_03      1 1 3 000 - 300 gate rest=5
+dj04                   gpu   fp16acc32  den_joint_04   g1_den_joint_04      1 1 3 000 - 300 gate rest=5
+dj05                   gpu   fp16acc32  den_joint_05   g1_den_joint_05      1 1 3 000 - 300 gate rest=5
+dj06                   gpu   fp16acc32  den_joint_06   g1_den_joint_06      1 1 3 000 - 300 gate rest=5
+dj07                   gpu   fp16acc32  den_joint_07   g1_den_joint_07      1 1 3 000 - 300 gate rest=5
+dj08                   gpu   fp16acc32  den_joint_08   g1_den_joint_08      1 1 3 000 - 300 gate rest=5
+dj09                   gpu   fp16acc32  den_joint_09   g1_den_joint_09      1 1 3 000 - 300 gate rest=5
+dj10                   gpu   fp16acc32  den_joint_10   g1_den_joint_10      1 1 3 000 - 300 gate rest=5
+dj11                   gpu   fp16acc32  den_joint_11   g1_den_joint_11      1 1 3 000 - 300 gate rest=5
+dj12                   gpu   fp16acc32  den_joint_12   g1_den_joint_12      1 1 3 000 - 300 gate rest=5
+dj13                   gpu   fp16acc32  den_joint_13   g1_den_joint_13      1 1 3 000 - 300 gate rest=5
+dj14                   gpu   fp16acc32  den_joint_14   g1_den_joint_14      1 1 3 000 - 300 gate rest=5
+dj15                   gpu   fp16acc32  den_joint_15   g1_den_joint_15      1 1 3 000 - 300 gate rest=5
+dj16                   gpu   fp16acc32  den_joint_16   g1_den_joint_16      1 1 3 000 - 300 gate rest=5
+dj17                   gpu   fp16acc32  den_joint_17   g1_den_joint_17      1 1 3 000 - 300 gate rest=5
+dj18                   gpu   fp16acc32  den_joint_18   g1_den_joint_18      1 1 3 000 - 300 gate rest=5
+dj19                   gpu   fp16acc32  den_joint_19   g1_den_joint_19      1 1 3 000 - 300 gate rest=5
+dj20                   gpu   fp16acc32  den_joint_20   g1_den_joint_20      1 1 3 000 - 300 gate rest=5
+dj21                   gpu   fp16acc32  den_joint_21   g1_den_joint_21      1 1 3 000 - 300 gate rest=5
+dj22                   gpu   fp16acc32  den_joint_22   g1_den_joint_22      1 1 3 000 - 300 gate rest=5
+dj23                   gpu   fp16acc32  den_joint_23   g1_den_joint_23      1 1 3 000 - 300 gate rest=5
+octL64                 gpu   fp16acc32  oct            g1_oct_L64           1 1 3 000 - 300 gate rest=5 args=--signature,L64
+octL256                gpu   fp16acc32  oct            g1_oct_L256          1 1 3 000 - 300 gate rest=5 args=--signature,L256
+octL1024               gpu   fp16acc32  oct            g1_oct_L1024         1 1 3 000 - 300 gate rest=5 args=--signature,L1024
+octL4096               gpu   fp16acc32  oct            g1_oct_L4096         1 1 3 000 - 300 gate rest=5 args=--signature,L4096
+octL8192               gpu   fp16acc32  oct            g1_oct_L8192         1 1 3 000 - 300 gate rest=5 args=--signature,L8192
+gs0                    gpu   fp16acc32  gs_0           g1_gs_0              1 1 3 000 - 300 gate rest=5
+gs1                    gpu   fp16acc32  gs_1           g1_gs_1              1 1 3 000 - 300 gate rest=5
+gs2                    gpu   fp16acc32  gs_2           g1_gs_2              1 1 3 000 - 300 gate rest=5
+gs3                    gpu   fp16acc32  gs_3           g1_gs_3              1 1 3 000 - 300 gate rest=5
+gs4                    gpu   fp16acc32  gs_4           g1_gs_4              1 1 3 000 - 300 gate rest=5
+gs5                    gpu   fp16acc32  gs_5           g1_gs_5              1 1 3 000 - 300 gate rest=5
+gs6                    gpu   fp16acc32  gs_6           g1_gs_6              1 1 3 000 - 300 gate rest=5
+gs7                    gpu   fp16acc32  gs_7           g1_gs_7              1 1 3 000 - 300 gate rest=5

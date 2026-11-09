@@ -1,0 +1,86 @@
+=== 16:08:12 n=0
+devtime 1794208092
+kgsl 222 1300 0 46500
+cpu policy0 1555200 3628800 3628800
+cpu policy6 3859200 4742400 4742400
+MemFree:         1796312 kB
+MemAvailable:    6581656 kB
+SwapFree:       10606296 kB
+pid 22414
+VmHWM:	   73980 kB
+VmRSS:	   73980 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 207585280
+kgsl_busy       0       0 0
+Thermal Status: 1
+mValue=38.9, mType=3, mName=SKIN
+cooling cpufreq-cpu0 0/27
+cooling cpufreq-cpu6 0/30
+cooling ddr-cdev 0/1
+cooling cpu-cluster0 0/27
+cooling cpu-cluster1 0/30
+cooling cdsp_ss 0/12
+cooling cdsp_hw 0/1
+cooling kgsl 0/18
+cooling cdsp 0/12
+cooling gpu 0/18
+cooling cdsp_sw_hvx 0/11
+cooling cdsp_sw_hmx 0/12
+  temperature: 379
+mWakefulness=Awake
+=== 16:08:14 n=1
+devtime 1794208094
+kgsl 1300 1300 0 94600
+cpu policy0 998400 3628800 3628800
+cpu policy6 883200 4742400 4742400
+MemFree:         1613960 kB
+MemAvailable:    5648296 kB
+SwapFree:       10606040 kB
+pid 22414
+VmHWM:	 2211272 kB
+VmRSS:	 1431796 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 1084096512
+kgsl_busy  749287 1001778 74
+=== 16:08:16 n=2
+devtime 1794208096
+kgsl 1100 1200 1 105100
+cpu policy0 2112000 3628800 3628800
+cpu policy6 883200 4742400 4742400
+MemFree:         1575480 kB
+MemAvailable:    5630440 kB
+SwapFree:       10606040 kB
+pid 22414
+VmHWM:	 2211272 kB
+VmRSS:	 1451780 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 1084096512
+kgsl_busy 1002065 1002092 99
+=== 16:08:19 n=3
+devtime 1794208098
+kgsl 1300 1300 0 102700
+cpu policy0 2496000 3628800 3628800
+cpu policy6 883200 4742400 4742400
+MemFree:         1559460 kB
+MemAvailable:    5624004 kB
+SwapFree:       10608088 kB
+pid 22414
+VmHWM:	 2211272 kB
+VmRSS:	 1451752 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 1084096512
+kgsl_busy  995983 1002151 99
+=== 16:08:21 n=4
+devtime 1794208101
+kgsl 1300 1300 0 105500
+cpu policy0 2496000 3628800 3628800
+cpu policy6 883200 4742400 4742400
+MemFree:         1532824 kB
+MemAvailable:    5605120 kB
+SwapFree:       10608856 kB
+pid 22414
+VmHWM:	 2211272 kB
+VmRSS:	 1451724 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 1084096512
+kgsl_busy  980397 1002362 97

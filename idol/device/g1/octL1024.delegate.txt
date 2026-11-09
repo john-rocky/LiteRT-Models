@@ -1,0 +1,2 @@
+octL1024.stderr.txt:VERBOSE: Replacing 617 out of 617 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 2 (L1024).
+11-09 16:11:42.207 27369 27369 I tflite  : Replacing 617 out of 617 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 2 (L1024).

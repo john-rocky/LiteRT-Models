@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "ref/axolotl/gaussian.ply",
+  "device/results/s26/e2e_axolotl/e2e_axolotl.0.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 42.34244494025596,
+ "mse": 5.831167356152734e-05,
+ "psnr_per_view_db": [
+  40.72427289518203,
+  44.20864991300068,
+  40.587492650249175,
+  46.32338044880056
+ ]
+}

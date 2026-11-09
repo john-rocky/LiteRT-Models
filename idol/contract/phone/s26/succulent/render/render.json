@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "ref/succulent/gaussian.ply",
+  "device/results/s26/e2e_succulent/e2e_succulent.0.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 41.432420605385765,
+ "mse": 7.190480940626172e-05,
+ "psnr_per_view_db": [
+  40.30402492865313,
+  41.089524033227924,
+  42.18458900507528,
+  42.5105324810295
+ ]
+}

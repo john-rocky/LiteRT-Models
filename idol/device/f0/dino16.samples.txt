@@ -1,0 +1,30 @@
+=== 13:47:33 n=0
+devtime 1794199653
+kgsl 222 1300 0 34900
+cpu policy0 2112000 3628800 3628800
+cpu policy6 3859200 4742400 4742400
+MemFree:          547156 kB
+MemAvailable:    6434588 kB
+SwapFree:        9583024 kB
+pid 21405
+VmHWM:	   64560 kB
+VmRSS:	   64560 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 255750144
+kgsl_busy   28031 1004012 0
+Thermal Status: 0
+mValue=31.8, mType=3, mName=SKIN
+cooling cpufreq-cpu0 0/27
+cooling cpufreq-cpu6 0/30
+cooling ddr-cdev 0/1
+cooling cpu-cluster0 0/27
+cooling cpu-cluster1 0/30
+cooling cdsp_ss 0/12
+cooling cdsp_hw 0/1
+cooling kgsl 0/18
+cooling cdsp 0/12
+cooling gpu 0/18
+cooling cdsp_sw_hvx 0/11
+cooling cdsp_sw_hmx 0/12
+  temperature: 299
+mWakefulness=Awake

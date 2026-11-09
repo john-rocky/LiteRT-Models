@@ -1,0 +1,9 @@
+# F0: one block per heavy part, S26 GPU, LiteRT 2.3.0. count 1 = one parity fixture (dumped), then the latency phase.
+# tag     accel prec  graph                       fx                          count warmup rounds ab  cache compile_s ready extras
+den16     gpu   fp16  f0_den_block_L12294_c512    fx_den_block_L12294_c512    1     2      5      000 -     300       gate
+dino16    gpu   fp16  f0_dino_block_L4101_c1024   fx_dino_block_L4101_c1024   1     2      5      000 -     300       gate
+gs16      gpu   fp16  f0_gs_block_A8192_c512      fx_gs_block_A8192_c512      1     2      5      000 -     300       gate
+oct16     gpu   fp16  f0_oct_block_L8192_c512     fx_oct_block_L8192_c512     1     2      5      000 -     300       gate
+vae16     gpu   fp16  f0_vae_enc_1024_c1024       fx_vae_enc_1024_c1024       1     2      5      000 -     300       gate
+den32     gpu   fp32  f0_den_block_L12294_c512    fx_den_block_L12294_c512    1     1      3      000 -     300       gate
+den16a    gpu   fp16acc32 f0_den_block_L12294_c512 fx_den_block_L12294_c512   1     1      3      000 -     300       gate

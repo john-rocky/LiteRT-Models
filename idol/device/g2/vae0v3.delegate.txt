@@ -1,0 +1,2 @@
+vae0v3.stderr.txt:VERBOSE: Replacing 136 out of 136 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 16:51:29.600 15671 15671 I tflite  : Replacing 136 out of 136 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

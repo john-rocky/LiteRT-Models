@@ -1,0 +1,9 @@
+{
+ "comment": "CONTRACT.md (b): the whole pipeline from the succulent fixture's raw image with its noise arrays, one run (its .ply is scored against the author's .ply); graphs compiled before the run (preload).",
+ "reserve_mb": 2500,
+ "mem_check": true,
+ "handoff": "host",
+ "rows": [
+  {"id": "e2e_succulent", "kind": "e2e", "fixture": "fx/succulent", "runs": 1, "preload": true}
+ ]
+}

@@ -1,0 +1,19 @@
+push f0_den_block_L12294_c512.tflite rc=0 bytes 51767184/51767184 sha256 phone=83498816daa198a9f68e0d4d9c70b4a9ba89e1cd02063689c9a9381333801257 mac=83498816daa198a9f68e0d4d9c70b4a9ba89e1cd02063689c9a9381333801257 MATCH in 1s
+data free with f0_den_block_L12294_c512.tflite: 81320841216 B
+push f0_dino_block_L4101_c1024.tflite rc=0 bytes 104948648/104948648 sha256 phone=a615400df693b910778d3534c6525c9af25c75a7b00de35b38bad551c531ce31 mac=a615400df693b910778d3534c6525c9af25c75a7b00de35b38bad551c531ce31 MATCH in 2s
+data free with f0_dino_block_L4101_c1024.tflite: 81215762432 B
+removed graph f0_dino_block_L4101_c1024.tflite 2026-11-09 13:47:38
+push f0_gs_block_A8192_c512.tflite rc=0 bytes 58988320/58988320 sha256 phone=de3288cd7f9f1bfa2638804e9afc863478b771850b21f71e8a0bed332c1b5a91 mac=de3288cd7f9f1bfa2638804e9afc863478b771850b21f71e8a0bed332c1b5a91 MATCH in 2s
+data free with f0_gs_block_A8192_c512.tflite: 81261764608 B
+removed graph f0_gs_block_A8192_c512.tflite 2026-11-09 13:48:16
+push f0_oct_block_L8192_c512.tflite rc=0 bytes 42155364/42155364 sha256 phone=ff361b81dc47cf032f69d1523d13f6dc43e81232e15c3e3e7787c96bf30801a6 mac=ff361b81dc47cf032f69d1523d13f6dc43e81232e15c3e3e7787c96bf30801a6 MATCH in 1s
+data free with f0_oct_block_L8192_c512.tflite: 81278599168 B
+removed graph f0_oct_block_L8192_c512.tflite 2026-11-09 13:48:57
+push f0_vae_enc_1024_c1024.tflite rc=0 bytes 137959228/137959228 sha256 phone=4fe9d1318525608d79105e393d9e7bbecadbc72a760e4e4e8e9e64bbaa8e8a0c mac=4fe9d1318525608d79105e393d9e7bbecadbc72a760e4e4e8e9e64bbaa8e8a0c MATCH in 3s
+data free with f0_vae_enc_1024_c1024.tflite: 81182695424 B
+removed graph f0_vae_enc_1024_c1024.tflite 2026-11-09 13:50:17
+graph f0_den_block_L12294_c512.tflite already on the phone (sha256 MATCH)
+data free with f0_den_block_L12294_c512.tflite: 81320759296 B
+graph f0_den_block_L12294_c512.tflite already on the phone (sha256 MATCH)
+data free with f0_den_block_L12294_c512.tflite: 81320755200 B
+removed graph f0_den_block_L12294_c512.tflite 2026-11-09 13:51:52

@@ -1,0 +1,2 @@
+bir.stderr.txt:VERBOSE: Replacing 5225 out of 6843 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 55 partitions for subgraph 0 (main).
+11-09 16:05:52.148 13933 13933 I tflite  : Replacing 5225 out of 6843 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 55 partitions for subgraph 0 (main).

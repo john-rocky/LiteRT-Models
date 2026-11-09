@@ -1,0 +1,7 @@
+11-09 13:46:51.540  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 13:46:51.540  1034  1034 I lmkd    : Reclaim 'com.samsung.android.moaiapc' (25643), uid 1000, oom_score_adj 995, state 10 to free 56484kB rss, 41368kB swap; reason: low watermark is breached or filecache is low (2677420kB).; level: 1
+11-09 13:46:51.645  1034  1034 I lmkd    : 8(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!
+11-09 13:46:51.844  1034  1034 I lmkd    : 1(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!
+11-09 13:46:52.045  1034  1034 I lmkd    : 1(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!
+11-09 13:46:52.244  1034  1034 I lmkd    : 1(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!
+11-09 13:46:52.445  1034  1034 I lmkd    : 1(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!

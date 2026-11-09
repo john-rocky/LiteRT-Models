@@ -1,0 +1,2 @@
+dj09.stderr.txt:VERBOSE: Replacing 1232 out of 1232 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 16:17:27.149  3878  3878 I tflite  : Replacing 1232 out of 1232 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

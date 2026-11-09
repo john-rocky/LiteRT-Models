@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Idol</string>
+    <string name="title">Idol — one photo to 3D</string>
+    <string name="tagline">One photo in, a 3D object out — including the sides the picture never showed.</string>
+    <string name="mode_photo">Photo</string>
+    <string name="mode_render">Render or illustration</string>
+    <string name="pick">Pick a photo</string>
+    <string name="camera">Take a photo</string>
+    <string name="dis">Background removal on the GPU (IS-Net DIS)</string>
+    <string name="picture_description">The picture</string>
+    <string name="cutout_description">The cut-out the 3D model is made from</string>
+    <string name="share">Share .ply</string>
+    <string name="new_run">New</string>
+    <string name="viewer_hint">Drag to turn, pinch to zoom</string>
+    <string name="no_object">No object found in this picture.</string>
+    <string name="camera_denied">Camera permission is off. You can still pick a photo.</string>
+    <string name="no_camera_app">No camera app is available. You can still pick a photo.</string>
+    <string name="no_share_app">No app can receive the .ply.</string>
+    <string name="stopping">Stopping after the current step…</string>
+</resources>

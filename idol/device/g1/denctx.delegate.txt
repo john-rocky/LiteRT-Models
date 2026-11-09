@@ -1,0 +1,2 @@
+denctx.stderr.txt:VERBOSE: Replacing 622 out of 622 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 16:10:05.327 25098 25098 I tflite  : Replacing 622 out of 622 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

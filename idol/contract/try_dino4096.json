@@ -1,0 +1,20 @@
+{
+ "models": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/models/v1_dino4096",
+ "ref": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/armchair",
+ "accel": "gpu",
+ "precision": "metal default (fp16)",
+ "dinov3 feature1": {
+  "cos": 0.9998923781652855,
+  "rel_l2": 0.014671445686151953,
+  "max_abs_diff": 1.2247958183288574,
+  "max_abs_ref": 28.996522903442383,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "all_pass": true,
+ "wall_s": 63.6,
+ "stage_s": {
+  "dinov3": 63.46
+ }
+}

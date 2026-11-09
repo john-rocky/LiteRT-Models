@@ -1,0 +1,10 @@
+2026-11-09 16:49:21 inputs 1081005573 B: start; no window
+2026-11-09 16:49:31 inputs 1081005573 B: end, 16:49:21 to 16:49:31 (10 s); 0 s inside a window
+2026-11-09 16:49:46 setup 339295816 B: start; no window
+2026-11-09 16:50:13 setup 339295816 B: end, 16:49:46 to 16:50:13 (27 s); 0 s inside a window
+2026-11-09 16:50:13 graph bir.tflite 930410016 B: start; no window
+2026-11-09 16:50:36 graph bir.tflite 930410016 B: end, 16:50:13 to 16:50:36 (23 s); 0 s inside a window
+2026-11-09 16:51:38 pull vae0v3.dump 134217728 B: start; no window
+2026-11-09 16:51:43 pull vae0v3.dump 134217728 B: end, 16:51:38 to 16:51:42 (4 s); 0 s inside a window
+2026-11-09 16:51:55 pull vae1v3.dump 67108864 B: start; no window
+2026-11-09 16:51:57 pull vae1v3.dump 67108864 B: end, 16:51:55 to 16:51:57 (2 s); 0 s inside a window

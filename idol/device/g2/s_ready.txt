@@ -1,0 +1,14 @@
+16:50:36 ready? bir3: thermal 0 cap none kgsl_pwrlevel 0 rested 63s mode gate
+bir3 ready gate: clean; rested 63s since 16:49:33
+16:51:28 ready? vae0v3: thermal 0 cap policy0:3187200/3628800 policy6:3398400/4742400  kgsl_pwrlevel 0 rested 8s mode gate
+vae0v3 ready gate: gate leg, not waited for clean (thermal 0, cap policy0:3187200/3628800 policy6:3398400/4742400 , kgsl_pwrlevel 0); rested 8s since 16:51:20
+16:51:46 ready? vae1v3: thermal 0 cap policy0:3302400/3628800 policy6:3648000/4742400  kgsl_pwrlevel 0 rested 10s mode gate
+vae1v3 ready gate: gate leg, not waited for clean (thermal 0, cap policy0:3302400/3628800 policy6:3648000/4742400 , kgsl_pwrlevel 0); rested 10s since 16:51:36
+16:52:00 ready? vae2v3: thermal 0 cap policy0:3398400/3628800 policy6:3859200/4742400  kgsl_pwrlevel 0 rested 8s mode gate
+vae2v3 ready gate: gate leg, not waited for clean (thermal 0, cap policy0:3398400/3628800 policy6:3859200/4742400 , kgsl_pwrlevel 0); rested 8s since 16:51:52
+16:52:11 ready? vae3v3: thermal 0 cap policy0:3513600/3628800 policy6:3974400/4742400  kgsl_pwrlevel 0 rested 5s mode gate
+vae3v3 ready gate: gate leg, not waited for clean (thermal 0, cap policy0:3513600/3628800 policy6:3974400/4742400 , kgsl_pwrlevel 0); rested 5s since 16:52:06
+16:52:28 ready? vaeattnv3: thermal 0 cap policy6:4512000/4742400  kgsl_pwrlevel 0 rested 13s mode gate
+vaeattnv3 ready gate: gate leg, not waited for clean (thermal 0, cap policy6:4512000/4742400 , kgsl_pwrlevel 0); rested 13s since 16:52:15
+16:52:54 ready? vae4v3: thermal 0 cap none kgsl_pwrlevel 0 rested 21s mode gate
+vae4v3 ready gate: clean; rested 21s since 16:52:33

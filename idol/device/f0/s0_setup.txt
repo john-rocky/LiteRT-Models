@@ -1,0 +1,23 @@
+setup start 2026-11-09 13:46:24; data free before: 81539321856 B
+lib libLiteRt.so sha256 MATCH
+lib libLiteRtClGlAccelerator.so sha256 MATCH
+runner r3_rt_runner sha256 MATCH (7e7539e5bd0c73ed121a211a7021017e220757c526b6bca72a8d9089eefe68a1)
+push fx_den_block_L12294_c512 files 2/2 concat sha256 phone=72554aba28973bbb6b46967ac4e9c7d0ee06c7c7e0592cbef690ee2a065e6f6f mac=72554aba28973bbb6b46967ac4e9c7d0ee06c7c7e0592cbef690ee2a065e6f6f MATCH in 2s
+push fx_dino_block_L4101_c1024 files 3/3 concat sha256 phone=769f4a827eadcae4f484561f5bd627885cc1284f0352106b45ebc36d4220186b mac=769f4a827eadcae4f484561f5bd627885cc1284f0352106b45ebc36d4220186b MATCH in 1s
+push fx_gs_block_A8192_c512 files 2/2 concat sha256 phone=a9f1196a29be135ab706e051176ef439cdd31e0fde969f5798d885307b6acdfe mac=a9f1196a29be135ab706e051176ef439cdd31e0fde969f5798d885307b6acdfe MATCH in 2s
+push fx_oct_block_L8192_c512 files 3/3 concat sha256 phone=dfbe306ccfb26872e3aabc3db4eb63393d1fb1facc7647ef934b92809e19ae31 mac=dfbe306ccfb26872e3aabc3db4eb63393d1fb1facc7647ef934b92809e19ae31 MATCH in 1s
+push fx_vae_enc_1024_c1024 files 1/1 concat sha256 phone=17fbb3db1b3e30fd0c51250630d315291d113a99dd7065ca16fc9d0f5de4dd71 mac=17fbb3db1b3e30fd0c51250630d315291d113a99dd7065ca16fc9d0f5de4dd71 MATCH in 1s
+device: SM-S942Q 16 BP4A.251205.006.S942QOPS1AZH9
+total 11898
+drwxrwxrwx  7 shell shell    3452 2026-11-09 13:46 .
+drwxrwx--x 11 shell shell   20480 2026-11-09 13:46 ..
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_den_block_L12294_c512
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_dino_block_L4101_c1024
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_gs_block_A8192_c512
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_oct_block_L8192_c512
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_vae_enc_1024_c1024
+-rw-rw-rw-  1 shell shell 5629696 2026-11-09 13:45 libLiteRt.so
+-rw-rw-rw-  1 shell shell 3253032 2026-11-09 13:45 libLiteRtClGlAccelerator.so
+-rwxr-xr-x  1 shell shell 3257376 2026-11-09 13:45 r3_rt_runner
+/dev/block/dm-73 221G 145G   76G  66% /data/user/0
+setup end 2026-11-09 13:46:32 in 8s; data free 81372667904 B; bad=0

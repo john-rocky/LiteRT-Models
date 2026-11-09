@@ -1,0 +1,39 @@
+{
+ "box": [
+  0,
+  2,
+  1023,
+  1024
+ ],
+ "times": {
+  "preprocess": 6.42,
+  "dinov3": 13.14,
+  "vae": 1.72,
+  "denoiser": 39.21,
+  "octree": 3.56,
+  "gaussian_decoder": 8.41,
+  "ply": 0.09,
+  "generate_total": 66.79,
+  "all": 73.3
+ },
+ "box_reference": [
+  0,
+  2,
+  1023,
+  1024
+ ],
+ "tag": "axolotl",
+ "psnr_db": 32.21466167991724,
+ "psnr_per_view_db": [
+  33.84910373178293,
+  29.70482394754115,
+  34.57993029044004,
+  32.43166256726319
+ ],
+ "line_db": 25.0,
+ "matting": "birefnet",
+ "dis_alpha_floor": null,
+ "pass_": true,
+ "precision": "metal default (fp16)",
+ "models": "/Users/majimadaisuke/code/idol_work/models_v3"
+}

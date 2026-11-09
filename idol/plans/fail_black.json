@@ -1,0 +1,6 @@
+{
+ "comment": "CONTRACT.md (d) 2: an all-black picture ends with 'No object found in this picture.' on the Home screen, the process alive. With the model files missing the same row shows (d) 1's message instead.",
+ "rows": [
+  {"id": "fail_black", "kind": "image", "image": "fx/black/black.png", "mode": "real"}
+ ]
+}

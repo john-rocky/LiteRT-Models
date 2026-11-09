@@ -1,0 +1,72 @@
+=== 16:18:57 n=0
+devtime 1794208737
+kgsl 222 902 5 52300
+cpu policy0 1228800 1555200 3628800
+cpu policy6 1497600 1497600 4742400
+MemFree:         1887208 kB
+MemAvailable:    6748272 kB
+SwapFree:       10590960 kB
+pid 6461
+VmHWM:	   49792 kB
+VmRSS:	   49792 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 269606912
+kgsl_busy       0       0 0
+Thermal Status: 3
+mValue=44.4, mType=3, mName=SKIN
+cooling cpufreq-cpu0 0/27
+cooling cpufreq-cpu6 0/30
+cooling ddr-cdev 0/1
+cooling cpu-cluster0 0/27
+cooling cpu-cluster1 0/30
+cooling cdsp_ss 1/12
+cooling cdsp_hw 0/1
+cooling kgsl 0/18
+cooling cdsp 0/12
+cooling gpu 0/18
+cooling cdsp_sw_hvx 0/11
+cooling cdsp_sw_hmx 0/12
+  temperature: 449
+mWakefulness=Awake
+=== 16:18:59 n=1
+devtime 1794208739
+kgsl 902 902 5 60100
+cpu policy0 1670400 1670400 3628800
+cpu policy6 883200 1632000 4742400
+MemFree:         1741980 kB
+MemAvailable:    5918216 kB
+SwapFree:       10590960 kB
+pid 6461
+VmHWM:	  365024 kB
+VmRSS:	  365024 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 974540800
+kgsl_busy  866590 1001711 86
+=== 16:19:02 n=2
+devtime 1794208741
+kgsl 902 902 5 69000
+cpu policy0 1670400 1670400 3628800
+cpu policy6 883200 1632000 4742400
+MemFree:         1682832 kB
+MemAvailable:    5909208 kB
+SwapFree:       10590960 kB
+pid 6461
+VmHWM:	  463456 kB
+VmRSS:	  414168 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 974540800
+kgsl_busy       0       0 0
+=== 16:19:04 n=3
+devtime 1794208744
+kgsl 902 902 5 71300
+cpu policy0 1555200 1555200 3628800
+cpu policy6 883200 1497600 4742400
+MemFree:         1678668 kB
+MemAvailable:    5905048 kB
+SwapFree:       10590960 kB
+pid 6461
+VmHWM:	  463456 kB
+VmRSS:	  414120 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 974540800
+kgsl_busy  989041 1001718 98

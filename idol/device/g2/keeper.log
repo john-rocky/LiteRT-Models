@@ -1,0 +1,9 @@
+===== keeper for idol-g2-s26 started by chain pid 34634 2026-11-09 16:49:31 (keeper.sh sha256 35d7e060ab207487; ON_RELEASE.sh 15eee6254283cff7)
+keeper pid 37054 started 2026-11-09 16:49:31 hold=/Users/majimadaisuke/code/litertlm-convert/community_accel_work/s2_npu_sweep/.device_hold name=idol-g2-s26 hold_limit=1800s wait_limit=14400s on_release_max=120s
+line at start:
+  holder: none
+hold acquired: /Users/majimadaisuke/code/litertlm-convert/community_accel_work/s2_npu_sweep/.device_hold (owner pid 37054) at 16:49:32
+HOLD ACQUIRED by pid 37054 at 2026-11-09 16:49:32; hold file: {"pid": 37054, "script": "idol-g2-s26", "device": "S26", "started": "2026-11-09 16:49:32", "job": {"groups": [34633], "ancestors": [[34634, 1794210560], [34633, 1794210560]]}}
+auto release at 17:19:32
+device hold removed
+HOLD RELEASED at 2026-11-09 16:53:05; hold file now: <absent>

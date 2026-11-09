@@ -121,6 +121,57 @@ speed-ladder step and meets the int8 column. Each GPU call stays ≤ 2 s on the 
 starved the compositor and the process was killed). The turbo LoRA is either merged per phase (two graph sets) or
 kept as side matmuls with a phase input (one set), decided by measurement; the lines are the same either way.
 
+## Changes to the app after the first numbers (no line changed)
+
+- 2026-11-09 17:16, before any (c) number: "graphs already loaded and compiled" cannot hold on the S26 (12 GB): one
+  denoiser block takes about 0.7 GB of GPU memory and the 46 graphs do not fit at once, so the app keeps as many as fit
+  above a memory reserve and compiles the others during each run. (c) is measured as the contract says otherwise
+  (median `generate` of runs 1–3 after a warm-up), with the graphs compiled inside each measured run reported next
+  to it (count and seconds). The e2e plans keep a 2.5 GB reserve (a 1 GB reserve let lmkd kill the app during a
+  preload, LANE.md 17:11).
+
+- 2026-11-09 17:00: input 4 is shot in the first device hold that runs the app, before any app run of inputs 1–3
+  (the table's "first device hold after the go" was round g1, and round g2 followed it: both ran the graph runner,
+  no app). Its sha256 and time go into the table before any line runs on it.
+- 2026-11-09 17:00: the graph set becomes v3 = v2 with two graphs rebuilt after the first S26 sweep (device round g1,
+  `device/plan_g1.tsv`); same arithmetic, no line changed.
+  - The VAE GroupNorm's scale (`idol_graphs.PooledGroupNorm`): the per-group max of |x − mean| is a max pool by the
+    same k as the mean, then a max over the 32 × 32 map (a max of maxes: the same value). g1: `vae_0` took 8.0 s per
+    call on the S26 (one REDUCE_MAX over 1,048,576 values per channel), against the ≤ 2 s per call of "Forms". Round g2:
+    0.83 s, output equal to g1's (cos 1.0000000).
+  - BiRefNet (`bir.tflite`, CPU): g1 ran out of memory at the first call (the Mac CPU peaks at 9.3 GB in one call).
+    The memory-lean form `scripts/bir_lean.py`: the deformable-convolution gathers in output-row tiles that run one
+    after another (each tile's offsets plus an exact zero computed from the previous tile's output, so the LiteRT CPU
+    cannot run every tile's lookup before the work that consumes them), the ASPP's 1×1 convolution applied per
+    branch, and the decoder's last 1×1 convolution applied before the 4× resize and folded into the last 3×3
+    convolution. PyTorch: map cos 1.000000000 against the author's (max |Δ| 5.5e-6). Round g2 on the S26: one call,
+    VmHWM 4.15 GB; uint8 alpha on input 1 differs from the author's in 2,542 of 1,048,576 pixels, each by 1 (IoU
+    1.0). Mac CPU peak 3.2 GB.
+
+- 2026-11-09 15:21, after the (b) numbers with the floor below: the app's matting becomes the author's BiRefNet
+  itself (`bir.tflite`, run by `CompiledModel` on the CPU); DIS stays in the app as an option, off by default. BiRefNet's
+  20 deformable convolutions are rewritten as a GATHER on the token axis with bilinear weights and one matmul
+  (`scripts/deform_conv.py`, the arithmetic of torchvision's `deform_conv2d`): the whole BiRefNet in PyTorch is 4.0e-6
+  (max |Δ|) from the author's map, and through LiteRT CPU on input 1 its uint8 alpha differs from the author's in
+  2,543 of 1,048,576 pixels, each by 1, with the same crop. It runs on the CPU because the LiteRT GPU has no runtime
+  gather (GATHER_ND is not supported; EMBEDDING_LOOKUP with a runtime table ended the process with a segfault on Metal).
+  Why: splitting input 1's (b) put the whole loss in DIS's alpha edges, which no floor fixes (DIS alpha with the
+  author's crop: 22.83 dB; the author's alpha with DIS's crop: 30.35 dB); with the floor DIS passed input 1 by 0.76 dB
+  (25.76 dB) and input 2 at 30.48 dB, and input 3's crop stayed 8 % larger than the author's. Line (a′) now compares
+  the author's BiRefNet run by LiteRT CPU with the author's BiRefNet in PyTorch; its threshold is unchanged. The DIS
+  numbers stay recorded (`contract/standin/`, `contract/a_<input>_mac.json`).
+- 2026-11-09 15:07, after the first (b) numbers (Mac stand-in: armchair 24.04, axolotl 19.00, succulent 19.15 dB, all
+  FAIL): the app's DIS alpha gets a floor: uint8 values below 8 are set to 0 before the author's preprocessing above.
+  Why: DIS leaves faint responses BiRefNet does not (1/255 at the image corners on the axolotl, a faint wisp over the
+  succulent's top leaf), and the author's rule crops to the nonzero alpha, so the crop came out 20 % (axolotl) and
+  25 % (succulent) larger than BiRefNet's. The value was chosen on 31 held-out images of the author's gallery (every third file, inputs 1–2
+  excluded; `scripts/calibrate_matting_floor.py`, `contract/matting_floor.json`) as the floor whose crop box best
+  matches BiRefNet's: mean error 0.14 % of the side, worst 0.59 % (no floor: mean 9.0 %, 20 of 31 images over 2 %).
+  Line (a′) thresholds at 128 and is unaffected. The first numbers stay recorded (`contract/standin_v1/`,
+  `contract/a_<input>_mac_v1.json`, LANE.md).
+- 2026-11-09 15:05: the graph set became v2 (DINOv3 and the context refiner with the key-chunked attention from
+  4,096 keys); no line changed.
+
 ## Changes before any number
 
 - 2026-11-09 14:13, before any (b) number: the cameras' up axis. The contract said "y up"; the first render of the

@@ -1,0 +1,37 @@
+{
+ "models": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/models/v2",
+ "ref": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/armchair",
+ "accel": "gpu",
+ "precision": "metal default (fp16)",
+ "matting": {
+  "iou": 1.0,
+  "line": 0.95,
+  "pass": true,
+  "box_birefnet": [
+   1,
+   1,
+   1023,
+   1022
+  ],
+  "box_dis": [
+   1,
+   1,
+   1023,
+   1022
+  ],
+  "box_corner_diff_px": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "alpha_nonzero_birefnet": 436528,
+  "alpha_nonzero_dis": 436528,
+  "app_matting": "birefnet",
+  "alpha_uint8_pixels_differing": 2543,
+  "alpha_uint8_max_abs_diff": 1
+ },
+ "all_pass": true,
+ "wall_s": 115.9,
+ "stage_s": {}
+}

@@ -1,0 +1,29 @@
+{
+ "models": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/models/v1",
+ "ref": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/armchair",
+ "accel": "gpu",
+ "precision": "metal default (fp16)",
+ "vae moments (metered)": {
+  "cos": 0.9999579542581172,
+  "rel_l2": 0.009185117075357921,
+  "max_abs_diff": 0.1405651569366455,
+  "max_abs_ref": 7.709245681762695,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "vae latent tokens": {
+  "cos": 0.9999494931568925,
+  "rel_l2": 0.010059233801730197,
+  "max_abs_diff": 0.08323025703430176,
+  "max_abs_ref": 4.563530445098877,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "all_pass": true,
+ "wall_s": 3.5,
+ "stage_s": {
+  "vae": 3.48
+ }
+}

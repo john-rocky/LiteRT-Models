@@ -1,0 +1,4 @@
+[kswapd0] +8s
+[zram_comp] +3s
+com.android.systemui +2s
+system_server +9s

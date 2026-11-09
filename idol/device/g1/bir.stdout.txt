@@ -1,0 +1,6 @@
+pid=13933 accel=cpu gpu_precision=fp32 burst=1 models=1 fixtures=1 warmup=1 rounds=3 ab_fixture=000 libdir=/data/local/tmp/idol_g1 cache_dir= dump=full signature=(0) profile=0 npu_vendor=qualcomm ref=- ref2=- stop_nonfinite=0 llm_chain_flags=0 wall_ms=1794207951930
+model[0] signature[0] serving_default
+model[0] input[0] sig_name=args_0 logical=args_0 type=1 bytes=12582912 rank=4 ext=.f32
+compile_start model[0] wall_ms=1794207952133
+compile_end model[0] wall_ms=1794207952644
+model[0]=/data/local/tmp/idol_g1/bir.tflite signature=serving_default index=0 inputs=1 outputs=1 out0_elems=1048576 compile_ms=511.2 fully_accelerated=false

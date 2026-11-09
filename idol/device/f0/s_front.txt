@@ -1,0 +1,14 @@
+2026-11-09 13:46:34 den16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6314076 kB, kgsl page_alloc 254038016 B
+  left alone: a system app
+2026-11-09 13:47:06 dino16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6446040 kB, kgsl page_alloc 238776320 B
+  left alone: a system app
+2026-11-09 13:47:40 gs16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6550428 kB, kgsl page_alloc 242987008 B
+  left alone: a system app
+2026-11-09 13:48:18 oct16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6600384 kB, kgsl page_alloc 241405952 B
+  left alone: a system app
+2026-11-09 13:49:01 vae16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6624852 kB, kgsl page_alloc 239575040 B
+  left alone: a system app
+2026-11-09 13:50:19 den32: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6875740 kB, kgsl page_alloc 254328832 B
+  left alone: a system app
+2026-11-09 13:51:10 den16a: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6883632 kB, kgsl page_alloc 255909888 B
+  left alone: a system app

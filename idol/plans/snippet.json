@@ -1,0 +1,6 @@
+{
+ "comment": "The model card's Kotlin block (CardSnippet.kt) on the armchair fixture's picture: its line goes to DONE.json and logcat.",
+ "rows": [
+  {"id": "snippet", "kind": "snippet", "fixture": "fx/armchair"}
+ ]
+}

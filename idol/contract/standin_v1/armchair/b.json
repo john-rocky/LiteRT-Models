@@ -1,0 +1,37 @@
+{
+ "box": [
+  0,
+  -4,
+  1027,
+  1024
+ ],
+ "times": {
+  "preprocess": 1.23,
+  "dinov3": 35.22,
+  "vae": 3.11,
+  "denoiser": 45.46,
+  "octree": 4.92,
+  "gaussian_decoder": 22.38,
+  "ply": 0.09,
+  "generate_total": 111.69,
+  "all": 113.01
+ },
+ "box_reference": [
+  1,
+  1,
+  1023,
+  1022
+ ],
+ "tag": "armchair",
+ "psnr_db": 24.04315213036147,
+ "psnr_per_view_db": [
+  24.90652712324809,
+  24.003467854365752,
+  24.094216174496058,
+  23.31405630728893
+ ],
+ "line_db": 25.0,
+ "pass_": false,
+ "precision": "metal default (fp16)",
+ "models": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/models/v1"
+}

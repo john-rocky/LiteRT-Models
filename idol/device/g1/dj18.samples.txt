@@ -1,0 +1,83 @@
+=== 16:20:09 n=0
+devtime 1794208809
+kgsl 222 902 5 52700
+cpu policy0 1228800 1555200 3628800
+cpu policy6 1497600 1497600 4742400
+MemFree:         1782704 kB
+MemAvailable:    6733000 kB
+SwapFree:       10591472 kB
+pid 8329
+VmHWM:	   49876 kB
+VmRSS:	   49876 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 269082624
+kgsl_busy       0       0 0
+Thermal Status: 3
+mValue=44.4, mType=3, mName=SKIN
+cooling cpufreq-cpu0 0/27
+cooling cpufreq-cpu6 0/30
+cooling ddr-cdev 0/1
+cooling cpu-cluster0 0/27
+cooling cpu-cluster1 0/30
+cooling cdsp_ss 1/12
+cooling cdsp_hw 0/1
+cooling kgsl 0/18
+cooling cdsp 0/12
+cooling gpu 0/18
+cooling cdsp_sw_hvx 0/11
+cooling cdsp_sw_hmx 0/12
+  temperature: 449
+mWakefulness=Awake
+=== 16:20:12 n=1
+devtime 1794208811
+kgsl 222 902 5 54300
+cpu policy0 1555200 1555200 3628800
+cpu policy6 883200 1497600 4742400
+MemFree:         1672144 kB
+MemAvailable:    5937648 kB
+SwapFree:       10591472 kB
+pid 8329
+VmHWM:	  365728 kB
+VmRSS:	  365728 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 974016512
+kgsl_busy       0       0 0
+=== 16:20:14 n=2
+devtime 1794208814
+kgsl 902 902 5 64000
+cpu policy0 1324800 1324800 3628800
+cpu policy6 1382400 1382400 4742400
+MemFree:         1620136 kB
+MemAvailable:    5934932 kB
+SwapFree:       10591472 kB
+pid 8329
+VmHWM:	  463028 kB
+VmRSS:	  413840 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 974016512
+kgsl_busy  975892 1001826 97
+=== 16:20:16 n=3
+devtime 1794208816
+kgsl 902 902 5 71700
+cpu policy0 1324800 1324800 3628800
+cpu policy6 883200 1382400 4742400
+MemFree:         1624592 kB
+MemAvailable:    5937000 kB
+SwapFree:       10591216 kB
+pid 8329
+VmHWM:	  463028 kB
+VmRSS:	  413836 kB
+VmSwap:	       0 kB
+kgsl_page_alloc 974016512
+kgsl_busy  986279 1001741 98
+=== 16:20:18 n=4
+devtime 1794208818
+kgsl 222 826 6 64300
+cpu policy0 1228800 1228800 3628800
+cpu policy6 883200 1267200 4742400
+MemFree:         1758024 kB
+MemAvailable:    6772420 kB
+SwapFree:       10591216 kB
+pid 
+kgsl_page_alloc 256471040
+kgsl_busy       0       0 0

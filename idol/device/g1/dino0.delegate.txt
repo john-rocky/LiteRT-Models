@@ -1,0 +1,2 @@
+dino0.stderr.txt:VERBOSE: Replacing 1392 out of 1392 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 16:06:31.544 20740 20740 I tflite  : Replacing 1392 out of 1392 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

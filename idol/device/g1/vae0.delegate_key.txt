@@ -1,0 +1,1 @@
+11-09 16:08:33.535 22835 22835 I tflite  : Replacing 152 out of 152 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

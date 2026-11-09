@@ -1,0 +1,38 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; thermal status 2 (moderate) from the first photo",
+ "run_dir": "device/results/s26/e2e_armchair",
+ "vmhwm_kb_max": 5151832,
+ "gpu_page_alloc_max_bytes": 6015221760,
+ "per_run": [
+  {
+   "run": 0,
+   "vmhwm_kb": 5151832,
+   "vmswap_kb": 232484,
+   "gpu_page_alloc_max_bytes": 6015221760,
+   "mem_available_kb_start": 2860476,
+   "mem_available_kb_end": 2633740
+  },
+  {
+   "run": 1,
+   "vmhwm_kb": 4366980,
+   "vmswap_kb": 187144,
+   "gpu_page_alloc_max_bytes": 5727129600,
+   "mem_available_kb_start": 2634496,
+   "mem_available_kb_end": 2888012
+  },
+  {
+   "run": 2,
+   "vmhwm_kb": 4287980,
+   "vmswap_kb": 223264,
+   "gpu_page_alloc_max_bytes": 5852499968,
+   "mem_available_kb_start": 2886972,
+   "mem_available_kb_end": 2860272
+  }
+ ],
+ "sampler": {
+  "vmhwm_kb_max": 5651836,
+  "kgsl_page_alloc_max_bytes": 6015221760,
+  "mem_available_kb_min": 1189388,
+  "samples": 2313
+ }
+}

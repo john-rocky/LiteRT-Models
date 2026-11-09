@@ -1,0 +1,1 @@
+gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 7s since 16:14:50; front com.android.settings (a system app: left alone)

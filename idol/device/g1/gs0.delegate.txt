@@ -1,0 +1,2 @@
+gs0.stderr.txt:VERBOSE: Replacing 2091 out of 2091 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 16:12:30.384 28367 28367 I tflite  : Replacing 2091 out of 2091 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

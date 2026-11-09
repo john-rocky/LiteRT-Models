@@ -1,0 +1,97 @@
+setup start 2026-11-09 16:03:10; data free before: 81540554752 B
+lib libLiteRt.so sha256 MATCH
+lib libLiteRtClGlAccelerator.so sha256 MATCH
+runner r3_rt_runner sha256 MATCH (7e7539e5bd0c73ed121a211a7021017e220757c526b6bca72a8d9089eefe68a1)
+push g1_bir files 1/1 concat sha256 phone=91b606ce2d8ae1f3d110012071d9c8dc1bf1529fca361f9a5ce5049da5bea3ba mac=91b606ce2d8ae1f3d110012071d9c8dc1bf1529fca361f9a5ce5049da5bea3ba MATCH in 1s
+push g1_den_ctx files 3/3 concat sha256 phone=21ba1d71b12dc8ac1319b81c0ba3c4ab440126da06f7bc80a0e6ff89f8bc4dc7 mac=21ba1d71b12dc8ac1319b81c0ba3c4ab440126da06f7bc80a0e6ff89f8bc4dc7 MATCH in 2s
+push g1_den_in files 5/5 concat sha256 phone=b054f2eb7fe5fd598be7bd4d956f2a9d01ece4a25a63a71e6c76cf3beab1ebbd mac=b054f2eb7fe5fd598be7bd4d956f2a9d01ece4a25a63a71e6c76cf3beab1ebbd MATCH in 2s
+push g1_den_joint_00 files 5/5 concat sha256 phone=8bffaa4cbf5d4b7df98ea0706bd30f4a48bd41f1f787fecdfb57df5214fe483e mac=8bffaa4cbf5d4b7df98ea0706bd30f4a48bd41f1f787fecdfb57df5214fe483e MATCH in 2s
+push g1_den_joint_01 files 3/3 concat sha256 phone=fcc5f4d559aba80b981698ea16995ce2c063a6c701b92f29a07bd7699a5ef592 mac=fcc5f4d559aba80b981698ea16995ce2c063a6c701b92f29a07bd7699a5ef592 MATCH in 2s
+push g1_den_joint_02 files 3/3 concat sha256 phone=f2d9e539aec450a3df39da1853e5f1567a7748d555f53f41e0c36856152ad300 mac=f2d9e539aec450a3df39da1853e5f1567a7748d555f53f41e0c36856152ad300 MATCH in 1s
+push g1_den_joint_03 files 3/3 concat sha256 phone=b15622eb83f3d46d523cea3fcdd1cc55978e540ac71d08038c44c3bb5e3ad2b4 mac=b15622eb83f3d46d523cea3fcdd1cc55978e540ac71d08038c44c3bb5e3ad2b4 MATCH in 3s
+push g1_den_joint_04 files 3/3 concat sha256 phone=a5b8bb5fbfbe0fbe51632e6945cb0cde6f29b1e89191e41d9317b4be02b7e057 mac=a5b8bb5fbfbe0fbe51632e6945cb0cde6f29b1e89191e41d9317b4be02b7e057 MATCH in 2s
+push g1_den_joint_05 files 3/3 concat sha256 phone=fba46ceb537fc83dde077e7aed6a19063f8d563a921bd0cc693983f7b53a1a83 mac=fba46ceb537fc83dde077e7aed6a19063f8d563a921bd0cc693983f7b53a1a83 MATCH in 4s
+push g1_den_joint_06 files 3/3 concat sha256 phone=a3febbb74f8ac4332c06bb3de29466b74d693388f8cd40ad6ee0d4ba9d9d653c mac=a3febbb74f8ac4332c06bb3de29466b74d693388f8cd40ad6ee0d4ba9d9d653c MATCH in 4s
+push g1_den_joint_07 files 3/3 concat sha256 phone=5b3e5204d78ae08519e5b987407018768f180edee200086f8988133dc19551d2 mac=5b3e5204d78ae08519e5b987407018768f180edee200086f8988133dc19551d2 MATCH in 2s
+push g1_den_joint_08 files 3/3 concat sha256 phone=dfbabe1af89704afd9e7c0eddb00a2e6dd8e9b9a618906193bf1c9f68bdcfd51 mac=dfbabe1af89704afd9e7c0eddb00a2e6dd8e9b9a618906193bf1c9f68bdcfd51 MATCH in 4s
+push g1_den_joint_09 files 3/3 concat sha256 phone=77713912c9106dba4fd1c98973bd532d190e5b4fbb9ea692b65bd212e3024638 mac=77713912c9106dba4fd1c98973bd532d190e5b4fbb9ea692b65bd212e3024638 MATCH in 4s
+push g1_den_joint_10 files 3/3 concat sha256 phone=9aa2333f2c36a363b990cc5e15d93dd60a1a14d9df4f6dfb62111b068ed4ea87 mac=9aa2333f2c36a363b990cc5e15d93dd60a1a14d9df4f6dfb62111b068ed4ea87 MATCH in 4s
+push g1_den_joint_11 files 3/3 concat sha256 phone=90760835a928825438d0fba63cbff432c424174ef7fb5a44ee0435cbb6625bdd mac=90760835a928825438d0fba63cbff432c424174ef7fb5a44ee0435cbb6625bdd MATCH in 5s
+push g1_den_joint_12 files 3/3 concat sha256 phone=59967d369129fbadee1bd7e3f704d031abd10f1e5bfaa13cfb359951104a2f2f mac=59967d369129fbadee1bd7e3f704d031abd10f1e5bfaa13cfb359951104a2f2f MATCH in 6s
+push g1_den_joint_13 files 3/3 concat sha256 phone=9914446e7c5d90f6351c5c9465cc7ee0a16c6db76233646ffb512250059fc9ad mac=9914446e7c5d90f6351c5c9465cc7ee0a16c6db76233646ffb512250059fc9ad MATCH in 4s
+push g1_den_joint_14 files 3/3 concat sha256 phone=f650847ca84077fbdba3d33bb587f78a96a6a9b9e104ec782c7bfb03629961c9 mac=f650847ca84077fbdba3d33bb587f78a96a6a9b9e104ec782c7bfb03629961c9 MATCH in 4s
+push g1_den_joint_15 files 3/3 concat sha256 phone=ce2ad60adcb03df0c3d6eb57613f142d33a07126af56ec46c2cb042e18339966 mac=ce2ad60adcb03df0c3d6eb57613f142d33a07126af56ec46c2cb042e18339966 MATCH in 3s
+push g1_den_joint_16 files 3/3 concat sha256 phone=9e000ada2bcb351e4fe7dce55567903ff7d87854fbc75bef09967696ae1aac0d mac=9e000ada2bcb351e4fe7dce55567903ff7d87854fbc75bef09967696ae1aac0d MATCH in 3s
+push g1_den_joint_17 files 3/3 concat sha256 phone=8f8bc302578bd2fec86375f86f6a2ac2e6661ce31ff09255deb090b47a6cf4a0 mac=8f8bc302578bd2fec86375f86f6a2ac2e6661ce31ff09255deb090b47a6cf4a0 MATCH in 4s
+push g1_den_joint_18 files 3/3 concat sha256 phone=48b858e0b15690c9cf1011e0e445f9619a5f3516fb70944bf2ba963edcf0a455 mac=48b858e0b15690c9cf1011e0e445f9619a5f3516fb70944bf2ba963edcf0a455 MATCH in 3s
+push g1_den_joint_19 files 3/3 concat sha256 phone=3f3f0c71529ef21a54a8706a35fb446cafe0b5fc2de363bc556e0f934d46b22f mac=3f3f0c71529ef21a54a8706a35fb446cafe0b5fc2de363bc556e0f934d46b22f MATCH in 3s
+push g1_den_joint_20 files 3/3 concat sha256 phone=cf3d7f53866c5ee15f3562e9a570a93524a949e1e04ad600bebcb8fafb383bec mac=cf3d7f53866c5ee15f3562e9a570a93524a949e1e04ad600bebcb8fafb383bec MATCH in 2s
+push g1_den_joint_21 files 3/3 concat sha256 phone=df3be9c5151beb3de646094e365d17a341f410212b4ba501787a953bdcb2ee9b mac=df3be9c5151beb3de646094e365d17a341f410212b4ba501787a953bdcb2ee9b MATCH in 2s
+push g1_den_joint_22 files 3/3 concat sha256 phone=5685b39226988c48a832179ffacb7d5ca5a1cd2ccb0f9b33017899a905b05540 mac=5685b39226988c48a832179ffacb7d5ca5a1cd2ccb0f9b33017899a905b05540 MATCH in 2s
+push g1_den_joint_23 files 4/4 concat sha256 phone=ffd0ce671c6e7d76c89bec803afd35313d1a5b5eff32971e354142acea97851e mac=ffd0ce671c6e7d76c89bec803afd35313d1a5b5eff32971e354142acea97851e MATCH in 1s
+push g1_dino_0 files 3/3 concat sha256 phone=7f1d1ffd107684e1d9cf8a888f0deb0d03370f96bd4363b290c74c099a434f98 mac=7f1d1ffd107684e1d9cf8a888f0deb0d03370f96bd4363b290c74c099a434f98 MATCH in 1s
+push g1_dino_1 files 3/3 concat sha256 phone=7e9290d8dc143234bf45c57ccacfe59d08508dcb09059f791e0cc2c304a4bfa6 mac=7e9290d8dc143234bf45c57ccacfe59d08508dcb09059f791e0cc2c304a4bfa6 MATCH in 2s
+push g1_dino_2 files 3/3 concat sha256 phone=b4a419cd7fc0c331d763fc540dcc67d0621a2f1bf078825ad102a420a0947b33 mac=b4a419cd7fc0c331d763fc540dcc67d0621a2f1bf078825ad102a420a0947b33 MATCH in 1s
+push g1_dino_3 files 3/3 concat sha256 phone=62d4a7424eb663c05bff940e395ede3f5fbde6e8fb45f8f7492ab45c9786034d mac=62d4a7424eb663c05bff940e395ede3f5fbde6e8fb45f8f7492ab45c9786034d MATCH in 2s
+push g1_gs_0 files 3/3 concat sha256 phone=73d2d840ee18e68c4171dc116c06f2d6705139b3a985cccfe25f5a3563787a31 mac=73d2d840ee18e68c4171dc116c06f2d6705139b3a985cccfe25f5a3563787a31 MATCH in 2s
+push g1_gs_1 files 2/2 concat sha256 phone=a7da3c59f34cf58f7efc3458949dcdd2b1a5e9dfc4b60e94755a498922d3c169 mac=a7da3c59f34cf58f7efc3458949dcdd2b1a5e9dfc4b60e94755a498922d3c169 MATCH in 2s
+push g1_gs_2 files 2/2 concat sha256 phone=4c3ac171ee86ae8ae88c73cf30066fc8e98373d0ddb840ff12e27375763a64ed mac=4c3ac171ee86ae8ae88c73cf30066fc8e98373d0ddb840ff12e27375763a64ed MATCH in 2s
+push g1_gs_3 files 2/2 concat sha256 phone=57e83267a5f49ccb067f0423441c14e331c05339aedaf0f90011aea31ac9d2ec mac=57e83267a5f49ccb067f0423441c14e331c05339aedaf0f90011aea31ac9d2ec MATCH in 1s
+push g1_gs_4 files 2/2 concat sha256 phone=2a6c70ed7a55d4b105bd48b1ae6ea3bde385efc5b02114424e095adf3d9d3f7b mac=2a6c70ed7a55d4b105bd48b1ae6ea3bde385efc5b02114424e095adf3d9d3f7b MATCH in 1s
+push g1_gs_5 files 2/2 concat sha256 phone=be4933aa874d0f23e2dc46ca3e186df66847017367b885310d985d5fbe036462 mac=be4933aa874d0f23e2dc46ca3e186df66847017367b885310d985d5fbe036462 MATCH in 2s
+push g1_gs_6 files 2/2 concat sha256 phone=9a190ffb3ae3e4765f4568e8acc3500a7b447ed4380fd09aaef86198c60dc28f mac=9a190ffb3ae3e4765f4568e8acc3500a7b447ed4380fd09aaef86198c60dc28f MATCH in 2s
+push g1_gs_7 files 2/2 concat sha256 phone=a0ec972ad9508bf4b37f205a1adb2d4de17d877f6ea79f84ed4c03694b0b42f5 mac=a0ec972ad9508bf4b37f205a1adb2d4de17d877f6ea79f84ed4c03694b0b42f5 MATCH in 1s
+push g1_oct_L1024 files 4/4 concat sha256 phone=610d2e6cb2a89836c4135bb1b41682d690cc37d59316547b631864f82093c633 mac=610d2e6cb2a89836c4135bb1b41682d690cc37d59316547b631864f82093c633 MATCH in 1s
+push g1_oct_L256 files 4/4 concat sha256 phone=ea10301f534148507e11c6c0d4fe96492d4549480f2edafde6569a0b5da544e0 mac=ea10301f534148507e11c6c0d4fe96492d4549480f2edafde6569a0b5da544e0 MATCH in 0s
+push g1_oct_L4096 files 4/4 concat sha256 phone=ef192459a6ea43e0ae712f2e4dd7be1ddda0827b5010190dc14f2f8896c19a07 mac=ef192459a6ea43e0ae712f2e4dd7be1ddda0827b5010190dc14f2f8896c19a07 MATCH in 1s
+push g1_oct_L64 files 4/4 concat sha256 phone=6a2e6369b8896cd9e3a5c2ab40e93f88df215300ee4498ff1890bfc0e0866ef2 mac=6a2e6369b8896cd9e3a5c2ab40e93f88df215300ee4498ff1890bfc0e0866ef2 MATCH in 1s
+push g1_oct_L8192 files 4/4 concat sha256 phone=5cf475496c4079bcafbcaeb67487b407e8a8351b52413a533cc5240d2bcf0bc8 mac=5cf475496c4079bcafbcaeb67487b407e8a8351b52413a533cc5240d2bcf0bc8 MATCH in 2s
+push g1_vae_0 files 1/1 concat sha256 phone=bc5af53ee834b81603cf57f5376197d8428005d3acb38dd82745dcebea6a6aac mac=bc5af53ee834b81603cf57f5376197d8428005d3acb38dd82745dcebea6a6aac MATCH in 1s
+push g1_vae_1 files 1/1 concat sha256 phone=63ee282ed799e3399cc6f5e8193f7e59202e62401949607ed617e5a9e3f3d43e mac=63ee282ed799e3399cc6f5e8193f7e59202e62401949607ed617e5a9e3f3d43e MATCH in 4s
+push g1_vae_2 files 1/1 concat sha256 phone=a2cd7e011f3807cee9f2d9e6001db2083b15fe373db3d6c31de0fbf071649bb2 mac=a2cd7e011f3807cee9f2d9e6001db2083b15fe373db3d6c31de0fbf071649bb2 MATCH in 3s
+push g1_vae_3 files 1/1 concat sha256 phone=0481cd8d4c58fabf54d9948ed620d4011ec4c7371fcbad8e466e6ba7aa2b98ac mac=0481cd8d4c58fabf54d9948ed620d4011ec4c7371fcbad8e466e6ba7aa2b98ac MATCH in 1s
+push g1_vae_4 files 1/1 concat sha256 phone=74b8d64661cb2bbc223ace689de1700358156a040863b9c04ddd62d02bddbdc9 mac=74b8d64661cb2bbc223ace689de1700358156a040863b9c04ddd62d02bddbdc9 MATCH in 2s
+push g1_vae_attn files 1/1 concat sha256 phone=2d12b813ccdfd1f1a381a5637d095c066837a56af107df4ff556b9dfbbc24667 mac=2d12b813ccdfd1f1a381a5637d095c066837a56af107df4ff556b9dfbbc24667 MATCH in 1s
+device: SM-S942Q 16 BP4A.251205.006.S942QOPS1AZH9
+total 12033
+drwxrwxrwx 52 shell shell    3452 2026-11-09 16:05 .
+drwxrwx--x 11 shell shell   20480 2026-11-09 16:03 ..
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_bir
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_ctx
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_in
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_00
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_01
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_02
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_03
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_04
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_05
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_06
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_07
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_08
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_09
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:03 g1_den_joint_10
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_11
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_12
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_13
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_14
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_15
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_16
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_17
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_18
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_19
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_20
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_21
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_22
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_den_joint_23
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_dino_0
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_dino_1
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_dino_2
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_dino_3
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_gs_0
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_gs_1
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_gs_2
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:04 g1_gs_3
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:05 g1_gs_4
+drwxrwxrwx  2 shell shell    3452 2026-11-09 16:05 g1_gs_5
+/dev/block/dm-73 221G 147G   74G  67% /data/user/0
+setup end 2026-11-09 16:05:27 in 137s; data free 79516348416 B; bad=0

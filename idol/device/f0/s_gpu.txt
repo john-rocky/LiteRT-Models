@@ -1,0 +1,2 @@
+gpu at 2026-11-09 13:46:16: kgsl (the ready gate's GPU level: kgsl_pwrlevel)
+cooling: sysfs (the thermal service lists no cooling device; /sys/class/thermal, kept by type: cooling_device0:cpufreq-cpu0 cooling_device1:cpufreq-cpu6 cooling_device3:ddr-cdev cooling_device31:cpu-cluster0 cooling_device32:cpu-cluster1 cooling_device34:cdsp_ss cooling_device35:cdsp_hw cooling_device36:kgsl cooling_device37:cdsp cooling_device38:gpu cooling_device39:cdsp_sw_hvx cooling_device40:cdsp_sw_hmx)

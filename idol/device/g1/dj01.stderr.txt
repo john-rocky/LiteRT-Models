@@ -1,0 +1,23 @@
+INFO: [environment.cc:36] Creating LiteRT environment with options
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007e22e0b040, name=NpuAccelerator
+INFO: [npu_registry.cc:30] NPU accelerator registered.
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_g1/libLiteRtGpuAccelerator.so).
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_g1/libLiteRtClGlAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007e22e0c000, name=LiteRT GPU
+INFO: [gpu_registry.cc:138] Dynamically loaded GPU accelerator(libLiteRtClGlAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007e22e0c770, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [compiled_model.cc:829] Flatbuffer model initialized directly from incoming litert model.
+INFO: Initialized TensorFlow Lite runtime.
+I0000 00:00:1794208245.680423   26120 delegate_opencl.cc:604] options->hint_waiting_for_completion: false
+I0000 00:00:1794208245.680463   26120 delegate_opencl.cc:606] options->kernel_batch_size: -1
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+INFO: [gpu_environment.cc:241] Created OpenCL device from provided device id and platform id.
+INFO: [gpu_environment.cc:306] Reusing provided EGL environment.
+INFO: [gpu_environment.h:155] Created LiteRT GpuEnvironment.
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+VERBOSE: Replacing 1232 out of 1232 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+I0000 00:00:1794208245.735053   26120 delegate_kernel.cc:984] Initializing OpenCL-based API from graph.
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007e22e0c770, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007e22e0c000, name=LiteRT GPU
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007e22e0b040, name=NpuAccelerator

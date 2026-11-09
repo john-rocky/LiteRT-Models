@@ -1,0 +1,80 @@
+11-09 16:05:52.819  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.819  1034  1034 I lmkd    : Reclaim 'com.samsung.storyservice' (27861), uid 5004, oom_score_adj 995, state 19 to free 60548kB rss, 48164kB swap; reason: low watermark is breached or filecache is low (2218564kB).; level: 1
+11-09 16:05:52.826  1034  1040 I lowmemorykiller: Process 27861 was reaped in 8ms
+11-09 16:05:52.830  1034  1034 I lmkd    : 1(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!
+11-09 16:05:52.830  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.830  1034  1034 I lmkd    : Reclaim 'com.sec.spp.push' (25770), uid 10119, oom_score_adj 995, state 10 to free 61640kB rss, 43384kB swap; reason: low watermark is breached or filecache is low (2211004kB).; level: 1
+11-09 16:05:52.837  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.837  1034  1034 I lmkd    : Reclaim 'com.google.android.aicore' (31839), uid 10252, oom_score_adj 985, state 19 to free 72232kB rss, 48752kB swap; reason: low watermark is breached or filecache is low (2204704kB).; level: 1
+11-09 16:05:52.848  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.849  1034  1034 I lmkd    : Reclaim 'com.samsung.android.scs' (28065), uid 10126, oom_score_adj 985, state 19 to free 57984kB rss, 41760kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.854  1034  1041 I lowmemorykiller: Process 28065 was reaped in 4ms
+11-09 16:05:52.856  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.856  1034  1034 I lmkd    : Reclaim 'com.google.android.apps.tachyon' (5629), uid 10276, oom_score_adj 975, state 19 to free 82412kB rss, 64728kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:52.868  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.868  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.aodservice:provider' (5767), uid 10048, oom_score_adj 975, state 19 to free 79752kB rss, 48616kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.877  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.878  1034  1034 I lmkd    : Reclaim 'com.samsung.android.bixby.agent' (5831), uid 10058, oom_score_adj 975, state 19 to free 80740kB rss, 50224kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:52.885  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.885  1034  1034 I lmkd    : Reclaim 'com.samsung.android.oneconnect:Core' (5943), uid 10342, oom_score_adj 965, state 19 to free 75140kB rss, 52080kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:52.893  1034  1041 I lowmemorykiller: Process 5943 was reaped in 8ms
+11-09 16:05:52.895  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.895  1034  1034 I lmkd    : Reclaim 'com.sec.android.gallery3d' (6031), uid 10129, oom_score_adj 945, state 19 to free 75024kB rss, 53796kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.902  1034  1040 I lowmemorykiller: Process 6031 was reaped in 8ms
+11-09 16:05:52.906  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.906  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.aodservice' (6872), uid 10048, oom_score_adj 945, state 19 to free 80000kB rss, 45644kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:52.914  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.915  1034  1034 I lmkd    : Reclaim 'com.samsung.android.privateaccesstokens' (8187), uid 10210, oom_score_adj 935, state 19 to free 55040kB rss, 42712kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:52.919  1034  1040 I lowmemorykiller: Process 8187 was reaped in 4ms
+11-09 16:05:52.922  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.923  1034  1034 I lmkd    : Reclaim 'com.google.android.apps.carrier.carrierwifi' (7793), uid 10258, oom_score_adj 935, state 19 to free 62184kB rss, 49060kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:52.928  1034  1041 I lowmemorykiller: Process 7793 was reaped in 8ms
+11-09 16:05:52.930  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.930  1034  1034 I lmkd    : Reclaim 'com.samsung.android.authfw' (8024), uid 5278, oom_score_adj 925, state 19 to free 59888kB rss, 40280kB swap; reason: low watermark is breached or filecache is low (2036432kB).; level: 1
+11-09 16:05:52.935  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.935  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.notes' (8422), uid 10350, oom_score_adj 925, state 19 to free 77068kB rss, 64908kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.944  1034  1041 I lowmemorykiller: Process 8422 was reaped in 8ms
+11-09 16:05:52.947  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.947  1034  1034 I lmkd    : Reclaim 'com.samsung.android.stickercenter' (8527), uid 1000, oom_score_adj 925, state 19 to free 69760kB rss, 42896kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.955  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.955  1034  1034 I lmkd    : Reclaim 'com.sec.android.app.sbrowser' (8470), uid 10345, oom_score_adj 925, state 19 to free 68684kB rss, 48548kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.965  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.965  1034  1034 I lmkd    : Reclaim 'com.samsung.android.aremoji' (8447), uid 10049, oom_score_adj 925, state 19 to free 62956kB rss, 47524kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.970  1034  1040 I lowmemorykiller: Process 8447 was reaped in 4ms
+11-09 16:05:52.972  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.973  1034  1034 I lmkd    : Reclaim 'com.samsung.android.samsungpassautofill' (8874), uid 10214, oom_score_adj 915, state 19 to free 67040kB rss, 42504kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.978  1034  1041 I lowmemorykiller: Process 8874 was reaped in 3ms
+11-09 16:05:52.980  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.980  1034  1034 I lmkd    : Reclaim 'com.samsung.android.samsungpass' (7928), uid 10133, oom_score_adj 915, state 19 to free 82292kB rss, 49360kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:52.989  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:52.989  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.contacts' (8424), uid 10125, oom_score_adj 915, state 19 to free 74376kB rss, 56664kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:52.997  1034  1041 I lowmemorykiller: Process 8424 was reaped in 8ms
+11-09 16:05:53.000  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.000  1034  1034 I lmkd    : Reclaim 'com.samsung.android.fmm' (26440), uid 1000, oom_score_adj 915, state 10 to free 78612kB rss, 41964kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:53.205  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.205  1034  1034 I lmkd    : Reclaim 'com.samsung.android.smartface' (11258), uid 1000, oom_score_adj 915, state 19 to free 71152kB rss, 46368kB swap; reason: min watermark is breached or filecache is low (1815608kB).; level: 1
+11-09 16:05:53.211  1034  1041 I lowmemorykiller: Process 11258 was reaped in 4ms
+11-09 16:05:53.214  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.214  1034  1034 I lmkd    : Reclaim 'com.samsung.android.sm.provider' (17873), uid 1000, oom_score_adj 915, state 19 to free 69852kB rss, 41628kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:53.219  1034  1040 I lowmemorykiller: Process 17873 was reaped in 4ms
+11-09 16:05:53.221  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.222  1034  1034 I lmkd    : Reclaim 'com.samsung.android.scloud' (6198), uid 5009, oom_score_adj 905, state 19 to free 87424kB rss, 42664kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:53.229  1034  1041 I lowmemorykiller: Process 6198 was reaped in 8ms
+11-09 16:05:53.232  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.232  1034  1034 I lmkd    : Reclaim 'com.facebook.appmanager' (10058), uid 10182, oom_score_adj 905, state 19 to free 70092kB rss, 58408kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:53.242  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.242  1034  1034 I lmkd    : Reclaim 'com.facebook.system' (10090), uid 10077, oom_score_adj 905, state 19 to free 56684kB rss, 47524kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:53.248  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.248  1034  1034 I lmkd    : Reclaim 'com.samsung.android.smartsuggestions:search' (28034), uid 10134, oom_score_adj 905, state 19 to free 82920kB rss, 66412kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:53.260  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.260  1034  1034 I lmkd    : Reclaim 'com.android.vending:quick_launch' (6612), uid 10268, oom_score_adj 905, state 19 to free 96284kB rss, 54392kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:53.269  1034  1041 I lowmemorykiller: Process 6612 was reaped in 8ms
+11-09 16:05:53.272  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.272  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.sharelive' (8744), uid 5026, oom_score_adj 905, state 19 to free 68768kB rss, 50068kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:53.282  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.282  1034  1034 I lmkd    : Reclaim 'com.sec.android.app.shealth' (3653), uid 10336, oom_score_adj 905, state 19 to free 79564kB rss, 61496kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:53.294  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.294  1034  1034 I lmkd    : Reclaim 'com.google.android.cellbroadcastreceiver' (5302), uid 10302, oom_score_adj 905, state 19 to free 56876kB rss, 44860kB swap; reason: min watermark is breached even after kill; level: 1
+11-09 16:05:53.301  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 16:05:53.301  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.routines' (18981), uid 10048, oom_score_adj 905, state 10 to free 66012kB rss, 76308kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 16:05:53.315  1034  1034 I lmkd    : cached 0, sandbox(not0) 0

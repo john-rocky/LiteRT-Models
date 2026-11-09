@@ -1,0 +1,100 @@
+16:05:50 ready? bir: thermal 0 cap none kgsl_pwrlevel 0 rested 175s mode gate
+bir ready gate: clean; rested 175s since 16:02:55; front com.android.settings (a system app: left alone)
+16:06:29 ready? dino0: thermal 0 cap policy0:3302400/3628800 policy6:3648000/4742400  kgsl_pwrlevel 0 rested 21s mode gate
+dino0 ready gate: gate leg, not waited for clean (thermal 0, cap policy0:3302400/3628800 policy6:3648000/4742400 , kgsl_pwrlevel 0); rested 21s since 16:06:08
+16:07:04 ready? dino1: thermal 0 cap none kgsl_pwrlevel 0 rested 22s mode gate
+dino1 ready gate: clean; rested 22s since 16:06:42
+16:07:37 ready? dino2: thermal 0 cap none kgsl_pwrlevel 0 rested 21s mode gate
+dino2 ready gate: clean; rested 21s since 16:07:16
+16:08:10 ready? dino3: thermal 1 cap none kgsl_pwrlevel 0 rested 20s mode gate
+dino3 ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 20s since 16:07:50
+16:08:31 ready? vae0: thermal 1 cap none kgsl_pwrlevel 0 rested 8s mode gate
+vae0 ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 8s since 16:08:23
+16:08:59 ready? vae1: thermal 1 cap none kgsl_pwrlevel 0 rested 8s mode gate
+vae1 ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 8s since 16:08:51
+16:09:19 ready? vae2: thermal 1 cap none kgsl_pwrlevel 0 rested 6s mode gate
+vae2 ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 6s since 16:09:13
+16:09:30 ready? vae3: thermal 1 cap none kgsl_pwrlevel 0 rested 5s mode gate
+vae3 ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 5s since 16:09:25
+16:09:43 ready? vaeattn: thermal 1 cap none kgsl_pwrlevel 0 rested 9s mode gate
+vaeattn ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 9s since 16:09:34
+16:09:54 ready? vae4: thermal 1 cap none kgsl_pwrlevel 0 rested 5s mode gate
+vae4 ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 5s since 16:09:49
+16:10:04 ready? denctx: thermal 1 cap none kgsl_pwrlevel 0 rested 6s mode gate
+denctx ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 6s since 16:09:58
+16:10:17 ready? denin: thermal 1 cap none kgsl_pwrlevel 0 rested 8s mode gate
+denin ready gate: gate leg, not waited for clean (thermal 1, cap none, kgsl_pwrlevel 0); rested 8s since 16:10:09
+16:10:30 ready? dj00: thermal 1 cap policy6:4512000/4742400  kgsl_pwrlevel 0 rested 5s mode gate
+dj00 ready gate: gate leg, not waited for clean (thermal 1, cap policy6:4512000/4742400 , kgsl_pwrlevel 0); rested 5s since 16:10:25
+16:10:44 ready? dj01: thermal 2 cap policy0:3513600/3628800 policy6:4070400/4742400  kgsl_pwrlevel 1 rested 6s mode gate
+dj01 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3513600/3628800 policy6:4070400/4742400 , kgsl_pwrlevel 1); rested 6s since 16:10:38
+16:10:57 ready? dj23: thermal 2 cap policy0:3398400/3628800 policy6:3763200/4742400  kgsl_pwrlevel 1 rested 5s mode gate
+dj23 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3398400/3628800 policy6:3763200/4742400 , kgsl_pwrlevel 1); rested 5s since 16:10:52
+16:11:14 ready? octL64: thermal 2 cap policy0:3513600/3628800 policy6:3974400/4742400  kgsl_pwrlevel 0 rested 9s mode gate
+octL64 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3513600/3628800 policy6:3974400/4742400 , kgsl_pwrlevel 0); rested 9s since 16:11:05
+16:11:27 ready? octL256: thermal 2 cap none kgsl_pwrlevel 0 rested 9s mode gate
+octL256 ready gate: gate leg, not waited for clean (thermal 2, cap none, kgsl_pwrlevel 0); rested 9s since 16:11:18
+16:11:40 ready? octL1024: thermal 2 cap none kgsl_pwrlevel 0 rested 9s mode gate
+octL1024 ready gate: gate leg, not waited for clean (thermal 2, cap none, kgsl_pwrlevel 0); rested 9s since 16:11:31
+16:11:53 ready? octL4096: thermal 2 cap none kgsl_pwrlevel 0 rested 9s mode gate
+octL4096 ready gate: gate leg, not waited for clean (thermal 2, cap none, kgsl_pwrlevel 0); rested 9s since 16:11:44
+16:12:10 ready? octL8192: thermal 2 cap policy6:4608000/4742400  kgsl_pwrlevel 0 rested 8s mode gate
+octL8192 ready gate: gate leg, not waited for clean (thermal 2, cap policy6:4608000/4742400 , kgsl_pwrlevel 0); rested 8s since 16:12:02
+16:12:29 ready? gs0: thermal 2 cap policy0:3302400/3628800 policy6:3648000/4742400  kgsl_pwrlevel 2 rested 6s mode gate
+gs0 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3302400/3628800 policy6:3648000/4742400 , kgsl_pwrlevel 2); rested 6s since 16:12:23
+16:12:48 ready? gs1: thermal 2 cap policy0:3187200/3628800 policy6:3129600/4742400  kgsl_pwrlevel 2 rested 7s mode gate
+gs1 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3187200/3628800 policy6:3129600/4742400 , kgsl_pwrlevel 2); rested 7s since 16:12:41
+16:13:08 ready? gs2: thermal 2 cap policy0:3187200/3628800 policy6:3129600/4742400  kgsl_pwrlevel 3 rested 7s mode gate
+gs2 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3187200/3628800 policy6:3129600/4742400 , kgsl_pwrlevel 3); rested 7s since 16:13:01
+16:13:28 ready? gs3: thermal 2 cap policy0:2899200/3628800 policy6:2880000/4742400  kgsl_pwrlevel 3 rested 7s mode gate
+gs3 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:2899200/3628800 policy6:2880000/4742400 , kgsl_pwrlevel 3); rested 7s since 16:13:21
+16:13:49 ready? gs4: thermal 2 cap policy0:2745600/3628800 policy6:2668800/4742400  kgsl_pwrlevel 4 rested 8s mode gate
+gs4 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:2745600/3628800 policy6:2668800/4742400 , kgsl_pwrlevel 4); rested 8s since 16:13:41
+16:14:11 ready? gs5: thermal 2 cap policy0:2227200/3628800 policy6:2227200/4742400  kgsl_pwrlevel 4 rested 7s mode gate
+gs5 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:2227200/3628800 policy6:2227200/4742400 , kgsl_pwrlevel 4); rested 7s since 16:14:04
+16:14:34 ready? gs6: thermal 3 cap policy0:1555200/3628800 policy6:1497600/4742400  kgsl_pwrlevel 5 rested 8s mode gate
+gs6 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1555200/3628800 policy6:1497600/4742400 , kgsl_pwrlevel 5); rested 8s since 16:14:26; front com.android.settings (a system app: left alone)
+16:14:57 ready? gs7: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+gs7 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 7s since 16:14:50; front com.android.settings (a system app: left alone)
+16:15:18 ready? dj02: thermal 3 cap policy0:1228800/3628800 policy6:1267200/4742400  kgsl_pwrlevel 6 rested 5s mode gate
+dj02 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1228800/3628800 policy6:1267200/4742400 , kgsl_pwrlevel 6); rested 5s since 16:15:13; front com.android.settings (a system app: left alone)
+16:15:39 ready? dj03: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 6 rested 7s mode gate
+dj03 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 6); rested 7s since 16:15:32; front com.android.settings (a system app: left alone)
+16:15:58 ready? dj04: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+dj04 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 7s since 16:15:51; front com.android.settings (a system app: left alone)
+16:16:14 ready? dj05: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj05 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:16:08; front com.android.settings (a system app: left alone)
+16:16:33 ready? dj06: thermal 3 cap policy0:1555200/3628800 policy6:1497600/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj06 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1555200/3628800 policy6:1497600/4742400 , kgsl_pwrlevel 5); rested 6s since 16:16:27; front com.android.settings (a system app: left alone)
+16:16:50 ready? dj07: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj07 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:16:44; front com.android.settings (a system app: left alone)
+16:17:07 ready? dj08: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj08 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:17:01; front com.android.settings (a system app: left alone)
+16:17:25 ready? dj09: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj09 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:17:19; front com.android.settings (a system app: left alone)
+16:17:42 ready? dj10: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj10 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:17:36; front com.android.settings (a system app: left alone)
+16:18:01 ready? dj11: thermal 3 cap policy0:1555200/3628800 policy6:1497600/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj11 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1555200/3628800 policy6:1497600/4742400 , kgsl_pwrlevel 5); rested 6s since 16:17:55; front com.android.settings (a system app: left alone)
+16:18:18 ready? dj12: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj12 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:18:12; front com.android.settings (a system app: left alone)
+16:18:35 ready? dj13: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj13 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:18:29; front com.android.settings (a system app: left alone)
+16:18:55 ready? dj14: thermal 3 cap policy0:1555200/3628800 policy6:1497600/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+dj14 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1555200/3628800 policy6:1497600/4742400 , kgsl_pwrlevel 5); rested 7s since 16:18:48; front com.android.settings (a system app: left alone)
+16:19:12 ready? dj15: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj15 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:19:06; front com.android.settings (a system app: left alone)
+16:19:32 ready? dj16: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+dj16 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 7s since 16:19:25; front com.android.settings (a system app: left alone)
+16:19:50 ready? dj17: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+dj17 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 7s since 16:19:43; front com.android.settings (a system app: left alone)
+16:20:08 ready? dj18: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+dj18 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 7s since 16:20:01; front com.android.settings (a system app: left alone)
+16:20:27 ready? dj19: thermal 3 cap policy0:1555200/3628800 policy6:1497600/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+dj19 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1555200/3628800 policy6:1497600/4742400 , kgsl_pwrlevel 5); rested 7s since 16:20:20; front com.android.settings (a system app: left alone)
+16:20:44 ready? dj20: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 7s mode gate
+dj20 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 7s since 16:20:37; front com.android.settings (a system app: left alone)
+16:21:01 ready? dj21: thermal 3 cap policy0:1228800/3628800 policy6:1267200/4742400  kgsl_pwrlevel 6 rested 6s mode gate
+dj21 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1228800/3628800 policy6:1267200/4742400 , kgsl_pwrlevel 6); rested 6s since 16:20:55; front com.android.settings (a system app: left alone)
+16:21:20 ready? dj22: thermal 3 cap policy0:1324800/3628800 policy6:1382400/4742400  kgsl_pwrlevel 5 rested 6s mode gate
+dj22 ready gate: gate leg, not waited for clean (thermal 3, cap policy0:1324800/3628800 policy6:1382400/4742400 , kgsl_pwrlevel 5); rested 6s since 16:21:14; front com.android.settings (a system app: left alone)

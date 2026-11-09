@@ -1,0 +1,189 @@
+chain f0 pid 94961 2026-11-09 13:46:06; this file sha256 7f03f0976e1e887f; lib.sh sha256 447e2385e537a72f; lane.env /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/lane.s26.env sha256 b3fbe3241c3e6f5b; plan /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/plan_f0.tsv sha256 8ec412738e8111b7
+plan: /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/plan_f0.tsv
+den16                      gpu      fp16  f0_den_block_L12294_c512 fx_den_block_L12294_c512    1   2   5  000 -                         300 gate      
+dino16                     gpu      fp16  f0_dino_block_L4101_c1024 fx_dino_block_L4101_c1024    1   2   5  000 -                         300 gate      
+gs16                       gpu      fp16  f0_gs_block_A8192_c512 fx_gs_block_A8192_c512    1   2   5  000 -                         300 gate      
+oct16                      gpu      fp16  f0_oct_block_L8192_c512 fx_oct_block_L8192_c512    1   2   5  000 -                         300 gate      
+vae16                      gpu      fp16  f0_vae_enc_1024_c1024 fx_vae_enc_1024_c1024    1   2   5  000 -                         300 gate      
+den32                      gpu      fp32  f0_den_block_L12294_c512 fx_den_block_L12294_c512    1   1   3  000 -                         300 gate      
+den16a                     gpu      fp16acc32 f0_den_block_L12294_c512 fx_den_block_L12294_c512    1   1   3  000 -                         300 gate      
+inputs (sha256):
+  83498816daa198a9… 51767184 B models/f0/f0_den_block_L12294_c512.tflite
+  a615400df693b910… 104948648 B models/f0/f0_dino_block_L4101_c1024.tflite
+  de3288cd7f9f1bfa… 58988320 B models/f0/f0_gs_block_A8192_c512.tflite
+  ff361b81dc47cf03… 42155364 B models/f0/f0_oct_block_L8192_c512.tflite
+  4fe9d1318525608d… 137959228 B models/f0/f0_vae_enc_1024_c1024.tflite
+  runner 7e7539e5bd0c73ed… 3257376 B device/stage/r3_rt_runner
+  libs: 2/2 OK against /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/stage/libs230g/SHA256SUMS
+  fx_den_block_L12294_c512: 2 files, 50380800 B, concat sha256 72554aba28973bbb…
+  fx_dino_block_L4101_c1024: 3 files, 23096832 B, concat sha256 769f4a827eadcae4…
+  fx_gs_block_A8192_c512: 2 files, 34078720 B, concat sha256 a9f1196a29be135a…
+  fx_oct_block_L8192_c512: 3 files, 34103296 B, concat sha256 dfbe306ccfb26872…
+  fx_vae_enc_1024_c1024: 1 files, 12582912 B, concat sha256 17fbb3db1b3e30fd…
+keeper pid 96706 waiting in line for /Users/majimadaisuke/code/litertlm-convert/community_accel_work/s2_npu_sweep/.device_hold as idol-f0-s26 2026-11-09 13:46:13
+HOLD_SEEN 2026-11-09 13:46:15: acquired 13:46:13, skip_after 14:11:13, run_end 14:14:13, released by 14:16:13
+gpu at 2026-11-09 13:46:16: kgsl (the ready gate's GPU level: kgsl_pwrlevel)
+cooling: sysfs (the thermal service lists no cooling device; /sys/class/thermal, kept by type: cooling_device0:cpufreq-cpu0 cooling_device1:cpufreq-cpu6 cooling_device3:ddr-cdev cooling_device31:cpu-cluster0 cooling_device32:cpu-cluster1 cooling_device34:cdsp_ss cooling_device35:cdsp_hw cooling_device36:kgsl cooling_device37:cdsp cooling_device38:gpu cooling_device39:cdsp_sw_hvx cooling_device40:cdsp_sw_hmx)
+thermal service at the hold: skin 30.3 °C (current; the cached section says 37.9), 0 cooling devices listed, CPU (mType 2) 0, GPU (mType 3) 0; sysfs cooling devices read 63; cooling read from sysfs (s_thermal_raw.txt, s_cooling_sysfs.txt)
+=== transfer check 2026-11-09 13:46:17
+host adb processes:
+  none
+phone:
+2127509.28 15963239.87
+/dev/block/dm-73 221G 145G   76G  66% /data/user/0
+    6 24-14:58:30 00:00:00 [kworker/R-sync_wq]
+ 1900 24-14:58:25 00:00:00 android.hardware.gatekeeper-service
+ 2386 24-14:58:24 00:01:59 installd
+ 2457 24-14:58:24 00:00:00 gatekeeperd
+25770    02:46:45 00:00:00 com.sec.spp.push
+top resumed:     topResumedActivity=ActivityRecord{153785014 u0 com.android.settings/.SubSettings t3127}
+our stage before setup: ls: /data/local/tmp/idol_f0: No such file or directory
+CPU TIME grown in 5 s (>= 2 s):
+phone uptime at the hold: 2127514s
+time: 2026-11-09 13:46:23
+uptime: 2127514.73 15963282.64
+thermal: Thermal Status: 0
+skin: mValue=30.4, mType=3, mName=SKIN
+hal_temps: mValue=29.9, mType=0, mName=AP;mValue=28.4, mType=2, mName=BAT;mValue=29.9, mType=5, mName=PA;mValue=30.4, mType=3, mName=SKIN;mValue=0.0, mType=2, mName=SUBBAT;mValue=28.8, mType=4, mName=USB;
+cooling: cpufreq-cpu0=0/27;cpufreq-cpu6=0/30;ddr-cdev=0/1;cpu-cluster0=0/27;cpu-cluster1=0/30;cdsp_ss=0/12;cdsp_hw=0/1;kgsl=0/18;cdsp=0/12;gpu=0/18;cdsp_sw_hvx=0/11;cdsp_sw_hmx=0/12;
+battery_temp: temperature:285
+battery_level: level:79
+screen: mWakefulness=Awake
+top:     topResumedActivity=ActivityRecord{153785014 u0 com.android.settings/.SubSettings t3127}
+gpu: kind=kgsl
+kgsl: temp=32500 clock_mhz=222 max_clock_mhz=1300 thermal_pwrlevel=0
+freq (policy cur scaling_max cpuinfo_max): policy0 1228800 3628800 3628800;policy6 883200 4742400 4742400;
+freq_capped: none
+mem: MemAvailable:    6280232 kB
+data_free: /dev/block/dm-73 221G 145G   76G  66% /data/user/0
+setup start 2026-11-09 13:46:24; data free before: 81539321856 B
+lib libLiteRt.so sha256 MATCH
+lib libLiteRtClGlAccelerator.so sha256 MATCH
+runner r3_rt_runner sha256 MATCH (7e7539e5bd0c73ed121a211a7021017e220757c526b6bca72a8d9089eefe68a1)
+push fx_den_block_L12294_c512 files 2/2 concat sha256 phone=72554aba28973bbb6b46967ac4e9c7d0ee06c7c7e0592cbef690ee2a065e6f6f mac=72554aba28973bbb6b46967ac4e9c7d0ee06c7c7e0592cbef690ee2a065e6f6f MATCH in 2s
+push fx_dino_block_L4101_c1024 files 3/3 concat sha256 phone=769f4a827eadcae4f484561f5bd627885cc1284f0352106b45ebc36d4220186b mac=769f4a827eadcae4f484561f5bd627885cc1284f0352106b45ebc36d4220186b MATCH in 1s
+push fx_gs_block_A8192_c512 files 2/2 concat sha256 phone=a9f1196a29be135ab706e051176ef439cdd31e0fde969f5798d885307b6acdfe mac=a9f1196a29be135ab706e051176ef439cdd31e0fde969f5798d885307b6acdfe MATCH in 2s
+push fx_oct_block_L8192_c512 files 3/3 concat sha256 phone=dfbe306ccfb26872e3aabc3db4eb63393d1fb1facc7647ef934b92809e19ae31 mac=dfbe306ccfb26872e3aabc3db4eb63393d1fb1facc7647ef934b92809e19ae31 MATCH in 1s
+push fx_vae_enc_1024_c1024 files 1/1 concat sha256 phone=17fbb3db1b3e30fd0c51250630d315291d113a99dd7065ca16fc9d0f5de4dd71 mac=17fbb3db1b3e30fd0c51250630d315291d113a99dd7065ca16fc9d0f5de4dd71 MATCH in 1s
+device: SM-S942Q 16 BP4A.251205.006.S942QOPS1AZH9
+total 11898
+drwxrwxrwx  7 shell shell    3452 2026-11-09 13:46 .
+drwxrwx--x 11 shell shell   20480 2026-11-09 13:46 ..
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_den_block_L12294_c512
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_dino_block_L4101_c1024
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_gs_block_A8192_c512
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_oct_block_L8192_c512
+drwxrwxrwx  2 shell shell    3452 2026-11-09 13:46 fx_vae_enc_1024_c1024
+-rw-rw-rw-  1 shell shell 5629696 2026-11-09 13:45 libLiteRt.so
+-rw-rw-rw-  1 shell shell 3253032 2026-11-09 13:45 libLiteRtClGlAccelerator.so
+-rwxr-xr-x  1 shell shell 3257376 2026-11-09 13:45 r3_rt_runner
+/dev/block/dm-73 221G 145G   76G  66% /data/user/0
+setup end 2026-11-09 13:46:32 in 8s; data free 81372667904 B; bad=0
+2026-11-09 13:46:34 den16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6314076 kB, kgsl page_alloc 254038016 B
+  left alone: a system app
+13:46:49 ready? den16: thermal 0 cap none kgsl_pwrlevel 0 rested 34s mode gate
+den16 ready gate: clean; rested 34s since 13:46:15; front com.android.settings (a system app: left alone)
+=== leg den16 start 13:46:51 device mark '11-09 13:46:51.000' uptime 2127542 compile watch 300s guard 1000000 kB ready: clean; rested 34s since 13:46:15; front com.android.settings (a system app: left alone)
+stderr den16.stderr.txt bytes phone=2044 pulled=2044 MATCH
+=== leg den16 status DONE rc 0 killed none dumps 1 (bad size 0) cache none kB end 13:47:03 uptime 2127542 -> 2127551
+model[0]=/data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite signature=serving_default index=0 inputs=2 outputs=1 out0_elems=12589056 compile_ms=811.1 fully_accelerated=true
+parity_summary model[0] /data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite fixtures=1 nonfinite_values=0 first_run_ms=719.6 mean_ms=689.199 outdir=/data/local/tmp/idol_f0/out_den16/model0
+summary model[0] /data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite n=5 median=752.872 min=689.923 max=818.156 nonfinite_rounds=0 compile_ms=811.1 fully_accelerated=true
+done wall_ms=1794199618946
+VERBOSE: Replacing 248 out of 248 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+lmkd lines during den16: 7 (R/den16.lmkd_lines.txt)
+2026-11-09 13:47:06 dino16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6446040 kB, kgsl page_alloc 238776320 B
+  left alone: a system app
+13:47:32 ready? dino16: thermal 0 cap none kgsl_pwrlevel 0 rested 32s mode gate
+dino16 ready gate: clean; rested 32s since 13:47:00; front com.android.settings (a system app: left alone)
+=== leg dino16 start 13:47:33 device mark '11-09 13:47:33.000' uptime 2127584 compile watch 300s guard 1000000 kB ready: clean; rested 32s since 13:47:00; front com.android.settings (a system app: left alone)
+stderr dino16.stderr.txt bytes phone=2042 pulled=2042 MATCH
+=== leg dino16 status DONE rc 0 killed none dumps 1 (bad size 0) cache none kB end 13:47:38 uptime 2127584 -> 2127587
+model[0]=/data/local/tmp/idol_f0/f0_dino_block_L4101_c1024.tflite signature=serving_default index=0 inputs=3 outputs=1 out0_elems=5249280 compile_ms=552.2 fully_accelerated=true
+parity_summary model[0] /data/local/tmp/idol_f0/f0_dino_block_L4101_c1024.tflite fixtures=1 nonfinite_values=0 first_run_ms=168.5 mean_ms=132.953 outdir=/data/local/tmp/idol_f0/out_dino16/model0
+summary model[0] /data/local/tmp/idol_f0/f0_dino_block_L4101_c1024.tflite n=5 median=133.348 min=132.098 max=135.622 nonfinite_rounds=0 compile_ms=552.2 fully_accelerated=true
+done wall_ms=1794199655401
+VERBOSE: Replacing 96 out of 96 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+2026-11-09 13:47:40 gs16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6550428 kB, kgsl page_alloc 242987008 B
+  left alone: a system app
+13:48:05 ready? gs16: thermal 0 cap none kgsl_pwrlevel 0 rested 30s mode gate
+gs16 ready gate: clean; rested 30s since 13:47:35; front com.android.settings (a system app: left alone)
+=== leg gs16 start 13:48:07 device mark '11-09 13:48:07.000' uptime 2127618 compile watch 300s guard 1000000 kB ready: clean; rested 30s since 13:47:35; front com.android.settings (a system app: left alone)
+stderr gs16.stderr.txt bytes phone=2044 pulled=2044 MATCH
+=== leg gs16 status DONE rc 0 killed none dumps 1 (bad size 0) cache none kB end 13:48:16 uptime 2127618 -> 2127625
+model[0]=/data/local/tmp/idol_f0/f0_gs_block_A8192_c512.tflite signature=serving_default index=0 inputs=2 outputs=1 out0_elems=8388608 compile_ms=551.5 fully_accelerated=true
+parity_summary model[0] /data/local/tmp/idol_f0/f0_gs_block_A8192_c512.tflite fixtures=1 nonfinite_values=0 first_run_ms=621.3 mean_ms=543.191 outdir=/data/local/tmp/idol_f0/out_gs16/model0
+summary model[0] /data/local/tmp/idol_f0/f0_gs_block_A8192_c512.tflite n=5 median=541.868 min=537.296 max=600.660 nonfinite_rounds=0 compile_ms=551.5 fully_accelerated=true
+done wall_ms=1794199693046
+VERBOSE: Replacing 288 out of 288 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+2026-11-09 13:48:18 oct16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6600384 kB, kgsl page_alloc 241405952 B
+  left alone: a system app
+13:48:48 ready? oct16: thermal 0 cap none kgsl_pwrlevel 0 rested 34s mode gate
+oct16 ready gate: clean; rested 34s since 13:48:14; front com.android.settings (a system app: left alone)
+=== leg oct16 start 13:48:50 device mark '11-09 13:48:50.000' uptime 2127661 compile watch 300s guard 1000000 kB ready: clean; rested 34s since 13:48:14; front com.android.settings (a system app: left alone)
+stderr oct16.stderr.txt bytes phone=2044 pulled=2044 MATCH
+=== leg oct16 status DONE rc 0 killed none dumps 1 (bad size 0) cache none kB end 13:48:57 uptime 2127661 -> 2127666
+model[0]=/data/local/tmp/idol_f0/f0_oct_block_L8192_c512.tflite signature=serving_default index=0 inputs=3 outputs=1 out0_elems=8388608 compile_ms=506.9 fully_accelerated=true
+parity_summary model[0] /data/local/tmp/idol_f0/f0_oct_block_L8192_c512.tflite fixtures=1 nonfinite_values=0 first_run_ms=309.4 mean_ms=287.960 outdir=/data/local/tmp/idol_f0/out_oct16/model0
+summary model[0] /data/local/tmp/idol_f0/f0_oct_block_L8192_c512.tflite n=5 median=287.832 min=282.671 max=298.196 nonfinite_rounds=0 compile_ms=506.9 fully_accelerated=true
+done wall_ms=1794199733544
+VERBOSE: Replacing 169 out of 169 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+2026-11-09 13:49:01 vae16: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6624852 kB, kgsl page_alloc 239575040 B
+  left alone: a system app
+13:49:26 ready? vae16: thermal 0 cap none kgsl_pwrlevel 0 rested 32s mode gate
+vae16 ready gate: clean; rested 32s since 13:48:54; front com.android.settings (a system app: left alone)
+=== leg vae16 start 13:49:27 device mark '11-09 13:49:27.000' uptime 2127699 compile watch 300s guard 1000000 kB ready: clean; rested 32s since 13:48:54; front com.android.settings (a system app: left alone)
+stderr vae16.stderr.txt bytes phone=1759 pulled=1759 MATCH
+=== leg vae16 status RUNNER_FAILED rc 137 killed none dumps 1 (bad size 0) cache none kB end 13:50:17 uptime 2127699 -> 2127747
+model[0]=/data/local/tmp/idol_f0/f0_vae_enc_1024_c1024.tflite signature=serving_default index=0 inputs=1 outputs=1 out0_elems=1048576 compile_ms=1608.9 fully_accelerated=true
+parity_summary model[0] /data/local/tmp/idol_f0/f0_vae_enc_1024_c1024.tflite fixtures=1 nonfinite_values=0 first_run_ms=9114.5 mean_ms=9063.776 outdir=/data/local/tmp/idol_f0/out_vae16/model0
+VERBOSE: Replacing 485 out of 485 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+2026-11-09 13:50:19 den32: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6875740 kB, kgsl page_alloc 254328832 B
+  left alone: a system app
+13:50:49 ready? den32: thermal 0 cap none kgsl_pwrlevel 0 rested 34s mode gate
+den32 ready gate: clean; rested 34s since 13:50:15; front com.android.settings (a system app: left alone)
+=== leg den32 start 13:50:50 device mark '11-09 13:50:50.000' uptime 2127781 compile watch 300s guard 1000000 kB ready: clean; rested 34s since 13:50:15; front com.android.settings (a system app: left alone)
+stderr den32.stderr.txt bytes phone=2044 pulled=2044 MATCH
+=== leg den32 status DONE rc 0 killed none dumps 1 (bad size 0) cache none kB end 13:51:09 uptime 2127781 -> 2127797
+model[0]=/data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite signature=serving_default index=0 inputs=2 outputs=1 out0_elems=12589056 compile_ms=697.0 fully_accelerated=true
+parity_summary model[0] /data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite fixtures=1 nonfinite_values=0 first_run_ms=2400.0 mean_ms=2029.018 outdir=/data/local/tmp/idol_f0/out_den32/model0
+summary model[0] /data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite n=3 median=2050.588 min=2029.540 max=2390.806 nonfinite_rounds=0 compile_ms=697.0 fully_accelerated=true
+done wall_ms=1794199864491
+VERBOSE: Replacing 248 out of 248 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+2026-11-09 13:51:10 den16a: front com.android.settings/.SubSettings (system app; the launcher is com.sec.android.app.launcher); MemAvailable 6883632 kB, kgsl page_alloc 255909888 B
+  left alone: a system app
+13:51:41 ready? den16a: thermal 0 cap none kgsl_pwrlevel 0 rested 35s mode gate
+den16a ready gate: clean; rested 35s since 13:51:06; front com.android.settings (a system app: left alone)
+=== leg den16a start 13:51:42 device mark '11-09 13:51:42.000' uptime 2127833 compile watch 300s guard 1000000 kB ready: clean; rested 35s since 13:51:06; front com.android.settings (a system app: left alone)
+stderr den16a.stderr.txt bytes phone=2044 pulled=2044 MATCH
+=== leg den16a status DONE rc 0 killed none dumps 1 (bad size 0) cache none kB end 13:51:52 uptime 2127833 -> 2127840
+model[0]=/data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite signature=serving_default index=0 inputs=2 outputs=1 out0_elems=12589056 compile_ms=638.5 fully_accelerated=true
+parity_summary model[0] /data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite fixtures=1 nonfinite_values=0 first_run_ms=804.9 mean_ms=772.035 outdir=/data/local/tmp/idol_f0/out_den16a/model0
+summary model[0] /data/local/tmp/idol_f0/f0_den_block_L12294_c512.tflite n=3 median=781.477 min=780.788 max=782.068 nonfinite_rounds=0 compile_ms=638.5 fully_accelerated=true
+done wall_ms=1794199907824
+VERBOSE: Replacing 248 out of 248 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+stage left: ls: /data/local/tmp/idol_f0: No such file or directory
+runner left: ''
+data_free: /dev/block/dm-73 221G 145G   76G  66% /data/user/0
+time: 2026-11-09 13:51:52
+uptime: 2127844.18 15965806.80
+thermal: Thermal Status: 0
+skin: mValue=36.2, mType=3, mName=SKIN
+hal_temps: mValue=43.8, mType=0, mName=AP;mValue=33.8, mType=2, mName=BAT;mValue=44.2, mType=5, mName=PA;mValue=36.2, mType=3, mName=SKIN;mValue=0.0, mType=2, mName=SUBBAT;mValue=29.8, mType=4, mName=USB;
+cooling: cpufreq-cpu0=0/27;cpufreq-cpu6=0/30;ddr-cdev=0/1;cpu-cluster0=0/27;cpu-cluster1=0/30;cdsp_ss=0/12;cdsp_hw=0/1;kgsl=0/18;cdsp=0/12;gpu=0/18;cdsp_sw_hvx=0/11;cdsp_sw_hmx=0/12;
+battery_temp: temperature:333
+battery_level: level:79
+screen: mWakefulness=Awake
+top:     topResumedActivity=ActivityRecord{153785014 u0 com.android.settings/.SubSettings t3127}
+gpu: kind=kgsl
+kgsl: temp=44900 clock_mhz=160 max_clock_mhz=1300 thermal_pwrlevel=0
+freq (policy cur scaling_max cpuinfo_max): policy0 1440000 3628800 3628800;policy6 883200 4742400 4742400;
+freq_capped: none
+mem: MemAvailable:    6887648 kB
+data_free: /dev/block/dm-73 221G 145G   76G  66% /data/user/0
+chain f0 legs done 2026-11-09 13:51:53
+RELEASE_HOLD written 2026-11-09 13:51:53
+keeper released the hold at 2026-11-09 13:51:54
+host scorers done 2026-11-09 13:51:54
+chain exit 0 2026-11-09 13:51:54
+chain_exit=0

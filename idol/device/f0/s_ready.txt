@@ -1,0 +1,14 @@
+13:46:49 ready? den16: thermal 0 cap none kgsl_pwrlevel 0 rested 34s mode gate
+den16 ready gate: clean; rested 34s since 13:46:15; front com.android.settings (a system app: left alone)
+13:47:32 ready? dino16: thermal 0 cap none kgsl_pwrlevel 0 rested 32s mode gate
+dino16 ready gate: clean; rested 32s since 13:47:00; front com.android.settings (a system app: left alone)
+13:48:05 ready? gs16: thermal 0 cap none kgsl_pwrlevel 0 rested 30s mode gate
+gs16 ready gate: clean; rested 30s since 13:47:35; front com.android.settings (a system app: left alone)
+13:48:48 ready? oct16: thermal 0 cap none kgsl_pwrlevel 0 rested 34s mode gate
+oct16 ready gate: clean; rested 34s since 13:48:14; front com.android.settings (a system app: left alone)
+13:49:26 ready? vae16: thermal 0 cap none kgsl_pwrlevel 0 rested 32s mode gate
+vae16 ready gate: clean; rested 32s since 13:48:54; front com.android.settings (a system app: left alone)
+13:50:49 ready? den32: thermal 0 cap none kgsl_pwrlevel 0 rested 34s mode gate
+den32 ready gate: clean; rested 34s since 13:50:15; front com.android.settings (a system app: left alone)
+13:51:41 ready? den16a: thermal 0 cap none kgsl_pwrlevel 0 rested 35s mode gate
+den16a ready gate: clean; rested 35s since 13:51:06; front com.android.settings (a system app: left alone)

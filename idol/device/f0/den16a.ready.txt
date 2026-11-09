@@ -1,0 +1,1 @@
+clean; rested 35s since 13:51:06; front com.android.settings (a system app: left alone)

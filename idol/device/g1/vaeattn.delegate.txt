@@ -1,0 +1,2 @@
+vaeattn.stderr.txt:VERBOSE: Replacing 897 out of 897 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 16:09:45.226 24509 24509 I tflite  : Replacing 897 out of 897 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

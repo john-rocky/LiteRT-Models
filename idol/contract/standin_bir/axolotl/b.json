@@ -1,0 +1,39 @@
+{
+ "box": [
+  0,
+  2,
+  1023,
+  1024
+ ],
+ "times": {
+  "preprocess": 5.2,
+  "dinov3": 185.85,
+  "vae": 9.46,
+  "denoiser": 147.6,
+  "octree": 11.67,
+  "gaussian_decoder": 49.51,
+  "ply": 0.31,
+  "generate_total": 404.86,
+  "all": 410.37
+ },
+ "box_reference": [
+  0,
+  2,
+  1023,
+  1024
+ ],
+ "tag": "axolotl",
+ "psnr_db": 32.21466167991724,
+ "psnr_per_view_db": [
+  33.84910373178293,
+  29.70482394754115,
+  34.57993029044004,
+  32.43166256726319
+ ],
+ "line_db": 25.0,
+ "matting": "birefnet",
+ "dis_alpha_floor": null,
+ "pass_": true,
+ "precision": "metal default (fp16)",
+ "models": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/models/v2"
+}
