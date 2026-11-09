@@ -95,6 +95,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [GFPGAN v1.4](#gfpgan-v14-blind-face-restoration) | Blind face restoration |  |  | [🤗 HF](https://huggingface.co/litert-community/GFPGAN-v1.4-LiteRT) |
 | [Bonsai Image 4B](bonsai_image/) | Text-to-image (ternary DiT, CPU) | Galaxy S26 (CPU) | 23.5 s per 256×256 image (app, 4 steps, 2026-10-09) | [🤗 HF](https://huggingface.co/litert-community/Bonsai-Image-ternary-4B) |
 | [iris-3b Turbo](#iris-3b-turbo) | Text-to-image (pixel-space DiT, GPU) | Galaxy S26 | 212.6 s per 768×768 image (app, 4 steps, first image after the install, 2026-10-21) | [🤗 HF](https://huggingface.co/litert-community/iris-3b-Turbo-LiteRT) |
+| [Idol](#idol-speridlabsidol--idol-turbo) | Image to 3D Gaussian splat (GPU; background removal on the CPU) | Galaxy S26 | 303 s per photo (app, 5 steps, first photo after start on a cool phone; 339–449 s on a phone already warm, 2026-11-09) | [🤗 HF](https://huggingface.co/litert-community/Idol) |
 | [MoGe-2 ViT-S](#moge-2-vit-s) | Monocular geometry (points, normals, depth) | Pixel 8a | ~522 ms | [GitHub](https://github.com/john-rocky/LiteRT-Models/releases/download/v3/moge.tflite) |
 | [Depth Anything 3 Small](#depth-anything-3-vit-s-small) | Monocular depth | Pixel 8a | ~1.8 s/image | [🤗 HF](https://huggingface.co/mlboydaisuke/Depth-Anything-3-Small-LiteRT) |
 | [Metric3D v2 ViT-S](#metric3d-v2-vit-s) | Metric depth | Pixel 8a | ~44 ms | [🤗 HF](https://huggingface.co/mlboydaisuke/Metric3D-v2-LiteRT) |
@@ -134,7 +135,7 @@ This repository is the model zoo for that path: **91 converted models** (as of 2
 | [Fun-ASR-Nano-2512](asr_litertlm/) | Speech recognition, zh / en / ja (LiteRT-LM) | Galaxy S26 (CPU) | 1.19 s for a 6.4 s clip (RTF 0.19) | [🤗 HF](https://huggingface.co/litert-community/Fun-ASR-Nano-2512) |
 | [Confucius4-R2T2](asr_litertlm/) | Speech recognition, zh / en, a Qwen3-ASR-1.7B fine-tune (LiteRT-LM) | Galaxy S26 (CPU) | 2.59 s for a 6.4 s clip (RTF 0.40) | [🤗 HF](https://huggingface.co/mlboydaisuke/Confucius4-R2T2-LiteRT) |
 
-Latency is the figure each model's section below records, on the device named; blank means this repository records no measurement. **Galaxy S26** rows (Snapdragon 8 Elite Gen 5) come from [npubench](npubench/): LiteRT 2.2.0 `CompiledModel` GPU, median of 50 runs after warm-up, `run()` plus output readback, thermal status NONE, 2026-08; the value in parentheses is the same phone's Hexagon NPU. 50 models were measured that way — see [Snapdragon NPU](#snapdragon-npu-hexagon). The Galaxy S26 (CPU) rows dated 2026-10 (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2, Bonsai Image 4B, Audio8-TTS-Preview-0.6b), the Galaxy S26 GPU row of iris-3b Turbo and the Galaxy S26 GPU + NPU row of Ming-3.0-tts-0.5B are instead the sample apps' own device checks on the same phone, as their sections say. **Pixel 8a** (Tensor G3, Mali GPU, fp16) figures marked `~` come from each model's conversion notes; per [docs § Latency figures](docs/LITERT_CONVERSION_GUIDE.md#latency-figures-time-run--readback), figures recorded before 2026-08 may time only the asynchronous `run()` call (ormbg's earlier "~10 ms" re-measured at 246 ms with the readback). Camera FPS, RTF, tok/s and per-turn figures are end-to-end app measurements. The Model column links to the full entry: I/O shapes, preprocessing, license, conversion script and sample app.
+Latency is the figure each model's section below records, on the device named; blank means this repository records no measurement. **Galaxy S26** rows (Snapdragon 8 Elite Gen 5) come from [npubench](npubench/): LiteRT 2.2.0 `CompiledModel` GPU, median of 50 runs after warm-up, `run()` plus output readback, thermal status NONE, 2026-08; the value in parentheses is the same phone's Hexagon NPU. 50 models were measured that way — see [Snapdragon NPU](#snapdragon-npu-hexagon). The Galaxy S26 (CPU) rows dated 2026-10 (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2, Bonsai Image 4B, Audio8-TTS-Preview-0.6b), the Galaxy S26 GPU rows of iris-3b Turbo and Idol, and the Galaxy S26 GPU + NPU row of Ming-3.0-tts-0.5B are instead the sample apps' own device checks on the same phone, as their sections say. **Pixel 8a** (Tensor G3, Mali GPU, fp16) figures marked `~` come from each model's conversion notes; per [docs § Latency figures](docs/LITERT_CONVERSION_GUIDE.md#latency-figures-time-run--readback), figures recorded before 2026-08 may time only the asynchronous `run()` call (ormbg's earlier "~10 ms" re-measured at 246 ms with the readback). Camera FPS, RTF, tok/s and per-turn figures are end-to-end app measurements. The Model column links to the full entry: I/O shapes, preprocessing, license, conversion script and sample app.
 
 # Run a model in 5 lines
 
@@ -1732,6 +1733,29 @@ The fully-connected weights are fp16 constants with a `DEQUANTIZE` in front (lit
 **Sample app**: [iris3b/](iris3b/) — type a prompt (or tap an example), Generate; the tokenizer (Kotlin port), the embedding lookup, the masks and the sampler run on the host, every graph on the GPU. `install_to_device.sh` streams the 24 files into the app's private storage.
 
 # Monocular Geometry Estimation
+
+### Idol (speridlabs/idol + idol-turbo)
+
+Idol turns one photo of an object into a 3D Gaussian splat (262,144 Gaussians) that you can turn around, including the sides the picture never showed. On the phone it runs as 46 fixed-shape graphs plus host glue: the author's BiRefNet background remover (LiteRT CPU), the DINOv3 ViT-H+/16 and FLUX.2 VAE encoders, the denoiser with the idol-turbo LoRA (5 guidance-free steps), the octree decoder and the Gaussian decoder (LiteRT GPU, fp16 with fp32 accumulation).
+
+Converted via **litert-torch** from re-authored modules, each checked against the author's PyTorch pipeline on three fixed inputs (thresholds in [idol/CONTRACT.md](idol/CONTRACT.md), fixed before any run). Two rewrites carry the accuracy: attention over 4,096 keys or more sums the product of the attention weights and the values over key chunks of 1,024 after centring the values (one fp16 sum over 8,192 keys lost 18 %), and BiRefNet's 20 deformable convolutions become a gather with bilinear weights and one matmul (5.5e-6 from the author's map; the gather has no GPU kernel, so BiRefNet runs on the CPU). The gathers run in row tiles, each tile's offsets waiting on the previous tile's output: without that wait the CPU runtime ran every tile's gather before using any of them and the first export ran out of memory on the Galaxy S26. On a Galaxy S26 the sample app makes the splat in 303 s for the first photo after start on a cool phone (the GPU clock cap falls from 1,300 to 422 MHz within that photo), and in 339–449 s per photo on a phone that was already warm (the graphs do not all fit in memory at once, so about 115 compiles happen per photo); rendered from four sides, the phone's splats match the author's at a PSNR of 41.4–46.6 dB (threshold: 25 dB).
+
+| Stage | Graphs | Runs on | Input | Output |
+| ----- | ------ | ------- | ----- | ------ |
+| Background removal (BiRefNet) | `bir.tflite` (930 MB) | CompiledModel CPU | image [1, 3, 1024, 1024] (ImageNet-normalised) | sigmoid map [1, 1, 1024, 1024] |
+| DINOv3 ViT-H+/16 | `dino_0..3` (gated repo) | CompiledModel GPU | pixels [1, 3, 1024, 1024] in [0, 1], RoPE cos / sin [1, 1, 4101, 64] | feature1 [1, 4101, 1280] |
+| FLUX.2 VAE encoder | `vae_0..3`, `vae_attn`, `vae_4` | CompiledModel GPU | pixels | moments [1, 64, 128, 128] |
+| Denoiser + turbo LoRA (x5 steps) | `den_ctx`, `den_in`, `den_joint_00..23` | CompiledModel GPU | latent [1, 8192, 16], camera [1, 1, 5], both image features | latent velocity [1, 8192, 16], camera velocity [1, 1, 5] |
+| Octree decoder (8 levels) | `oct` (one graph, 5 signatures by row count: 64 to 8,192) | CompiledModel GPU | cells, latent | child probabilities |
+| Gaussian decoder | `gs_0..7` | CompiledModel GPU | anchors [1, 8192, 3], latent | 32 Gaussians per anchor |
+
+<img src="idol/docs/app_s26.png" width="300">
+
+**Host side** (Python reference `idol/scripts/idol_runner.py` + `idol_glue.py`, Kotlin in the app): the author's preprocessing (short side 1024, alpha, 3×3 min filter, square crop, composite on black), the Euler loop, octree sampling, Gaussian activation and the PLY writer.
+
+**Sample app**: [idol/](idol/) — pick a photo or take one, watch each stage, then turn the splat around in a WebView viewer ([antimatter15/splat](https://github.com/antimatter15/splat), MIT).
+
+**Original project**: [speridlabs/idol](https://huggingface.co/speridlabs/idol) | Apache-2.0 (DINOv3: DINOv3 License; BiRefNet: MIT)
 
 ### MoGe-2 ViT-S
 

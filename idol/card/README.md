@@ -16,10 +16,12 @@ tags:
 
 # Idol on LiteRT: one photo to a 3D Gaussian splat on the phone
 
+{SEAT}
+
 [speridlabs/idol](https://huggingface.co/speridlabs/idol) turns one photo of an object into a 3D Gaussian splat of
-262,144 Gaussians that you can turn around, including the sides the picture never showed. This repo is that pipeline
-as LiteRT graphs for `CompiledModel`: the author's denoiser with the
-[speridlabs/idol-turbo](https://huggingface.co/speridlabs/idol-turbo) LoRA (5 steps, no guidance), its octree and
+262,144 Gaussians that you can turn around, including the sides the picture never showed. This repo holds the
+author's denoiser with the [speridlabs/idol-turbo](https://huggingface.co/speridlabs/idol-turbo) LoRA (5 steps, no
+guidance), its octree and
 Gaussian decoders, the FLUX.2 VAE encoder, and the author's BiRefNet background remover. The DINOv3 image encoder is
 in a separate, gated repo under its own licence:
 [litert-community/DINOv3-ViT-H16plus-Idol-LiteRT](https://huggingface.co/litert-community/DINOv3-ViT-H16plus-Idol-LiteRT).
@@ -40,10 +42,10 @@ Speed still being tuned (updates follow).
 ## How close it is to the author's model
 
 Each check runs the author's PyTorch pipeline (float32, CPU) and these graphs on the same input with the same random
-numbers, against lines written down before the first run. The inputs are two images from the author's gallery
+numbers, against thresholds fixed before the first run. The inputs are two images from the author's gallery
 (`nb-armchair`, `fig-axolotl`) and one photo (a succulent, Pexels). Per part, each graph gets the author's own input
-for that part and its output is compared with the author's (cosine; the line is 0.99). The whole pipeline is compared
-by rendering both splats from four sides with the same renderer (PSNR; the line is 25 dB).
+for that part and its output is compared with the author's (cosine; the threshold is 0.99). The whole pipeline is compared
+by rendering both splats from four sides with the same renderer (PSNR; the threshold is 25 dB).
 
 {FACTS}
 
@@ -86,6 +88,9 @@ chmod +x gradlew scripts/install_to_device.sh        # the Hub does not keep the
 IDOL_DIR=~/Downloads/Idol DINO_DIR=~/Downloads/DINOv3-ViT-H16plus-Idol-LiteRT ./scripts/install_to_device.sh
 ```
 
+Close other apps before a run: one photo peaks at about 5.4 GiB of resident memory, and with another app holding
+memory the system can close the app during background removal.
+
 ## What runs where
 
 | Stage | Files | Runs on | Calls per photo |
@@ -109,10 +114,11 @@ IDOL_DIR=~/Downloads/Idol DINO_DIR=~/Downloads/DINOv3-ViT-H16plus-Idol-LiteRT ./
   another: each tile's offsets wait for the previous tile's result. Without that wait the CPU runtime ran every
   tile's gather before using any of them; the first export ran out of memory on the Galaxy S26, and this one peaks
   at {BIR_PEAK} on it.
-- **The VAE's GroupNorm takes its fp16 scale as a max pool, then a max** over the 32 × 32 result (the same value).
-  One REDUCE_MAX over the whole 1024 × 1024 map took 8 s per GPU call on the Galaxy S26; this form takes 0.83 s.
-- **Attention over 4,096 keys or more is summed in chunks.** The A·V product runs over key chunks of 1,024 after
-  centring the values (exact, since each softmax row sums to 1). One fp16 sum over 8,192 keys lost 18 % in the
+- **The VAE's GroupNorm scales each group by its largest |x − mean| to stay in fp16 range.** The graph finds that
+  maximum as a max pool, then a max over the 32 × 32 result (the same value). One REDUCE_MAX over the whole
+  1024 × 1024 map took 8 s per GPU call on the Galaxy S26; this form takes 0.83 s.
+- **Attention over 4,096 keys or more is summed in chunks.** The product of the attention weights and the values is
+  summed over key chunks of 1,024 after centring the values (exact, since each softmax row sums to 1). One fp16 sum over 8,192 keys lost 18 % in the
   Gaussian decoder's first block; the chunked form loses 0.6 %. Keep it if you re-export.
 - **Keep each GPU call short on the Galaxy S26.** In the feasibility run the VAE encoder ran as one graph, about 9 s
   per GPU call; the screen compositor stalled and the process was killed (signal 9) on its fifth call. Every stage here
@@ -126,6 +132,6 @@ IDOL_DIR=~/Downloads/Idol DINO_DIR=~/Downloads/DINOv3-ViT-H16plus-Idol-LiteRT ./
 | Turbo LoRA (applied to the denoiser graphs) | [speridlabs/idol-turbo](https://huggingface.co/speridlabs/idol-turbo) | Apache-2.0 |
 | FLUX.2 VAE encoder | [black-forest-labs/FLUX.2-klein-4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) `vae/` | Apache-2.0 |
 | BiRefNet background remover | `birefnet.safetensors` in speridlabs/idol ([BiRefNet](https://github.com/ZhengPeng7/BiRefNet)) | MIT |
-| DINOv3 ViT-H+/16 (separate repo) | [facebook/dinov3-vith16plus-pretrain-lvd1689m](https://huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m) | DINOv3 License |
+| DINOv3 ViT-H+/16 (separate repo) | [facebook/dinov3-vith16plus-pretrain-lvd1689m](https://huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m), read from the bf16 copy Idol loads (Comfy-Org/Idol `clip_vision/dino_v3_vit_h_bf16.safetensors`) | DINOv3 License |
 
 The graphs here are Apache-2.0 except `bir.tflite` (MIT). `LICENSES.md` records where each licence was read.

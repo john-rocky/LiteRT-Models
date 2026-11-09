@@ -1,0 +1,22 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; from a cool phone (GPU clock cap 1,300 MHz, thermal status 1 at the start)",
+ "run_dir": "device/results/s26/e2e_cool",
+ "vmhwm_kb_max": 4935640,
+ "gpu_page_alloc_max_bytes": 6014398464,
+ "per_run": [
+  {
+   "run": 0,
+   "vmhwm_kb": 4935640,
+   "vmswap_kb": 219732,
+   "gpu_page_alloc_max_bytes": 6014398464,
+   "mem_available_kb_start": 2754624,
+   "mem_available_kb_end": 2635588
+  }
+ ],
+ "sampler": {
+  "vmhwm_kb_max": 5693596,
+  "kgsl_page_alloc_max_bytes": 6014398464,
+  "mem_available_kb_min": 1497084,
+  "samples": 477
+ }
+}

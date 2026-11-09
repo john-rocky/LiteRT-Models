@@ -1,0 +1,55 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app (staged-source APK), LiteRT 2.3.0; hold 3, right after the 3-photo series",
+ "runs": [
+  {
+   "input": "succulent",
+   "run": 0,
+   "warmup": true,
+   "total_s": 448.74610087,
+   "generate_s": 431.038838846,
+   "stages": {
+    "matting": 15.046243692,
+    "preprocess": 17.611307389,
+    "dinov3": 17.340101764,
+    "vae": 9.715704424,
+    "denoiser": 348.504979814,
+    "octree": 17.250094108,
+    "gaussian_decoder": 37.356287538,
+    "ply": 0.143607864
+   },
+   "compiles": {
+    "count": 112,
+    "seconds": 79.757342838
+   },
+   "thermal_start": 2,
+   "thermal_end": 2,
+   "vmhwm_kb": 5596872,
+   "gpu_page_alloc_max_bytes": 6018744320
+  },
+  {
+   "input": "axolotl",
+   "run": 0,
+   "warmup": true,
+   "total_s": 416.201500674,
+   "generate_s": 403.332478804,
+   "stages": {
+    "matting": 11.910153277,
+    "preprocess": 12.783827287,
+    "dinov3": 15.179197755,
+    "vae": 8.41077208,
+    "denoiser": 325.77984555300003,
+    "octree": 16.198481556,
+    "gaussian_decoder": 36.819518216,
+    "ply": 0.172551875
+   },
+   "compiles": {
+    "count": 113,
+    "seconds": 79.258332002
+   },
+   "thermal_start": 2,
+   "thermal_end": 2,
+   "vmhwm_kb": 5439984,
+   "gpu_page_alloc_max_bytes": 6016937984
+  }
+ ]
+}

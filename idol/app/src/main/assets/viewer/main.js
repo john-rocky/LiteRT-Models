@@ -798,10 +798,17 @@ async function main() {
 
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
     const reader = req.body.getReader();
-    let splatData = new Uint8Array(req.headers.get("content-length"));
+    // idol: in the app's WebView this page got no usable Content-Length for the .ply; the stock code then made an
+    // empty buffer and the first chunk threw "RangeError: offset is out of bounds". Take the first number when there
+    // is one and grow the buffer as chunks arrive.
+    const contentLength = req.headers.get("content-length");
+    const declaredLength = parseInt(contentLength, 10);
+    let splatData = new Uint8Array(declaredLength > 0 ? declaredLength : 1 << 24);
+    console.log("content-length", contentLength);
 
-    const downsample =
-        splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
+    // idol: one object of 262,144 Gaussians, under the stock 500,000 line, so full resolution (the stock rule counts
+    // 32-byte .splat rows and would read the 68-byte rows of Idol's .ply as 557,000)
+    const downsample = 1 / devicePixelRatio;
     console.log(splatData.length / rowLength, downsample);
 
     const worker = new Worker(
@@ -1495,6 +1502,12 @@ async function main() {
         const { done, value } = await reader.read();
         if (done || stopLoading) break;
 
+        if (bytesRead + value.length > splatData.length) {
+            // idol: grow the buffer (see the Content-Length note above)
+            const grown = new Uint8Array(Math.max(2 * splatData.length, bytesRead + value.length));
+            grown.set(splatData.subarray(0, bytesRead));
+            splatData = grown;
+        }
         splatData.set(value, bytesRead);
         bytesRead += value.length;
 
@@ -1511,7 +1524,7 @@ async function main() {
     if (!stopLoading) {
         if (isPly(splatData)) {
             // ply file magic header means it should be handled differently
-            worker.postMessage({ ply: splatData.buffer, save: false });
+            worker.postMessage({ ply: splatData.buffer.slice(0, bytesRead), save: false });
         } else {
             worker.postMessage({
                 buffer: splatData.buffer,

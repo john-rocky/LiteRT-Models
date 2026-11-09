@@ -45,7 +45,9 @@ def call_range(g1_path, g2_dir):
         m = re.search(r'median=([\d.]+)', open(p, errors='replace').read())
         if m:
             vals[os.path.basename(p).split('.')[0]] = float(m.group(1))
-    return min(vals.values()) / 1000, max(vals.values()) / 1000, len(vals)
+    graphs = {r['graph'] for r in json.load(open(g1_path)) if r.get('accel') == 'gpu' and r.get('median_ms')
+              and not r['graph'].startswith('vae_')} | {k for k in vals if k.startswith('vae')}
+    return min(vals.values()) / 1000, max(vals.values()) / 1000, len(vals), len(graphs)
 
 
 def fill(text, values):
@@ -55,6 +57,33 @@ def fill(text, values):
     left = re.findall(r'\{[A-Z][A-Z0-9_]+\}', text)
     assert not left, left
     return text
+
+
+def speed_paragraph(contract):
+    """The Speed paragraph (cool-phone headline when contract/c_s26_cool.json exists, then the throttled photos and the
+    GPU clock cap from the thermal trace) and the background-removal seconds that go with the headline."""
+    c = json.load(open(os.path.join(contract, 'c_s26.json')))
+    warm_runs = sorted(c['per_run'], key=lambda r: r['run'])
+    warm_totals = [r['total_s'] for r in warm_runs]
+    more = os.path.join(contract, 'e2e_s26_hold3.json')   # the two photos after the series, still throttled
+    if os.path.exists(more):
+        warm_totals += [r['total_s'] for r in json.load(open(more))['runs']]
+    warm_lo, warm_hi = min(warm_totals), max(warm_totals)
+    comp_n = statistics.median(r['compiles']['count'] for r in warm_runs)
+    cool_path = os.path.join(contract, 'c_s26_cool.json')
+    cool = json.load(open(cool_path))
+    cr = next(r for r in cool['per_run'] if r['warmup'])
+    tw = json.load(open(os.path.join(contract, 'c_s26_cool_thermal.json')))
+    bir_s = cr['stages']['matting']
+    speed_par = (f'On a Galaxy S26, the sample app turns one photo into a splat of {c["gaussians"]:,} Gaussians in '
+                 f'{cr["total_s"]:.0f} s, starting from a cool phone (the first photo after start). The phone throttles its '
+                 f'GPU during that photo: the GPU clock cap fell from {tw["cap_mhz_start"]:,.0f} to {tw["cap_mhz_min"]:.0f} MHz '
+                 f'within its {cr["total_s"] / 60:.0f} minutes (thermal status {tw["status_start"]} → {tw["status_max"]}). '
+                 f'Photos taken one after another on a phone that was already warm (thermal status 2) took '
+                 f'{warm_lo:.0f}–{warm_hi:.0f} s. The graphs do not all fit in the phone\'s memory at once, so the app closes '
+                 'graphs and compiles them again when the run comes back to them: about '
+                 f'{comp_n:.0f} compiles per photo, {cr["compiles"]["seconds"]:.0f} s of the first one.')
+    return speed_par, bir_s
 
 
 def main():
@@ -68,35 +97,21 @@ def main():
     ap.add_argument('--out-dino', required=True)
     a = ap.parse_args()
     c = json.load(open(os.path.join(a.contract, 'c_s26.json')))
-    lo, hi, n = call_range(a.g1, a.g2)
+    lo, hi, n, n_graphs = call_range(a.g1, a.g2)
     leg = json.load(open(a.bir_leg))
     assert leg['graph'] == 'bir' and leg['status'] == 'DONE', leg['status']
     bir_hwm_kb = int(re.search(r'VmHWM_max_kB (\d+)', leg['memory']).group(1))
     facts = card_facts.render(a.contract)
     speed = '\n\n'.join(card_facts.speed_tables(a.contract))
-    warm_runs = sorted(c['per_run'], key=lambda r: r['run'])
-    warm_lo, warm_hi = min(r['total_s'] for r in warm_runs), max(r['total_s'] for r in warm_runs)
-    comp_n = statistics.median(r['compiles']['count'] for r in warm_runs)
-    cool_path = os.path.join(a.contract, 'c_s26_cool.json')
-    therm = list(csv.DictReader(open(os.path.join(a.contract, 's26_thermal.csv'))))
-    cap_min = min(float(r['max_gpuclk_mhz']) for r in therm if r['max_gpuclk_mhz'])
-    cap_top = max(int(f) for f in open(os.path.join(a.contract, 's26_gpu_available_frequencies.txt')).read().split()) / 1e6
-    if os.path.exists(cool_path):
-        cool = json.load(open(cool_path))
-        cr = sorted(cool['per_run'], key=lambda r: r['run'])
-        head = (f'On a Galaxy S26, the sample app makes a splat of {c["gaussians"]:,} Gaussians from a photo in '
-                f'{cr[0]["total_s"]:.0f} s, starting from a cool phone (the first photo after start'
-                + (f'; {cr[1]["total_s"]:.0f} s for the next one' if len(cr) > 1 else '') + '). ')
-        bir_s = cr[0]['stages']['matting']
-    else:
-        head = f'On a Galaxy S26, the sample app makes a splat of {c["gaussians"]:,} Gaussians from a photo. '
-        bir_s = c['median_stage_s']['matting']
-    speed_par = (head + f'Photo after photo, the phone throttles its GPU: with its thermal status at 2 (moderate), '
-                 f'photos took {warm_lo:.0f}–{warm_hi:.0f} s, and after half an hour of them the GPU clock was capped '
-                 f'at {cap_min:.0f} of {cap_top:,.0f} MHz. The graphs do not all fit in the phone\'s memory at once, so '
-                 'the app closes graphs and compiles them again when the run comes back to them: about '
-                 f'{comp_n:.0f} compiles per photo.')
+    speed_par, bir_s = speed_paragraph(a.contract)
+    cool = json.load(open(os.path.join(a.contract, 'c_s26_cool.json')))
+    cool_first = next(r for r in cool['per_run'] if r['warmup'])
+    seat = ('Idol (speridlabs/idol with the idol-turbo LoRA) as LiteRT graphs for `CompiledModel`, converted with '
+            f'litert-torch: on a Galaxy S26, the Android sample in `android/` turns one photo into a 3D Gaussian splat of '
+            f'{c["gaussians"]:,} Gaussians in {cool_first["total_s"]:.0f} s (the first photo after start on a cool phone, '
+            'GPU fp16 with fp32 accumulation, LiteRT 2.3.0, measured 2026-11-09).')
     main_vals = {
+        'SEAT': seat,
         'HERO_CAPTION': a.hero_caption,
         'SPEED_PARAGRAPH': speed_par,
         'BIR_S26': f'{bir_s:.1f}',
@@ -105,7 +120,7 @@ def main():
         'FACTS': facts,
         'PYTHON_SNIPPET': open(os.path.join(MODULE, 'card/snippets/bir_python.py')).read().rstrip(),
         'KOTLIN_SNIPPET': kotlin_block("// ---- the card's block, verbatim", "// ---- end of the card's block"),
-        'CALL_LENGTHS': f'on the Galaxy S26 each of the {n} GPU graphs takes {lo:.2f}–{hi:.2f} s per call',
+        'CALL_LENGTHS': f'on the Galaxy S26 every GPU call takes {lo:.2f}–{hi:.2f} s: {n_graphs} graphs, {n} signatures',
     }
     main = fill(open(os.path.join(MODULE, 'card/README.md')).read(), main_vals)
     mac = []

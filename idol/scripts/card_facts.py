@@ -92,7 +92,7 @@ def matting_table(contract):
 
 
 def line_b_table(contract):
-    rows = ['| Input | Where | PSNR, 4 views pooled (line: 25 dB) | per view: 0°, 90°, 180°, 270° |', '|---|---|---|---|']
+    rows = ['| Input | Where | PSNR, 4 views pooled (threshold: 25 dB) | per view: 0°, 90°, 180°, 270° |', '|---|---|---|---|']
     for t in INPUTS:
         d = load(f'{contract}/standin_v3/{t}/b.json') or load(f'{contract}/standin_bir/{t}/b.json')
         if d:
@@ -117,6 +117,8 @@ def speed_tables(contract):
     for c_path in sorted(glob.glob(f'{contract}/c_*.json'), key=lambda p: (0 if 'cool' in p else 1, p)):
         dev = os.path.basename(c_path)[2:-5]
         c, e = load(c_path), load(f'{contract}/e_{dev}.json')
+        if not c or 'per_run' not in c:
+            continue   # c_s26_cool_thermal.json and other side records
         runs = sorted(c['per_run'], key=lambda r: r['run'])
         mem = {m['run']: m for m in (e or {}).get('per_run', [])}
         heads = ['first photo after start' if r['warmup'] else f'photo {r["run"] + 1}' for r in runs]
@@ -139,8 +141,7 @@ def speed_tables(contract):
 def render(contract, with_speed=False):
     """The facts tables as markdown: line (a) on the Mac and the phones, background removal, line (b); with_speed adds
     the (c) / (e) tables (the card puts those in its Speed section)."""
-    parts = ['<!-- rendered by scripts/card_facts.py from the result files; do not edit by hand -->',
-             '### Per-part agreement on the Mac (LiteRT GPU, Metal, fp16): cosine vs the author\'s model',
+    parts = ['### Per-part agreement on the Mac (LiteRT GPU, Metal, fp16): cosine vs the author\'s model',
              line_a_table(contract, 'mac')]
     for where, phone in (('s26', 'a Galaxy S26'), ('p11p', 'a Pixel 11 Pro')):
         t = line_a_table(contract, where)

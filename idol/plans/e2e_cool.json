@@ -1,9 +1,15 @@
 {
- "comment": "CONTRACT.md (c), (e) on a cool phone: the whole pipeline from the armchair fixture's raw image with its noise arrays, run 0 = the first photo after start, run 1 = the photo after it; started only when the S26 reports thermal status 0 and its GPU clock cap is back at the top level (the hold's driver checks s26_thermal.csv).",
+ "comment": "CONTRACT.md (c), (e) on a cool phone: the whole pipeline from the armchair fixture's raw image with its noise arrays, one run = the first photo after start; started only when the S26 reports thermal status 0 and its GPU clock cap is at the top level (hold4_when_cool.sh reads the thermal trace).",
  "reserve_mb": 2500,
  "mem_check": true,
  "handoff": "host",
  "rows": [
-  {"id": "e2e_cool", "kind": "e2e", "fixture": "fx/armchair", "runs": 2, "preload": true}
+  {
+   "id": "e2e_cool",
+   "kind": "e2e",
+   "fixture": "fx/armchair",
+   "runs": 1,
+   "preload": true
+  }
  ]
 }

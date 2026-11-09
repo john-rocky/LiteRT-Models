@@ -68,6 +68,7 @@ author's) to DIS (GPU, with the alpha floor of 8 from `scripts/idol_glue.py`). I
 | The picture has no object (all black, one flat colour, no alpha value of 128 or more) | "No object found in this picture." |
 | Camera permission denied | "Camera permission is off. You can still pick a photo." |
 | A graph does not fit in memory even after the others are closed | "Not enough memory for <graph> ... Close other apps and try again." |
+| Another app holds memory during background removal | none: the system closes the app (known issue, below) |
 
 ## Memory and loading
 
@@ -82,6 +83,11 @@ to 8 s before it gives up with "Not enough memory".
 BiRefNet (930 MB, CPU) is compiled for each picture and closed right after the background removal, before the DINOv3
 graphs run.
 
+Known issue: the memory check counts BiRefNet at 1.2 GB (its file and its largest tensor), but one BiRefNet call peaks
+at about 4 GiB of resident memory. With another app still holding memory (once, the photo picker right after Done),
+the Galaxy S26 closed the app during background removal, with no message. Close other apps and run again; counting
+the call's peak in the check is the next change.
+
 Each graph runs as its own GPU call. One long GPU call starves the phone's compositor, and the process gets killed
 (`F0.md` finding 2). Outputs pass to the next graph through host memory (`readFloat` / `writeFloat`), and inputs that
 did not change since the last write are not written again: the RoPE tables, the position embedding, the LoRA gate, the
@@ -91,13 +97,35 @@ yet, and on the first error the app falls back to host copies and records why.
 
 ## Speed and memory
 
-| Galaxy S26 | |
+On a Galaxy S26, the sample app turns one photo into a splat of 262,144 Gaussians in 303 s, starting from a cool phone (the first photo after start). The phone throttles its GPU during that photo: the GPU clock cap fell from 1,300 to 422 MHz within its 5 minutes (thermal status 1 → 3). Photos taken one after another on a phone that was already warm (thermal status 2) took 339–449 s. The graphs do not all fit in the phone's memory at once, so the app closes graphs and compiles them again when the run comes back to them: about 115 compiles per photo, 70 s of the first one. Background removal (BiRefNet) runs on the CPU: 11.1 s of the first photo.
+
+| Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; from a cool phone (GPU clock cap 1,300 MHz, thermal status 1 at the start) | first photo after start |
 |---|---|
-| Photo to `.ply` (generate: preprocessed picture → `.ply`, graphs loaded) | TODO(numbers) s |
-| Background removal (BiRefNet, CPU) | TODO(numbers) s |
-| DINOv3 / VAE / denoiser / octree / Gaussian decoder / PLY | TODO(numbers) s |
-| Load and compile at start | TODO(numbers) s |
-| Peak memory (VmHWM) / GPU pages | TODO(numbers) |
+| **photo → .ply written** | **303 s** |
+| background removal (BiRefNet, CPU) | 11.1 s |
+| DINOv3 encoder | 6.3 s |
+| VAE encoder | 3.7 s |
+| denoiser, 5 steps | 228.4 s |
+| octree decoder | 16.2 s |
+| Gaussian decoder | 36.0 s |
+| PLY writer | 0.2 s |
+| graphs compiled during the photo | 115 (70 s) |
+| peak resident memory (VmHWM) | 4.71 GiB |
+| peak GPU memory (kgsl) | 5.60 GiB |
+
+| Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; thermal status 2 (moderate) from the first photo | first photo after start | photo 2 | photo 3 |
+|---|---|---|---|
+| **photo → .ply written** | **339 s** | **416 s** | **414 s** |
+| background removal (BiRefNet, CPU) | 8.5 s | 17.7 s | 15.9 s |
+| DINOv3 encoder | 8.8 s | 31.0 s | 26.7 s |
+| VAE encoder | 5.4 s | 8.5 s | 7.3 s |
+| denoiser, 5 steps | 262.9 s | 306.9 s | 311.9 s |
+| octree decoder | 16.0 s | 15.1 s | 15.3 s |
+| Gaussian decoder | 35.6 s | 35.7 s | 36.2 s |
+| PLY writer | 0.2 s | 0.1 s | 0.1 s |
+| graphs compiled during the photo | 115 (78 s) | 114 (97 s) | 116 (93 s) |
+| peak resident memory (VmHWM) | 4.91 GiB | 4.16 GiB | 4.09 GiB |
+| peak GPU memory (kgsl) | 5.60 GiB | 5.33 GiB | 5.45 GiB |
 
 ## AutoRun (debug builds)
 

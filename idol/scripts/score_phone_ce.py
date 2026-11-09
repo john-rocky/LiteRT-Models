@@ -31,6 +31,9 @@ def main():
         runs.append(json.load(open(p)))
     done = [r for r in runs if r.get('status') == 'done']
     measured = [r for r in done if not r.get('warmup')]
+    first_only = not measured and len(done) == 1
+    if first_only:
+        measured = done   # a one-run plan (e2e_cool): the first photo after start is the measurement
     if not measured:
         raise SystemExit(f'no measured run done in {a.run}: statuses {[r.get("status") for r in runs]}')
     stage_keys = sorted({k for r in measured for k in r.get('stages', {})})
@@ -39,7 +42,7 @@ def main():
         return statistics.median(vals) if vals else None
 
     c = {
-        'where': a.where, 'run_dir': a.run, 'runs_done': len(done), 'runs_measured': len(measured),
+        'where': a.where, 'run_dir': a.run, 'runs_done': len(done), 'runs_measured': len(measured), 'first_only': first_only,
         'median_generate_s': med([r['generate'] for r in measured]),
         'generate_s': [r['generate'] for r in measured],
         'total_s': [r.get('total') for r in measured],

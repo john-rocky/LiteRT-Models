@@ -1,0 +1,99 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; from a cool phone (GPU clock cap 1,300 MHz, thermal status 1 at the start)",
+ "run_dir": "device/results/s26/e2e_cool",
+ "runs_done": 1,
+ "runs_measured": 1,
+ "first_only": true,
+ "median_generate_s": 291.363645983,
+ "generate_s": [
+  291.363645983
+ ],
+ "total_s": [
+  303.182088895
+ ],
+ "median_total_s": 303.182088895,
+ "median_stage_s": {
+  "denoiser": 228.39319944300001,
+  "dinov3": 6.258712602,
+  "gaussian_decoder": 36.009552225,
+  "matting": 11.115101037,
+  "octree": 16.216454213,
+  "ply": 0.184764427,
+  "preprocess": 11.750945569,
+  "vae": 3.650169478
+ },
+ "compiles_in_run": [
+  {
+   "run": 0,
+   "count": 115,
+   "seconds": 69.786451589
+  }
+ ],
+ "thermal": [
+  {
+   "run": 0,
+   "start": 1,
+   "end": 3
+  }
+ ],
+ "warmup": {
+  "generate_s": 291.363645983,
+  "total_s": 303.182088895,
+  "stages": {
+   "matting": 11.115101037,
+   "preprocess": 11.750945569,
+   "dinov3": 6.258712602,
+   "vae": 3.650169478,
+   "denoiser": 228.39319944300001,
+   "octree": 16.216454213,
+   "gaussian_decoder": 36.009552225,
+   "ply": 0.184764427
+  }
+ },
+ "runs_not_done": [],
+ "per_run": [
+  {
+   "run": 0,
+   "warmup": true,
+   "total_s": 303.182088895,
+   "generate_s": 291.363645983,
+   "stages": {
+    "matting": 11.115101037,
+    "preprocess": 11.750945569,
+    "dinov3": 6.258712602,
+    "vae": 3.650169478,
+    "denoiser": 228.39319944300001,
+    "octree": 16.216454213,
+    "gaussian_decoder": 36.009552225,
+    "ply": 0.184764427
+   },
+   "compiles": {
+    "count": 115,
+    "seconds": 69.786451589
+   }
+  }
+ ],
+ "gaussians": 262144,
+ "handoff": "host",
+ "options": {
+  "preload": true,
+  "reserve_mb": 2500,
+  "mem_check": true,
+  "handoff": "host",
+  "matting": "bir",
+  "cpu_threads": 6,
+  "gpu_priority": "default",
+  "dis_floor": 8
+ },
+ "preload": {
+  "graphs": 5,
+  "seconds": 6.431434112
+ },
+ "device": {
+  "device": "Galaxy S26 (SM-S942Q)",
+  "android_sdk": 36,
+  "litert": "2.3.0",
+  "mem_total_kb": 11389756,
+  "thermal": 1
+ }
+}

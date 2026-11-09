@@ -51,7 +51,10 @@ object ResultViewer {
         web.destroy()
     }
 
-    /** Serves files of [dir] with a Content-Length (the viewer sizes its buffer from it). */
+    /**
+     * Serves files of [dir]. The viewer does not rely on the Content-Length set here: on a Galaxy S26 the page got no
+     * length it could use, so main.js grows its buffer as the file arrives.
+     */
     private class PlyHandler(private val dir: File) : WebViewAssetLoader.PathHandler {
         override fun handle(path: String): WebResourceResponse? {
             val f = File(dir, path)

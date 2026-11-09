@@ -18,7 +18,8 @@ tags:
 The image encoder of [litert-community/Idol](https://huggingface.co/litert-community/Idol) (one photo to a 3D Gaussian
 splat on the phone): Meta's DINOv3 ViT-H+/16
 ([facebook/dinov3-vith16plus-pretrain-lvd1689m](https://huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m))
-as four LiteRT graphs for `CompiledModel` on the GPU. It is its own repo because the weights are under the DINOv3
+as four LiteRT graphs for `CompiledModel` on the GPU, converted from the bf16 copy of those weights that Idol itself
+loads (Comfy-Org/Idol `clip_vision/dino_v3_vit_h_bf16.safetensors`). It is its own repo because the weights are under the DINOv3
 License, which this repo carries in full (`LICENSE.md`); the rest of Idol is Apache-2.0.
 
 ## Input and output
@@ -36,7 +37,8 @@ plain DINOv3 feature: Idol adds the parameter-free layer norm on top.
 ## How close it is to the original
 
 On the Mac (LiteRT GPU, Metal, fp16), the last output against the author's PyTorch pipeline (float32): {DINO_FACTS}.
-Attention over the 4,101 tokens sums the A·V product over key chunks of 1,024 after centring the values. Exported
+Attention over the 4,101 tokens sums the product of the attention weights and the values over key chunks of 1,024,
+after centring the values. Exported
 with one fp16 sum instead, the last output was 4.8 % off (relative L2) on the first test image, against 1.5 % with the
 chunks.
 
