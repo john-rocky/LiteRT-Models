@@ -119,7 +119,7 @@ def installed(hold: Path, mf: dict) -> list[str]:
     on a mismatch, so the hold's models step ending normally is the proof. -> the install lines."""
     text = (hold / "driver.out").read_text(errors="replace")
     lines = [l.strip() for l in text.splitlines() if l.startswith(("Up to date: models/", "Installing models/"))]
-    seen = {re.sub(r"^(Up to date|Installing) models/", "", l).split(" ")[0] for l in lines}
+    seen = {re.sub(r"^(Up to date:|Installing) models/", "", l).split(" ")[0] for l in lines}
     want = {g["file"] for g in mf["graphs"].values()} | set(mf["man"].get("side_files", {})) | \
         set(mf["man"].get("json_files", [])) | {"manifest.json"}
     want.discard("dis.tflite")
@@ -212,7 +212,7 @@ def phone_doc(p: dict, mf: dict, hub: dict, ships: list[tuple[str, str]]) -> dic
     hold, plan, run = p["ship"]
     s = plan_run(hold, plan, run)
     r, head = s["run"], s["head"]
-    check(head["device"] == p["header_device"], f"{p['slug']}: header device {head['device']}")
+    check(head["model"] == p["header_device"], f"{p['slug']}: header model {head['model']}")
     sdk = {35: 15, 36: 16, 37: 17}[head["android_sdk"]]
     os_build = f"Android {sdk} (build {head['fingerprint'].split('/')[3].split(':')[0]})"
     date = jst_date(head["start_ms"])
@@ -342,8 +342,8 @@ def harness_s26(p: dict, s: dict) -> str:
             "1,300 MHz and thermal status <= 1 in three reads 10 s apart (" + cool[1] + " s of waiting; status "
             f"{r['thermal_start']} at the photo's start). While the app ran the GPU clock cap fell to "
             f"{tw['cap_mhz_min']:.0f} MHz (thermal status {r['thermal_start']} -> {r['thermal_end']}). Not rows here: "
-            "the parity plan that dumps line (a)'s tensors; the fig-axolotl photo later in the same session and the "
-            "succulent photo of a later session (their PSNR is in metrics); the four photos of the next session on the "
+            "the parity plan that dumps line (a)'s tensors; the fig-axolotl photo later in the same device run and the "
+            "succulent photo of a later device run (their PSNR is in metrics); the four photos of the next device run on the "
             "warm phone (warm_photo*_wall_s); "
             "the repo's first form (262,144 Gaussians, a graph per block, FP16 with fp32 accumulation, in its 262k/ "
             "folder) and the other forms measured for the conversion's speed ladder.")
@@ -358,7 +358,7 @@ def harness_p11p(p: dict, s: dict) -> str:
     g = J(K / "device/results/p11p/G/e2e_cool/e2e_cool.0.json")
     return ("Harness: the same app, files and plan as the Galaxy S26 record, without a cool wait (thermal status "
             f"{r['thermal_start']} at the photo's start, {r['thermal_end']} at its end). Not rows here: the parity "
-            "plan; the Kotlin blocks of this repo's card and of the DINOv3 repo's card, run as written in the same session "
+            "plan; the Kotlin blocks of this repo's card and of the DINOv3 repo's card, run as written in the same device run "
             f"(plan snippet: BiRefNet on the CPU, mean alpha {alpha}; the DINOv3 graphs on the GPU, cosine {cos} "
             "against the author's encoder output); the conversion's form G (the "
             "same files except den_joint_mid at attention query chunk 512: "
