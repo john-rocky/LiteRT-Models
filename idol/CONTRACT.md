@@ -85,9 +85,9 @@ Apache-2.0) pure-PyTorch projection and tile intersection (`gsplat.cuda._torch_i
 compositing (alpha = min(0.999, opacity · exp(−σ)), weight = alpha × the product of (1 − alpha) in front), on the Mac
 CPU, float32, black background, colour = clamp(0.5 + 0.28209479 · f_dc, ≥ 0), image clamped to [0, 1].
 
-Cameras, in the PLY frame (y up, object inside [−0.5, 0.5]³): 4 pinhole cameras at azimuth 0°, 90°, 180°, 270°
-about +y, elevation 20°, distance 2.2 from the origin, looking at the origin, up +y, vertical field of view 40°,
-512 × 512.
+Cameras, in the PLY frame (y down, object inside [−0.5, 0.5]³): 4 pinhole cameras at azimuth 0°, 90°, 180°, 270°
+about the y axis, 20° above the object (camera y = −2.2 · sin 20°), distance 2.2 from the origin, looking at the
+origin, image up −y, vertical field of view 40°, 512 × 512.
 
 Line: **PSNR ≥ 25 dB per input**, MSE pooled over the 4 views (RGB, [0, 1]). Per-view PSNR recorded. The side-by-side
 image of both renders (4 views × 2 rows) is kept at `contract/b_<input>.png` — the line you can see.
@@ -123,4 +123,7 @@ kept as side matmuls with a phase input (one set), decided by measurement; the l
 
 ## Changes before any number
 
-(none)
+- 2026-11-09 14:13, before any (b) number: the cameras' up axis. The contract said "y up"; the first render of the
+  armchair reference (no comparison, no PSNR) showed the object upside down. idol's `save_ply` writes the y-down frame
+  3DGS viewers use (its comment says y-up, the files are not), so the cameras now sit above the object at −y with
+  image up −y. Same 4 azimuths, elevation, distance, field of view and size.
