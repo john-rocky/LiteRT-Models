@@ -1,0 +1,23 @@
+{
+ "status": "DONE",
+ "rows": [
+  {
+   "id": "fail_bir_memory",
+   "kind": "image",
+   "image": "fx\/armchair\/input.webp",
+   "mode": "real",
+   "status": "memory",
+   "message": "Not enough memory for background removal (bir): 11465 MB available, 11668 MB needed (reserve 9000 MB). Close other apps and try again.",
+   "message_on_screen": "Not enough memory for background removal (bir): 11465 MB available, 11668 MB needed (reserve 9000 MB). Close other apps and try again.",
+   "pid": 13539,
+   "summary": "Not enough memory for background removal (bir): 11465 MB available, 11668 MB needed (reserve 9000 MB). Close other apps and try again."
+  }
+ ],
+ "pid": 13539,
+ "end_ms": 1794219814581,
+ "self_status_kb": {
+  "VmHWM": 335884,
+  "VmRSS": 211028,
+  "VmSwap": 25728
+ }
+}

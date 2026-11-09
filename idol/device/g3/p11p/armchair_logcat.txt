@@ -1,0 +1,278 @@
+--------- beginning of system
+11-09 19:05:43.734 I/ActivityManager( 1439): Start proc 11117:com.google.android.photopicker/u0a313 for next-top-activity {com.google.android.photopicker/com.android.photopicker.MainActivity}
+11-09 19:05:43.790 I/ActivityManager( 1439): Start proc 11151:com.google.android.apps.photos/u0a235 for content provider {com.google.android.apps.photos/com.google.android.apps.photos.cloudpicker.CloudMediaProviderWrapper}
+11-09 19:05:44.019 W/ActivityManager( 1439): Skipping manifest association check for null package. SourceUid: -1, SourcePkg: null, TargetUid: 10235, TargetPkg: com.google.android.apps.photos
+11-09 19:05:44.520 W/ActivityManager( 1439): Skipping manifest association check for null package. SourceUid: -1, SourcePkg: null, TargetUid: 10235, TargetPkg: com.google.android.apps.photos
+11-09 19:05:46.032 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:46.035 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.033 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.051 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.055 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.057 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.065 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.066 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.069 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.071 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.076 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.078 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.079 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.081 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.083 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.085 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.088 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:47.089 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:50.682 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:50.682 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:51.690 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:51.712 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:52.967 W/ActivityManager( 1439): Skipping manifest association check for null package. SourceUid: 10314, SourcePkg: com.google.android.providers.media.module, TargetUid: 10461, TargetPkg: null
+11-09 19:05:52.970 W/ActivityManager( 1439): Skipping manifest association check for null package. SourceUid: 10314, SourcePkg: com.google.android.providers.media.module, TargetUid: 10313, TargetPkg: null
+11-09 19:05:53.480 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:53.480 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:05:54.967 I/ActivityManager( 1439): Process com.android.vending:background (pid 9333) has died: cch  +95 CEM 
+11-09 19:05:54.968 W/ActivityManager( 1439): Scheduling restart of crashed service com.android.vending/com.google.frameworks.client.data.android.server.play.BackgroundProcessEndpointService in 1000ms for connection
+11-09 19:05:54.992 I/ActivityManager( 1439): Process com.android.keychain (pid 10552) has died: cch  +85 CEM 
+11-09 19:05:55.022 I/ActivityManager( 1439): Process com.android.vending:quick_launch (pid 9334) has died: cch  +75 CEM 
+11-09 19:05:55.037 W/ActivityManager( 1439): Rescheduling restart of crashed service com.android.vending/com.google.frameworks.client.data.android.server.play.BackgroundProcessEndpointService in 29930ms for mem-pressure-event
+11-09 19:05:55.194 I/ActivityManager( 1439): Process com.android.vending (pid 9257) has died: cch  +65 CEM 
+11-09 19:05:55.197 W/ActivityManager( 1439): Scheduling restart of crashed service com.android.vending/com.google.android.verifier.backport.impl.system.BackportVerificationSystemService in 1000ms for connection
+11-09 19:05:55.198 I/ActivityManager( 1439): Process com.google.android.apps.carrier.carrierwifi (pid 22870) has died: cch  +55 SVC 
+11-09 19:05:55.199 W/ActivityManager( 1439): Scheduling restart of crashed service com.google.android.apps.carrier.carrierwifi/.mobility.MobilityDetectionService in 40998ms for start-requested
+11-09 19:05:55.216 I/ActivityManager( 1439): Process com.google.android.euicc (pid 10121) has died: cch  +35 CEM 
+11-09 19:05:55.231 I/ActivityManager( 1439): Process com.google.android.photopicker (pid 11117) has died: cch CEM 
+11-09 19:05:55.232 W/ActivityManager( 1439): setHasOverlayUi called on unknown pid: 11117
+11-09 19:05:55.240 I/ActivityManager( 1439): Process com.google.android.flipendo (pid 9017) has died: cch CEM 
+11-09 19:05:55.252 I/ActivityManager( 1439): Process com.google.android.apps.pixel.dcservice (pid 9032) has died: cch CEM 
+11-09 19:05:55.271 W/ActivityManager( 1439): pid 10178 com.google.android.verifier sent binder code 2 with flags 1 and got error -32
+11-09 19:05:55.311 I/ActivityManager( 1439): Process com.google.android.GoogleCamera (pid 5423) has died: svcb SVC 
+11-09 19:05:55.312 W/ActivityManager( 1439): Scheduling restart of crashed service com.google.android.GoogleCamera/com.google.android.apps.camera.prewarm.NoOpPrewarmService in 80886ms for start-requested
+11-09 19:05:55.312 W/ActivityManager( 1439): setHasOverlayUi called on unknown pid: 5423
+11-09 19:05:55.437 I/ActivityManager( 1439): Process com.google.android.verifier (pid 10178) has died: cch CEM 
+11-09 19:05:56.977 W/ActivityManager( 1439): Rescheduling restart of crashed service com.google.android.apps.carrier.carrierwifi/.mobility.MobilityDetectionService in 0ms for mem-pressure-event
+11-09 19:05:56.977 W/ActivityManager( 1439): Rescheduling restart of crashed service com.google.android.GoogleCamera/com.google.android.apps.camera.prewarm.NoOpPrewarmService in 10000ms for mem-pressure-event
+11-09 19:05:56.986 I/ActivityManager( 1439): Start proc 11322:com.google.android.apps.carrier.carrierwifi/u0a157 for started-service {com.google.android.apps.carrier.carrierwifi/com.google.android.apps.carrier.carrierwifi.mobility.MobilityDetectionService}
+11-09 19:06:03.790 I/ActivityManager( 1439): Start proc 11339:com.google.android.apps.pixel.dcservice/u0a262 for broadcast {com.google.android.apps.pixel.dcservice/com.google.android.apps.pixel.dcservice.receiver.ForwardBroadcastListener_Receiver}
+11-09 19:06:03.978 I/ActivityManager( 1439): Start proc 11358:com.google.android.flipendo/u0a301 for broadcast {com.google.android.flipendo/com.google.android.flipendo.receiver.PowerSaveModeChangedBroadcastReceiver}
+11-09 19:06:06.998 I/ActivityManager( 1439): Start proc 11382:com.google.android.GoogleCamera/u0a176 for started-service {com.google.android.GoogleCamera/com.google.android.apps.camera.prewarm.NoOpPrewarmService}
+11-09 19:06:08.991 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:06:08.991 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:06:23.843 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:06:23.846 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:06:38.708 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:06:38.711 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:06:53.432 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:06:53.433 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:08.155 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:08.155 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:22.812 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:22.820 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:37.748 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:37.757 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:52.630 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:07:52.630 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:07.672 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:07.689 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:22.424 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:22.428 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:37.284 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:37.289 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:52.260 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:08:52.261 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:07.212 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:07.213 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:22.243 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:22.248 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:37.121 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:37.130 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:43.923 I/ActivityManager( 1439): Process com.google.android.apps.photos (pid 11151) has died: cch CEM 
+11-09 19:09:43.963 I/ActivityManager( 1439): Process com.google.android.apps.pixel.dcservice (pid 11339) has died: cch CEM 
+11-09 19:09:44.007 I/ActivityManager( 1439): Process com.google.android.flipendo (pid 11358) has died: cch CEM 
+11-09 19:09:47.310 I/ActivityManager( 1439): Start proc 11888:com.google.android.flipendo/u0a301 for broadcast {com.google.android.flipendo/com.google.android.flipendo.receiver.PowerSaveModeChangedBroadcastReceiver}
+11-09 19:09:47.457 I/ActivityManager( 1439): Start proc 11902:com.google.android.apps.pixel.dcservice/u0a262 for broadcast {com.google.android.apps.pixel.dcservice/com.google.android.apps.pixel.dcservice.receiver.ForwardBroadcastListener_Receiver}
+11-09 19:09:52.681 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:09:52.681 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:07.456 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:07.456 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:22.449 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:22.453 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:37.656 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:37.657 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:52.736 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:10:52.737 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:07.612 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:07.627 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:22.841 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:22.842 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:37.741 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:37.746 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:52.693 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:11:52.701 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:07.755 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:07.758 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:23.232 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:23.236 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:38.363 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:38.365 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:53.395 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:12:53.408 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:08.663 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:08.675 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:23.747 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:23.751 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:38.651 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:38.655 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:53.711 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:13:53.711 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:08.911 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:08.927 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:14.552 I/ActivityManager( 1439): Start proc 12412:com.google.android.googlequicksearchbox:search/u0a210 for bound-service {com.google.android.googlequicksearchbox/androidx.work.impl.background.systemjob.SystemJobService}
+11-09 19:14:24.191 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:24.202 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:39.425 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:39.426 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+--------- beginning of main
+11-09 19:14:43.913 I/IdolGraphs(10792): memory: {"t_ms":659840197,"event":"evict","graph":"den_joint_16","mem_available_kb":2726312,"resident":11,"need_kb":3373292,"for":"den_joint_17"}
+11-09 19:14:43.969 I/IdolGraphs(10792): memory: {"t_ms":659840252,"event":"close","graph":"den_joint_16","mem_available_kb":2742108,"resident":10}
+11-09 19:14:48.150 I/IdolGraphs(10792): compiled den_joint_17 in 3.97 s (gpu, fp16_with_fp32_accum), MemAvailable 3306 -> 2613 MB, resident 11
+11-09 19:14:49.583 I/IdolGraphs(10792): memory: {"t_ms":659845866,"event":"evict","graph":"den_joint_17","mem_available_kb":2628512,"resident":11,"need_kb":3342532,"for":"den_joint_18"}
+11-09 19:14:49.647 I/IdolGraphs(10792): memory: {"t_ms":659845930,"event":"close","graph":"den_joint_17","mem_available_kb":2641448,"resident":10}
+11-09 19:14:49.852 I/IdolGraphs(10792): memory: {"t_ms":659846136,"event":"evict","graph":"den_joint_15","mem_available_kb":3326160,"resident":10,"need_kb":3342532,"for":"den_joint_18"}
+11-09 19:14:49.904 I/IdolGraphs(10792): memory: {"t_ms":659846188,"event":"close","graph":"den_joint_15","mem_available_kb":3447828,"resident":9}
+11-09 19:14:54.065 I/IdolGraphs(10792): compiled den_joint_18 in 3.95 s (gpu, fp16_with_fp32_accum), MemAvailable 4142 -> 3494 MB, resident 10
+11-09 19:14:54.495 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:54.495 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:14:59.488 I/IdolGraphs(10792): compiled den_joint_19 in 3.96 s (gpu, fp16_with_fp32_accum), MemAvailable 3413 -> 2614 MB, resident 11
+11-09 19:15:06.780 I/IdolGraphs(10792): memory: {"t_ms":659863063,"event":"evict","graph":"den_joint_23","mem_available_kb":2756144,"resident":11,"need_kb":3085714,"for":"oct"}
+11-09 19:15:06.840 I/IdolGraphs(10792): memory: {"t_ms":659863123,"event":"close","graph":"den_joint_23","mem_available_kb":2764408,"resident":10}
+11-09 19:15:09.492 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:15:09.496 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:15:11.674 I/lowmemorykiller(  597): Kill 'com.google.android.googlequicksearchbox:search' (12412), uid 10210, oom_score_adj 905 to free 90604kB rss, 14804kB anon rss, 48632kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached
+11-09 19:15:11.711 I/lowmemorykiller(  597): Kill 'com.google.android.flipendo' (11888), uid 10301, oom_score_adj 905 to free 71488kB rss, 16576kB anon rss, 37936kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached
+11-09 19:15:11.726 I/ActivityManager( 1439): Process com.google.android.googlequicksearchbox:search (pid 12412) has died: cch CEM 
+11-09 19:15:11.736 I/ActivityManager( 1439): Process com.google.android.flipendo (pid 11888) has died: cch CEM 
+11-09 19:15:11.737 I/lowmemorykiller(  597): Kill 'com.google.android.apps.pixel.dcservice' (11902), uid 10262, oom_score_adj 905 to free 82860kB rss, 16156kB anon rss, 41136kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached
+11-09 19:15:11.782 I/ActivityManager( 1439): Process com.google.android.apps.pixel.dcservice (pid 11902) has died: cch CEM 
+11-09 19:15:12.212 I/IdolGraphs(10792): compiled oct in 5.06 s (gpu, fp16_with_fp32_accum), MemAvailable 3411 -> 1822 MB, resident 11
+11-09 19:15:19.762 I/ActivityManager( 1439): Start proc 12582:com.google.android.flipendo/u0a301 for broadcast {com.google.android.flipendo/com.google.android.flipendo.receiver.PowerSaveModeChangedBroadcastReceiver}
+11-09 19:15:19.947 I/ActivityManager( 1439): Start proc 12596:com.google.android.apps.pixel.dcservice/u0a262 for broadcast {com.google.android.apps.pixel.dcservice/com.google.android.apps.pixel.dcservice.receiver.ForwardBroadcastListener_Receiver}
+11-09 19:15:25.383 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:15:25.387 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:15:27.078 I/IdolGraphs(10792): memory: {"t_ms":659883362,"event":"evict","graph":"oct","mem_available_kb":1857072,"resident":11,"need_kb":3045797,"for":"gs_0"}
+11-09 19:15:27.295 I/IdolGraphs(10792): memory: {"t_ms":659883579,"event":"close","graph":"oct","mem_available_kb":1881200,"resident":10}
+11-09 19:15:38.229 I/IdolGraphs(10792): compiled gs_0 in 9.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3082 -> 2940 MB, resident 11
+11-09 19:15:39.362 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:15:39.368 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:15:40.610 I/IdolGraphs(10792): memory: {"t_ms":659896894,"event":"evict","graph":"gs_0","mem_available_kb":2933712,"resident":11,"need_kb":3043738,"for":"gs_1"}
+11-09 19:15:40.710 I/IdolGraphs(10792): memory: {"t_ms":659896993,"event":"close","graph":"gs_0","mem_available_kb":2942728,"resident":10}
+11-09 19:15:50.389 I/IdolGraphs(10792): compiled gs_1 in 9.37 s (gpu, fp16_with_fp32_accum), MemAvailable 3250 -> 2876 MB, resident 11
+11-09 19:15:52.745 I/IdolGraphs(10792): memory: {"t_ms":659909028,"event":"evict","graph":"gs_1","mem_available_kb":2914896,"resident":11,"need_kb":3043738,"for":"gs_2"}
+11-09 19:15:52.886 I/IdolGraphs(10792): memory: {"t_ms":659909169,"event":"close","graph":"gs_1","mem_available_kb":2985168,"resident":10}
+11-09 19:15:53.365 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:15:53.370 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:02.518 I/IdolGraphs(10792): compiled gs_2 in 9.32 s (gpu, fp16_with_fp32_accum), MemAvailable 3463 -> 2872 MB, resident 11
+11-09 19:16:04.870 I/IdolGraphs(10792): memory: {"t_ms":659921154,"event":"evict","graph":"gs_2","mem_available_kb":2946304,"resident":11,"need_kb":3043738,"for":"gs_3"}
+11-09 19:16:04.968 I/IdolGraphs(10792): memory: {"t_ms":659921251,"event":"close","graph":"gs_2","mem_available_kb":2952028,"resident":10}
+11-09 19:16:07.664 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:07.677 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:14.649 I/IdolGraphs(10792): compiled gs_3 in 9.37 s (gpu, fp16_with_fp32_accum), MemAvailable 3370 -> 2834 MB, resident 11
+11-09 19:16:16.986 I/IdolGraphs(10792): memory: {"t_ms":659933270,"event":"evict","graph":"gs_3","mem_available_kb":2902016,"resident":11,"need_kb":3043738,"for":"gs_4"}
+11-09 19:16:17.085 I/IdolGraphs(10792): memory: {"t_ms":659933369,"event":"close","graph":"gs_3","mem_available_kb":2912968,"resident":10}
+11-09 19:16:21.766 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:21.766 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:26.729 I/IdolGraphs(10792): compiled gs_4 in 9.34 s (gpu, fp16_with_fp32_accum), MemAvailable 3316 -> 2834 MB, resident 11
+11-09 19:16:29.054 I/IdolGraphs(10792): memory: {"t_ms":659945338,"event":"evict","graph":"gs_4","mem_available_kb":2884244,"resident":11,"need_kb":3043738,"for":"gs_5"}
+11-09 19:16:29.151 I/IdolGraphs(10792): memory: {"t_ms":659945434,"event":"close","graph":"gs_4","mem_available_kb":2954560,"resident":10}
+11-09 19:16:35.797 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:35.800 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:38.381 I/IdolGraphs(10792): compiled gs_5 in 8.92 s (gpu, fp16_with_fp32_accum), MemAvailable 3334 -> 2874 MB, resident 11
+11-09 19:16:40.724 I/IdolGraphs(10792): memory: {"t_ms":659957008,"event":"evict","graph":"gs_5","mem_available_kb":2909604,"resident":11,"need_kb":3043738,"for":"gs_6"}
+11-09 19:16:40.815 I/IdolGraphs(10792): memory: {"t_ms":659957099,"event":"close","graph":"gs_5","mem_available_kb":2916372,"resident":10}
+11-09 19:16:44.981 I/ActivityManager( 1439): Start proc 12802:com.google.android.turboadapter/u0a291 for bound-service {com.google.android.turboadapter/com.google.android.turboadapter.GoogleBatteryService}
+11-09 19:16:49.361 I/IdolGraphs(10792): compiled gs_6 in 8.24 s (gpu, fp16_with_fp32_accum), MemAvailable 3430 -> 2864 MB, resident 11
+11-09 19:16:49.938 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:49.941 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:16:51.717 I/IdolGraphs(10792): memory: {"t_ms":659967999,"event":"evict","graph":"gs_6","mem_available_kb":2863060,"resident":11,"need_kb":3044701,"for":"gs_7"}
+11-09 19:16:51.808 I/IdolGraphs(10792): memory: {"t_ms":659968091,"event":"close","graph":"gs_6","mem_available_kb":2905100,"resident":10}
+11-09 19:17:00.504 I/IdolGraphs(10792): compiled gs_7 in 8.39 s (gpu, fp16_with_fp32_accum), MemAvailable 3420 -> 2836 MB, resident 11
+11-09 19:17:03.745 I/IdolEngine(10792): run done: matting 15.61, preprocess 16.40, dinov3 8.42, vae 16.93, denoiser 511.28, octree 19.17, gaussian_decoder 96.90, ply 0.25, generate 653.94, all 670.36
+11-09 19:17:03.851 I/chromium(10792): [1109/191703.850121:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+11-09 19:17:03.851 I/chromium(10792): [1109/191703.851746:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+11-09 19:17:03.910 I/ActivityManager( 1439): Start proc 12871:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i136 for bound-service {com.idol/org.chromium.content.app.SandboxedProcessService0:0}
+11-09 19:17:03.961 W/chromium(10792): [WARNING:net/dns/dns_config_service_android.cc:69] Failed to read DnsConfig.
+11-09 19:17:03.969 W/chromium(10792): [WARNING:android_webview/browser/network_service/net_helpers.cc:137] HTTP Cache size is: 20971520
+11-09 19:17:03.970 W/ActivityManager( 1439): Skipping manifest association check for null package. SourceUid: -1, SourcePkg: null, TargetUid: 10461, TargetPkg: com.idol
+11-09 19:17:03.972 W/ActivityManager( 1439): Skipping manifest association check for null package. SourceUid: -1, SourcePkg: null, TargetUid: 10461, TargetPkg: com.idol
+11-09 19:17:04.050 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:04.056 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:04.066 W/chromium(12871): [WARNING:content/app/android/content_main_android.cc:82] android_setCpu already initialized
+11-09 19:17:04.123 W/chromium(12871): [WARNING:content/child/runtime_features.cc:564] Fenced frames cannot be enabled in this configuration. Use --enable-features=FencedFrames instead.
+11-09 19:17:04.123 W/chromium(12871): [WARNING:content/child/runtime_features.cc:589] Topics cannot be enabled in this configuration. Use --enable-features=BrowsingTopics in addition.
+11-09 19:17:04.124 W/chromium(12871): [WARNING:content/child/runtime_features.cc:610] SharedStorage cannot be enabled in this configuration. Use --enable-features=SharedStorageAPI in addition.
+11-09 19:17:04.261 I/chromium(10792): [INFO:CONSOLE:795] "[object Response]", source: https://appassets.androidplatform.net/assets/viewer/main.js (795)
+11-09 19:17:04.264 I/chromium(10792): [INFO:CONSOLE:807] "content-length 17826208, 17826208", source: https://appassets.androidplatform.net/assets/viewer/main.js (807)
+11-09 19:17:04.264 I/chromium(10792): [INFO:CONSOLE:812] "557069 0.38095238095238093", source: https://appassets.androidplatform.net/assets/viewer/main.js (812)
+11-09 19:17:04.592 I/chromium(10792): [INFO:CONSOLE:186] "Vertex Count 262144", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (186)
+11-09 19:17:04.592 I/chromium(10792): [INFO:CONSOLE:209] "Bytes per row 68 [object Object] [object Object]", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (209)
+11-09 19:17:04.771 I/chromium(10792): [INFO:CONSOLE:242] "calculate importance: 192.68603515625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (242)
+11-09 19:17:04.949 I/chromium(10792): [INFO:CONSOLE:246] "sort: 177.656982421875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (246)
+11-09 19:17:05.235 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.247 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.280 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.285 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.288 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.288 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.289 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.289 W/ActivityManager( 1439): Unable to start service Intent { xflg=0x4 cmp=com.google.android.odad/com.google.android.apps.miphone.odad.hb.HummingbirdEventService } U=0: not found
+11-09 19:17:05.714 I/chromium(10792): [INFO:CONSOLE:320] "build buffer: 764.25390625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (320)
+11-09 19:17:05.945 I/chromium(10792): [INFO:CONSOLE:169] "sort: 24.35302734375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:06.432 I/ActivityManager( 1439): Start proc 12955:com.google.android.webview:webview_service/u0a253 for bound-service {com.google.android.webview/org.chromium.android_webview.services.VariationsSeedServer}
+11-09 19:17:08.284 I/chromium(10792): [INFO:CONSOLE:169] "sort: 11.864990234375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:08.609 I/chromium(10792): [INFO:CONSOLE:169] "sort: 10.4189453125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:08.938 I/chromium(10792): [INFO:CONSOLE:169] "sort: 10.05517578125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:09.273 I/chromium(10792): [INFO:CONSOLE:169] "sort: 15.7060546875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:09.583 I/chromium(10792): [INFO:CONSOLE:169] "sort: 11.1650390625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:09.912 I/chromium(10792): [INFO:CONSOLE:169] "sort: 10.152099609375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:10.242 I/chromium(10792): [INFO:CONSOLE:169] "sort: 19.77392578125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:10.550 I/chromium(10792): [INFO:CONSOLE:169] "sort: 11.847900390625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:10.868 I/chromium(10792): [INFO:CONSOLE:169] "sort: 10.574951171875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:11.201 I/chromium(10792): [INFO:CONSOLE:169] "sort: 17.008056640625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:11.505 I/chromium(10792): [INFO:CONSOLE:169] "sort: 10.158203125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:11.830 I/chromium(10792): [INFO:CONSOLE:169] "sort: 10.573974609375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:12.185 I/chromium(10792): [INFO:CONSOLE:169] "sort: 25.077880859375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:12.510 I/chromium(10792): [INFO:CONSOLE:169] "sort: 29.868896484375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:12.805 I/chromium(10792): [INFO:CONSOLE:169] "sort: 11.762939453125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:13.129 I/chromium(10792): [INFO:CONSOLE:169] "sort: 6.333984375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:13.466 I/chromium(10792): [INFO:CONSOLE:169] "sort: 16.10009765625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:13.770 I/chromium(10792): [INFO:CONSOLE:169] "sort: 9.60888671875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:14.116 I/chromium(10792): [INFO:CONSOLE:169] "sort: 16.739990234375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:14.421 I/chromium(10792): [INFO:CONSOLE:169] "sort: 8.33984375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:14.727 I/chromium(10792): [INFO:CONSOLE:169] "sort: 3.905029296875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:15.081 I/chromium(10792): [INFO:CONSOLE:169] "sort: 14.546875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:15.422 I/chromium(10792): [INFO:CONSOLE:169] "sort: 14.60009765625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:15.748 I/chromium(10792): [INFO:CONSOLE:169] "sort: 18.491943359375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:16.073 I/chromium(10792): [INFO:CONSOLE:169] "sort: 17.27587890625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:16.394 I/chromium(10792): [INFO:CONSOLE:169] "sort: 19.968994140625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:16.722 I/chromium(10792): [INFO:CONSOLE:169] "sort: 16.869140625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:17.032 I/chromium(10792): [INFO:CONSOLE:169] "sort: 19.589111328125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:17.355 I/chromium(10792): [INFO:CONSOLE:169] "sort: 18.944091796875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:17.679 I/chromium(10792): [INFO:CONSOLE:169] "sort: 19.357177734375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:18.019 I/chromium(10792): [INFO:CONSOLE:169] "sort: 18.574951171875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:18.355 I/chromium(10792): [INFO:CONSOLE:169] "sort: 18.618896484375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:18.665 I/chromium(10792): [INFO:CONSOLE:169] "sort: 16.77197265625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:18.988 I/chromium(10792): [INFO:CONSOLE:169] "sort: 19.234130859375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:19.307 I/chromium(10792): [INFO:CONSOLE:169] "sort: 12.069091796875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:19.608 I/chromium(10792): [INFO:CONSOLE:169] "sort: 11.725830078125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:19.952 I/chromium(10792): [INFO:CONSOLE:169] "sort: 17.648193359375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:20.248 I/chromium(10792): [INFO:CONSOLE:169] "sort: 5.7490234375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:20.571 I/chromium(10792): [INFO:CONSOLE:169] "sort: 9.843017578125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:20.903 I/chromium(10792): [INFO:CONSOLE:169] "sort: 10.799072265625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:21.221 I/chromium(10792): [INFO:CONSOLE:169] "sort: 8.7490234375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:21.542 I/chromium(10792): [INFO:CONSOLE:169] "sort: 11.55810546875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:21.885 I/chromium(10792): [INFO:CONSOLE:169] "sort: 18.498779296875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:22.212 I/chromium(10792): [INFO:CONSOLE:169] "sort: 18.323974609375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:22.546 I/chromium(10792): [INFO:CONSOLE:169] "sort: 17.719970703125 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:22.849 I/chromium(10792): [INFO:CONSOLE:169] "sort: 8.68701171875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:23.165 I/chromium(10792): [INFO:CONSOLE:169] "sort: 12.351806640625 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:23.497 I/chromium(10792): [INFO:CONSOLE:169] "sort: 11.0068359375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:23.831 I/chromium(10792): [INFO:CONSOLE:169] "sort: 15.31396484375 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)
+11-09 19:17:24.168 I/chromium(10792): [INFO:CONSOLE:169] "sort: 18.272216796875 ms", source: blob:https://appassets.androidplatform.net/63af8bb6-48ce-4e6e-8b69-6f838e6e71d4 (169)

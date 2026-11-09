@@ -1,0 +1,12 @@
+19:04:08 r2_hold_gui: p11p idol-p11p-r2 steps stop,apk,models,state,wait:1500,stop,state subjects armchair=/Users/majimadaisuke/code/idol_work/demo_photos/p11112734.jpg
+19:04:33 wait step started; hold acquired 19:04:09; deadline 19:29:09
+19:04:33 armchair: /Users/majimadaisuke/code/idol_work/demo_photos/p11112734.jpg
+19:05:43 armchair: tap Pick a photo at 540 913
+19:05:47 armchair: tap the newest photo at 179 1456
+19:05:52 armchair: tap Done at 904 2211
+19:15:23 armchair: run state octree after 581 s
+19:17:07 armchair: done after 685 s
+19:17:23 armchair: viewer screenshot
+19:17:24 takes over
+19:17:24 takes rc=0
+19:17:26 hold over (run_hold rc=0)

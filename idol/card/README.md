@@ -88,8 +88,10 @@ chmod +x gradlew scripts/install_to_device.sh        # the Hub does not keep the
 IDOL_DIR=~/Downloads/Idol DINO_DIR=~/Downloads/DINOv3-ViT-H16plus-Idol-LiteRT ./scripts/install_to_device.sh
 ```
 
-Close other apps before a run: one photo peaks at about 5.4 GiB of resident memory, and with another app holding
-memory the system can close the app during background removal.
+Background removal (BiRefNet on the CPU) needs about 2,670 MB of free memory for one call. Before compiling it, the
+app closes GPU graphs until that much is free on top of its 2,500 MB reserve; if other apps hold the rest, it stops
+with "Not enough memory for background removal (bir) … Close other apps and try again." before starting
+the call.
 
 ## What runs where
 

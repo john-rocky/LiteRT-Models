@@ -1,0 +1,8 @@
+{
+ "comment": "Round 2, the memory check before background removal: with a reserve no phone can meet (9,000 MB), BiRefNet's call (its measured peak plus the reserve) does not fit even with every graph closed, so the run stops with 'Not enough memory for background removal (bir) ... Close other apps and try again.' on the Home screen and the process stays alive. Preload off: no graph to close.",
+ "reserve_mb": 9000,
+ "preload": false,
+ "rows": [
+  {"id": "fail_bir_memory", "kind": "image", "image": "fx/armchair/input.webp", "mode": "real"}
+ ]
+}

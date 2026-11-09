@@ -17,6 +17,10 @@ from lrt import sig_io  # noqa: E402
 
 FP32_GRAPHS = set()   # graphs whose fp16 form fails its CONTRACT.md line (none since the key-chunked attention)
 CPU_GRAPHS = {'bir'}  # BiRefNet: its deformable convolutions lower to GATHER_ND, which the LiteRT GPU does not run
+# A CPU graph's working memory comes with its call, after the compile: how far MemAvailable fell from just before the
+# compile to the low point of one call on the Galaxy S26 (LiteRT 2.3.0 CPU; device/g2/bir3.samples.txt: 6,492,924 kB
+# before, 3,760,320 kB lowest = 2,732,604 kB). The app's memory check counts it before BiRefNet runs.
+RUN_PEAK_BYTES = {'bir': 2_732_604 * 1024}
 ORDER = (['bir', 'dis'] + [f'dino_{i}' for i in range(4)] + ['vae_0', 'vae_1', 'vae_2', 'vae_3', 'vae_attn', 'vae_4'] +
          ['den_ctx', 'den_in'] + [f'den_joint_{k:02d}' for k in range(24)] + ['oct'] + [f'gs_{i}' for i in range(8)])
 SIDE = {'den_pos_emb.f32': [1, 8192, 1024], 'dino_rope_cos.f32': [1, 1, 4101, 64], 'dino_rope_sin.f32': [1, 1, 4101, 64],
@@ -51,6 +55,8 @@ def main():
                         'accelerator': 'cpu' if name in CPU_GRAPHS else 'gpu',
                         'precision': 'fp32' if name in FP32_GRAPHS | CPU_GRAPHS else 'fp16_with_fp32_accum',
                         'signatures': sig_io(path)}
+        if name in RUN_PEAK_BYTES:
+            graphs[name]['run_peak_bytes'] = RUN_PEAK_BYTES[name]
         if not a.no_sha:
             graphs[name]['sha256'] = sha256(path)
     side = {}

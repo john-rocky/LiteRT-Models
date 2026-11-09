@@ -67,26 +67,30 @@ author's) to DIS (GPU, with the alpha floor of 8 from `scripts/idol_glue.py`). I
 | A model file is missing or has the wrong size or SHA-256 | "Model files are missing. Run scripts/install_to_device.sh (see README)." and the list of files |
 | The picture has no object (all black, one flat colour, no alpha value of 128 or more) | "No object found in this picture." |
 | Camera permission denied | "Camera permission is off. You can still pick a photo." |
-| A graph does not fit in memory even after the others are closed | "Not enough memory for <graph> ... Close other apps and try again." |
-| Another app holds memory during background removal | none: the system closes the app (known issue, below) |
+| A graph, or background removal, does not fit in memory even after the others are closed | "Not enough memory for <graph> ... Close other apps and try again." (`<graph>` = "background removal (bir)" for BiRefNet) |
 
 ## Memory and loading
 
 The 45 GPU graphs do not all fit in the phone's memory at once (one denoiser block alone takes about 0.7 GB of GPU
-memory). At start the app compiles them in the order a run uses them, until `MemAvailable` would drop below a reserve
-of 2,500 MB ("Loading models k/45"). The rest are compiled during the run. When the next graph does not fit, the app
-closes the resident graph whose next use is farthest away in the run's order, so the graphs used next stay resident.
-The reserve is large because `MemAvailable` counts the page cache of the mapped graph files: with 1,000 MB, a compile
-burst outran its reclaim and lmkd killed the app on the Galaxy S26 at about 1.9 GB available. After closing a graph
-the app waits up to 1.5 s for its memory to show up (the Pixel 11 Pro returns GPU memory a few seconds late), and up
-to 8 s before it gives up with "Not enough memory".
-BiRefNet (930 MB, CPU) is compiled for each picture and closed right after the background removal, before the DINOv3
-graphs run.
-
-Known issue: the memory check counts BiRefNet at 1.2 GB (its file and its largest tensor), but one BiRefNet call peaks
-at about 4 GiB of resident memory. With another app still holding memory (once, the photo picker right after Done),
-the Galaxy S26 closed the app during background removal, with no message. Close other apps and run again; counting
-the call's peak in the check is the next change.
+memory). At start the app compiles them in the order a run uses them, until `MemAvailable` would drop below a reserve of
+2,500 MB plus the room background removal needs (below) ("Loading models k/45"). The rest are compiled during the run.
+When the next graph does not fit, the app closes the resident graph whose next use is farthest away in the run's order,
+so the graphs used next stay resident. The reserve is large because `MemAvailable` counts the page cache of the mapped
+graph files: with 1,000 MB, a compile burst outran its reclaim and lmkd killed the app on the Galaxy S26 at about 1.9 GB
+available. After closing a graph the app waits up to 1.5 s for its memory to show up (the Pixel 11 Pro returns GPU
+memory a few seconds late), and up to 8 s before it gives up with "Not enough memory". BiRefNet (930 MB, CPU) is
+compiled for each picture and closed right after the background removal, before the DINOv3 graphs run. Its call needs
+far more memory than its file: on the Galaxy S26 one call lowered `MemAvailable` by about 2,670 MB (a standalone runner
+leg, `device/g2/bir3`). The manifest carries that measured peak (`run_peak_bytes`; without it the app assumes 3 × the
+file size). Before compiling BiRefNet, the app closes graphs until `MemAvailable` covers the peak plus the reserve, or
+stops with "Not enough memory for background removal (bir) ... Close other apps and try again." The preload leaves the
+same room free, so the graphs compiled ahead stay resident through background removal (on the Galaxy S26 in the take
+below, about 5,190 MB free, that left no room to compile any graph ahead). During the call the app reads `MemAvailable`
+every 50 ms and logs the drop (`peak` events, tag `IdolGraphs`); a larger drop than the manifest's raises the estimate
+for later pictures while the app runs. With this check a photo ran through to the viewer on the Galaxy S26 (the call
+lowered `MemAvailable` by 1,911 MB) and on the Pixel 11 Pro (2,475 MB), and neither phone closed the app. The stop
+itself was run on the Pixel 11 Pro with a reserve no phone can meet (`plans/fail_bir_memory.json`): the message above,
+the app still running.
 
 Each graph runs as its own GPU call. One long GPU call starves the phone's compositor, and the process gets killed
 (`F0.md` finding 2). Outputs pass to the next graph through host memory (`readFloat` / `writeFloat`), and inputs that

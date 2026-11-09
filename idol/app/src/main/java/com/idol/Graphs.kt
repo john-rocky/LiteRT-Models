@@ -124,12 +124,20 @@ class GraphPool(
     private val lastUse = HashMap<String, Long>()
     private val pinned = HashSet<String>()
     private val footprintKb = HashMap<String, Long>()
+    /** The largest fall of `MemAvailable` seen from a CPU graph's compile to the low point of its call ([runWatched]). */
+    private val peakKb = HashMap<String, Long>()
     private var schedule: List<String> = emptyList()
     private var cursor = -1
     private var clock = 0L
 
     /** What the compile records are filed under ("preload", "run", "parity", ...). */
     var phase = "run"
+
+    /**
+     * Memory [preload] leaves free above the reserve: the peak of the graph a run starts with (the CPU matting graph),
+     * so that the graphs compiled ahead stay resident through it instead of being closed for it.
+     */
+    var preloadHeadroomKb = 0L
     val compiles = ArrayList<CompileRecord>()
     val events = ArrayList<JSONObject>()
 
@@ -163,7 +171,7 @@ class GraphPool(
     /** Compiles [name] if it fits without closing another graph; false when it does not fit. */
     fun preload(name: String): Boolean {
         if (name in resident) return true
-        val need = estimateKb(name) + reserveKb
+        val need = estimateKb(name) + reserveKb + preloadHeadroomKb
         val avail = DeviceInfo.memAvailableKb()
         if (avail in 0 until need) {
             event("preload_stop", name, avail, need)
@@ -218,25 +226,27 @@ class GraphPool(
 
     /**
      * Closes graphs until `MemAvailable` covers the estimate for [name] plus the reserve. With [memoryCheck], fails
-     * when nothing is left to close and even the reserve is not there (or the measured size of [name] is not).
+     * when nothing is left to close and even the reserve is not there (or the measured size of [name] is not). A CPU
+     * graph must fit whole, its call's peak and the reserve: its memory comes with the call, after the compile, so
+     * a compile that fits says nothing about the call (BiRefNet: the system killed the app during that call).
      */
     private fun makeRoom(name: String, evict: Boolean) {
         val est = estimateKb(name)
+        val cpu = manifest.graph(name).onCpu
         while (true) {
             val avail = DeviceInfo.memAvailableKb()
             if (avail < 0 || avail >= est + reserveKb) return
             val v = if (evict) victim(name) else null
             if (v == null) {
                 event("short", name, avail, est + reserveKb)
-                val measured = footprintKb[name]
-                val floor = reserveKb + (measured ?: 0L)
+                val floor = if (cpu) est + reserveKb else reserveKb + (footprintKb[name] ?: 0L)
                 if (memoryCheck && avail < floor) {
                     val now = awaitAvailable(floor, MAX_WAIT_SHORT_MS)
                     event("waited", name, now, floor)
                     if (now in 0 until floor) {
                         throw NotEnoughMemoryException(
-                            "Not enough memory for $name: ${now / 1024} MB available, ${floor / 1024} MB needed " +
-                                "(reserve ${reserveKb / 1024} MB). Close other apps and try again.",
+                            "Not enough memory for ${label(name)}: ${now / 1024} MB available, ${floor / 1024} MB " +
+                                "needed (reserve ${reserveKb / 1024} MB). Close other apps and try again.",
                         )
                     }
                 }
@@ -300,19 +310,54 @@ class GraphPool(
     }
 
     /**
-     * The memory [name] is expected to take: what it took when it was last compiled, else an estimate from the
-     * file (weights at the run precision) and its largest tensor (a transformer block keeps a few dozen of those).
+     * The memory [name] is expected to take. A GPU graph: what it took when it was last compiled, else an estimate
+     * from the file (weights at the run precision) and its largest tensor (a transformer block keeps a few dozen of
+     * those). A CPU graph: the peak of its call (the manifest's measured `run_peak_bytes`, or what a call in this
+     * process took if more, else [CPU_PEAK_PER_FILE_BYTE] × the file), since its compile is the smaller part.
      */
     fun estimateKb(name: String): Long {
-        footprintKb[name]?.let { if (it > 0) return it }
         val spec = manifest.graph(name)
-        val elementBytes = if (spec.precision == "fp32" || spec.onCpu) 4L else 2L
+        if (spec.onCpu) {
+            val prior = (spec.runPeakBytes ?: (spec.bytes * CPU_PEAK_PER_FILE_BYTE)) / 1024
+            return maxOf(prior, peakKb[name] ?: 0L, footprintKb[name] ?: 0L)
+        }
+        footprintKb[name]?.let { if (it > 0) return it }
+        val elementBytes = if (spec.precision == "fp32") 4L else 2L
         val weights = if (elementBytes == 4L) spec.bytes else spec.bytes / 2
         val transformer = name.startsWith("dino_") || name.startsWith("den_") || name == "oct" ||
-            name.startsWith("gs_") || name == "bir"
+            name.startsWith("gs_")
         val activations = spec.maxIoElements * elementBytes * (if (transformer) 26 else 8)
         return (weights + activations) / 1024
     }
+
+    /**
+     * Runs [block] with the graph [name] ([get]: compiled now if needed, after closing others for its estimate) while
+     * sampling `MemAvailable`; the fall from just before the compile to the lowest reading becomes the graph's
+     * measured peak when it is the largest so far, so the next check counts what this call took. For the CPU graph.
+     */
+    fun <T> runWatched(name: String, block: (Graph) -> T): T {
+        val wasResident = name in resident
+        val g = get(name)
+        val before = if (wasResident) {
+            DeviceInfo.memAvailableKb().let { if (it < 0) it else it + (footprintKb[name] ?: 0L) }
+        } else {
+            compiles.lastOrNull { it.graph == name }?.memAvailableBeforeKb ?: -1L
+        }
+        val watch = MemAvailableWatch(PEAK_POLL_MS).apply { start() }
+        try {
+            return block(g)
+        } finally {
+            val low = watch.stop()
+            if (before >= 0 && low >= 0) {
+                val drop = before - low
+                if (drop > (peakKb[name] ?: 0L)) peakKb[name] = drop
+                event("peak", name, low, null, "before_kb" to before, "drop_kb" to drop, "estimate_kb" to estimateKb(name))
+            }
+        }
+    }
+
+    private fun label(name: String): String =
+        if (name == "bir" || name == "dis") "background removal ($name)" else name
 
     private fun event(kind: String, graph: String, availKb: Long, needKb: Long?, vararg extra: Pair<String, Any>) {
         val e = JSONObject().put("t_ms", SystemClock.elapsedRealtime()).put("event", kind).put("graph", graph)
@@ -326,8 +371,15 @@ class GraphPool(
     companion object {
         const val TAG = "IdolGraphs"
         private const val POLL_MS = 100L
+        private const val PEAK_POLL_MS = 50L
         private const val MAX_WAIT_EVICT_MS = 1_500L
         private const val MAX_WAIT_SHORT_MS = 8_000L
+
+        /**
+         * A CPU graph's call peak per byte of its file when the manifest gives none: BiRefNet on the Galaxy S26 took
+         * 2.73 GB of `MemAvailable` (compile + one call, LiteRT 2.3.0 CPU) for a 0.93 GB file.
+         */
+        private const val CPU_PEAK_PER_FILE_BYTE = 3L
 
         fun precisionOf(p: String): CompiledModel.GpuOptions.Precision = when (p) {
             "fp32" -> CompiledModel.GpuOptions.Precision.FP32

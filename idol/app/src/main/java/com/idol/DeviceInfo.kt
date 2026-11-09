@@ -64,6 +64,45 @@ object DeviceInfo {
 }
 
 /**
+ * Samples `MemAvailable` every [periodMs] while one call runs and keeps the lowest reading (the memory guard's view
+ * of the call's peak). [stop] returns it, or -1 when `/proc/meminfo` cannot be read.
+ */
+class MemAvailableWatch(private val periodMs: Long) {
+    @Volatile private var lowKb = -1L
+    @Volatile private var running = false
+    private var thread: Thread? = null
+
+    private fun sample() {
+        val v = DeviceInfo.memAvailableKb()
+        if (v >= 0 && (lowKb < 0 || v < lowKb)) lowKb = v
+    }
+
+    fun start() {
+        sample()
+        running = true
+        thread = Thread({
+            while (running) {
+                sample()
+                try {
+                    Thread.sleep(periodMs)
+                } catch (_: InterruptedException) {
+                    break
+                }
+            }
+        }, "IdolMemWatch").apply { isDaemon = true; start() }
+    }
+
+    fun stop(): Long {
+        running = false
+        thread?.interrupt()
+        thread?.join(500)
+        thread = null
+        sample()
+        return lowKb
+    }
+}
+
+/**
  * Samples the system's GPU pages every [periodMs] while a run is in progress and keeps the maximum (CONTRACT.md
  * line (e)). Best effort: when the app cannot read the file, [maxBytes] stays -1.
  */

@@ -22,6 +22,12 @@ class GraphSpec(
     /** "fp16_with_fp32_accum", "fp16" or "fp32". */
     val precision: String,
     val signatures: Map<String, SignatureSpec>,
+    /**
+     * A CPU graph's working memory: how far `MemAvailable` fell from just before its compile to the lowest point of
+     * one call, measured on a phone (`run_peak_bytes`; BiRefNet's call takes about twice what its compile takes).
+     * Null when the manifest does not say.
+     */
+    val runPeakBytes: Long? = null,
 ) {
     val onCpu: Boolean get() = accelerator == "cpu"
 
@@ -78,6 +84,7 @@ class Manifest(
                     accelerator = e.optString("accelerator", "gpu"),
                     precision = e.optString("precision", "fp16_with_fp32_accum"),
                     signatures = sigs,
+                    runPeakBytes = if (e.has("run_peak_bytes")) e.getLong("run_peak_bytes") else null,
                 )
             }
             val side = LinkedHashMap<String, SideFile>()

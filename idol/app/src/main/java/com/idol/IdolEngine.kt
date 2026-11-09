@@ -159,6 +159,10 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         val names = preloadOrder()
         pool.phase = "preload"
         pool.setSchedule(runSchedule())
+        // a run starts with the matting graph: on the CPU its call needs most of its memory, so leave that free and
+        // the graphs compiled here stay resident through it
+        val matting = manifest.graph(options.matting)
+        pool.preloadHeadroomKb = if (matting.onCpu) pool.estimateKb(matting.name) else 0L
         val first = pool.compiles.size
         val t0 = SystemClock.elapsedRealtimeNanos()
         var loaded = 0
@@ -186,7 +190,7 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         return JSONObject().put("graphs", graphs).put("loaded", loaded).put("of", names.size)
             .put("stopped_at", stoppedAt ?: JSONObject.NULL).put("total_s", total)
             .put("compile_s", pool.compiles.subList(first, pool.compiles.size).sumOf { it.seconds })
-            .put("resident", JSONArray(pool.residentNames))
+            .put("resident", JSONArray(pool.residentNames)).put("headroom_kb", pool.preloadHeadroomKb)
     }
 
     // ------------------------------------------------------------------------------------------------ the run
@@ -295,15 +299,23 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         return g
     }
 
-    /** The matting graph's uint8 alpha for the resized RGB picture; the graph is closed right after. */
+    /**
+     * The matting graph's uint8 alpha for the resized RGB picture; the graph is closed right after. The pool makes
+     * room for the call's peak before the compile (BiRefNet on the CPU takes most of its memory during the call) and
+     * keeps the peak this call measured for the next check.
+     */
     private fun alpha(rgb: Image8): ByteArray {
         val m = options.matting
         val input = if (m == "bir") Matting.birefnetInput(rgb) else Matting.disInput(rgb)
         try {
-            val g = graph(m)
-            g.write(0, input)
-            g.run()
-            val map = g.read(0)
+            if (cancel) throw CancelledException()
+            if (!pool.isResident(m)) progress.status("Loading $m")
+            val map = pool.runWatched(m) { g ->
+                progress.status("")
+                g.write(0, input)
+                g.run()
+                g.read(0)
+            }
             pool.release(m)
             return if (m == "bir") Matting.birefnetAlpha(map, rgb.width, rgb.height)
             else Matting.disAlpha(map, rgb.width, rgb.height, options.disFloor)

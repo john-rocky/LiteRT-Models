@@ -1,0 +1,3 @@
+11-09 17:05:15.814 I/am_kill ( 1439): [0,4277,com.idol,0,permissions revoked,168232]
+11-09 17:17:34.853 I/am_kill ( 1439): [0,4929,com.idol,0,stop com.idol due to killDueToPackageUpdate,340120]
+11-09 19:04:10.099 I/am_kill ( 1439): [0,14660,com.idol,0,stop com.idol due to from pid 10094,317976]

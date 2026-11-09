@@ -1,0 +1,4 @@
+11-09 19:23:25.676 I/IdolAutoRun(13539): IDOL_AUTORUN START plan=fail_bir_memory.json out=fail_bir_memory pid=13539
+11-09 19:23:25.676 I/IdolAutoRun(13539): IDOL_AUTORUN ROW_START id=fail_bir_memory kind=image
+11-09 19:23:34.581 I/IdolAutoRun(13539): IDOL_AUTORUN ROW id=fail_bir_memory kind=image status=memory Not enough memory for background removal (bir): 11465 MB available, 11668 MB needed (reserve 9000 MB). Close other apps and try again.
+11-09 19:23:34.582 I/IdolAutoRun(13539): IDOL_AUTORUN DONE rows=1 pid=13539

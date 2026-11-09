@@ -1,0 +1,29 @@
+{
+ "plan": "fail_bir_memory.json",
+ "plan_json": {
+  "comment": "Round 2, the memory check before background removal: with a reserve no phone can meet (9,000 MB), BiRefNet's call (its measured peak plus the reserve) does not fit even with every graph closed, so the run stops with 'Not enough memory for background removal (bir) ... Close other apps and try again.' on the Home screen and the process stays alive. Preload off: no graph to close.",
+  "reserve_mb": 9000,
+  "preload": false,
+  "rows": [
+   {
+    "id": "fail_bir_memory",
+    "kind": "image",
+    "image": "fx\/armchair\/input.webp",
+    "mode": "real"
+   }
+  ]
+ },
+ "device": "Pixel 11 Pro",
+ "model": "Pixel 11 Pro",
+ "android_sdk": 37,
+ "fingerprint": "google\/grizzly\/grizzly:17\/CD1A.260905.001.B1\/16238327:user\/release-keys",
+ "litert": "2.3.0",
+ "app_version": "0.1",
+ "pid": 13539,
+ "mem_total_kb": 16030796,
+ "mem_available_kb": 11796884,
+ "thermal": 1,
+ "cpuset": "3:cpuset:\/top-app",
+ "start_ms": 1794219805675,
+ "load": []
+}
