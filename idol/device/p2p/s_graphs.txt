@@ -1,0 +1,32 @@
+push den_joint_00.tflite rc=0 bytes 56134468/56134468 sha256 phone=37e269459ef1325bd4a84d1df1545afacf8e33d6d5c232c62f834f343a882f86 mac=37e269459ef1325bd4a84d1df1545afacf8e33d6d5c232c62f834f343a882f86 MATCH in 2s
+data free with den_joint_00.tflite: 417445228544 B
+graph den_joint_00.tflite already on the phone (sha256 MATCH)
+data free with den_joint_00.tflite: 417443524608 B
+push gs_0.tflite rc=0 bytes 122497768/122497768 sha256 phone=244ae2ffc6d510c8eab99d2381cb20edb8a7c1715272f7a7efeba5fcd77cfa39 mac=244ae2ffc6d510c8eab99d2381cb20edb8a7c1715272f7a7efeba5fcd77cfa39 MATCH in 3s
+data free with gs_0.tflite: 417320595456 B
+graph gs_0.tflite already on the phone (sha256 MATCH)
+data free with gs_0.tflite: 417319821312 B
+removed graph gs_0.tflite 2026-11-09 19:45:42
+push den_joint_01.tflite rc=0 bytes 56134100/56134100 sha256 phone=103efe94ce85aeb29f084f85962d0e85d4a395c629101d3ea21d23e6cdc53e25 mac=103efe94ce85aeb29f084f85962d0e85d4a395c629101d3ea21d23e6cdc53e25 MATCH in 1s
+data free with den_joint_01.tflite: 417386369024 B
+removed graph den_joint_01.tflite 2026-11-09 19:46:11
+push den_joint_mid.tflite rc=0 bytes 185020/185020 sha256 phone=679191fddc1b577bd83d8c0f030de0f98ae1a72b45ca81abe237a6e43952f939 mac=679191fddc1b577bd83d8c0f030de0f98ae1a72b45ca81abe237a6e43952f939 MATCH in 0s
+data free with den_joint_mid.tflite: 417442336768 B
+removed graph den_joint_mid.tflite 2026-11-09 19:46:37
+push den_joint_00.wo8.tflite rc=0 bytes 14485328/14485328 sha256 phone=bc6c8be3e59b29de82427de3ddba88e1fe3f9dfddb022c7ab491a50ff50cbd7a mac=bc6c8be3e59b29de82427de3ddba88e1fe3f9dfddb022c7ab491a50ff50cbd7a MATCH in 1s
+data free with den_joint_00.wo8.tflite: 417427546112 B
+removed graph den_joint_00.wo8.tflite 2026-11-09 19:46:49
+push den_joint_00.dyn8.tflite rc=0 bytes 14481520/14481520 sha256 phone=57bd5452dcb83417aeb0e1a0416f77965bbb8e11e78b0f2dbb3cf0c27458976b mac=57bd5452dcb83417aeb0e1a0416f77965bbb8e11e78b0f2dbb3cf0c27458976b MATCH in 0s
+data free with den_joint_00.dyn8.tflite: 417427550208 B
+removed graph den_joint_00.dyn8.tflite 2026-11-09 19:47:01
+push gs_0.wo8.tflite rc=0 bytes 31398336/31398336 sha256 phone=29bf1ca3f6f095cba01ce1f9a4a5cc7ffd9eca14195040005a532531ea3079b0 mac=29bf1ca3f6f095cba01ce1f9a4a5cc7ffd9eca14195040005a532531ea3079b0 MATCH in 1s
+data free with gs_0.wo8.tflite: 417410617344 B
+removed graph gs_0.wo8.tflite 2026-11-09 19:47:12
+push gs_0.dyn8.tflite rc=0 bytes 31394368/31394368 sha256 phone=0433ccf63dec2bc5ded1ca945e05f2610e09be1237e496607090d5ed236ba1ed mac=0433ccf63dec2bc5ded1ca945e05f2610e09be1237e496607090d5ed236ba1ed MATCH in 1s
+data free with gs_0.dyn8.tflite: 417410621440 B
+removed graph gs_0.dyn8.tflite 2026-11-09 19:47:27
+graph den_joint_00.tflite already on the phone (sha256 MATCH)
+data free with den_joint_00.tflite: 417442054144 B
+graph den_joint_00.tflite already on the phone (sha256 MATCH)
+data free with den_joint_00.tflite: 417442054144 B
+removed graph den_joint_00.tflite 2026-11-09 19:48:25

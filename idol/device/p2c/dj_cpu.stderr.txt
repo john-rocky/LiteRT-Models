@@ -1,0 +1,27 @@
+INFO: [environment.cc:36] Creating LiteRT environment with options
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007183003be0, name=NpuAccelerator
+INFO: [npu_registry.cc:30] NPU accelerator registered.
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_p2c/libLiteRtGpuAccelerator.so).
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_p2c/libLiteRtClGlAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007183005230, name=LiteRT GPU
+INFO: [gpu_registry.cc:138] Dynamically loaded GPU accelerator(libLiteRtClGlAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb4000071830059a0, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [compiler_plugin.cc:308] Attempting to load plugin at: /data/local/tmp/idol_p2c/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiler_plugin.cc:250] Loading plugin at: /data/local/tmp/idol_p2c/libLiteRtCompilerPlugin_Qualcomm.so
+WARNING: linker: Warning: "/data/local/tmp/idol_p2c/libLiteRtCompilerPlugin_Qualcomm.so" unused DT entry: DT_RPATH (type 0xf arg 0x820) (ignoring)
+INFO: [compiler_plugin.cc:260] Loaded plugin at: /data/local/tmp/idol_p2c/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiler_plugin.cc:263] Resolved plugin api at: /data/local/tmp/idol_p2c/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [qnn_manager.cc:508] Configuring ADSP_LIBRARY_PATH with dir: /data/local/tmp/idol_p2c
+INFO: [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2c/libQnnSystem.so"
+INFO: [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2c/libQnnHtp.so"
+INFO: [qnn_manager.cc:200] Loaded qnn shared library
+INFO: [compiler_plugin.cc:268] Initialize plugin at: /data/local/tmp/idol_p2c/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+INFO: [compiled_model.cc:829] Flatbuffer model initialized directly from incoming litert model.
+INFO: Initialized TensorFlow Lite runtime.
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+VERBOSE: Replacing 1232 out of 1233 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 3 partitions for subgraph 0 (main).
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb4000071830059a0, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007183005230, name=LiteRT GPU
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007183003be0, name=NpuAccelerator

@@ -1,0 +1,3 @@
+11-09 18:23:11.284 I/am_proc_died( 2824): [0,31400,com.idol,0,2,2708,1061]
+11-09 18:37:45.662 I/am_kill ( 2824): [0,5389,com.idol,0,stop com.idol due to from pid 10596,1698508]
+11-09 19:36:19.124 I/am_kill ( 2824): [0,21351,com.idol,0,stop com.idol due to from pid 31087,1750828]

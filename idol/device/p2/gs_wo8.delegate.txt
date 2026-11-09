@@ -1,0 +1,11 @@
+gs_wo8.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+gs_wo8.stderr.txt:VERBOSE: Replacing 2113 out of 2113 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 20:06:48.624 19517 19517 I litert  : [qnn_manager.cc:508] Configuring ADSP_LIBRARY_PATH with dir: /data/local/tmp/idol_p2
+11-09 20:06:48.624 19517 19517 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnSystem.so"
+11-09 20:06:48.625 19517 19517 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnHtp.so"
+11-09 20:06:48.625 19517 19517 I litert  : [qnn_manager.cc:200] Loaded qnn shared library
+11-09 20:06:48.625 19517 19517 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+11-09 20:06:48.685 19517 19517 I tflite  : Replacing 2113 out of 2113 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 20:06:48.812 19517 19517 E native  : E0000 00:00:1794222408.812704   19517 delegate_opencl.cc:341] Failed to create litert::ml_drift::DelegateKernelLiteRt: INVALID_ARGUMENT: Shape mismatch: {bhwc, {1024, 1, 1, 3}} vs {bhwc, {1, 1, 1024, 3}}
+11-09 20:06:48.812 19517 19517 E litert  : [error_reporter.cc:27] Failed to initialize kernel.
+11-09 20:06:48.815 19517 19517 E litert  : [error_reporter.cc:27] Restored original execution plan after delegate application failure.

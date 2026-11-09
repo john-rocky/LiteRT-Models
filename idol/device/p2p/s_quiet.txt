@@ -1,0 +1,8 @@
+2026-11-09 19:43:06 inputs 338851185 B: start; no window
+2026-11-09 19:43:15 inputs 338851185 B: end, 19:43:06 to 19:43:15 (9 s); 0 s inside a window
+2026-11-09 19:43:32 setup 253374792 B: start; no window
+2026-11-09 19:43:45 setup 253374792 B: end, 19:43:32 to 19:43:43 (11 s); 0 s inside a window
+2026-11-09 19:44:35 graph gs_0.tflite 122497768 B: start; no window
+2026-11-09 19:44:38 graph gs_0.tflite 122497768 B: end, 19:44:35 to 19:44:38 (3 s); 0 s inside a window
+2026-11-09 19:45:08 graph gs_0.tflite 122497768 B: start; no window
+2026-11-09 19:45:10 graph gs_0.tflite 122497768 B: end, 19:45:08 to 19:45:09 (1 s); 0 s inside a window

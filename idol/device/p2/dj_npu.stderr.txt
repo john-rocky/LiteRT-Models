@@ -1,0 +1,91 @@
+INFO: [environment.cc:36] Creating LiteRT environment with options
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb40000733bc034a0, name=NpuAccelerator
+INFO: [npu_registry.cc:30] NPU accelerator registered.
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_p2/libLiteRtGpuAccelerator.so).
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_p2/libLiteRtClGlAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb40000733bc03f20, name=LiteRT GPU
+INFO: [gpu_registry.cc:138] Dynamically loaded GPU accelerator(libLiteRtClGlAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb40000733bc04380, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [compiled_model.cc:750] NPU JIT compilation caching enabled with cache dir: /data/local/tmp/idol_p2/cache_dj
+INFO: [compiler_plugin.cc:308] Attempting to load plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiler_plugin.cc:250] Loading plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+WARNING: linker: Warning: "/data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so" unused DT entry: DT_RPATH (type 0xf arg 0x820) (ignoring)
+INFO: [compiler_plugin.cc:260] Loaded plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiler_plugin.cc:263] Resolved plugin api at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [common.h:179] 
+
++------------------------------------------+
+|              ::qnn::Options              |
++------------------------------------------+
+[GENERAL]
+  LogLevel                 : Info(3)
+  BackendType              : Htp(2)
+  Profiling                : Off(0)
+  QnnLibDir                :
+  DspSkelDir               :
+  UseInt64BiasAsInt32      : true
+  EnableWeightSharing      : false
+  EnableJustInTime         : false
+  GraphPriority            : Default(0)
+  GraphIOTensorMemType     : MemHandle(1)
+  CustomOpPackage          :
+    name                   :
+    interface_provider     :
+    compile_package_path   :
+    dispatch_package_path  :
+    target                 :
+    GraphTransform         :
+[HTP]
+  UseConvHMX               : true
+  UseFoldReLU              : true
+  HtpDlbc                  : false
+  HtpDlbcWeights           : false
+  HtpPPoint                : 0
+  HtpPerformanceMode       : Burst(2)
+  HtpPerfCtrlMode          : Manual(0)
+  HtpPdSession             : Unsigned(0)
+  VtcmSize                 : 0
+  NumHvxThreads            : 0
+  OptimizationLevel        : HtpOptimizeForInferenceO3(2)
+[IR]
+  IrJsonDir                :
+  DlcDir                   :
+[SAVER]
+  SaverOutputDir           :
+[DSP]
+  DspPerformanceMode       : Default(0)
+  DspPerfCtrlMode          : Manual(0)
+  DspPdSession             : Unsigned(0)
+  DspEncoding              : Static(0)
+[GPU]
+  GpuPerformanceMode       : High(1)
+  GpuPrecision             : Fp16(2)
+[LPAI]
+  LpaiTarget               : Adsp(2)
+  LpaiFps                  : 1
+  LpaiFtrtRatio            : 10
+  LpaiClientPerfType       : Default(0)
+  LpaiCoreAffinityType     : Default(0)
+  LpaiCoreSelection        : 0
+[DEBUG]
+  DumpTensorIds            :
+  SchematicDir             :
+
+INFO: [qnn_manager.cc:508] Configuring ADSP_LIBRARY_PATH with dir: /data/local/tmp/idol_p2
+INFO: [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnSystem.so"
+INFO: [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnHtp.so"
+INFO: [qnn_manager.cc:200] Loaded qnn shared library
+INFO: [compiler_plugin.cc:268] Initialize plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiler_plugin.cc:948] Applying plugin with SDK version: v2.50.0.260828221209
+INFO: [compiler_plugin.cc:929] Registered 0 transformations.
+INFO: [compiler_plugin.cc:936] Applied transformations.
+INFO: [Qnn] Set HTP performance mode: 2
+INFO: [compiler_plugin.cc:524] Partition strategy: 0
+INFO: [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 1233 ops, from a total of 1233 ops. resulted in 1 partitions.
+INFO: [qnn_compiler_plugin.cc:552] Starting QNN compilation for 1 subgraphs.
+INFO: [qnn_compiler_plugin.cc:651] Creating context handle
+INFO: [qnn_compiler_plugin.cc:684] Context handle created
+INFO: [qnn_compiler_plugin.cc:699] Composing graph
+INFO: [qnn_compiler_plugin.cc:703] Entry point name: qnn_partition_0
+Killed 

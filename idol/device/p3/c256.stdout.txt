@@ -1,0 +1,50 @@
+pid=30260 accel=gpu gpu_precision=fp16 burst=1 models=1 fixtures=1 warmup=1 rounds=5 ab_fixture=000 libdir=/data/local/tmp/idol_p3 cache_dir= dump=full signature=(0) profile=0 npu_vendor=qualcomm ref=- ref2=- stop_nonfinite=0 llm_chain_flags=0 wall_ms=1794228322884
+model[0] signature[0] serving_default
+model[0] input[0] sig_name=args_0 logical=args_0 type=1 bytes=50356224 rank=3 ext=.f32
+model[0] input[1] sig_name=args_1 logical=args_1 type=1 bytes=24576 rank=2 ext=.f32
+model[0] input[2] sig_name=args_2 logical=args_2 type=1 bytes=256 rank=2 ext=.f32
+model[0] input[3] sig_name=args_3 logical=args_3 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[4] sig_name=args_4 logical=args_4 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[5] sig_name=args_5 logical=args_5 type=1 bytes=524288 rank=3 ext=.f32
+model[0] input[6] sig_name=args_6 logical=args_6 type=1 bytes=524288 rank=3 ext=.f32
+model[0] input[7] sig_name=args_7 logical=args_7 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[8] sig_name=args_8 logical=args_8 type=1 bytes=4194304 rank=3 ext=.f32
+model[0] input[9] sig_name=args_9 logical=args_9 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[10] sig_name=args_10 logical=args_10 type=1 bytes=4194304 rank=3 ext=.f32
+model[0] input[11] sig_name=args_11 logical=args_11 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[12] sig_name=args_12 logical=args_12 type=1 bytes=4194304 rank=3 ext=.f32
+model[0] input[13] sig_name=args_13 logical=args_13 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[14] sig_name=args_14 logical=args_14 type=1 bytes=4096 rank=4 ext=.f32
+model[0] input[15] sig_name=args_15 logical=args_15 type=1 bytes=4096 rank=4 ext=.f32
+model[0] input[16] sig_name=args_16 logical=args_16 type=1 bytes=4194304 rank=3 ext=.f32
+model[0] input[17] sig_name=args_17 logical=args_17 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[18] sig_name=args_18 logical=args_18 type=1 bytes=16777216 rank=3 ext=.f32
+model[0] input[19] sig_name=args_19 logical=args_19 type=1 bytes=16384 rank=3 ext=.f32
+model[0] input[20] sig_name=args_20 logical=args_20 type=1 bytes=16777216 rank=3 ext=.f32
+model[0] input[21] sig_name=args_21 logical=args_21 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[22] sig_name=args_22 logical=args_22 type=1 bytes=24576 rank=2 ext=.f32
+model[0] input[23] sig_name=args_23 logical=args_23 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[24] sig_name=args_24 logical=args_24 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[25] sig_name=args_25 logical=args_25 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[26] sig_name=args_26 logical=args_26 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[27] sig_name=args_27 logical=args_27 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[28] sig_name=args_28 logical=args_28 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[29] sig_name=args_29 logical=args_29 type=1 bytes=262144 rank=3 ext=.f32
+model[0] input[30] sig_name=args_30 logical=args_30 type=1 bytes=1048576 rank=3 ext=.f32
+model[0] input[31] sig_name=args_31 logical=args_31 type=1 bytes=1048576 rank=3 ext=.f32
+model[0] input[32] sig_name=args_32 logical=args_32 type=1 bytes=262144 rank=3 ext=.f32
+compile_start model[0] wall_ms=1794228322939
+INFO: Loaded OpenCL library with dlopen.
+compile_end model[0] wall_ms=1794228323866
+model[0]=/data/local/tmp/idol_p3/den_joint_mid_c256.tflite signature=serving_default index=0 inputs=33 outputs=1 out0_elems=12589056 compile_ms=927.4 fully_accelerated=true
+parity model[0] fixture 000 ms=776.084 run_ms=0.645 nonfinite=0 out0[0..3]=2.03711,1.49609,0.916504,-0.485107 l2=46196.3 maxabs=2396
+parity_summary model[0] /data/local/tmp/idol_p3/den_joint_mid_c256.tflite fixtures=1 nonfinite_values=0 first_run_ms=830.6 mean_ms=776.084 outdir=/data/local/tmp/idol_p3/out_c256/model0
+latency_start wall_ms=1794228325567
+warmup 0 model[0] 761.735 ms run_ms=0.625
+round 0 model[0] write+run+readback_ms=773.228 run_ms=0.747
+round 1 model[0] write+run+readback_ms=767.170 run_ms=1.029
+round 2 model[0] write+run+readback_ms=767.614 run_ms=0.994
+round 3 model[0] write+run+readback_ms=769.453 run_ms=0.782
+round 4 model[0] write+run+readback_ms=766.232 run_ms=0.581
+summary model[0] /data/local/tmp/idol_p3/den_joint_mid_c256.tflite n=5 median=767.614 min=766.232 max=773.228 nonfinite_rounds=0 compile_ms=927.4 fully_accelerated=true
+done wall_ms=1794228330315

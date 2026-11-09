@@ -1,0 +1,21 @@
+setup start 2026-11-09 19:43:32; data free before: 417755303936 B
+lib libLiteRt.so sha256 MATCH
+lib libLiteRtClGlAccelerator.so sha256 MATCH
+runner r3_rt_runner sha256 MATCH (7e7539e5bd0c73ed121a211a7021017e220757c526b6bca72a8d9089eefe68a1)
+push g1_den_joint_00 files 5/5 concat sha256 phone=8bffaa4cbf5d4b7df98ea0706bd30f4a48bd41f1f787fecdfb57df5214fe483e mac=8bffaa4cbf5d4b7df98ea0706bd30f4a48bd41f1f787fecdfb57df5214fe483e MATCH in 2s
+push g1_den_joint_01 files 3/3 concat sha256 phone=fcc5f4d559aba80b981698ea16995ce2c063a6c701b92f29a07bd7699a5ef592 mac=fcc5f4d559aba80b981698ea16995ce2c063a6c701b92f29a07bd7699a5ef592 MATCH in 2s
+push g1_gs_0 files 3/3 concat sha256 phone=73d2d840ee18e68c4171dc116c06f2d6705139b3a985cccfe25f5a3563787a31 mac=73d2d840ee18e68c4171dc116c06f2d6705139b3a985cccfe25f5a3563787a31 MATCH in 2s
+push p2_den_mid_01 files 33/33 concat sha256 phone=9c84bf0964c58dd33d7e93d3dd9fe2b7e6fcc8f450dfb5e73e086f2258ee1c51 mac=9c84bf0964c58dd33d7e93d3dd9fe2b7e6fcc8f450dfb5e73e086f2258ee1c51 MATCH in 3s
+device: Pixel 11 Pro 17 CD1A.260905.001.B1
+total 11886
+drwxrwxrwx  6 shell shell    3452 2026-11-09 19:43 .
+drwxrwx--x 32 shell shell    3452 2026-11-09 19:43 ..
+drwxrwxrwx  2 shell shell    3452 2026-11-09 19:43 g1_den_joint_00
+drwxrwxrwx  2 shell shell    3452 2026-11-09 19:43 g1_den_joint_01
+drwxrwxrwx  2 shell shell    3452 2026-11-09 19:43 g1_gs_0
+-rw-rw-rw-  1 shell shell 5629696 2026-11-09 13:45 libLiteRt.so
+-rw-rw-rw-  1 shell shell 3253032 2026-11-09 13:45 libLiteRtClGlAccelerator.so
+drwxrwxrwx  2 shell shell    3452 2026-11-09 19:43 p2_den_mid_01
+-rwxr-xr-x  1 shell shell 3257376 2026-11-09 13:45 r3_rt_runner
+/dev/block/dm-30 462G  73G  389G  16% /data/user/0
+setup end 2026-11-09 19:43:42 in 10s; data free 417501425664 B; bad=0

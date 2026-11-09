@@ -1,0 +1,16 @@
+{
+ "tag": "armchair",
+ "where": "Mac M4 Max (Metal), LiteRT 2.3.0, the staged Hub folder's python/run_idol.py --models 262k --mode synthetic --seed 7 (the first release's form, round 2's runner; the reference's mode and noise), nb-armchair",
+ "psnr_db": 35.51202495393333,
+ "psnr_per_view_db": [
+  34.85666730913027,
+  37.91886377528125,
+  34.151026192239854,
+  35.99602837689698
+ ],
+ "line_db": 25.0,
+ "pass_": true,
+ "ply": "/Users/majimadaisuke/code/idol_work/hf_test_262k_s7/out/gaussian.ply",
+ "ply_sha256": "41ee4d83823e85dc2373b0b596618d0fe93361924495b08fbd0b3b7d0601c8ba",
+ "ply_bytes": 17826208
+}

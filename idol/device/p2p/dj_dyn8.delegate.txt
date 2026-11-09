@@ -1,0 +1,6 @@
+dj_dyn8.stderr.txt:VERBOSE: Replacing 1233 out of 1233 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 19:46:54.477 17975 17975 I tflite  : Replacing 1233 out of 1233 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 19:46:57.719 17975 17975 E native  : E0000 00:00:1794221217.719138   17975 delegate_opencl.cc:341] Failed to create litert::ml_drift::DelegateKernelLiteRt: INVALID_ARGUMENT: Unable to parse bc coord for BATCH axis. Layout is bhwc, args are res, DST_X + 0, DST_Y + 0, DST_S + 0.; selector object=dst_tensor, selector=Write, args=[res, DST_X + 0, DST_Y + 0, DST_S + 0], template_args=[], descriptor=float16, TensorStorageType::TEXTURE_2D, layout: bhwc, shape: {bhwc, {12294, 1, 1, 1024}}
+11-09 19:46:57.719 17975 17975 E litert  : [error_reporter.cc:27] Failed to initialize kernel.
+11-09 19:46:57.725 17975 17975 E litert  : [error_reporter.cc:27] Restored original execution plan after delegate application failure.
+11-09 19:46:57.760 17975 17975 E pvr-gralloc-integration: vendor/imgtec/powervr/android/graphicshal_customer/global_pvr_services.cpp:521: eErr == PVRSRV_OK FAILED

@@ -1,0 +1,193 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; right after the cool photo's hold (thermal status 3 at the start)",
+ "run_dir": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/s26/H_warm/e2e_armchair",
+ "runs_done": 4,
+ "runs_measured": 3,
+ "first_only": false,
+ "median_generate_s": 325.562591855,
+ "generate_s": [
+  331.524000602,
+  325.562591855,
+  313.268153214
+ ],
+ "total_s": [
+  350.79216247,
+  341.177205079,
+  329.080859614
+ ],
+ "median_total_s": 341.177205079,
+ "median_stage_s": {
+  "denoiser": 272.635629376,
+  "dinov3": 23.559708637,
+  "gaussian_decoder": 7.575216143,
+  "matting": 15.41278265,
+  "octree": 12.075810621,
+  "ply": 0.028068489,
+  "preprocess": 15.788248796,
+  "vae": 7.992469529
+ },
+ "compiles_in_run": [
+  {
+   "run": 0,
+   "count": 18,
+   "seconds": 29.135256449
+  },
+  {
+   "run": 1,
+   "count": 18,
+   "seconds": 20.997607337999998
+  },
+  {
+   "run": 2,
+   "count": 19,
+   "seconds": 24.727868321000003
+  },
+  {
+   "run": 3,
+   "count": 18,
+   "seconds": 19.92845494
+  }
+ ],
+ "thermal": [
+  {
+   "run": 0,
+   "start": 3,
+   "end": 3
+  },
+  {
+   "run": 1,
+   "start": 3,
+   "end": 3
+  },
+  {
+   "run": 2,
+   "start": 3,
+   "end": 3
+  },
+  {
+   "run": 3,
+   "start": 3,
+   "end": 3
+  }
+ ],
+ "warmup": {
+  "generate_s": 335.478783674,
+  "total_s": 351.475450804,
+  "stages": {
+   "matting": 14.893904161,
+   "preprocess": 15.902181921,
+   "dinov3": 22.503569106,
+   "vae": 10.678019371,
+   "denoiser": 278.121903748,
+   "octree": 14.26789437,
+   "gaussian_decoder": 9.249300673,
+   "ply": 0.137956927
+  }
+ },
+ "runs_not_done": [],
+ "per_run": [
+  {
+   "run": 0,
+   "warmup": true,
+   "total_s": 351.475450804,
+   "generate_s": 335.478783674,
+   "stages": {
+    "matting": 14.893904161,
+    "preprocess": 15.902181921,
+    "dinov3": 22.503569106,
+    "vae": 10.678019371,
+    "denoiser": 278.121903748,
+    "octree": 14.26789437,
+    "gaussian_decoder": 9.249300673,
+    "ply": 0.137956927
+   },
+   "compiles": {
+    "count": 18,
+    "seconds": 29.135256449
+   }
+  },
+  {
+   "run": 1,
+   "warmup": false,
+   "total_s": 350.79216247,
+   "generate_s": 331.524000602,
+   "stages": {
+    "matting": 18.853977493,
+    "preprocess": 19.246149263,
+    "dinov3": 23.559708637,
+    "vae": 8.056630986,
+    "denoiser": 280.327849424,
+    "octree": 11.693215933,
+    "gaussian_decoder": 7.687452133,
+    "ply": 0.027994844
+   },
+   "compiles": {
+    "count": 18,
+    "seconds": 20.997607337999998
+   }
+  },
+  {
+   "run": 2,
+   "warmup": false,
+   "total_s": 341.177205079,
+   "generate_s": 325.562591855,
+   "stages": {
+    "matting": 15.20784963,
+    "preprocess": 15.592547077,
+    "dinov3": 25.082330928,
+    "vae": 7.992469529,
+    "denoiser": 272.635629376,
+    "octree": 12.075810621,
+    "gaussian_decoder": 7.575216143,
+    "ply": 0.03129375
+   },
+   "compiles": {
+    "count": 19,
+    "seconds": 24.727868321000003
+   }
+  },
+  {
+   "run": 3,
+   "warmup": false,
+   "total_s": 329.080859614,
+   "generate_s": 313.268153214,
+   "stages": {
+    "matting": 15.41278265,
+    "preprocess": 15.788248796,
+    "dinov3": 20.584047231,
+    "vae": 7.515857601,
+    "denoiser": 265.431647034,
+    "octree": 12.163959214,
+    "gaussian_decoder": 7.380766508,
+    "ply": 0.028068489
+   },
+   "compiles": {
+    "count": 18,
+    "seconds": 19.92845494
+   }
+  }
+ ],
+ "gaussians": 65536,
+ "handoff": "host",
+ "options": {
+  "preload": true,
+  "reserve_mb": 2500,
+  "mem_check": true,
+  "handoff": "host",
+  "matting": "bir",
+  "cpu_threads": 6,
+  "gpu_priority": "default",
+  "dis_floor": 8
+ },
+ "preload": {
+  "graphs": 3,
+  "seconds": 8.897846247
+ },
+ "device": {
+  "device": "Galaxy S26 (SM-S942Q)",
+  "android_sdk": 36,
+  "litert": "2.3.0",
+  "mem_total_kb": 11389756,
+  "thermal": 3
+ }
+}

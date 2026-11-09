@@ -1,0 +1,22 @@
+{
+ "where": "Pixel 11 Pro, the sample app, LiteRT 2.3.0; thermal status 0 at the start",
+ "run_dir": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/p11p/H/e2e_cool",
+ "vmhwm_kb_max": 6249896,
+ "gpu_page_alloc_max_bytes": -1,
+ "per_run": [
+  {
+   "run": 0,
+   "vmhwm_kb": 6249896,
+   "vmswap_kb": 169332,
+   "gpu_page_alloc_max_bytes": -1,
+   "mem_available_kb_start": 4936708,
+   "mem_available_kb_end": 2538512
+  }
+ ],
+ "sampler": {
+  "vmhwm_kb_max": 6249896,
+  "kgsl_page_alloc_max_bytes": null,
+  "mem_available_kb_min": 2002336,
+  "samples": 450
+ }
+}

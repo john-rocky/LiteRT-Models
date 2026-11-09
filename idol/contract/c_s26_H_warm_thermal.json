@@ -1,0 +1,10 @@
+{
+ "run": "e2e_armchair run 0 (H_warm, plan 00:05:21-00:28:35)",
+ "samples": 138,
+ "cap_mhz_start": 1300.0,
+ "cap_mhz_min": 191.0,
+ "status_start": 3,
+ "status_max": 3,
+ "skin_c_start": 44.2,
+ "skin_c_max": 44.7
+}

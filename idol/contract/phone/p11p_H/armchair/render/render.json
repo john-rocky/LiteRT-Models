@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/armchair/gaussian.ply",
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/p11p/H/e2e_cool/e2e_cool.0.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 33.58473144016746,
+ "mse": 0.00043805319874831646,
+ "psnr_per_view_db": [
+  32.423477536850186,
+  34.81212671281065,
+  31.903009408016803,
+  36.89390681662704
+ ]
+}

@@ -19,6 +19,7 @@ MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Defaults for local testing: this worktree's export (models/v2 holds every graph except dis.tflite).
 # For the published release point them at the downloaded repos (see README), e.g.
 #   IDOL_DIR=~/Downloads/Idol DINO_DIR=~/Downloads/DINOv3-ViT-H16plus-Idol-LiteRT DIS_DIR=~/Downloads/DIS-ISNet-LiteRT
+#   (IDOL_DIR=~/Downloads/Idol/262k for the first release's form: 262,144 Gaussians, same DINO_DIR)
 IDOL_DIR="${IDOL_DIR:-$MODULE_DIR/models/v2}"
 DINO_DIR="${DINO_DIR:-$IDOL_DIR}"
 DIS_DIR="${DIS_DIR:-$HOME/Downloads/DIS-ISNet-LiteRT}"

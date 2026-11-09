@@ -1,0 +1,2 @@
+2026-11-09 21:42:10 setup 118435656 B: start; no window
+2026-11-09 21:43:31 setup 118435656 B: end, 21:42:10 to 21:43:31 (81 s); 0 s inside a window

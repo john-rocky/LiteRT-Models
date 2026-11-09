@@ -1,0 +1,2 @@
+c512.stderr.txt:VERBOSE: Replacing 1256 out of 1256 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 21:43:39.098 29811 29811 I tflite  : Replacing 1256 out of 1256 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

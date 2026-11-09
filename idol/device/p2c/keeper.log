@@ -1,0 +1,11 @@
+===== keeper for idol-p2c-s26 started by chain pid 49557 2026-11-09 20:26:19 (keeper.sh sha256 35d7e060ab207487; ON_RELEASE.sh be983fb3fffb7bfa)
+keeper pid 50721 started 2026-11-09 20:26:19 hold=/Users/majimadaisuke/code/litertlm-convert/community_accel_work/s2_npu_sweep/.device_hold name=idol-p2c-s26 hold_limit=1800s wait_limit=14400s on_release_max=120s
+line at start:
+  holder: idol-p2-s26 (pid 58236, since 2026-11-09 20:03:45)
+  order: rank (/Users/majimadaisuke/code/standup/state/mac-priority.txt; equal ranks by arrival, `front` moves kept)
+  1. idol-p2n-s26  ?  ~0 min  queued 2026-11-09 20:23:51 (keeper waiting)  rank 4 (no key)
+hold acquired: /Users/majimadaisuke/code/litertlm-convert/community_accel_work/s2_npu_sweep/.device_hold (owner pid 50721) at 20:28:31
+HOLD ACQUIRED by pid 50721 at 2026-11-09 20:28:31; hold file: {"pid": 50721, "script": "idol-p2c-s26", "device": "S26", "started": "2026-11-09 20:28:31", "job": {"groups": [48738], "ancestors": [[49557, 1794223576]]}}
+auto release at 20:58:31
+device hold removed
+HOLD RELEASED at 2026-11-09 20:30:42; hold file now: <absent>

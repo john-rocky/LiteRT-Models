@@ -1,0 +1,401 @@
+dj_npu.stderr.txt:INFO: [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 1233 ops, from a total of 1233 ops. resulted in 1 partitions.
+11-09 20:07:48.906 20858 20858 I litert  : |              ::qnn::Options              |
+11-09 20:07:48.906 20858 20858 I litert  :   QnnLibDir                :
+11-09 20:07:48.906 20858 20858 I litert  : [qnn_manager.cc:508] Configuring ADSP_LIBRARY_PATH with dir: /data/local/tmp/idol_p2
+11-09 20:07:48.906 20858 20858 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnSystem.so"
+11-09 20:07:48.907 20858 20858 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnHtp.so"
+11-09 20:07:48.907 20858 20858 I litert  : [qnn_manager.cc:200] Loaded qnn shared library
+11-09 20:07:48.915 20858 20858 I qnn     : QnnDsp <I> QnnLog_create started.
+11-09 20:07:48.919 20858 20858 W qnn     : QnnDsp <W> Initializing HtpProvider
+11-09 20:07:48.920 20858 20858 I qnn     : QnnDsp <I> exit with 0
+11-09 20:07:48.920 20858 20858 I qnn     : QnnDsp <I> exit with 0
+11-09 20:07:48.920 20858 20858 I qnn     : QnnDsp <I> QnnLog_create exit.
+11-09 20:07:48.920 20858 20858 I qnn     : Creating backend with QnnGraphTransformerAdapter
+11-09 20:07:48.920 20858 20858 I qnn     : QnnDsp <I> QnnBackend_create started. backend = 0xe7a42488
+11-09 20:07:48.921 20858 20858 I qnn     : QnnDsp <I> QnnBackend_create done successfully. backend = 0xe7a42488
+11-09 20:07:48.921 20858 20858 I qnn     : QnnGraphTransformer createBackend done, status = 0x0
+11-09 20:07:48.921 20858 20858 I qnn     : QnnDsp <I> QnnDevice_create started
+11-09 20:07:48.921 20858 20858 I qnn     : QnnDsp <I> No scheduler was created for deviceId=0 coreId=0 pdId=0
+11-09 20:07:48.921 20858 20858 E r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:4366: Error 0xe: remote_handle_control_domain failed for request ID 2 on domain 100000 (errno Success)
+11-09 20:07:48.921 20858 20858 E r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:4390: Error 0xe: remote_handle_control failed for request ID 2 (errno Success) (user err 0xe)
+11-09 20:07:48.921 20858 20858 I r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:3365: WARNING: get_handle_priority_from_uri: libQnnHtpV81Skel.so lib opened handle without priority token
+11-09 20:07:48.922 20858 20858 E r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:6192: Error 0xd: open_shell failed for domain 3 search paths used are /usr/lib/dsp/, /vendor/dsp/, /vendor/dsp/xdsp/ (errno Permission denied)
+11-09 20:07:48.950 20858 20858 I r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:7196: open_dev : panic error codes sent successfully
+11-09 20:07:48.950 20858 20858 E r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/log_config.c:687:Error : Unable to add watcher for folder /vendor/lib/rfsa/adsp : errno is Permission denied
+11-09 20:07:48.950 20858 20858 E r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/log_config.c:687:Error : Unable to add watcher for folder /vendor/lib64/rfs/dsp : errno is Permission denied
+11-09 20:07:48.950 20858 20858 E r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/log_config.c:687:Error : Unable to add watcher for folder /vendor/lib/rfsa/adsp : errno is Permission denied
+11-09 20:07:48.952 20858 20877 E r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/apps_std_imp.c:377: Error 0x2: apps_std_fopen_fd failed for /data/local/tmp/idol_p2/cdsp/./libQnnHtpV81Skel.so (No such file or directory)
+11-09 20:07:48.955 20858 20877 D r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/apps_std_imp.c:369: apps_std_fopen_fd done for /data/local/tmp/idol_p2/./libQnnHtpV81Skel.so with fsize:13546372       fopen:21us, fstat:1us, read:2489us,       rpc_alloc:82us, mmap:677us fd 0x12 error_code 0x0
+11-09 20:07:48.955 20858 20877 I r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/apps_std_imp.c:1236: Successfully opened file /data/local/tmp/idol_p2/./libQnnHtpV81Skel.so
+11-09 20:07:48.991 20858 20858 I r3_rt_runner: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:3471: remote_handle64_open: opened handle 0xb4000072fbc5a630 (remote 0x2cea10) for file:///libQnnHtpV81Skel.so?qnn_2_50_0_skel_handle_invoke&_modver=1.0&_dom=cdsp on domain 100000 (spawn time 28338 us, load time 41341 us), refs 1
+11-09 20:07:49.011 20858 20858 I qnn     : QnnDsp <I> QnnDevice_create done. device = 0x1. status 0x0
+11-09 20:07:49.011 20858 20858 I lrt-qc  : INFO: [Qnn] Set HTP performance mode: 2
+11-09 20:07:49.011 20858 20858 I qnn     : QnnDsp <I> htpPerfInfrastructureCreatePowerConfigId started for deviceId: 0, coreId: 0
+11-09 20:07:49.011 20858 20858 I qnn     : 
+11-09 20:07:49.012 20858 20858 I qnn     : QnnDsp <I> htpPerfInfrastructureCreatePowerConfigId done. status 0x0
+11-09 20:07:49.012 20858 20858 I qnn     : QnnDsp <I> htpPerfInfrastructureSetPowerConfig started for powerConfigId: -734029864
+11-09 20:07:49.012 20858 20858 I qnn     : 
+11-09 20:07:49.012 20858 20858 I qnn     : QnnDsp <I> htpPerfInfrastructureSetPowerConfig done. status 0x0
+11-09 20:07:49.012 20858 20858 I qnn     : QnnDsp <I> htpPerfInfrastructureSetPowerConfig started for powerConfigId: -734029864
+11-09 20:07:49.012 20858 20858 I qnn     : 
+11-09 20:07:49.014 20858 20858 I qnn     : QnnDsp <I> htpPerfInfrastructureSetPowerConfig done. status 0x0
+11-09 20:07:49.015 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.015 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.015 20858 20858 W qnn     : QnnDsp <W> PrepareLibLoader Loading libQnnHtpPrepare.so
+11-09 20:07:49.117 20858 20858 I qnn     : QnnDsp <I> First connection to QNN HTP Prepare library established!
+11-09 20:07:49.119 20858 20858 I qnn     : c_interface.cc:152:Creating environment (&hexnn_env_priority=192): Create-threads: 1, Priority: c0, hexnn version: hexnn_ver_v2.50.0.260828221209.
+11-09 20:07:49.119 20858 20858 I qnn     : hexagon_nn_env.cc:406:VXU 0: Num HVX threads: 8, Num HMX threads: 1, Num HLX threads: 2
+11-09 20:07:49.120 20858 20858 I qnn     : c_interface.cc:162:New env: 0xb40000724bc19d30
+11-09 20:07:49.120 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.120 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.121 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.122 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.123 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.124 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.125 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter
+11-09 20:07:49.126 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig started, backend = 0x1
+11-09 20:07:49.126 20858 20858 I qnn     : QnnDsp <I> QnnBackend_validateOpConfig done successfully. Backend = 0x1
+11-09 20:07:49.126 20858 20858 I qnn     : validate OpConfig with QnnGraphTransformerAdapter

@@ -1,0 +1,99 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; from a cool phone (GPU clock cap 1,300 MHz, thermal status 0 at the start)",
+ "run_dir": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/s26/H/e2e_cool",
+ "runs_done": 1,
+ "runs_measured": 1,
+ "first_only": true,
+ "median_generate_s": 150.606171089,
+ "generate_s": [
+  150.606171089
+ ],
+ "total_s": [
+  158.478734575
+ ],
+ "median_total_s": 158.478734575,
+ "median_stage_s": {
+  "denoiser": 119.764200319,
+  "dinov3": 10.580127652,
+  "gaussian_decoder": 5.461563071,
+  "matting": 7.424207341,
+  "octree": 9.131445101,
+  "ply": 0.122991615,
+  "preprocess": 7.83151083,
+  "vae": 5.201343384
+ },
+ "compiles_in_run": [
+  {
+   "run": 0,
+   "count": 19,
+   "seconds": 20.345269887
+  }
+ ],
+ "thermal": [
+  {
+   "run": 0,
+   "start": 0,
+   "end": 2
+  }
+ ],
+ "warmup": {
+  "generate_s": 150.606171089,
+  "total_s": 158.478734575,
+  "stages": {
+   "matting": 7.424207341,
+   "preprocess": 7.83151083,
+   "dinov3": 10.580127652,
+   "vae": 5.201343384,
+   "denoiser": 119.764200319,
+   "octree": 9.131445101,
+   "gaussian_decoder": 5.461563071,
+   "ply": 0.122991615
+  }
+ },
+ "runs_not_done": [],
+ "per_run": [
+  {
+   "run": 0,
+   "warmup": true,
+   "total_s": 158.478734575,
+   "generate_s": 150.606171089,
+   "stages": {
+    "matting": 7.424207341,
+    "preprocess": 7.83151083,
+    "dinov3": 10.580127652,
+    "vae": 5.201343384,
+    "denoiser": 119.764200319,
+    "octree": 9.131445101,
+    "gaussian_decoder": 5.461563071,
+    "ply": 0.122991615
+   },
+   "compiles": {
+    "count": 19,
+    "seconds": 20.345269887
+   }
+  }
+ ],
+ "gaussians": 65536,
+ "handoff": "host",
+ "options": {
+  "preload": true,
+  "reserve_mb": 2500,
+  "mem_check": true,
+  "handoff": "host",
+  "matting": "bir",
+  "cpu_threads": 6,
+  "gpu_priority": "default",
+  "dis_floor": 8
+ },
+ "preload": {
+  "graphs": 1,
+  "seconds": 1.756776718
+ },
+ "device": {
+  "device": "Galaxy S26 (SM-S942Q)",
+  "android_sdk": 36,
+  "litert": "2.3.0",
+  "mem_total_kb": 11389756,
+  "thermal": 0
+ }
+}

@@ -1,0 +1,8 @@
+dj_acc.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+dj_acc.stderr.txt:VERBOSE: Replacing 1233 out of 1233 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 20:04:24.672 16400 16400 I litert  : [qnn_manager.cc:508] Configuring ADSP_LIBRARY_PATH with dir: /data/local/tmp/idol_p2
+11-09 20:04:24.672 16400 16400 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnSystem.so"
+11-09 20:04:24.672 16400 16400 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnHtp.so"
+11-09 20:04:24.673 16400 16400 I litert  : [qnn_manager.cc:200] Loaded qnn shared library
+11-09 20:04:24.673 16400 16400 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+11-09 20:04:24.726 16400 16400 I tflite  : Replacing 1233 out of 1233 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

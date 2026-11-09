@@ -1,0 +1,50 @@
+{
+ "den_joint_00.fp32.gpu": {
+  "cos": 0.9999922814020632,
+  "rel_l2": 0.00405918201826106,
+  "compile_s": 0.38884592056274414,
+  "call_s": 0.1537179946899414
+ },
+ "den_joint_00.wo8.gpu": {
+  "error": "ERROR: [./litert/cc/litert_compiled_model.h:1961]\n\u2514 Failed to modify graph with delegate"
+ },
+ "den_joint_00.wo8.cpu": {
+  "cos": 0.9999975744910198,
+  "rel_l2": 0.0022051584725460327,
+  "compile_s": 0.10549306869506836,
+  "call_s": 4.663496971130371
+ },
+ "den_joint_00.dyn8.gpu": {
+  "error": "ERROR: [./litert/cc/litert_compiled_model.h:1961]\n\u2514 Failed to modify graph with delegate"
+ },
+ "den_joint_00.dyn8.cpu": {
+  "cos": 0.999984252998103,
+  "rel_l2": 0.005613159198949331,
+  "compile_s": 0.06804776191711426,
+  "call_s": 4.7798378467559814
+ },
+ "gs_0.fp32.gpu": {
+  "cos": 0.9999750989298574,
+  "rel_l2": 0.007061769102935342,
+  "compile_s": 0.6080193519592285,
+  "call_s": 0.23494505882263184
+ },
+ "gs_0.wo8.gpu": {
+  "error": "ERROR: [./litert/cc/litert_compiled_model.h:1961]\n\u2514 Failed to modify graph with delegate"
+ },
+ "gs_0.wo8.cpu": {
+  "cos": 0.9999896758484658,
+  "rel_l2": 0.00454468840057101,
+  "compile_s": 0.22150611877441406,
+  "call_s": 6.878965854644775
+ },
+ "gs_0.dyn8.gpu": {
+  "error": "ERROR: [./litert/cc/litert_compiled_model.h:1961]\n\u2514 Failed to modify graph with delegate"
+ },
+ "gs_0.dyn8.cpu": {
+  "cos": 0.9999171031342478,
+  "rel_l2": 0.01287587077422116,
+  "compile_s": 0.1361689567565918,
+  "call_s": 7.742763042449951
+ }
+}

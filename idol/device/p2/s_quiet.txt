@@ -1,0 +1,10 @@
+2026-11-09 20:03:32 inputs 450524339 B: start; no window
+2026-11-09 20:03:42 inputs 450524339 B: end, 20:03:32 to 20:03:42 (10 s); 0 s inside a window
+2026-11-09 20:03:56 setup 365045412 B: start; no window
+2026-11-09 20:04:20 setup 365045412 B: end, 20:03:56 to 20:04:20 (24 s); 0 s inside a window
+2026-11-09 20:04:54 graph gs_0.tflite 122497768 B: start; no window
+2026-11-09 20:04:57 graph gs_0.tflite 122497768 B: end, 20:04:54 to 20:04:57 (3 s); 0 s inside a window
+2026-11-09 20:05:21 graph gs_0.tflite 122497768 B: start; no window
+2026-11-09 20:05:22 graph gs_0.tflite 122497768 B: end, 20:05:21 to 20:05:22 (1 s); 0 s inside a window
+2026-11-09 20:23:05 graph gs_0.tflite 122497768 B: start; no window
+2026-11-09 20:23:06 graph gs_0.tflite 122497768 B: end, 20:23:05 to 20:23:06 (1 s); 0 s inside a window

@@ -1,0 +1,155 @@
+{
+ "_id": "6af1852043c4b34a0af0d87c",
+ "id": "litert-community/DINOv3-ViT-H16plus-Idol-LiteRT",
+ "private": false,
+ "pipeline_tag": "image-feature-extraction",
+ "library_name": "litert",
+ "tags": [
+  "litert",
+  "tflite",
+  "android",
+  "on-device",
+  "gpu",
+  "dinov3",
+  "image-feature-extraction",
+  "base_model:facebook/dinov3-vith16plus-pretrain-lvd1689m",
+  "base_model:quantized:facebook/dinov3-vith16plus-pretrain-lvd1689m",
+  "license:other",
+  "region:us"
+ ],
+ "downloads": 0,
+ "likes": 0,
+ "modelId": "litert-community/DINOv3-ViT-H16plus-Idol-LiteRT",
+ "author": "litert-community",
+ "sha": "e7842b44d471d75c339b8f8d03860044390be6eb",
+ "lastModified": "2026-11-09T09:10:22.000Z",
+ "gated": "auto",
+ "disabled": false,
+ "model-index": null,
+ "config": {},
+ "cardData": {
+  "license": "other",
+  "license_name": "dinov3-license",
+  "license_link": "https://ai.meta.com/resources/models-and-libraries/dinov3-license",
+  "extra_gated_prompt": "# DINOv3 License\n\n*Last Updated: August 19, 2025*\n\n**\u201cAgreement\u201d** means the terms and conditions for use, reproduction, distribution and modification of the DINO Materials set forth herein.\n\n**\u201cDINO Materials\u201d** means, collectively, Documentation and the models, software and algorithms, including machine-learning model code, trained model weights, inference-enabling code, training-enabling code, fine-tuning enabling code, and other elements of the foregoing distributed by Meta and made available under this Agreement.\n\n**\u201cDocumentation\u201d** means the specifications, manuals and documentation accompanying\nDINO Materials distributed by Meta.\n\n**\u201cLicensee\u201d** or **\u201cyou\u201d** means you, or your employer or any other person or entity (if you are entering into this Agreement on such person or entity\u2019s behalf), of the age required under applicable laws, rules or regulations to provide legal consent and that has legal authority to bind your employer or such other person or entity if you are entering in this Agreement on their behalf.\n\n**\u201cMeta\u201d** or **\u201cwe\u201d** means Meta Platforms Ireland Limited (if you are located in or, if you are an entity, your principal place of business is in the EEA or Switzerland) or Meta Platforms, Inc. (if you are located outside of the EEA or Switzerland).\n\n**\u201cSanctions\u201d** means any economic or trade sanctions or restrictions administered or enforced by the United States (including the Office of Foreign Assets Control of the U.S. Department of the Treasury (\u201cOFAC\u201d), the U.S. Department of State and the U.S. Department of Commerce), the United Nations, the European Union, or the United Kingdom.\n\n**\u201cTrade Controls\u201d** means any of the following: Sanctions and applicable export and import controls.\n\nBy clicking \u201cI Accept\u201d below or by using or distributing any portion or element of the DINO Materials, you agree to be bound by this Agreement.\n\n## 1. License Rights and Redistribution.\n\na. <ins>Grant of Rights</ins>. You are granted a non-exclusive, worldwide, non-transferable and royalty-free limited license under Meta\u2019s intellectual property or other rights owned by Meta embodied in the DINO Materials to use, reproduce, distribute, copy, create derivative works of, and make modifications to the DINO Materials.\n\nb. <ins>Redistribution and Use</ins>.\n\ni. Distribution of DINO Materials, and any derivative works thereof, are subject to the terms of this Agreement. If you distribute or make the DINO Materials, or any derivative works thereof, available to a third party, you may only do so under the terms of this Agreement and you shall provide a copy of this Agreement with any such DINO Materials.\n\nii.  If you submit for publication the results of research you perform on, using, or otherwise in connection with DINO Materials, you must acknowledge the use of DINO Materials in your publication.\n\niii. Your use of the DINO Materials must comply with applicable laws and regulations, including Trade Control Laws and applicable privacy and data protection laws.\n\niv. Your use of the DINO Materials will not involve or encourage others to reverse engineer, decompile or discover the underlying components of the DINO Materials.\n\nv. You are not the target of Trade Controls and your use of DINO Materials must comply with Trade Controls. You agree not to use, or permit others to use, DINO Materials for any activities subject to the International Traffic in Arms Regulations (ITAR) or end uses prohibited by Trade Controls, including those related to military or warfare purposes, nuclear industries or applications, espionage, or the development or use of guns or illegal weapons.\n\n## 2. User Support.\n\nYour use of the DINO Materials is done at your own discretion; Meta does not process any information nor provide any service in relation to such use.  Meta is under no obligation to provide any support services for the DINO Materials. Any support provided is \u201cas is\u201d, \u201cwith all faults\u201d, and without warranty of any kind.\n\n## 3. Disclaimer of Warranty.\n\nUNLESS REQUIRED BY APPLICABLE LAW, THE DINO MATERIALS AND ANY OUTPUT AND RESULTS THEREFROM ARE PROVIDED ON AN \u201cAS IS\u201d BASIS, WITHOUT WARRANTIES OF ANY KIND, AND META DISCLAIMS ALL WARRANTIES OF ANY KIND, BOTH EXPRESS AND IMPLIED, INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. YOU ARE SOLELY RESPONSIBLE FOR DETERMINING THE APPROPRIATENESS OF USING OR REDISTRIBUTING THE DINO MATERIALS AND ASSUME ANY RISKS ASSOCIATED WITH YOUR USE OF THE DINO MATERIALS AND ANY OUTPUT AND RESULTS.\n\n## 4. Limitation of Liability.\n\nIN NO EVENT WILL META OR ITS AFFILIATES BE LIABLE UNDER ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, TORT, NEGLIGENCE, PRODUCTS LIABILITY, OR OTHERWISE, ARISING OUT OF THIS AGREEMENT, FOR ANY LOST PROFITS OR ANY DIRECT OR INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL, EXEMPLARY OR PUNITIVE DAMAGES, EVEN IF META OR ITS AFFILIATES HAVE BEEN ADVISED OF THE POSSIBILITY OF ANY OF THE FOREGOING.\n\n## 5. Intellectual Property.\n\na. Subject to Meta\u2019s ownership of DINO Materials and derivatives made by or for Meta, with respect to any derivative works and modifications of the DINO Materials that are made by you, as between you and Meta, you are and will be the owner of such derivative works and modifications.\n\nb. If you institute litigation or other proceedings against Meta or any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the DINO Materials, outputs or results, or any portion of any of the foregoing, constitutes infringement of intellectual property or other rights owned or licensable by you, then any licenses granted to you under this Agreement shall terminate as of the date such litigation or claim is filed or instituted. You will indemnify and hold harmless Meta from and against any claim by any third party arising out of or related to your use or distribution of the DINO Materials.\n\n## 6. Term and Termination.\n\nThe term of this Agreement will commence upon your acceptance of this Agreement or access to the DINO Materials and will continue in full force and effect until terminated in accordance with the terms and conditions herein. Meta may terminate this Agreement if you are in breach of any term or condition of this Agreement. Upon termination of this Agreement, you shall delete and cease use of the DINO Materials. Sections 3, 4 and 7 shall survive the termination of this Agreement.\n\n## 7. Governing Law and Jurisdiction.\n\nThis Agreement will be governed and construed under the laws of the State of California without regard to choice of law principles, and the UN Convention on Contracts for the International Sale of Goods does not apply to this Agreement. The courts of California shall have exclusive jurisdiction of any dispute arising out of this Agreement.\n\n## 8. Modifications and Amendments.\n\nMeta may modify this Agreement from time to time; provided that they are similar in spirit to the current version of the Agreement, but may differ in detail to address new problems or concerns. All such changes will be effective immediately. Your continued use of the DINO Materials after any modification to this Agreement constitutes your agreement to such modification. Except as provided in this Agreement, no modification or addition to any provision of this Agreement will be binding unless it is in writing and signed by an authorized representative of both you and Meta.\n",
+  "extra_gated_fields": {
+   "First Name": "text",
+   "Last Name": "text",
+   "Date of birth": "date_picker",
+   "Country": "country",
+   "Affiliation": "text",
+   "Job title": {
+    "type": "select",
+    "options": [
+     "Student",
+     "Research Graduate",
+     "AI researcher",
+     "AI developer/engineer",
+     "Reporter",
+     "Other"
+    ]
+   },
+   "geo": "ip_location",
+   "By clicking Submit below I accept the terms of the license and acknowledge that the information I provide will be collected stored processed and shared in accordance with the Meta Privacy Policy": "checkbox"
+  },
+  "extra_gated_description": "The information you provide will be collected, stored, processed and shared in accordance with the [Meta Privacy Policy](https://www.facebook.com/privacy/policy/).",
+  "extra_gated_button_content": "Submit",
+  "base_model": "facebook/dinov3-vith16plus-pretrain-lvd1689m",
+  "base_model_relation": "quantized",
+  "library_name": "litert",
+  "pipeline_tag": "image-feature-extraction",
+  "tags": [
+   "litert",
+   "tflite",
+   "android",
+   "on-device",
+   "gpu",
+   "dinov3"
+  ]
+ },
+ "siblings": [
+  {
+   "rfilename": ".gitattributes",
+   "blobId": "d2d0e186729a3d56e5917adccb95ae5dfe326997",
+   "size": 1627
+  },
+  {
+   "rfilename": "LICENSE.md",
+   "blobId": "f531b1e6b5ab2318957bbf8ad1bda9f800a23e17",
+   "size": 7503
+  },
+  {
+   "rfilename": "README.md",
+   "blobId": "12ec91e69ab2bfb3562b3950ad4deb69289e7d00",
+   "size": 14193
+  },
+  {
+   "rfilename": "dino_0.tflite",
+   "blobId": "bdc07828fbded61b696f6ef5dfa6ca43643b6eb2",
+   "size": 843659604,
+   "lfs": {
+    "sha256": "7b4fc27cde00f794a846766b660445b08cb94e2380ad9c7f58db191edd3b5b50",
+    "size": 843659604,
+    "pointerSize": 134
+   }
+  },
+  {
+   "rfilename": "dino_1.tflite",
+   "blobId": "3d39e1614bf8ea2486fd179acf24af0afaae2094",
+   "size": 839694588,
+   "lfs": {
+    "sha256": "54a96f0a0ac0cb29e3520c303dba10544ab88f67d97160dbae941ea8f09b41be",
+    "size": 839694588,
+    "pointerSize": 134
+   }
+  },
+  {
+   "rfilename": "dino_2.tflite",
+   "blobId": "6ccdc4af9f23acf5169d52322e4b5b251e50f75b",
+   "size": 839694588,
+   "lfs": {
+    "sha256": "93b8659dfe738efb3239aa28ff683d503f4caee7b73ebbb9e8914ae27e90f3a1",
+    "size": 839694588,
+    "pointerSize": 134
+   }
+  },
+  {
+   "rfilename": "dino_3.tflite",
+   "blobId": "ec2d86795289bb0d9a3adcd0afdc2743eb940d73",
+   "size": 839710040,
+   "lfs": {
+    "sha256": "9281d490c988268cd8209f353937677b585e13e6ea324c4f01229f93c89f8c39",
+    "size": 839710040,
+    "pointerSize": 134
+   }
+  },
+  {
+   "rfilename": "dino_rope_cos.f32",
+   "blobId": "7a8b4337f2630772d58c0ccaf40bcb299d580e5d",
+   "size": 1049856,
+   "lfs": {
+    "sha256": "198d4cbc96f1c749d3c2752973c485e118e6fbf33e6564df67769b84f5f13038",
+    "size": 1049856,
+    "pointerSize": 132
+   }
+  },
+  {
+   "rfilename": "dino_rope_sin.f32",
+   "blobId": "4bfab3d0fc281ce50736fecfc2e72713334bde20",
+   "size": 1049856,
+   "lfs": {
+    "sha256": "6d3071525093fd870a619c0eebd73f079b7ed4e50f8d0dba82f77155a61b95aa",
+    "size": 1049856,
+    "pointerSize": 132
+   }
+  },
+  {
+   "rfilename": "manifest.json",
+   "blobId": "e152c61d1027d896dbb2643af1a2767f1ed32edd",
+   "size": 3128
+  }
+ ],
+ "spaces": [],
+ "createdAt": "2026-11-09T08:32:32.000Z",
+ "usedStorage": 3364858532
+}

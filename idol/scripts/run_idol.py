@@ -1,8 +1,13 @@
-"""Idol on LiteRT: one image -> a 3D Gaussian splat (.ply, 262,144 Gaussians), with LiteRT CompiledModel.
+"""Idol on LiteRT: one image -> a 3D Gaussian splat (.ply), with LiteRT CompiledModel.
 
   pip install -r requirements.txt
-  python run_idol.py photo.jpg --out out            # downloads both repos with huggingface_hub
+  python run_idol.py photo.jpg --out out            # downloads both repos with huggingface_hub (the default form)
   python run_idol.py photo.jpg --out out --models <Idol folder> --dino <DINOv3 folder>
+
+litert-community/Idol holds two forms: the default in the repo's root (65,536 Gaussians, the faster one) and the
+first release's in `262k/` (262,144 Gaussians, the author's default size, closer to the author's output). Without
+--models the runner downloads the default form only; for the other, download the repo and pass
+`--models <Idol folder>/262k`.
 
 The DINOv3 encoder repo is gated: accept the DINOv3 License on its Hub page and log in (`hf auth login`) first.
 Background removal (the author's BiRefNet) runs on the CPU, everything else on the GPU (Metal on a Mac).
@@ -34,7 +39,7 @@ def main():
     if models is None or dino is None:
         from huggingface_hub import snapshot_download
         if models is None:
-            models = snapshot_download(MAIN_REPO)
+            models = snapshot_download(MAIN_REPO, ignore_patterns=['262k/*'])
         if dino is None:
             dino_repo = json.load(open(os.path.join(models, 'manifest.json')))['repos']['dino']
             dino = snapshot_download(dino_repo)

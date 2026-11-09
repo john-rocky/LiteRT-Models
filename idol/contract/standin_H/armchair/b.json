@@ -1,0 +1,39 @@
+{
+ "box": [
+  1,
+  1,
+  1023,
+  1022
+ ],
+ "times": {
+  "preprocess": 5.96,
+  "dinov3": 12.36,
+  "vae": 1.78,
+  "denoiser": 24.94,
+  "octree": 2.88,
+  "gaussian_decoder": 3.41,
+  "ply": 1.94,
+  "generate_total": 47.53,
+  "all": 55.24
+ },
+ "box_reference": [
+  1,
+  1,
+  1023,
+  1022
+ ],
+ "tag": "armchair",
+ "psnr_db": 35.01540728165656,
+ "psnr_per_view_db": [
+  34.22741359977536,
+  36.989219828866766,
+  33.393494780950036,
+  36.481284651601804
+ ],
+ "line_db": 25.0,
+ "matting": "birefnet",
+ "dis_alpha_floor": null,
+ "pass_": true,
+ "precision": "metal default (fp16)",
+ "models": "/Users/majimadaisuke/code/idol_work/models_H"
+}

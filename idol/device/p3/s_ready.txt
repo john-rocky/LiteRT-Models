@@ -1,0 +1,16 @@
+21:43:34 ready? c512: thermal 0 cap none kgsl_pwrlevel 0 rested 123s mode gate
+c512 ready gate: clean; rested 124s since 21:41:31
+21:44:50 ready? c256: thermal 0 cap none kgsl_pwrlevel 0 rested 64s mode gate
+c256 ready gate: clean; rested 64s since 21:43:46
+21:46:25 ready? c1024: thermal 0 cap none kgsl_pwrlevel 0 rested 21s mode gate
+c1024 ready gate: clean; rested 21s since 21:46:04
+21:46:56 ready? c2048: thermal 0 cap none kgsl_pwrlevel 0 rested 16s mode gate
+c2048 ready gate: clean; rested 17s since 21:46:40
+21:47:25 ready? c2048b: thermal 0 cap none kgsl_pwrlevel 0 rested 15s mode gate
+c2048b ready gate: clean; rested 15s since 21:47:10
+21:47:54 ready? c1024b: thermal 0 cap none kgsl_pwrlevel 0 rested 17s mode gate
+c1024b ready gate: clean; rested 18s since 21:47:37
+21:48:19 ready? c256b: thermal 0 cap none kgsl_pwrlevel 0 rested 13s mode gate
+c256b ready gate: clean; rested 14s since 21:48:06
+21:48:46 ready? c512b: thermal 0 cap none kgsl_pwrlevel 0 rested 14s mode gate
+c512b ready gate: clean; rested 15s since 21:48:32

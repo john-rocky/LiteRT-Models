@@ -1,0 +1,2 @@
+djm_acc.stderr.txt:VERBOSE: Replacing 1256 out of 1256 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 19:46:16.368 17367 17367 I tflite  : Replacing 1256 out of 1256 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

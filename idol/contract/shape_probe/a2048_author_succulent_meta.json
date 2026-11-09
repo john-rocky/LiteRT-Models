@@ -1,0 +1,43 @@
+{
+ "image": "/Users/majimadaisuke/code/idol_work/inputs/pexels_20324601/original.jpg",
+ "mode": "real",
+ "seed": 42,
+ "steps": 5,
+ "turbo": true,
+ "cfg": 0.0,
+ "rescale_t": 3.0,
+ "num_gaussians": 65536,
+ "encode_size": 1024,
+ "device": "cpu",
+ "native": false,
+ "box": [
+  -87,
+  -45,
+  1107,
+  1150
+ ],
+ "camera": {
+  "yaw": 0.8805433872395881,
+  "pitch": -0.0989634137717498,
+  "radius": 5.138730774037201,
+  "fov": 22.138119417930668
+ },
+ "glue_ply_bytes_equal": true,
+ "octree_rows": [
+  1,
+  8,
+  37,
+  146,
+  584,
+  1692,
+  2042,
+  2048
+ ],
+ "seconds": {
+  "load": 33.7,
+  "encode": 6.7,
+  "sample": 89.6,
+  "octree": 4.7,
+  "gaussians": 2.1
+ }
+}

@@ -1,0 +1,34 @@
+INFO: [environment.cc:36] Creating LiteRT environment with options
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007845807120, name=NpuAccelerator
+INFO: [npu_registry.cc:30] NPU accelerator registered.
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_p2/libLiteRtGpuAccelerator.so).
+INFO: [gpu_registry.cc:130] Attempting to load GPU accelerator(/data/local/tmp/idol_p2/libLiteRtClGlAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007845808a80, name=LiteRT GPU
+INFO: [gpu_registry.cc:138] Dynamically loaded GPU accelerator(libLiteRtClGlAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007845808070, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [compiler_plugin.cc:308] Attempting to load plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiler_plugin.cc:250] Loading plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+WARNING: linker: Warning: "/data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so" unused DT entry: DT_RPATH (type 0xf arg 0x820) (ignoring)
+INFO: [compiler_plugin.cc:260] Loaded plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiler_plugin.cc:263] Resolved plugin api at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [qnn_manager.cc:508] Configuring ADSP_LIBRARY_PATH with dir: /data/local/tmp/idol_p2
+INFO: [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnSystem.so"
+INFO: [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2/libQnnHtp.so"
+INFO: [qnn_manager.cc:200] Loaded qnn shared library
+INFO: [compiler_plugin.cc:268] Initialize plugin at: /data/local/tmp/idol_p2/libLiteRtCompilerPlugin_Qualcomm.so
+INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+INFO: [compiled_model.cc:829] Flatbuffer model initialized directly from incoming litert model.
+INFO: Initialized TensorFlow Lite runtime.
+I0000 00:00:1794222367.344131   18601 delegate_opencl.cc:604] options->hint_waiting_for_completion: false
+I0000 00:00:1794222367.344169   18601 delegate_opencl.cc:606] options->kernel_batch_size: -1
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+INFO: [gpu_environment.cc:241] Created OpenCL device from provided device id and platform id.
+INFO: [gpu_environment.cc:306] Reusing provided EGL environment.
+INFO: [gpu_environment.h:155] Created LiteRT GpuEnvironment.
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+VERBOSE: Replacing 1256 out of 1256 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+I0000 00:00:1794222367.376753   18601 delegate_kernel.cc:984] Initializing OpenCL-based API from graph.
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007845808070, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007845808a80, name=LiteRT GPU
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007845807120, name=NpuAccelerator

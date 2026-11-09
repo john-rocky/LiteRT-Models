@@ -1,0 +1,1 @@
+gate leg, not waited for clean (thermal 0, cap policy0:2496000/3628800 policy6:2438400/4742400 , kgsl_pwrlevel 6); rested 6s since 20:04:33

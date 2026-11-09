@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/armchair/gaussian.ply",
+  "/Users/majimadaisuke/code/idol_work/probe_r2/enc512/armchair/gaussian.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 16.191293796194824,
+ "mse": 0.02403646628777867,
+ "psnr_per_view_db": [
+  18.185532781378477,
+  15.485642106407681,
+  16.759854674195015,
+  15.003733693612523
+ ]
+}

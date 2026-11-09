@@ -15,3 +15,43 @@
 19:29:15 backhoe: take A done
 19:30:25 r2_hold_gui: s26 idol-s26-r2b steps stop,state,wait:1500,stop,state subjects axolotl=/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/fx/axolotl/input.webp puppyside=/Users/majimadaisuke/code/idol_work/demo_photos/p1638724.jpg sneaker=/Users/majimadaisuke/code/idol_work/demo_photos/p14174467.jpg camera=/Users/majimadaisuke/code/idol_work/demo_photos/p1203803.jpg
 19:34:25 backhoe: run state octree after 343 s
+19:35:14 backhoe: done after 392 s
+19:35:28 backhoe: viewer screenshot
+19:36:10 backhoe: take B done
+19:36:14 takes over
+19:36:17 CONTINUE touched after the backhoe take
+19:36:22 wait step started; hold acquired 19:36:21; deadline 20:01:21
+19:36:22 axolotl: /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/fx/axolotl/input.webp
+19:36:41 axolotl: mode render checked
+19:36:44 axolotl: tap Pick a photo at 540 955
+19:36:48 axolotl: tap the newest photo at 179 1370
+19:36:52 axolotl: tap Done at 881 2112
+19:37:17 axolotl: take A done
+19:42:04 axolotl: run state octree after 320 s
+19:42:44 axolotl: done after 360 s
+19:42:59 axolotl: viewer screenshot
+19:43:20 axolotl: take B done
+19:43:24 puppyside: /Users/majimadaisuke/code/idol_work/demo_photos/p1638724.jpg
+19:43:37 puppyside: mode photo checked
+19:43:39 puppyside: tap Pick a photo at 540 955
+19:43:45 puppyside: tap the newest photo at 179 1370
+19:43:49 puppyside: tap Done at 881 2112
+19:44:13 puppyside: take A done
+19:49:02 puppyside: run state octree after 323 s
+19:49:49 puppyside: done after 370 s
+19:50:04 puppyside: viewer screenshot
+19:50:18 puppyside: take B done
+19:50:21 sneaker: /Users/majimadaisuke/code/idol_work/demo_photos/p14174467.jpg
+19:50:34 sneaker: mode photo checked
+19:50:36 sneaker: tap Pick a photo at 540 955
+19:50:41 sneaker: tap the newest photo at 179 1370
+19:50:45 sneaker: tap Done at 881 2112
+19:51:12 sneaker: take A done
+19:56:06 sneaker: run state octree after 330 s
+19:56:54 sneaker: done after 378 s
+19:57:08 sneaker: viewer screenshot
+19:57:21 sneaker: take B done
+19:57:24 camera: 237 s left in the hold, needs 400: carried
+19:57:24 takes over
+19:57:24 takes rc=0
+19:57:25 hold over (run_hold rc=0)

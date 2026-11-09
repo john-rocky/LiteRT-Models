@@ -1,0 +1,31 @@
+plan: /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/plan_p2.tsv
+dj_acc                     gpu      fp16acc32 den_joint_00       g1_den_joint_00    1   1   5  000 -                         300 gate      rest=5
+dj_f16                     gpu      fp16  den_joint_00       g1_den_joint_00    1   1   5  000 -                         300 gate      rest=5
+gs_acc                     gpu      fp16acc32 gs_0               g1_gs_0     1   1   5  000 -                         300 gate      rest=5
+gs_f16                     gpu      fp16  gs_0               g1_gs_0     1   1   5  000 -                         300 gate      rest=5
+dj01_acc                   gpu      fp16acc32 den_joint_01       g1_den_joint_01    1   1   5  000 -                         300 gate      rest=5
+djm_acc                    gpu      fp16acc32 den_joint_mid      p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+dj_wo8                     gpu      fp16acc32 den_joint_00.wo8   g1_den_joint_00    1   1   5  000 -                         300 gate      rest=5
+dj_dyn8                    gpu      fp16acc32 den_joint_00.dyn8  g1_den_joint_00    1   1   5  000 -                         300 gate      rest=5
+gs_wo8                     gpu      fp16acc32 gs_0.wo8           g1_gs_0     1   1   5  000 -                         300 gate      rest=5
+gs_dyn8                    gpu      fp16acc32 gs_0.dyn8          g1_gs_0     1   1   5  000 -                         300 gate      rest=5
+dj_f16b                    gpu      fp16  den_joint_00       g1_den_joint_00    1   1   5  000 -                         300 gate      rest=5
+dj_accb                    gpu      fp16acc32 den_joint_00       g1_den_joint_00    1   1   5  000 -                         300 gate      rest=5
+dj_npu                     npu+cpu  -     den_joint_00       g1_den_joint_00    1   1   5  000 new:cache_dj              900 gate      rest=5
+dj_npuc                    npu+cpu  -     den_joint_00       g1_den_joint_00    1   1   5  000 use:cache_dj              300 gate      rest=5 needs=dj_npu
+gs_npu                     npu+cpu  -     gs_0               g1_gs_0     1   1   5  000 new:cache_gs              900 gate      rest=5
+inputs (sha256):
+  37e269459ef1325b… 56134468 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_00.tflite
+  57bd5452dcb83417… 14481520 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_00.dyn8.tflite
+  bc6c8be3e59b29de… 14485328 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_00.wo8.tflite
+  103efe94ce85aeb2… 56134100 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_01.tflite
+  679191fddc1b577b… 185020 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_mid.tflite
+  244ae2ffc6d510c8… 122497768 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/gs_0.tflite
+  0433ccf63dec2bc5… 31394368 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/gs_0.dyn8.tflite
+  29bf1ca3f6f095cb… 31398336 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/gs_0.wo8.tflite
+  runner 7e7539e5bd0c73ed… 3257376 B device/stage/r3_rt_runner
+  libs: 12/12 OK against /Users/majimadaisuke/code/litertlm-convert/phonon2_work/device/stage/libs/SHA256SUMS
+  g1_den_joint_00: 5 files, 50381056 B, concat sha256 8bffaa4cbf5d4b7d…
+  g1_den_joint_01: 3 files, 50381056 B, concat sha256 fcc5f4d559aba80b…
+  g1_gs_0: 3 files, 34177024 B, concat sha256 73d2d840ee18e68c…
+  p2_den_mid_01: 33 files, 106295552 B, concat sha256 9c84bf0964c58dd3…

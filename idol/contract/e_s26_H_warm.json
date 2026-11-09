@@ -1,0 +1,46 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0; right after the cool photo's hold (thermal status 3 at the start)",
+ "run_dir": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/s26/H_warm/e2e_armchair",
+ "vmhwm_kb_max": 5561312,
+ "gpu_page_alloc_max_bytes": 6148530176,
+ "per_run": [
+  {
+   "run": 0,
+   "vmhwm_kb": 5561312,
+   "vmswap_kb": 237456,
+   "gpu_page_alloc_max_bytes": 6148530176,
+   "mem_available_kb_start": 5335716,
+   "mem_available_kb_end": 2553744
+  },
+  {
+   "run": 1,
+   "vmhwm_kb": 4806096,
+   "vmswap_kb": 241888,
+   "gpu_page_alloc_max_bytes": 5496393728,
+   "mem_available_kb_start": 2553744,
+   "mem_available_kb_end": 3075988
+  },
+  {
+   "run": 2,
+   "vmhwm_kb": 5348660,
+   "vmswap_kb": 198116,
+   "gpu_page_alloc_max_bytes": 5504557056,
+   "mem_available_kb_start": 3073864,
+   "mem_available_kb_end": 3091708
+  },
+  {
+   "run": 3,
+   "vmhwm_kb": 4856360,
+   "vmswap_kb": 128228,
+   "gpu_page_alloc_max_bytes": 5412855808,
+   "mem_available_kb_start": 3091708,
+   "mem_available_kb_end": 3037560
+  }
+ ],
+ "sampler": {
+  "vmhwm_kb_max": 5561312,
+  "kgsl_page_alloc_max_bytes": 6146957312,
+  "mem_available_kb_min": 1820984,
+  "samples": 1957
+ }
+}

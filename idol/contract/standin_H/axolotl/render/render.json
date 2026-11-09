@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/axolotl/gaussian.ply",
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/contract/standin_H/axolotl/gaussian.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 31.240610280821166,
+ "mse": 0.0007515172816218441,
+ "psnr_per_view_db": [
+  32.83566877491488,
+  28.790544932887727,
+  33.37349878251557,
+  31.52095272587168
+ ]
+}

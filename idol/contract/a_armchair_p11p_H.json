@@ -1,0 +1,318 @@
+{
+ "where": "Pixel 11 Pro, the app, LiteRT 2.3.0: form H (2,048 anchors, shared middle denoiser and Gaussian decoder graphs, GPU FP16), BiRefNet on the CPU",
+ "ref": "/Users/majimadaisuke/code/idol_work/probe_r2/anchors2048/armchair",
+ "run": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/p11p/H/parity_armchair_a2048",
+ "app_row": {
+  "id": "parity_armchair_a2048",
+  "fixture": "armchair_a2048",
+  "matting": "bir",
+  "alpha": {
+   "file": "parity_armchair_a2048.alpha.u8",
+   "width": 1024,
+   "height": 1024,
+   "box": [
+    1,
+    1,
+    1023,
+    1022
+   ]
+  },
+  "t_grid_matches_fixture": true,
+  "seconds": {
+   "matting": 51.174050726,
+   "dinov3": 192.946556648,
+   "vae": 32.09659696,
+   "denoiser": 256.291356812,
+   "octree": 14.581956845,
+   "gaussian_decoder": 22.234032242
+  },
+  "handoff": "host",
+  "kind": "parity",
+  "status": "done",
+  "options": {
+   "preload": false,
+   "reserve_mb": 1000,
+   "mem_check": true,
+   "handoff": "host",
+   "matting": "bir",
+   "cpu_threads": 6,
+   "gpu_priority": "default",
+   "dis_floor": 8
+  },
+  "wall_s": 570.525111994,
+  "summary": "27 arrays"
+ },
+ "matting": {
+  "iou": 1.0,
+  "line": 0.95,
+  "pass": true,
+  "box_birefnet": [
+   1,
+   1,
+   1023,
+   1022
+  ],
+  "box_dis": [
+   1,
+   1,
+   1023,
+   1022
+  ],
+  "box_corner_diff_px": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "alpha_nonzero_birefnet": 436528,
+  "alpha_nonzero_dis": 436528,
+  "app_matting": "bir",
+  "alpha_pixels": 1048576,
+  "alpha_uint8_pixels_differing": 2543,
+  "alpha_uint8_max_abs_diff": 1
+ },
+ "dinov3 feature1": {
+  "cos": 0.9998931689268652,
+  "rel_l2": 0.014622484917450893,
+  "max_abs_diff": 1.2287020683288574,
+  "max_abs_ref": 28.996522903442383,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "vae moments (metered)": {
+  "cos": 0.9999739709642741,
+  "rel_l2": 0.007355420646403458,
+  "max_abs_diff": 0.10866880416870117,
+  "max_abs_ref": 7.709245681762695,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "vae latent tokens": {
+  "cos": 0.9999688311918887,
+  "rel_l2": 0.00806881258268303,
+  "max_abs_diff": 0.06223094463348389,
+  "max_abs_ref": 4.563530445098877,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 0 latent velocity": {
+  "cos": 0.9993042300375133,
+  "rel_l2": 0.03888653379507967,
+  "max_abs_diff": 0.5412137508392334,
+  "max_abs_ref": 10.335280418395996,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 0 camera (metered)": {
+  "cos": 0.9999738662909076,
+  "rel_l2": 0.007710546877449731,
+  "max_abs_diff": 0.02180546522140503,
+  "max_abs_ref": 2.4377634525299072,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 1 latent velocity": {
+  "cos": 0.9996599438452571,
+  "rel_l2": 0.026077029544105203,
+  "max_abs_diff": 0.611208438873291,
+  "max_abs_ref": 7.071547031402588,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 1 camera (metered)": {
+  "cos": 0.9999945470218407,
+  "rel_l2": 0.0033585587009216486,
+  "max_abs_diff": 0.008293986320495605,
+  "max_abs_ref": 2.331977367401123,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 2 latent velocity": {
+  "cos": 0.9997475780064166,
+  "rel_l2": 0.022936320734992653,
+  "max_abs_diff": 0.6725282669067383,
+  "max_abs_ref": 6.552692890167236,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 2 camera (metered)": {
+  "cos": 0.9999979788394141,
+  "rel_l2": 0.0024237735989536603,
+  "max_abs_diff": 0.00596928596496582,
+  "max_abs_ref": 2.201281785964966,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 3 latent velocity": {
+  "cos": 0.999772832823952,
+  "rel_l2": 0.022236971414843487,
+  "max_abs_diff": 0.5018838047981262,
+  "max_abs_ref": 6.584338188171387,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 3 camera (metered)": {
+  "cos": 0.9999919453436201,
+  "rel_l2": 0.006271831478099897,
+  "max_abs_diff": 0.013397693634033203,
+  "max_abs_ref": 2.032494306564331,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 4 latent velocity": {
+  "cos": 0.9996776825095035,
+  "rel_l2": 0.02582138446199961,
+  "max_abs_diff": 0.5362120270729065,
+  "max_abs_ref": 7.268375396728516,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 4 camera (metered)": {
+  "cos": 0.9999539714860103,
+  "rel_l2": 0.011765196239998669,
+  "max_abs_diff": 0.022228240966796875,
+  "max_abs_ref": 2.410900115966797,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "octree level 1 probs": {
+  "cos": 0.9999924942821264,
+  "rel_l2": 0.004119970063017869,
+  "max_abs_diff": 0.0011787738279515625,
+  "max_abs_ref": 0.22068336606025696,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 2 probs": {
+  "cos": 0.9999416870218497,
+  "rel_l2": 0.010807398182454433,
+  "max_abs_diff": 0.009731320899898033,
+  "max_abs_ref": 0.44136491417884827,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 3 probs": {
+  "cos": 0.9998695264080213,
+  "rel_l2": 0.016176571247704278,
+  "max_abs_diff": 0.030345404825037114,
+  "max_abs_ref": 0.9708437919616699,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 4 probs": {
+  "cos": 0.9999086250185975,
+  "rel_l2": 0.013518198229877274,
+  "max_abs_diff": 0.023449638399492434,
+  "max_abs_ref": 0.9997100234031677,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 5 probs": {
+  "cos": 0.9998771557981487,
+  "rel_l2": 0.015674575901371827,
+  "max_abs_diff": 0.04118369836502822,
+  "max_abs_ref": 0.9999867677688599,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 6 probs": {
+  "cos": 0.9996818652060101,
+  "rel_l2": 0.0252611950243132,
+  "max_abs_diff": 0.05799693644542403,
+  "max_abs_ref": 0.9923180341720581,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 7 probs": {
+  "cos": 0.9996218901379048,
+  "rel_l2": 0.02751494802805116,
+  "max_abs_diff": 0.062018791251314986,
+  "max_abs_ref": 0.9994854927062988,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 8 probs": {
+  "cos": 0.9994505624211121,
+  "rel_l2": 0.03320187182738203,
+  "max_abs_diff": 0.06686888031824698,
+  "max_abs_ref": 0.9663779735565186,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussian features (metered)": {
+  "cos": 0.9998824666556944,
+  "rel_l2": 0.01534277791181214,
+  "max_abs_diff": 6.729060649871826,
+  "max_abs_ref": 30.263853073120117,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "gaussians xyz": {
+  "cos": 0.9999990871480491,
+  "rel_l2": 0.0013516545870959375,
+  "max_abs_diff": 0.03206753730773926,
+  "max_abs_ref": 0.4421929121017456,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians features_dc": {
+  "cos": 0.9998836593757685,
+  "rel_l2": 0.015327261262028597,
+  "max_abs_diff": 0.9424501261673868,
+  "max_abs_ref": 2.818769693374634,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians scaling": {
+  "cos": 0.9996296719774607,
+  "rel_l2": 0.0274353587556379,
+  "max_abs_diff": 0.015484786592423916,
+  "max_abs_ref": 0.19218148291110992,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians rotation": {
+  "cos": 0.9993890234129094,
+  "rel_l2": 0.034956446824781155,
+  "max_abs_diff": 1.4648497104644775,
+  "max_abs_ref": 0.9999996423721313,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians opacity": {
+  "cos": 0.9999813208620865,
+  "rel_l2": 0.006174023641263438,
+  "max_abs_diff": 0.32125258445739746,
+  "max_abs_ref": 1.0,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "all_pass": true
+}

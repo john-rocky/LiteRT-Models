@@ -1,0 +1,112 @@
+gpu at 2026-11-09 19:43:17: powervr (the ready gate's GPU level: gpu_cooling)
+  props: egl=powervr vulkan=powervr platform=malibu soc=Tensor G6
+  readable devfreq/34f00000.gpu0/cur_freq
+  devfreq/34f00000.gpu0/max_freq: Permission denied
+  devfreq/34f00000.gpu0/min_freq: Permission denied
+  devfreq/34f00000.gpu0/governor: Permission denied
+  readable devfreq/34f00000.gpu0/available_frequencies
+  readable devfreq/34f00000.gpu0/trans_stat
+  devfreq/codec3p_clamp/cur_freq: Permission denied
+  devfreq/codec3p_clamp/max_freq: Permission denied
+  devfreq/codec3p_clamp/min_freq: Permission denied
+  devfreq/codec3p_clamp/governor: Permission denied
+  devfreq/codec3p_clamp/available_frequencies: Permission denied
+  devfreq/codec3p_clamp/trans_stat: Permission denied
+  devfreq/cpuacc_clamp/cur_freq: Permission denied
+  devfreq/cpuacc_clamp/max_freq: Permission denied
+  devfreq/cpuacc_clamp/min_freq: Permission denied
+  devfreq/cpuacc_clamp/governor: Permission denied
+  devfreq/cpuacc_clamp/available_frequencies: Permission denied
+  devfreq/cpuacc_clamp/trans_stat: Permission denied
+  devfreq/dpu_clamp/cur_freq: Permission denied
+  devfreq/dpu_clamp/max_freq: Permission denied
+  devfreq/dpu_clamp/min_freq: Permission denied
+  devfreq/dpu_clamp/governor: Permission denied
+  devfreq/dpu_clamp/available_frequencies: Permission denied
+  devfreq/dpu_clamp/trans_stat: Permission denied
+  devfreq/dsu_target/cur_freq: Permission denied
+  devfreq/dsu_target/max_freq: Permission denied
+  devfreq/dsu_target/min_freq: Permission denied
+  devfreq/dsu_target/governor: Permission denied
+  devfreq/dsu_target/available_frequencies: Permission denied
+  devfreq/dsu_target/trans_stat: Permission denied
+  devfreq/fabdisp_clamp/cur_freq: Permission denied
+  devfreq/fabdisp_clamp/max_freq: Permission denied
+  devfreq/fabdisp_clamp/min_freq: Permission denied
+  devfreq/fabdisp_clamp/governor: Permission denied
+  devfreq/fabdisp_clamp/available_frequencies: Permission denied
+  devfreq/fabdisp_clamp/trans_stat: Permission denied
+  devfreq/fabhbw_clamp/cur_freq: Permission denied
+  devfreq/fabhbw_clamp/max_freq: Permission denied
+  devfreq/fabhbw_clamp/min_freq: Permission denied
+  devfreq/fabhbw_clamp/governor: Permission denied
+  devfreq/fabhbw_clamp/available_frequencies: Permission denied
+  devfreq/fabhbw_clamp/trans_stat: Permission denied
+  devfreq/fabmed_clamp/cur_freq: Permission denied
+  devfreq/fabmed_clamp/max_freq: Permission denied
+  devfreq/fabmed_clamp/min_freq: Permission denied
+  devfreq/fabmed_clamp/governor: Permission denied
+  devfreq/fabmed_clamp/available_frequencies: Permission denied
+  devfreq/fabmed_clamp/trans_stat: Permission denied
+  devfreq/fabstby_clamp/cur_freq: Permission denied
+  devfreq/fabstby_clamp/max_freq: Permission denied
+  devfreq/fabstby_clamp/min_freq: Permission denied
+  devfreq/fabstby_clamp/governor: Permission denied
+  devfreq/fabstby_clamp/available_frequencies: Permission denied
+  devfreq/fabstby_clamp/trans_stat: Permission denied
+  devfreq/fabsyss_clamp/cur_freq: Permission denied
+  devfreq/fabsyss_clamp/max_freq: Permission denied
+  devfreq/fabsyss_clamp/min_freq: Permission denied
+  devfreq/fabsyss_clamp/governor: Permission denied
+  devfreq/fabsyss_clamp/available_frequencies: Permission denied
+  devfreq/fabsyss_clamp/trans_stat: Permission denied
+  devfreq/g2d_clamp/cur_freq: Permission denied
+  devfreq/g2d_clamp/max_freq: Permission denied
+  devfreq/g2d_clamp/min_freq: Permission denied
+  devfreq/g2d_clamp/governor: Permission denied
+  devfreq/g2d_clamp/available_frequencies: Permission denied
+  devfreq/g2d_clamp/trans_stat: Permission denied
+  devfreq/gcv_clamp/cur_freq: Permission denied
+  devfreq/gcv_clamp/max_freq: Permission denied
+  devfreq/gcv_clamp/min_freq: Permission denied
+  devfreq/gcv_clamp/governor: Permission denied
+  devfreq/gcv_clamp/available_frequencies: Permission denied
+  devfreq/gcv_clamp/trans_stat: Permission denied
+  devfreq/gmc_clamp/cur_freq: Permission denied
+  devfreq/gmc_clamp/max_freq: Permission denied
+  devfreq/gmc_clamp/min_freq: Permission denied
+  devfreq/gmc_clamp/governor: Permission denied
+  devfreq/gmc_clamp/available_frequencies: Permission denied
+  devfreq/gmc_clamp/trans_stat: Permission denied
+  devfreq/irm_gmc_freq/cur_freq: Permission denied
+  devfreq/irm_gmc_freq/max_freq: Permission denied
+  devfreq/irm_gmc_freq/min_freq: Permission denied
+  devfreq/irm_gmc_freq/governor: Permission denied
+  devfreq/irm_gmc_freq/available_frequencies: Permission denied
+  devfreq/irm_gmc_freq/trans_stat: Permission denied
+  devfreq/ispbe_clamp/cur_freq: Permission denied
+  devfreq/ispbe_clamp/max_freq: Permission denied
+  devfreq/ispbe_clamp/min_freq: Permission denied
+  devfreq/ispbe_clamp/governor: Permission denied
+  devfreq/ispbe_clamp/available_frequencies: Permission denied
+  devfreq/ispbe_clamp/trans_stat: Permission denied
+  devfreq/ispfe_clamp/cur_freq: Permission denied
+  devfreq/ispfe_clamp/max_freq: Permission denied
+  devfreq/ispfe_clamp/min_freq: Permission denied
+  devfreq/ispfe_clamp/governor: Permission denied
+  devfreq/ispfe_clamp/available_frequencies: Permission denied
+  devfreq/ispfe_clamp/trans_stat: Permission denied
+  devfreq/memss_clamp/cur_freq: Permission denied
+  devfreq/memss_clamp/max_freq: Permission denied
+  devfreq/memss_clamp/min_freq: Permission denied
+  devfreq/memss_clamp/governor: Permission denied
+  devfreq/memss_clamp/available_frequencies: Permission denied
+  devfreq/memss_clamp/trans_stat: Permission denied
+  ls /sys/kernel/gpu: ls: /sys/kernel/gpu: No such file or directory 
+  ls /proc/pvr: ls: /proc/pvr: Permission denied 
+  ls /sys/kernel/debug/pvr: ls: /sys/kernel/debug/pvr: No such file or directory 
+  ls /sys/module/pvrsrvkm/parameters: AutoVzGPUPowerdown DebugDumpFWTLogType DevMemFWHeapPolicy DisableClockGating DisableDMOverlap DriverMode EmuMaxFreq EnableCrossDMPause EnableFWContextSwitch EnableFullSyncTracking EnablePageFaultDebug EnableRDPowerIsland 
+  dumpsys gpu --gpumem: Memory snapshot for GPU 0: Global total: 493879296 Proc 894 total: 1032192 Proc 1010 total: 188092416 
+  GPU_DEVFREQ: 34f00000.gpu0
+  GPU_FREQS: 150000000 300000000 460000000 499000000 556000000 614000000 691000000 748000000 825000000 883000000 940000000 1017000000 1094000000 1190000000 1286000000
+cooling: hal (the thermal service's cooling-device list; the CPU / GPU devices by mType 2 / 3)

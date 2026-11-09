@@ -1,0 +1,16 @@
+=== transfer check 2026-11-09 19:43:24
+host adb processes:
+  none
+phone:
+661561.22 3528803.19
+/dev/block/dm-30 462G  73G  389G  16% /data/user/0
+    6  7-15:46:02 00:00:00 [kworker/R-sync_wq]
+  900  7-15:45:46 00:00:00 android.hardware.gatekeeper-service.trusty
+ 1182  7-15:45:46 00:01:23 installd
+ 1205  7-15:45:46 00:00:00 gatekeeperd
+ 1245  7-15:45:46 00:00:00 [kworker/R-mtk_rx_push_01000]
+ 1248  7-15:45:46 00:00:00 [kworker/R-mtk_rx_push_01000]
+ 2298  7-15:45:40 00:00:04 com.google.pixel.digitalkey.timesync
+top resumed:     topResumedActivity=ActivityRecord{251408908 u0 com.android.settings/.SubSettings t867}
+our stage before setup: ls: /data/local/tmp/idol_p2p: No such file or directory
+CPU TIME grown in 5 s (>= 2 s):

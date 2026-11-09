@@ -1,0 +1,24 @@
+2026-11-09 19:43:47 dj_acc: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11720436 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:44:13 dj_f16: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11684972 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:44:39 gs_acc: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11689300 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:45:10 gs_f16: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11616184 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:45:47 dj01_acc: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11641800 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:46:13 djm_acc: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11664940 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:46:39 dj_wo8: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11645852 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:46:51 dj_dyn8: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11697792 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:47:04 gs_wo8: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11670732 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:47:14 gs_dyn8: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11702732 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:47:29 dj_f16b: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11678500 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app
+2026-11-09 19:48:00 dj_accb: front com.android.settings/.SubSettings (system app; the launcher is com.google.android.apps.nexuslauncher); MemAvailable 11673220 kB, the GPU memory not read (GPU powervr)
+  left alone: a system app

@@ -1,0 +1,12 @@
+libLiteRt.so: OK
+libLiteRtClGlAccelerator.so: OK
+libLiteRtCompilerPlugin_Qualcomm.so: OK
+libLiteRtDispatch_Qualcomm.so: OK
+libQnnHtp.so: OK
+libQnnHtpPrepare.so: OK
+libQnnHtpV81CalculatorStub.so: OK
+libQnnHtpV81Skel.so: OK
+libQnnHtpV81Stub.so: OK
+libQnnIr.so: OK
+libQnnSaver.so: OK
+libQnnSystem.so: OK

@@ -1,0 +1,43 @@
+{
+ "image": "/Users/majimadaisuke/code/idol_work/inputs/nb-armchair.webp",
+ "mode": "synthetic",
+ "seed": 7,
+ "steps": 5,
+ "turbo": true,
+ "cfg": 0.0,
+ "rescale_t": 3.0,
+ "num_gaussians": 262144,
+ "encode_size": 512,
+ "device": "cpu",
+ "native": false,
+ "box": [
+  1,
+  1,
+  1023,
+  1022
+ ],
+ "camera": {
+  "yaw": 0.7414639024671245,
+  "pitch": 0.16101287414393436,
+  "radius": 1000.0,
+  "fov": 0.10270823180080299
+ },
+ "glue_ply_bytes_equal": true,
+ "octree_rows": [
+  1,
+  8,
+  56,
+  299,
+  1462,
+  4830,
+  7739,
+  8171
+ ],
+ "seconds": {
+  "load": 33.0,
+  "encode": 1.3,
+  "sample": 47.1,
+  "octree": 3.3,
+  "gaussians": 7.7
+ }
+}

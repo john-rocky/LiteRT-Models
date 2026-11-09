@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/axolotl/gaussian.ply",
+  "/Users/majimadaisuke/code/idol_work/probe_r2/anchors2048/axolotl/gaussian.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 40.07583552076746,
+ "mse": 9.826897992828969e-05,
+ "psnr_per_view_db": [
+  41.19792436730886,
+  37.743971138928714,
+  41.86650719292657,
+  40.75705165477771
+ ]
+}

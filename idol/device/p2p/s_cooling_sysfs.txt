@@ -1,0 +1,2 @@
+/sys/class/thermal/cooling_device* at 2026-11-09 19:43:24 (dir type cur_state/max_state):
+cooling_device* cat: /sys/class/thermal/cooling_device*/type: Permission denied cat: /sys/class/thermal/cooling_device*/cur_state: Permission denied/cat: /sys/class/thermal/cooling_device*/max_state: Permission denied

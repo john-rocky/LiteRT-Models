@@ -1,0 +1,39 @@
+{
+ "box": [
+  -87,
+  -45,
+  1107,
+  1150
+ ],
+ "times": {
+  "preprocess": 7.44,
+  "dinov3": 14.42,
+  "vae": 1.82,
+  "denoiser": 21.93,
+  "octree": 2.84,
+  "gaussian_decoder": 1.41,
+  "ply": 0.48,
+  "generate_total": 43.11,
+  "all": 52.31
+ },
+ "box_reference": [
+  -87,
+  -45,
+  1107,
+  1150
+ ],
+ "tag": "succulent",
+ "psnr_db": 34.85009016824301,
+ "psnr_per_view_db": [
+  34.04719191767957,
+  34.885143173100495,
+  35.03161836178526,
+  35.57685555842849
+ ],
+ "line_db": 25.0,
+ "matting": "birefnet",
+ "dis_alpha_floor": null,
+ "pass_": true,
+ "precision": "metal default (fp16)",
+ "models": "/Users/majimadaisuke/code/idol_work/models_H"
+}

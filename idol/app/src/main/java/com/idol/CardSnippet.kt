@@ -23,7 +23,7 @@ fun cardSnippet(dir: File, image: FloatArray): String {
     for (b in inputs + outputs) b.close()
     bir.close()
     val gpu = CompiledModel.Options(Accelerator.GPU).apply {   // every other graph
-        gpuOptions = CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP16_WITH_FP32_ACCUM)
+        gpuOptions = CompiledModel.GpuOptions(precision = CompiledModel.GpuOptions.Precision.FP16)
     }
     // ---- end of the card's block
     runCatching { env.close() }

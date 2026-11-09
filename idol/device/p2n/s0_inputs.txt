@@ -1,0 +1,8 @@
+plan: /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/plan_p2n.tsv
+dj_npuo2                   npu+cpu  -     den_joint_00       g1_den_joint_00    1   1   5  000 new:cache_djo2            900 gate      rest=5 args=--qnn-toml,optimization_level=1
+dj_npuo2c                  npu+cpu  -     den_joint_00       g1_den_joint_00    1   1   5  000 use:cache_djo2            300 gate      rest=5 needs=dj_npuo2 args=--qnn-toml,optimization_level=1
+inputs (sha256):
+  37e269459ef1325b… 56134468 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_00.tflite
+  runner 7e7539e5bd0c73ed… 3257376 B device/stage/r3_rt_runner
+  libs: 12/12 OK against /Users/majimadaisuke/code/litertlm-convert/phonon2_work/device/stage/libs/SHA256SUMS
+  g1_den_joint_00: 5 files, 50381056 B, concat sha256 8bffaa4cbf5d4b7d…

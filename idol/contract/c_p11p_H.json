@@ -1,0 +1,99 @@
+{
+ "where": "Pixel 11 Pro, the sample app, LiteRT 2.3.0; thermal status 0 at the start",
+ "run_dir": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/p11p/H/e2e_cool",
+ "runs_done": 1,
+ "runs_measured": 1,
+ "first_only": true,
+ "median_generate_s": 324.561323091,
+ "generate_s": [
+  324.561323091
+ ],
+ "total_s": [
+  342.617744866
+ ],
+ "median_total_s": 342.617744866,
+ "median_stage_s": {
+  "denoiser": 242.27267606,
+  "dinov3": 8.517553381,
+  "gaussian_decoder": 23.717992104,
+  "matting": 17.38040733,
+  "octree": 12.930792194,
+  "ply": 0.240457418,
+  "preprocess": 18.00889576,
+  "vae": 36.059438783
+ },
+ "compiles_in_run": [
+  {
+   "run": 0,
+   "count": 15,
+   "seconds": 75.19767734799998
+  }
+ ],
+ "thermal": [
+  {
+   "run": 0,
+   "start": 0,
+   "end": 2
+  }
+ ],
+ "warmup": {
+  "generate_s": 324.561323091,
+  "total_s": 342.617744866,
+  "stages": {
+   "matting": 17.38040733,
+   "preprocess": 18.00889576,
+   "dinov3": 8.517553381,
+   "vae": 36.059438783,
+   "denoiser": 242.27267606,
+   "octree": 12.930792194,
+   "gaussian_decoder": 23.717992104,
+   "ply": 0.240457418
+  }
+ },
+ "runs_not_done": [],
+ "per_run": [
+  {
+   "run": 0,
+   "warmup": true,
+   "total_s": 342.617744866,
+   "generate_s": 324.561323091,
+   "stages": {
+    "matting": 17.38040733,
+    "preprocess": 18.00889576,
+    "dinov3": 8.517553381,
+    "vae": 36.059438783,
+    "denoiser": 242.27267606,
+    "octree": 12.930792194,
+    "gaussian_decoder": 23.717992104,
+    "ply": 0.240457418
+   },
+   "compiles": {
+    "count": 15,
+    "seconds": 75.19767734799998
+   }
+  }
+ ],
+ "gaussians": 65536,
+ "handoff": "host",
+ "options": {
+  "preload": true,
+  "reserve_mb": 2500,
+  "mem_check": true,
+  "handoff": "host",
+  "matting": "bir",
+  "cpu_threads": 6,
+  "gpu_priority": "default",
+  "dis_floor": 8
+ },
+ "preload": {
+  "graphs": 6,
+  "seconds": 59.504251726999996
+ },
+ "device": {
+  "device": "Pixel 11 Pro",
+  "android_sdk": 37,
+  "litert": "2.3.0",
+  "mem_total_kb": 16030796,
+  "thermal": 0
+ }
+}

@@ -1,0 +1,182 @@
+{
+ "256": {
+  "rel_l2_vs_c512": 0.0,
+  "bytes": 341028,
+  "export_s": 11.1,
+  "scan": {
+   "ops": 2288,
+   "hist": {
+    "ABS": 4,
+    "ADD": 662,
+    "BATCH_MATMUL": 705,
+    "CONCATENATION": 3,
+    "COS": 1,
+    "DIV": 6,
+    "GELU": 1,
+    "LOGISTIC": 1,
+    "MAXIMUM": 6,
+    "MEAN": 7,
+    "MUL": 37,
+    "REDUCE_MAX": 4,
+    "RESHAPE": 30,
+    "RSQRT": 5,
+    "SIN": 1,
+    "SLICE": 709,
+    "SOFTMAX": 49,
+    "SUB": 5,
+    "TRANSPOSE": 52
+   },
+   "max_rank": 4,
+   "tensors_rank_gt4": 0,
+   "bmm_ranks": [
+    3,
+    4
+   ],
+   "bmm_first": [
+    [
+     [
+      1,
+      12294,
+      1024
+     ],
+     [
+      1024,
+      128
+     ]
+    ],
+    [
+     [
+      1,
+      12294,
+      1024
+     ],
+     [
+      1024,
+      128
+     ]
+    ]
+   ],
+   "bytes": 341028
+  }
+ },
+ "1024": {
+  "rel_l2_vs_c512": 0.0,
+  "bytes": 116436,
+  "export_s": 3.1,
+  "scan": {
+   "ops": 740,
+   "hist": {
+    "ABS": 4,
+    "ADD": 194,
+    "BATCH_MATMUL": 201,
+    "CONCATENATION": 3,
+    "COS": 1,
+    "DIV": 6,
+    "GELU": 1,
+    "LOGISTIC": 1,
+    "MAXIMUM": 6,
+    "MEAN": 7,
+    "MUL": 37,
+    "REDUCE_MAX": 4,
+    "RESHAPE": 30,
+    "RSQRT": 5,
+    "SIN": 1,
+    "SLICE": 205,
+    "SOFTMAX": 13,
+    "SUB": 5,
+    "TRANSPOSE": 16
+   },
+   "max_rank": 4,
+   "tensors_rank_gt4": 0,
+   "bmm_ranks": [
+    3,
+    4
+   ],
+   "bmm_first": [
+    [
+     [
+      1,
+      12294,
+      1024
+     ],
+     [
+      1024,
+      128
+     ]
+    ],
+    [
+     [
+      1,
+      12294,
+      1024
+     ],
+     [
+      1024,
+      128
+     ]
+    ]
+   ],
+   "bytes": 116436
+  }
+ },
+ "2048": {
+  "rel_l2_vs_c512": 0.0,
+  "bytes": 79836,
+  "export_s": 1.9,
+  "scan": {
+   "ops": 482,
+   "hist": {
+    "ABS": 4,
+    "ADD": 116,
+    "BATCH_MATMUL": 117,
+    "CONCATENATION": 3,
+    "COS": 1,
+    "DIV": 6,
+    "GELU": 1,
+    "LOGISTIC": 1,
+    "MAXIMUM": 6,
+    "MEAN": 7,
+    "MUL": 37,
+    "REDUCE_MAX": 4,
+    "RESHAPE": 30,
+    "RSQRT": 5,
+    "SIN": 1,
+    "SLICE": 121,
+    "SOFTMAX": 7,
+    "SUB": 5,
+    "TRANSPOSE": 10
+   },
+   "max_rank": 4,
+   "tensors_rank_gt4": 0,
+   "bmm_ranks": [
+    3,
+    4
+   ],
+   "bmm_first": [
+    [
+     [
+      1,
+      12294,
+      1024
+     ],
+     [
+      1024,
+      128
+     ]
+    ],
+    [
+     [
+      1,
+      12294,
+      1024
+     ],
+     [
+      1024,
+      128
+     ]
+    ]
+   ],
+   "bytes": 79836
+  }
+ }
+}

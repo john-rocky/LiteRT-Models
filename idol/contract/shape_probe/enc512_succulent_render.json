@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/succulent/gaussian.ply",
+  "/Users/majimadaisuke/code/idol_work/probe_r2/enc512/succulent/gaussian.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 22.884862248056734,
+ "mse": 0.005146521307778444,
+ "psnr_per_view_db": [
+  21.88586764446861,
+  23.19783546404958,
+  23.731093110704155,
+  22.9375619003703
+ ]
+}

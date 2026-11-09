@@ -1,0 +1,15 @@
+time: 2026-11-09 19:48:21
+uptime: 661858.23 3530549.70
+thermal: Thermal Status: 1
+skin: mValue=39.526302, mType=3, mName=VIRTUAL-SKIN
+hal_temps: mValue=54.000004, mType=1, mName=GPU;mValue=39.526302, mType=3, mName=VIRTUAL-SKIN;mValue=49.000004, mType=0, mName=MIDLL;mValue=39.526302, mType=5, mName=cellular-emergency;mValue=50.000004, mType=0, mName=MID;mValue=37.800003, mType=2, mName=battery;mValue=0.0, mType=4, mName=VIRTUAL-USB-UI;
+cooling: thermal-uclamp-2=7(type 2);cpufreq-cpu6=6048000(type 2);thermal-uclamp-6=12(type 2);cpufreq-cpu2=5332000(type 2);gpu=4031000(type 3);thermal-uclamp-0=11(type 2);cpufreq-cpu0=1340000(type 2);
+battery_temp: temperature:377
+battery_level: level:73
+screen: mWakefulness=Awake
+top:     topResumedActivity=ActivityRecord{251408908 u0 com.android.settings/.SubSettings t867}
+gpu: kind=powervr cur_freq=460000000 devfreq=34f00000.gpu0 gpu_cooling=4031000 gpu_temp=54.000004(GPU)
+freq (policy cur scaling_max cpuinfo_max): policy0 394000 2649000 2649000;policy2 394000 3379000 3379000;policy6 788000 4109000 4109000;
+freq_capped: none
+mem: MemAvailable:   11622708 kB
+data_free: /dev/block/dm-30 462G  74G  389G  16% /data/user/0

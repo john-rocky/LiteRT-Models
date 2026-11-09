@@ -1,0 +1,9 @@
+===== keeper for idol-p2p-p11p started by chain pid 83772 2026-11-09 19:43:15 (keeper.sh sha256 35d7e060ab207487; ON_RELEASE.sh 6e7d12284623c62a)
+keeper pid 89240 started 2026-11-09 19:43:15 hold=/Users/majimadaisuke/code/litertlm-convert/community_accel_work/s2_npu_sweep/.device_hold.pixel11pro name=idol-p2p-p11p hold_limit=1800s wait_limit=14400s on_release_max=120s
+line at start:
+  holder: none
+hold acquired: /Users/majimadaisuke/code/litertlm-convert/community_accel_work/s2_npu_sweep/.device_hold.pixel11pro (owner pid 89240) at 19:43:16
+HOLD ACQUIRED by pid 89240 at 2026-11-09 19:43:16; hold file: {"pid": 89240, "script": "idol-p2p-p11p", "device": "pixel11pro", "started": "2026-11-09 19:43:16", "job": {"groups": [83769], "ancestors": [[83772, 1794220985]]}}
+auto release at 20:13:16
+device hold removed
+HOLD RELEASED at 2026-11-09 19:48:28; hold file now: <absent>

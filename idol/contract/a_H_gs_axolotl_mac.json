@@ -1,0 +1,137 @@
+{
+ "models": "/Users/majimadaisuke/code/idol_work/models_H",
+ "ref": "/Users/majimadaisuke/code/idol_work/probe_r2/anchors2048/axolotl",
+ "accel": "gpu",
+ "precision": "metal default (fp16)",
+ "octree level 1 probs": {
+  "cos": 0.999997694471091,
+  "rel_l2": 0.002227821212950121,
+  "max_abs_diff": 0.0008267462253570557,
+  "max_abs_ref": 0.2981565296649933,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 2 probs": {
+  "cos": 0.9999948869153946,
+  "rel_l2": 0.003327249137423833,
+  "max_abs_diff": 0.00420689582824707,
+  "max_abs_ref": 0.951699435710907,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 3 probs": {
+  "cos": 0.9999785947927233,
+  "rel_l2": 0.0065549083420030725,
+  "max_abs_diff": 0.007451891899108887,
+  "max_abs_ref": 0.9999963045120239,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 4 probs": {
+  "cos": 0.9999388541518272,
+  "rel_l2": 0.011060167618290193,
+  "max_abs_diff": 0.03540452569723129,
+  "max_abs_ref": 0.9999970197677612,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 5 probs": {
+  "cos": 0.9999093061920107,
+  "rel_l2": 0.013494659874097861,
+  "max_abs_diff": 0.04228654503822327,
+  "max_abs_ref": 0.9997373223304749,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 6 probs": {
+  "cos": 0.9997394218591588,
+  "rel_l2": 0.022833475112171868,
+  "max_abs_diff": 0.05025473237037659,
+  "max_abs_ref": 0.9993742108345032,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 7 probs": {
+  "cos": 0.9995333464214673,
+  "rel_l2": 0.03054669029278779,
+  "max_abs_diff": 0.12218743562698364,
+  "max_abs_ref": 0.9989768266677856,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "octree level 8 probs": {
+  "cos": 0.9993662267452004,
+  "rel_l2": 0.03559738601445958,
+  "max_abs_diff": 0.1498902589082718,
+  "max_abs_ref": 0.9966984391212463,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussian features (metered)": {
+  "cos": 0.999669080291745,
+  "rel_l2": 0.02572533327462767,
+  "max_abs_diff": 6.9998743534088135,
+  "max_abs_ref": 30.383277893066406,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "gaussians xyz": {
+  "cos": 0.9999984400538141,
+  "rel_l2": 0.0017663210712686485,
+  "max_abs_diff": 0.028950601816177368,
+  "max_abs_ref": 0.5008554458618164,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians features_dc": {
+  "cos": 0.9998677680666948,
+  "rel_l2": 0.018382896244570023,
+  "max_abs_diff": 0.8035716712474823,
+  "max_abs_ref": 6.08543586730957,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians scaling": {
+  "cos": 0.9992494050948674,
+  "rel_l2": 0.04035196065382126,
+  "max_abs_diff": 0.0158987024333328,
+  "max_abs_ref": 0.19611966609954834,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians rotation": {
+  "cos": 0.9991921210858474,
+  "rel_l2": 0.040196490258489426,
+  "max_abs_diff": 1.7463083267211914,
+  "max_abs_ref": 0.9999921917915344,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "gaussians opacity": {
+  "cos": 0.9996916785059624,
+  "rel_l2": 0.025178415151475498,
+  "max_abs_diff": 0.4884359836578369,
+  "max_abs_ref": 1.0,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "all_pass": true,
+ "wall_s": 4.5,
+ "stage_s": {
+  "gaussian_decoder": 1.31
+ }
+}

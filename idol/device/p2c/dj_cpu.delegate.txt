@@ -1,0 +1,8 @@
+dj_cpu.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+dj_cpu.stderr.txt:VERBOSE: Replacing 1232 out of 1233 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 3 partitions for subgraph 0 (main).
+11-09 20:29:05.566 11332 11332 I litert  : [qnn_manager.cc:508] Configuring ADSP_LIBRARY_PATH with dir: /data/local/tmp/idol_p2c
+11-09 20:29:05.566 11332 11332 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2c/libQnnSystem.so"
+11-09 20:29:05.566 11332 11332 I litert  : [qnn_manager.cc:163] Loading qnn shared library from "/data/local/tmp/idol_p2c/libQnnHtp.so"
+11-09 20:29:05.567 11332 11332 I litert  : [qnn_manager.cc:200] Loaded qnn shared library
+11-09 20:29:05.567 11332 11332 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: 
+11-09 20:29:05.569 11332 11332 I tflite  : Replacing 1232 out of 1233 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 3 partitions for subgraph 0 (main).

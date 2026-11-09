@@ -1,0 +1,80 @@
+11-09 20:27:00.609  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.610  1034  1034 I lmkd    : Reclaim 'com.sec.android.provider.badge' (9857), uid 10057, oom_score_adj 975, state 19 to free 50956kB rss, 43768kB swap; reason: low watermark is breached or filecache is low (1347556kB).; level: 1
+11-09 20:27:00.616  1034  1041 I lowmemorykiller: Process 9857 was reaped in 8ms
+11-09 20:27:00.620  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.620  1034  1034 I lmkd    : Reclaim 'com.samsung.android.samsungpositioning' (10038), uid 5017, oom_score_adj 965, state 19 to free 56048kB rss, 45000kB swap; reason: low watermark is breached or filecache is low (1347564kB).; level: 1
+11-09 20:27:00.629  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.630  1034  1034 I lmkd    : Reclaim 'com.facebook.system' (10603), uid 10077, oom_score_adj 955, state 19 to free 52568kB rss, 47984kB swap; reason: low watermark is breached or filecache is low (1347564kB).; level: 1
+11-09 20:27:00.636  1034  1041 I lowmemorykiller: Process 10603 was reaped in 4ms
+11-09 20:27:00.640  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.640  1034  1034 I lmkd    : Reclaim 'com.samsung.android.scs' (10694), uid 10126, oom_score_adj 935, state 19 to free 54280kB rss, 42896kB swap; reason: low watermark is breached or filecache is low (1347572kB).; level: 1
+11-09 20:27:00.646  1034  1040 I lowmemorykiller: Process 10694 was reaped in 4ms
+11-09 20:27:00.649  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.649  1034  1034 I lmkd    : Reclaim 'com.samsung.android.moaiapc' (9719), uid 1000, oom_score_adj 915, state 10 to free 51320kB rss, 42784kB swap; reason: low watermark is breached or filecache is low (1348060kB).; level: 1
+11-09 20:27:00.658  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.658  1034  1034 I lmkd    : Reclaim 'com.android.externalstorage' (13382), uid 10076, oom_score_adj 905, state 19 to free 52532kB rss, 42724kB swap; reason: low watermark is breached or filecache is low (1348072kB).; level: 1
+11-09 20:27:00.663  1034  1040 I lowmemorykiller: Process 13382 was reaped in 4ms
+11-09 20:27:00.666  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.666  1034  1034 I lmkd    : Reclaim 'com.sec.android.CcInfo' (11363), uid 1000, oom_score_adj 905, state 19 to free 50772kB rss, 42968kB swap; reason: low watermark is breached or filecache is low (1348072kB).; level: 1
+11-09 20:27:00.672  1034  1041 I lowmemorykiller: Process 11363 was reaped in 4ms
+11-09 20:27:00.674  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.674  1034  1034 I lmkd    : Reclaim 'com.samsung.faceservice' (14375), uid 5004, oom_score_adj 905, state 19 to free 60416kB rss, 46828kB swap; reason: low watermark is breached or filecache is low (1348072kB).; level: 1
+11-09 20:27:00.680  1034  1040 I lowmemorykiller: Process 14375 was reaped in 8ms
+11-09 20:27:00.683  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.683  1034  1034 I lmkd    : Reclaim 'com.google.android.aicore' (14325), uid 10252, oom_score_adj 905, state 19 to free 67724kB rss, 42344kB swap; reason: low watermark is breached or filecache is low (1348104kB).; level: 1
+11-09 20:27:00.690  1034  1041 I lowmemorykiller: Process 14325 was reaped in 8ms
+11-09 20:27:00.692  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.692  1034  1034 I lmkd    : Reclaim 'com.samsung.videoscan' (14474), uid 10157, oom_score_adj 905, state 19 to free 57768kB rss, 47096kB swap; reason: low watermark is breached or filecache is low (1348112kB).; level: 1
+11-09 20:27:00.698  1034  1040 I lowmemorykiller: Process 14474 was reaped in 4ms
+11-09 20:27:00.701  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.701  1034  1034 I lmkd    : Reclaim 'com.samsung.mfcontents' (14507), uid 10096, oom_score_adj 905, state 19 to free 56512kB rss, 47464kB swap; reason: low watermark is breached or filecache is low (1348120kB).; level: 1
+11-09 20:27:00.709  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.709  1034  1034 I lmkd    : Reclaim 'com.facebook.appmanager' (10511), uid 10182, oom_score_adj 905, state 19 to free 68964kB rss, 50540kB swap; reason: low watermark is breached or filecache is low (1348400kB).; level: 1
+11-09 20:27:00.717  1034  1040 I lowmemorykiller: Process 10511 was reaped in 8ms
+11-09 20:27:00.720  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.720  1034  1034 I lmkd    : Reclaim 'com.google.android.apps.turbo:aab' (14326), uid 10271, oom_score_adj 905, state 19 to free 68960kB rss, 53996kB swap; reason: low watermark is breached or filecache is low (1348400kB).; level: 1
+11-09 20:27:00.732  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.732  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.moments' (14614), uid 10104, oom_score_adj 905, state 19 to free 73616kB rss, 44608kB swap; reason: low watermark is breached or filecache is low (1348424kB).; level: 1
+11-09 20:27:00.740  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.740  1034  1034 I lmkd    : Reclaim 'com.google.android.partnersetup' (14590), uid 10263, oom_score_adj 905, state 19 to free 59344kB rss, 48876kB swap; reason: low watermark is breached or filecache is low (1348432kB).; level: 1
+11-09 20:27:00.742  2824  2979 I ActivityManager_kpm: calculateLmkdStatus pid[14614] but don't get process info
+11-09 20:27:00.750  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.750  1034  1034 I lmkd    : Reclaim 'com.android.chrome' (14678), uid 10274, oom_score_adj 905, state 19 to free 61272kB rss, 54740kB swap; reason: low watermark is breached or filecache is low (1348428kB).; level: 1
+11-09 20:27:00.759  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.760  1034  1034 I lmkd    : Reclaim 'com.google.android.gm' (11100), uid 10277, oom_score_adj 905, state 19 to free 81816kB rss, 77572kB swap; reason: low watermark is breached or filecache is low (1348428kB).; level: 1
+11-09 20:27:00.777  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.778  1034  1034 I lmkd    : Reclaim 'com.samsung.mediasearch' (14386), uid 10098, oom_score_adj 905, state 19 to free 61972kB rss, 43212kB swap; reason: low watermark is breached or filecache is low (1348404kB).; level: 1
+11-09 20:27:00.786  1034  1040 I lowmemorykiller: Process 14386 was reaped in 8ms
+11-09 20:27:00.789  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.789  1034  1034 I lmkd    : Reclaim 'com.sec.android.widgetapp.easymodecontactswidget' (15029), uid 10181, oom_score_adj 905, state 19 to free 61816kB rss, 43148kB swap; reason: low watermark is breached or filecache is low (1348820kB).; level: 1
+11-09 20:27:00.798  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.798  1034  1034 I lmkd    : Reclaim 'com.samsung.cmh' (14363), uid 5004, oom_score_adj 905, state 19 to free 69312kB rss, 42968kB swap; reason: low watermark is breached or filecache is low (1348816kB).; level: 1
+11-09 20:27:00.806  1034  1040 I lowmemorykiller: Process 14363 was reaped in 8ms
+11-09 20:27:00.808  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.808  1034  1034 I lmkd    : Reclaim 'com.samsung.android.callassistant' (15187), uid 10064, oom_score_adj 905, state 19 to free 72660kB rss, 43476kB swap; reason: low watermark is breached or filecache is low (1348792kB).; level: 1
+11-09 20:27:00.815  1034  1041 I lowmemorykiller: Process 15187 was reaped in 4ms
+11-09 20:27:00.818  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.818  1034  1034 I lmkd    : Reclaim 'com.sec.android.gallery3d' (15159), uid 10129, oom_score_adj 905, state 19 to free 83624kB rss, 59116kB swap; reason: low watermark is breached or filecache is low (1348780kB).; level: 1
+11-09 20:27:00.829  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.829  1034  1034 I lmkd    : Reclaim 'com.samsung.android.scloud' (15360), uid 5009, oom_score_adj 905, state 19 to free 133704kB rss, 67052kB swap; reason: low watermark is breached or filecache is low (1348776kB).; level: 1
+11-09 20:27:00.843  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.843  1034  1034 I lmkd    : Reclaim 'com.sec.android.app.voicenote' (15136), uid 10339, oom_score_adj 905, state 19 to free 68324kB rss, 57836kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 20:27:00.851  1034  1040 I lowmemorykiller: Process 15136 was reaped in 8ms
+11-09 20:27:00.854  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.854  1034  1034 I lmkd    : Reclaim 'com.samsung.android.ssco' (10692), uid 10328, oom_score_adj 905, state 19 to free 49680kB rss, 43500kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 20:27:00.860  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.860  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.notes' (15200), uid 10350, oom_score_adj 905, state 19 to free 73744kB rss, 52548kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 20:27:00.869  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.869  1034  1034 I lmkd    : Reclaim 'com.samsung.android.app.contacts' (15539), uid 10125, oom_score_adj 905, state 19 to free 85532kB rss, 48436kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 20:27:00.876  1034  1041 I lowmemorykiller: Process 15539 was reaped in 4ms
+11-09 20:27:00.879  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.879  1034  1034 I lmkd    : Reclaim 'com.samsung.android.scpm' (15411), uid 5009, oom_score_adj 905, state 19 to free 72760kB rss, 43484kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 20:27:00.886  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.886  1034  1034 I lmkd    : Reclaim 'com.samsung.android.smartface' (16026), uid 1000, oom_score_adj 905, state 19 to free 70760kB rss, 43356kB swap; reason: low watermark is breached or filecache is low (1351764kB).; level: 1
+11-09 20:27:00.893  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.893  1034  1034 I lmkd    : Reclaim 'com.google.android.googlequicksearchbox:search' (14328), uid 10272, oom_score_adj 905, state 19 to free 110700kB rss, 47856kB swap; reason: low watermark is breached or filecache is low (1351764kB).; level: 1
+11-09 20:27:00.905  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.905  1034  1034 I lmkd    : Reclaim 'com.samsung.android.dqagent' (11382), uid 1000, oom_score_adj 905, state 19 to free 61596kB rss, 42332kB swap; reason: low watermark is breached or filecache is low (1351828kB).; level: 1
+11-09 20:27:00.911  1034  1041 I lowmemorykiller: Process 11382 was reaped in 4ms
+11-09 20:27:00.914  1034  1034 I lmkd    : cached 0, sandbox(not0) 0
+11-09 20:27:00.914  1034  1034 I lmkd    : Reclaim 'com.samsung.android.calendar' (28946), uid 10338, oom_score_adj 905, state 19 to free 71804kB rss, 51568kB swap; reason: low watermark is breached or filecache is low (1351912kB).; level: 1

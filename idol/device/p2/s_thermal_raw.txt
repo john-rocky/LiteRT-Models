@@ -1,0 +1,34 @@
+dumpsys thermalservice at 2026-11-09 20:03:47:
+IsStatusOverride: false
+ThermalEventListeners:
+	callbacks: 3
+	killed: false
+	broadcasts count: -1
+ThermalStatusListeners:
+	callbacks: 4
+	killed: false
+	broadcasts count: -1
+Thermal Status: 0
+Cached temperatures:
+	Temperature{mValue=0.0, mType=2, mName=SUBBAT, mStatus=0}
+	Temperature{mValue=54.9, mType=0, mName=AP, mStatus=0}
+	Temperature{mValue=53.7, mType=5, mName=PA, mStatus=0}
+	Temperature{mValue=42.8, mType=2, mName=BAT, mStatus=0}
+	Temperature{mValue=36.7, mType=4, mName=USB, mStatus=0}
+	Temperature{mValue=37.9, mType=3, mName=SKIN, mStatus=0}
+HAL Ready: true
+HAL connection:
+	ThermalHAL AIDL 3  connected: yes
+Current temperatures from HAL:
+	Temperature{mValue=38.3, mType=0, mName=AP, mStatus=0}
+	Temperature{mValue=37.1, mType=2, mName=BAT, mStatus=0}
+	Temperature{mValue=38.2, mType=5, mName=PA, mStatus=0}
+	Temperature{mValue=37.4, mType=3, mName=SKIN, mStatus=0}
+	Temperature{mValue=0.0, mType=2, mName=SUBBAT, mStatus=0}
+	Temperature{mValue=36.1, mType=4, mName=USB, mStatus=0}
+Current cooling devices from HAL:
+Temperature static thresholds from HAL:
+	TemperatureThreshold{mType=2, mName=BAT, mHotThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, 55.0, 85.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}
+	TemperatureThreshold{mType=3, mName=SKIN, mHotThrottlingThresholds=[38.0, 40.0, 42.0, 45.0, 47.0, 60.0, 90.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}
+Temperature headroom thresholds:
+[NaN, 0.8333333, 0.9, 1.0, 1.0666667, 1.5, 2.5]

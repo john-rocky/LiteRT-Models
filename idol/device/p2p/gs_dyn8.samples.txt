@@ -1,0 +1,48 @@
+=== 19:47:18 n=0
+devtime 1794221237
+gpu powervr 460000000
+cpu policy0 1036000 2649000 2649000
+cpu policy2 394000 3379000 3379000
+cpu policy6 788000 4109000 4109000
+MemFree:         8558980 kB
+MemAvailable:   11670824 kB
+SwapFree:        6574316 kB
+pid 18461
+VmHWM:	   85396 kB
+VmRSS:	   85396 kB
+VmSwap:	       0 kB
+Thermal Status: 1
+mValue=40.020924, mType=3, mName=VIRTUAL-SKIN
+cooling thermal-uclamp-2 11 type=2
+cooling cpufreq-cpu6 6048000 type=2
+cooling thermal-uclamp-6 15 type=2
+cooling cpufreq-cpu2 5332000 type=2
+cooling gpu 4614000 type=3
+cooling thermal-uclamp-0 14 type=2
+cooling cpufreq-cpu0 1340000 type=2
+mValue=40.0, mType=1, mName=GPU
+  temperature: 374
+mWakefulness=Awake
+=== 19:47:20 n=1
+devtime 1794221240
+gpu powervr 460000000
+cpu policy0 394000 2649000 2649000
+cpu policy2 394000 3379000 3379000
+cpu policy6 1555000 4109000 4109000
+MemFree:         8467768 kB
+MemAvailable:   11579660 kB
+SwapFree:        6574316 kB
+pid 18461
+VmHWM:	  216928 kB
+VmRSS:	  209348 kB
+VmSwap:	       0 kB
+=== 19:47:23 n=2
+devtime 1794221243
+gpu powervr 460000000
+cpu policy0 533000 2649000 2649000
+cpu policy2 394000 3379000 3379000
+cpu policy6 788000 4109000 4109000
+MemFree:         8571376 kB
+MemAvailable:   11683276 kB
+SwapFree:        6574316 kB
+pid 

@@ -1,0 +1,27 @@
+{
+ "ply": [
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/armchair/gaussian.ply",
+  "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/contract/standin_a2048/armchair/gaussian.ply"
+ ],
+ "cameras": {
+  "azimuth_deg": [
+   0.0,
+   90.0,
+   180.0,
+   270.0
+  ],
+  "elevation_deg": 20.0,
+  "distance": 2.2,
+  "fov_y_deg": 40.0,
+  "size": 512
+ },
+ "renderer": "gsplat 1.5.3 _torch_impl",
+ "psnr_db": 34.97589818395314,
+ "mse": 0.00031798759758655716,
+ "psnr_per_view_db": [
+  34.13449700811605,
+  37.12264492048697,
+  33.339443521431,
+  36.41101343347921
+ ]
+}

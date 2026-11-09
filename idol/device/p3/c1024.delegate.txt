@@ -1,0 +1,2 @@
+c1024.stderr.txt:VERBOSE: Replacing 740 out of 740 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 21:46:30.439 30672 30672 I tflite  : Replacing 740 out of 740 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).

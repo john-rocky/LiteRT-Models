@@ -1,0 +1,1392 @@
+--------- beginning of system
+11-09 19:50:34.510 I/ActivityManager( 2824): Changes in 10076 15 to 5, 256 to 400
+11-09 19:50:36.448 I/ActivityManager( 2824): Start proc 9226:com.google.android.photopicker/u0a312 for next-top-activity {com.google.android.photopicker/com.android.photopicker.MainActivity}
+11-09 19:50:36.463 I/ActivityManager( 2824): Changes in 10312 20 to 2, 0 to 511
+11-09 19:50:36.521 I/ActivityManager( 2824): Changes in 10283 19 to 5, 0 to 400
+11-09 19:50:36.805 I/ActivityManager( 2824): Start proc 9334:com.samsung.android.dqagent/1000 for broadcast {com.samsung.android.dqagent/com.samsung.android.dqagent.receiver.DQADataReceiver}
+11-09 19:50:38.128 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:50:38.129 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+--------- beginning of main
+11-09 19:50:38.366 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:50:38.366 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:50:38.366 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:50:38.419 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:50:38.422 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:50:40.518 I/ActivityManager( 2824): Changes in 10076 5 to 15, 400 to 256
+11-09 19:50:42.925 I/ActivityManager( 2824): Changes in 10283 5 to 15, 400 to 256
+11-09 19:50:45.222 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:50:45.690 I/ActivityManager( 2824): Changes in 10312 2 to 19, 511 to 384
+11-09 19:50:45.799 I/ActivityManager( 2824): Changes in 10312 19 to 19, 384 to 0
+11-09 19:50:46.803 I/IdolGraphs(31373): memory: {"t_ms":2149378250,"event":"evict","graph":"gs_7","mem_available_kb":2869948,"resident":8,"need_kb":5623040,"for":"bir"}
+11-09 19:50:46.850 I/IdolGraphs(31373): memory: {"t_ms":2149378298,"event":"close","graph":"gs_7","mem_available_kb":3374332,"resident":7}
+11-09 19:50:46.851 I/IdolGraphs(31373): memory: {"t_ms":2149378298,"event":"evict","graph":"gs_0","mem_available_kb":3374332,"resident":7,"need_kb":5623040,"for":"bir"}
+11-09 19:50:46.892 I/IdolGraphs(31373): memory: {"t_ms":2149378340,"event":"close","graph":"gs_0","mem_available_kb":3895892,"resident":6}
+11-09 19:50:46.893 I/IdolGraphs(31373): memory: {"t_ms":2149378340,"event":"evict","graph":"den_joint_21","mem_available_kb":3895892,"resident":6,"need_kb":5623040,"for":"bir"}
+11-09 19:50:46.934 I/IdolGraphs(31373): memory: {"t_ms":2149378382,"event":"close","graph":"den_joint_21","mem_available_kb":4570792,"resident":5}
+11-09 19:50:46.934 I/IdolGraphs(31373): memory: {"t_ms":2149378382,"event":"evict","graph":"den_joint_20","mem_available_kb":4570792,"resident":5,"need_kb":5623040,"for":"bir"}
+11-09 19:50:46.968 I/IdolGraphs(31373): memory: {"t_ms":2149378416,"event":"close","graph":"den_joint_20","mem_available_kb":5248312,"resident":4}
+11-09 19:50:46.968 I/IdolGraphs(31373): memory: {"t_ms":2149378416,"event":"evict","graph":"den_joint_19","mem_available_kb":5248312,"resident":4,"need_kb":5623040,"for":"bir"}
+11-09 19:50:47.004 I/IdolGraphs(31373): memory: {"t_ms":2149378451,"event":"close","graph":"den_joint_19","mem_available_kb":5936008,"resident":3}
+11-09 19:50:48.392 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:50:48.393 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:50:48.638 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:50:48.638 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:50:48.638 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:50:48.690 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:50:48.692 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:50:48.961 I/IdolGraphs(31373): compiled bir in 1.96 s (cpu, fp32), MemAvailable 5796 -> 4198 MB, resident 4
+11-09 19:50:49.143 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:49.143 I/lmkd    ( 1034): Reclaim 'com.sec.spp.push' (21856), uid 10119, oom_score_adj 975, state 10 to free 47176kB rss, 44404kB swap; reason: low watermark is breached or filecache is low (856212kB).; level: 1
+11-09 19:50:49.152 I/ActivityManager( 2824): Process com.sec.spp.push (pid 21856) has died: cch+75 SVC (57,1263)
+11-09 19:50:49.152 W/ActivityManager( 2824): Scheduling restart of crashed service com.sec.spp.push/.PushClientService in 1000ms for start-requested
+11-09 19:50:49.156 I/lmkd    ( 1034): 1(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!
+11-09 19:50:49.156 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:49.156 I/lmkd    ( 1034): Reclaim 'com.samsung.android.moaiapc' (21979), uid 1000, oom_score_adj 965, state 10 to free 42980kB rss, 44044kB swap; reason: low watermark is breached or filecache is low (819528kB).; level: 1
+11-09 19:50:49.163 I/lowmemorykiller( 1034): Process 21979 was reaped in 4ms
+11-09 19:50:49.166 I/ActivityManager( 2824): Process com.samsung.android.moaiapc (pid 21979) has died: cch+65 SVC (58,1227)
+11-09 19:50:49.166 I/lmkd    ( 1034): Reclaim 'com.samsung.android.rubin.app' (22041), uid 10115, oom_score_adj 955, state 10 to free 53392kB rss, 53576kB swap; reason: low watermark is breached or filecache is low (796300kB).; level: 2
+11-09 19:50:49.166 W/ActivityManager( 2824): Scheduling restart of crashed service com.samsung.android.moaiapc/.SecGatheringService in 10986ms for start-requested
+11-09 19:50:49.176 I/lmkd    ( 1034): Reclaim 'com.facebook.services' (22149), uid 10078, oom_score_adj 945, state 10 to free 54660kB rss, 43316kB swap; reason: low watermark is breached or filecache is low (782404kB).; level: 2
+11-09 19:50:49.177 I/ActivityManager( 2824): Process com.samsung.android.rubin.app (pid 22041) has died: cch+55 SVC (44,1214)
+11-09 19:50:49.178 W/ActivityManager( 2824): Scheduling restart of crashed service com.samsung.android.rubin.app/com.samsung.android.rubin.controller.services.KeepAliveService in 20975ms for start-requested
+11-09 19:50:49.186 I/lmkd    ( 1034): Reclaim 'com.google.android.apps.messaging' (6501), uid 10267, oom_score_adj 935, state 19 to free 63696kB rss, 79576kB swap; reason: low watermark is breached or filecache is low (772296kB).; level: 2
+11-09 19:50:49.187 I/ActivityManager( 2824): Process com.facebook.services (pid 22149) has died: cch+45 SVC (33,1203)
+11-09 19:50:49.188 W/ActivityManager( 2824): Scheduling restart of crashed service com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService in 30965ms for start-requested
+11-09 19:50:49.207 I/lowmemorykiller( 1034): Process 6501 was reaped in 20ms
+11-09 19:50:49.211 I/ActivityManager( 2824): Process com.google.android.apps.messaging (pid 6501) has died: cch+35 CEM (17,1185)
+11-09 19:50:49.212 I/lmkd    ( 1034): Reclaim 'com.samsung.android.ce' (7821), uid 10095, oom_score_adj 925, state 19 to free 72056kB rss, 45552kB swap; reason: min2x watermark is breached even after kill; level: 2
+11-09 19:50:49.214 W/ActivityManager( 2824): Rescheduling restart of crashed service com.sec.spp.push/.PushClientService in 19938ms for mem-pressure-event
+11-09 19:50:49.214 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.moaiapc/.SecGatheringService in 49938ms for mem-pressure-event
+11-09 19:50:49.215 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.rubin.app/com.samsung.android.rubin.controller.services.KeepAliveService in 79938ms for mem-pressure-event
+11-09 19:50:49.215 W/ActivityManager( 2824): Rescheduling restart of crashed service com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService in 109938ms for mem-pressure-event
+11-09 19:50:49.225 I/ActivityManager( 2824): Process com.samsung.android.ce (pid 7821) has died: cch+25 CEM (35,1149)
+11-09 19:50:49.226 I/lmkd    ( 1034): Reclaim 'com.samsung.android.dqagent' (9334), uid 1000, oom_score_adj 915, state 19 to free 59316kB rss, 42344kB swap; reason: low watermark is breached or filecache is low (714068kB).; level: 2
+11-09 19:50:49.233 I/ActivityManager( 2824): Process com.samsung.android.dqagent (pid 9334) has died: cch+15 CEM (46,1113)
+11-09 19:50:49.234 I/lmkd    ( 1034): Reclaim 'com.google.android.photopicker' (9226), uid 10312, oom_score_adj 905, state 19 to free 98024kB rss, 33392kB swap; reason: low watermark is breached or filecache is low (678380kB).; level: 2
+11-09 19:50:49.243 I/ActivityManager( 2824): Process com.google.android.photopicker (pid 9226) has died: cch+5 CEM (76,1068)
+11-09 19:50:49.243 I/lmkd    ( 1034): Reclaim 'com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:1' (8951), uid 99184, oom_score_adj 900, state 99 to free 109384kB rss, 42592kB swap; reason: low watermark is breached or filecache is low (633260kB).; level: 2
+11-09 19:50:49.252 I/lowmemorykiller( 1034): Process 8951 was reaped in 8ms
+11-09 19:50:49.254 W/ActivityManager( 2824): setHasOverlayUi called on unknown pid: 9226
+11-09 19:50:49.255 I/ActivityManager( 2824): Process com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:1 (pid 8951) has died: cch CACC(99,1023)
+11-09 19:50:49.255 W/ActivityManager( 2824): Scheduling restart of crashed service com.idol/org.chromium.content.app.SandboxedProcessService0:1 in 139897ms for connection
+11-09 19:50:49.260 E/chromium(31373): [ERROR:android_webview/browser/aw_browser_terminator.cc:176] Renderer process (8951) crash detected (code -1).
+11-09 19:50:49.755 I/lmkd    ( 1034): Reclaim 'com.samsung.android.fmm' (5402), uid 1000, oom_score_adj 800, state 10 to free 54068kB rss, 45180kB swap; reason: min2x watermark is breached and swap is low (9782816kB < 5033160kB); level: 2
+11-09 19:50:49.776 I/lowmemorykiller( 1034): Process 5402 was reaped in 16ms
+11-09 19:50:49.781 I/lmkd    ( 1034): Reclaim 'com.google.android.apps.photos' (5099), uid 10283, oom_score_adj 700, state 15 to free 68696kB rss, 52280kB swap; reason: min2x watermark is breached even after kill; level: 2
+11-09 19:50:49.782 I/ActivityManager( 2824): Process com.samsung.android.fmm (pid 5402) has died: svcb SVC (17,637)
+11-09 19:50:49.782 W/ActivityManager( 2824): Scheduling restart of crashed service com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService in 139370ms for start-requested
+11-09 19:50:49.782 W/ActivityManager( 2824): Scheduling restart of crashed service com.samsung.android.fmm/.application.FmmService in 169370ms for start-requested
+11-09 19:50:49.806 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:49.806 I/ActivityManager( 2824): Process com.google.android.apps.photos (pid 5099) has died: prev LAST(34,637)
+11-09 19:50:49.817 I/lmkd    ( 1034): Reclaim 'com.android.externalstorage' (8557), uid 10076, oom_score_adj 700, state 15 to free 47700kB rss, 42376kB swap; reason: min2x watermark is breached and swap is low (9775120kB < 5033160kB); level: 2
+11-09 19:50:49.820 W/ActivityManager( 2824): Rescheduling restart of crashed service com.sec.spp.push/.PushClientService in 29333ms for mem-pressure-event
+11-09 19:50:49.820 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.moaiapc/.SecGatheringService in 69333ms for mem-pressure-event
+11-09 19:50:49.820 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.rubin.app/com.samsung.android.rubin.controller.services.KeepAliveService in 109333ms for mem-pressure-event
+11-09 19:50:49.820 W/ActivityManager( 2824): Rescheduling restart of crashed service com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService in 149333ms for mem-pressure-event
+11-09 19:50:49.820 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService in 189333ms for mem-pressure-event
+11-09 19:50:49.820 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/.application.FmmService in 229333ms for mem-pressure-event
+11-09 19:50:49.835 I/ActivityManager( 2824): Process com.android.externalstorage (pid 8557) has died: prev LAST(13,638)
+11-09 19:50:49.835 I/lmkd    ( 1034): Reclaim 'com.samsung.android.smartsuggestions:moneta' (419), uid 10134, oom_score_adj 250, state 5 to free 49384kB rss, 70248kB swap; reason: min2x watermark is breached even after kill; level: 2
+11-09 19:50:49.932 I/lmkd    ( 1034): Reclaim 'com.google.android.apps.messaging:rcs' (1069), uid 10267, oom_score_adj 201, state 5 to free 46068kB rss, 67128kB swap; reason: min watermark is breached even after kill; level: 2
+11-09 19:50:49.949 I/lowmemorykiller( 1034): Process 419 was reaped in 116ms
+11-09 19:50:49.959 I/ActivityManager( 2824): Process com.samsung.android.smartsuggestions:moneta (pid 419) has died: prcl BFGS(16,624)
+11-09 19:50:49.959 W/ActivityManager( 2824): Scheduling restart of crashed service com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService in 269193ms for connection
+11-09 19:50:49.961 I/lowmemorykiller( 1034): Process 1069 was reaped in 28ms
+11-09 19:50:49.967 I/ActivityManager( 2824): Process com.google.android.apps.messaging:rcs (pid 1069) has died: prcp  +1 BFGS(17,624)
+11-09 19:50:49.968 I/lmkd    ( 1034): print processes meminfo in kernel log (sysrq-trigger)
+11-09 19:50:49.968 W/ActivityManager( 2824): Scheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 309184ms for connection
+11-09 19:50:49.968 W/ActivityManager( 2824): Scheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 349184ms for start-requested
+11-09 19:50:49.970 I/lmkd    ( 1034): Reclaim 'com.samsung.android.spay' (1578), uid 10359, oom_score_adj 200, state 8 to free 69360kB rss, 79428kB swap; reason: min2x watermark is breached even after kill; level: 2
+11-09 19:50:49.993 I/lowmemorykiller( 1034): Process 1578 was reaped in 24ms
+11-09 19:50:50.018 I/ActivityManager( 2824): Process com.samsung.android.spay (pid 1578) has died: prcp TRNB(420,595)
+11-09 19:50:50.018 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:50.032 W/ActivityManager( 2824): Scheduling restart of crashed service com.samsung.android.spay/.pay.HintService in 389120ms for start-requested
+11-09 19:50:50.035 W/ActivityManager( 2824): setHasOverlayUi called on unknown pid: 1578
+11-09 19:50:50.120 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:50.836 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:50.936 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:51.037 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:51.137 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:51.238 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:51.439 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.sec.spp.push/.PushClientService in 0ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.moaiapc/.SecGatheringService in 30000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.rubin.app/com.samsung.android.rubin.controller.services.KeepAliveService in 60000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService in 90000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService in 120000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/.application.FmmService in 150000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService in 180000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 210000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 240000ms for mem-pressure-event
+11-09 19:50:51.706 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.spay/.pay.HintService in 270000ms for mem-pressure-event
+11-09 19:50:51.717 I/ActivityManager( 2824): Start proc 9570:com.sec.spp.push/u0a119 for service {com.sec.spp.push/com.sec.spp.push.PushClientService}
+11-09 19:50:51.744 I/ActivityManager( 2824): Changes in 10119 20 to 19, 0 to 384
+11-09 19:50:51.830 W/ActivityManager( 2824): Receiver with filter android.content.IntentFilter@c4451af already registered for pid 9570, callerPackage is com.sec.spp.push
+11-09 19:50:51.852 I/ActivityManager( 2824): Changes in 10119 10 to 10, 384 to 256
+11-09 19:50:54.244 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:54.246 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:54.246 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:54.252 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:54.426 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:54.433 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:54.434 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:55.040 I/ActivityManager( 2824): Test idle passed
+11-09 19:50:55.446 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:55.446 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:55.447 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:55.483 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:55.493 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:55.494 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:55.496 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:56.469 I/IdolGraphs(31373): memory: {"t_ms":2149387916,"event":"peak","graph":"bir","mem_available_kb":2876556,"resident":4,"before_kb":5936008,"drop_kb":3059452,"estimate_kb":3063040}
+11-09 19:50:56.834 I/IdolGraphs(31373): memory: {"t_ms":2149388282,"event":"close","graph":"bir","mem_available_kb":6137112,"resident":3}
+11-09 19:50:57.506 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:57.507 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:57.508 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:57.509 W/ActivityManager( 2824): pid 2824 system sent binder code 1 with flags 1 and got error -32
+11-09 19:50:57.515 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:57.515 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:57.516 W/ActivityManager( 2824): pid 2824 system sent binder code 4 with flags 1 and got error -32
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.moaiapc/.SecGatheringService in 0ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.rubin.app/com.samsung.android.rubin.controller.services.KeepAliveService in 10000ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService in 20000ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService in 30000ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/.application.FmmService in 40000ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService in 50000ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 60000ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 70000ms for mem-pressure-event
+11-09 19:50:57.889 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.spay/.pay.HintService in 80000ms for mem-pressure-event
+11-09 19:50:57.900 I/ActivityManager( 2824): Start proc 9719:com.samsung.android.moaiapc/1000 for service {com.samsung.android.moaiapc/com.samsung.android.moaiapc.SecGatheringService}
+11-09 19:50:58.672 I/ActivityManager( 2824): com.samsung.android.spay is exempt from freezer by list
+11-09 19:50:58.679 I/ActivityManager( 2824): Start proc 9737:com.samsung.android.spay/u0a359 for broadcast {com.samsung.android.spay/com.samsung.android.spay.vas.octopus.ui.OctopusHCIEventReceiver}
+11-09 19:50:58.704 I/ActivityManager( 2824): Changes in 10359 20 to 19, 0 to 384
+11-09 19:50:58.912 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:50:58.912 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:50:58.912 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:50:59.550 I/IdolGraphs(31373): compiled dino_0 in 2.45 s (gpu, fp16_with_fp32_accum), MemAvailable 5961 -> 5199 MB, resident 4
+11-09 19:50:59.757 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.rubin.app/com.samsung.android.rubin.controller.services.KeepAliveService in 0ms for other
+11-09 19:50:59.757 W/ActivityManager( 2824): Rescheduling restart of crashed service com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService in 10000ms for other
+11-09 19:50:59.757 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService in 20000ms for other
+11-09 19:50:59.757 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/.application.FmmService in 30000ms for other
+11-09 19:50:59.757 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService in 40000ms for other
+11-09 19:50:59.757 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 50000ms for other
+11-09 19:50:59.757 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 60000ms for other
+11-09 19:50:59.770 I/ActivityManager( 2824): Start proc 9857:com.sec.android.provider.badge/u0a57 for broadcast {com.sec.android.provider.badge/com.sec.android.provider.badge.BadgeCountReceiver}
+11-09 19:50:59.778 I/ActivityManager( 2824): Start proc 9867:com.samsung.android.rubin.app/u0a115 for service {com.samsung.android.rubin.app/com.samsung.android.rubin.controller.services.KeepAliveService}
+11-09 19:50:59.802 I/ActivityManager( 2824): Changes in 10115 20 to 19, 0 to 384
+11-09 19:50:59.804 I/ActivityManager( 2824): Changes in 10057 20 to 19, 0 to 384
+11-09 19:50:59.824 I/ActivityManager( 2824): Changes in 10359 10 to 10, 384 to 256
+11-09 19:50:59.841 I/ActivityManager( 2824): Changes in 10057 11 to 19, 384 to 0
+11-09 19:50:59.842 I/ActivityManager( 2824): Changes in 10057 19 to 5, 0 to 400
+11-09 19:50:59.932 I/ActivityManager( 2824): Changes in 10115 10 to 10, 384 to 256
+11-09 19:50:59.959 W/ActivityManager( 2824): Unable to start service Intent { act=com.samsung.android.aliro.BIND_DIGITAL_KEY_ALIRO_SERVICE xflg=0x4 cmp=com.samsung.android.dkey/com.samsung.android.aliro.service.AliroFrameworkService } U=0: not found
+11-09 19:50:59.990 W/ActivityManager( 2824): pid 18102 com.samsung.android.spayfw sent binder code 3 with flags 2 and got error -32
+11-09 19:50:59.991 I/ActivityManager( 2824): Changes in 10359 10 to 10, 256 to 384
+11-09 19:51:00.022 I/ActivityManager( 2824): Start proc 10001:com.samsung.android.app.watchmanager:remote/u0a341 for service {com.samsung.android.app.watchmanager/com.samsung.android.app.twatchmanager.plugininfoservice.PluginInfoProvideService}
+11-09 19:51:00.041 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:00.056 I/ActivityManager( 2824): Changes in 10341 20 to 19, 0 to 384
+11-09 19:51:00.079 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:00.120 I/ActivityManager( 2824): Changes in 10341 8 to 8, 384 to 256
+11-09 19:51:00.173 I/ActivityManager( 2824): Start proc 10038:com.samsung.android.samsungpositioning/5017 for content provider {com.samsung.android.samsungpositioning/com.samsung.android.samsungpositioning.presentation.PathHistoryProvider}
+11-09 19:51:00.181 I/ActivityManager( 2824): Start proc 10040:com.osp.app.signin/u0a120 for content provider {com.osp.app.signin/com.samsung.android.samsungaccount.place.db.PlaceProvider}
+11-09 19:51:00.199 I/ActivityManager( 2824): Changes in 5017 20 to 19, 0 to 384
+11-09 19:51:00.201 I/ActivityManager( 2824): Changes in 10120 20 to 19, 0 to 384
+11-09 19:51:00.243 I/ActivityManager( 2824): Changes in 5017 19 to 10, 384 to 256
+11-09 19:51:00.341 I/ActivityManager( 2824): Start proc 10104:com.sec.android.app.shealth:remote/u0a336 for service {com.sec.android.app.shealth/com.samsung.android.service.health.HealthService}
+11-09 19:51:00.361 I/ActivityManager( 2824): Changes in 10115 10 to 10, 256 to 384
+11-09 19:51:00.362 I/ActivityManager( 2824): Changes in 5017 10 to 10, 256 to 384
+11-09 19:51:00.362 I/ActivityManager( 2824): Changes in 10115 10 to 10, 384 to 256
+11-09 19:51:00.363 I/ActivityManager( 2824): Changes in 5017 10 to 10, 384 to 256
+11-09 19:51:00.370 I/ActivityManager( 2824): Changes in 10336 20 to 19, 0 to 384
+11-09 19:51:00.380 I/ActivityManager( 2824): Changes in 10120 10 to 10, 384 to 256
+11-09 19:51:00.626 I/ActivityManager( 2824): Changes in 10336 10 to 10, 384 to 256
+11-09 19:51:00.666 I/ActivityManager( 2824): Changes in 10336 10 to 19, 256 to 0
+11-09 19:51:03.120 I/ActivityManager( 2824): Changes in 10341 8 to 10, 256 to 384
+11-09 19:51:03.121 I/ActivityManager( 2824): Changes in 10341 10 to 19, 384 to 0
+11-09 19:51:04.334 I/ActivityManager( 2824): Start proc 10270:com.samsung.android.providers.media/u0a69 for content provider {com.samsung.android.providers.media/com.samsung.android.providers.media.MediaProvider}
+11-09 19:51:04.354 I/ActivityManager( 2824): Changes in 10069 20 to 19, 0 to 384
+11-09 19:51:04.392 I/ActivityManager( 2824): Changes in 10069 19 to 10, 384 to 256
+11-09 19:51:04.492 I/IdolGraphs(31373): compiled dino_1 in 2.21 s (gpu, fp16_with_fp32_accum), MemAvailable 5018 -> 4152 MB, resident 5
+11-09 19:51:05.042 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:05.859 I/ActivityManager( 2824): Changes in 10057 5 to 15, 400 to 256
+11-09 19:51:06.882 I/ActivityManager( 2824): Broadcasting: Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }
+11-09 19:51:06.883 I/ActivityManager( 2824): Enqueued broadcast Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }: 0
+11-09 19:51:06.888 I/ActivityManager( 2824): Broadcast completed: result=0
+11-09 19:51:07.640 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:07.640 I/lmkd    ( 1034): Reclaim 'com.sec.android.app.shealth:remote' (10104), uid 10336, oom_score_adj 905, state 19 to free 175380kB rss, 39780kB swap; reason: low watermark is breached or filecache is low (2927556kB).; level: 1
+11-09 19:51:07.656 I/ActivityManager( 2824): Process com.sec.android.app.shealth:remote (pid 10104) has died: cch+5 CEM (53,3322)
+11-09 19:51:07.744 I/lmkd    ( 1034): 8(delay), 0(swap), 0(freelimit), 0(reentrymode) memory pressure events were skipped after a kill!
+11-09 19:51:07.744 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:07.744 I/lmkd    ( 1034): Reclaim 'com.samsung.android.app.watchmanager:remote' (10001), uid 10341, oom_score_adj 905, state 19 to free 63708kB rss, 47016kB swap; reason: min2x watermark is breached even after kill; level: 1
+11-09 19:51:07.754 I/ActivityManager( 2824): Process com.samsung.android.app.watchmanager:remote (pid 10001) has died: cch+5 CEM (29,3362)
+11-09 19:51:07.754 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:07.854 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:07.954 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.054 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.155 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.352 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.453 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.553 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.655 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.894 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:08.942 W/ActivityManager( 2824): Rescheduling restart of crashed service com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService in 10246ms for mem-pressure-event
+11-09 19:51:08.942 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService in 50246ms for mem-pressure-event
+11-09 19:51:08.942 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/.application.FmmService in 90246ms for mem-pressure-event
+11-09 19:51:08.942 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService in 130246ms for mem-pressure-event
+11-09 19:51:08.942 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 170246ms for mem-pressure-event
+11-09 19:51:08.942 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 210246ms for mem-pressure-event
+11-09 19:51:08.942 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:08.945 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:09.193 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:51:09.193 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:51:09.193 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:51:09.246 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:09.253 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:09.278 I/IdolGraphs(31373): compiled dino_2 in 2.47 s (gpu, fp16_with_fp32_accum), MemAvailable 4089 -> 3873 MB, resident 6
+11-09 19:51:09.956 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:09.965 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:12.757 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:12.959 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:13.472 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:13.573 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:13.674 I/lmkd    ( 1034): cached 0, sandbox(not0) 0
+11-09 19:51:14.032 I/IdolGraphs(31373): compiled dino_3 in 2.40 s (gpu, fp16_with_fp32_accum), MemAvailable 3826 -> 3029 MB, resident 7
+11-09 19:51:14.793 I/ActivityManager( 2824): Waited long enough for: ServiceRecord{3203535 u0 com.samsung.android.spay/.common.lockpolicy.SpayLockPolicyService c:com.samsung.android.spay}
+11-09 19:51:15.243 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:51:16.531 I/IdolGraphs(31373): memory: {"t_ms":2149407978,"event":"evict","graph":"dino_3","mem_available_kb":3063336,"resident":7,"need_kb":4396656,"for":"vae_0"}
+11-09 19:51:16.628 I/IdolGraphs(31373): memory: {"t_ms":2149408075,"event":"close","graph":"dino_3","mem_available_kb":3915412,"resident":6}
+11-09 19:51:16.628 I/IdolGraphs(31373): memory: {"t_ms":2149408076,"event":"evict","graph":"dino_2","mem_available_kb":3915412,"resident":6,"need_kb":4396656,"for":"vae_0"}
+11-09 19:51:16.722 I/IdolGraphs(31373): memory: {"t_ms":2149408169,"event":"close","graph":"dino_2","mem_available_kb":4763660,"resident":5}
+11-09 19:51:16.919 I/IdolGraphs(31373): compiled vae_0 in 0.20 s (gpu, fp16_with_fp32_accum), MemAvailable 4652 -> 2895 MB, resident 6
+11-09 19:51:17.764 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:18.128 I/IdolGraphs(31373): memory: {"t_ms":2149409575,"event":"evict","graph":"vae_0","mem_available_kb":2817532,"resident":6,"need_kb":3553420,"for":"vae_1"}
+11-09 19:51:18.208 I/IdolGraphs(31373): memory: {"t_ms":2149409655,"event":"close","graph":"vae_0","mem_available_kb":4707444,"resident":5}
+11-09 19:51:18.386 I/IdolGraphs(31373): compiled vae_1 in 0.18 s (gpu, fp16_with_fp32_accum), MemAvailable 4597 -> 3639 MB, resident 6
+11-09 19:51:19.211 I/ActivityManager( 2824): Start proc 10468:com.facebook.services/u0a78 for service {com.facebook.services/com.facebook.oxygen.services.fbns.PreloadedFbnsService}
+11-09 19:51:19.223 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService in 0ms for mem-pressure-event
+11-09 19:51:19.223 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.fmm/.application.FmmService in 20000ms for mem-pressure-event
+11-09 19:51:19.223 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService in 40000ms for mem-pressure-event
+11-09 19:51:19.223 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 60000ms for mem-pressure-event
+11-09 19:51:19.223 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 80000ms for mem-pressure-event
+11-09 19:51:19.224 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:19.227 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:19.236 I/ActivityManager( 2824): Start proc 10478:com.samsung.android.fmm/1000 for service {com.samsung.android.fmm/com.samsung.android.fme.offlinefinding.OfflineFindingService}
+11-09 19:51:19.248 I/ActivityManager( 2824): Changes in 10078 20 to 19, 0 to 384
+11-09 19:51:19.335 I/ActivityManager( 2824): Start proc 10511:com.facebook.appmanager/u0a182 for content provider {com.facebook.appmanager/com.facebook.oxygen.appmanager.firstparty.settings.FirstPartySettingsProvider}
+11-09 19:51:19.364 I/ActivityManager( 2824): Changes in 10182 20 to 19, 0 to 384
+11-09 19:51:19.370 W/ActivityManager( 2824): Rescheduling restart of crashed service com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService in 0ms for other
+11-09 19:51:19.370 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 20000ms for other
+11-09 19:51:19.370 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 40000ms for other
+11-09 19:51:19.379 I/ActivityManager( 2824): Start proc 10536:com.samsung.android.smartsuggestions:moneta/u0a134 for service {com.samsung.android.smartsuggestions/com.samsung.android.moneta.datacollector.application.notification.PdeNotificationListenerService}
+11-09 19:51:19.402 I/ActivityManager( 2824): Changes in 10078 10 to 10, 384 to 256
+11-09 19:51:19.452 I/ActivityManager( 2824): Changes in 10182 19 to 10, 384 to 256
+11-09 19:51:19.483 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:51:19.483 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:51:19.483 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:51:19.491 I/ActivityManager( 2824): Start proc 10603:com.facebook.system/u0a77 for content provider {com.facebook.system/com.facebook.oxygen.installer.api.AppManagerApiProvider}
+11-09 19:51:19.514 I/ActivityManager( 2824): Changes in 10077 20 to 19, 0 to 384
+11-09 19:51:19.536 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:19.539 I/ActivityManager( 2824): Changes in 10077 19 to 10, 384 to 256
+11-09 19:51:19.542 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:19.667 I/IdolGraphs(31373): compiled vae_2 in 0.50 s (gpu, fp16_with_fp32_accum), MemAvailable 3572 -> 3032 MB, resident 7
+11-09 19:51:19.669 I/ActivityManager( 2824): Start proc 10654:com.samsung.android.smartsuggestions:search/u0a134 for content provider {com.samsung.android.smartsuggestions/com.samsung.android.smartsuggestions.search.provider.SearchProvider}
+11-09 19:51:19.804 I/ActivityManager( 2824): com.samsung.android.ssco is exempt from freezer by list
+11-09 19:51:19.814 I/ActivityManager( 2824): Start proc 10692:com.samsung.android.ssco/u0a328 for content provider {com.samsung.android.ssco/com.samsung.android.ssco.provider.SemanticDataProvider}
+11-09 19:51:19.823 I/ActivityManager( 2824): Start proc 10694:com.samsung.android.scs/u0a126 for content provider {com.samsung.android.scs/com.samsung.android.scs.ai.search.provider.SearchProvider}
+11-09 19:51:19.842 I/ActivityManager( 2824): Changes in 10328 20 to 19, 0 to 384
+11-09 19:51:19.844 I/ActivityManager( 2824): Changes in 10126 20 to 19, 0 to 384
+11-09 19:51:19.892 I/ActivityManager( 2824): Changes in 10328 19 to 5, 384 to 400
+11-09 19:51:19.892 I/ActivityManager( 2824): Changes in 10190 7 to 5, 384 to 400
+11-09 19:51:19.893 I/ActivityManager( 2824): Changes in 10126 19 to 5, 384 to 400
+11-09 19:51:19.904 I/ActivityManager( 2824): Start proc 10737:com.samsung.android.ce/u0a95 for service {com.samsung.android.mcfds/com.samsung.android.ce.ContextEngineSystemService}
+11-09 19:51:19.930 I/ActivityManager( 2824): Changes in 10095 20 to 19, 0 to 384
+11-09 19:51:20.028 I/ActivityManager( 2824): Changes in 10095 19 to 5, 384 to 440
+11-09 19:51:20.302 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService in 0ms for mem-pressure-event
+11-09 19:51:20.302 W/ActivityManager( 2824): Rescheduling restart of crashed service com.google.android.apps.messaging/com.google.android.ims.service.JibeService in 10000ms for mem-pressure-event
+11-09 19:51:20.312 I/ActivityManager( 2824): Start proc 10824:com.google.android.apps.messaging:rcs/u0a267 for service {com.google.android.apps.messaging/com.google.android.ims.binding.SystemBindingService}
+11-09 19:51:20.334 I/ActivityManager( 2824): Changes in 10267 20 to 19, 0 to 384
+11-09 19:51:20.500 I/ActivityManager( 2824): Changes in 10267 19 to 5, 384 to 440
+11-09 19:51:20.528 I/ActivityManager( 2824): Start proc 10862:com.google.android.apps.messaging/u0a267 for broadcast {com.google.android.apps.messaging/com.google.android.apps.messaging.rcsprovisioning.RcsProvisioningBroadcastReceiver}
+11-09 19:51:20.614 I/ActivityManager( 2824): Start proc 10901:com.samsung.euicc/1000 for service {com.samsung.euicc/com.samsung.euicc.service.EuiccServiceImpl}
+11-09 19:51:20.756 I/ActivityManager( 2824): Changes in 10120 15 to 15, 256 to 384
+11-09 19:51:20.795 I/ActivityManager( 2824): Changes in 10120 15 to 5, 384 to 400
+11-09 19:51:20.897 I/IdolGraphs(31373): compiled vae_3 in 0.77 s (gpu, fp16_with_fp32_accum), MemAvailable 2871 -> 2445 MB, resident 8
+11-09 19:51:21.110 I/IdolGraphs(31373): memory: {"t_ms":2149412557,"event":"evict","graph":"vae_3","mem_available_kb":2462080,"resident":8,"need_kb":2819244,"for":"vae_attn"}
+11-09 19:51:21.133 I/IdolGraphs(31373): memory: {"t_ms":2149412581,"event":"close","graph":"vae_3","mem_available_kb":2766336,"resident":7}
+11-09 19:51:21.133 I/IdolGraphs(31373): memory: {"t_ms":2149412581,"event":"evict","graph":"vae_2","mem_available_kb":2766336,"resident":7,"need_kb":2819244,"for":"vae_attn"}
+11-09 19:51:21.161 I/IdolGraphs(31373): memory: {"t_ms":2149412609,"event":"close","graph":"vae_2","mem_available_kb":3316984,"resident":6}
+11-09 19:51:21.385 I/IdolGraphs(31373): compiled vae_attn in 0.22 s (gpu, fp16_with_fp32_accum), MemAvailable 3239 -> 2970 MB, resident 7
+11-09 19:51:22.268 I/IdolGraphs(31373): compiled vae_4 in 0.25 s (gpu, fp16_with_fp32_accum), MemAvailable 2932 -> 2861 MB, resident 8
+11-09 19:51:22.766 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:24.165 I/IdolGraphs(31373): memory: {"t_ms":2149415613,"event":"evict","graph":"vae_4","mem_available_kb":2886564,"resident":8,"need_kb":3257948,"for":"den_joint_00"}
+11-09 19:51:24.177 I/IdolGraphs(31373): memory: {"t_ms":2149415624,"event":"close","graph":"vae_4","mem_available_kb":3050100,"resident":7}
+11-09 19:51:24.177 I/IdolGraphs(31373): memory: {"t_ms":2149415625,"event":"evict","graph":"vae_attn","mem_available_kb":3050100,"resident":7,"need_kb":3257948,"for":"den_joint_00"}
+11-09 19:51:24.209 I/IdolGraphs(31373): memory: {"t_ms":2149415657,"event":"close","graph":"vae_attn","mem_available_kb":3331320,"resident":6}
+11-09 19:51:24.702 I/IdolGraphs(31373): compiled den_joint_00 in 0.49 s (gpu, fp16_with_fp32_accum), MemAvailable 3253 -> 2644 MB, resident 7
+11-09 19:51:25.544 I/ActivityManager( 2824): Changes in 10077 15 to 19, 256 to 0
+11-09 19:51:25.860 I/ActivityManager( 2824): Changes in 10057 15 to 19, 256 to 0
+11-09 19:51:25.863 I/ActivityManager( 2824): Changes in 10328 5 to 15, 400 to 256
+11-09 19:51:25.864 I/ActivityManager( 2824): Changes in 10190 5 to 7, 400 to 384
+11-09 19:51:25.864 I/ActivityManager( 2824): Changes in 10126 5 to 15, 400 to 256
+11-09 19:51:25.878 I/ActivityManager( 2824): Changes in 10126 15 to 19, 256 to 0
+11-09 19:51:26.051 I/IdolGraphs(31373): memory: {"t_ms":2149417499,"event":"evict","graph":"vae_1","mem_available_kb":2597260,"resident":7,"need_kb":3245740,"for":"den_joint_01"}
+11-09 19:51:26.095 I/IdolGraphs(31373): memory: {"t_ms":2149417542,"event":"close","graph":"vae_1","mem_available_kb":3631832,"resident":6}
+11-09 19:51:26.578 I/IdolGraphs(31373): compiled den_joint_01 in 0.48 s (gpu, fp16_with_fp32_accum), MemAvailable 3546 -> 2864 MB, resident 7
+11-09 19:51:26.777 I/ActivityManager( 2824): Changes in 10120 5 to 15, 400 to 256
+11-09 19:51:27.767 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:28.005 I/IdolGraphs(31373): memory: {"t_ms":2149419453,"event":"evict","graph":"dino_1","mem_available_kb":2881108,"resident":7,"need_kb":3260504,"for":"den_joint_02"}
+11-09 19:51:28.091 I/IdolGraphs(31373): memory: {"t_ms":2149419539,"event":"close","graph":"dino_1","mem_available_kb":3762232,"resident":6}
+11-09 19:51:28.600 I/IdolGraphs(31373): compiled den_joint_02 in 0.51 s (gpu, fp16_with_fp32_accum), MemAvailable 3674 -> 2985 MB, resident 7
+11-09 19:51:29.287 I/ActivityManager( 2824): Changes in 5017 15 to 19, 256 to 0
+11-09 19:51:29.523 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:29.525 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:29.772 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:51:29.772 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:51:29.772 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:51:29.827 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:29.830 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:30.025 I/IdolGraphs(31373): memory: {"t_ms":2149421473,"event":"evict","graph":"dino_0","mem_available_kb":2994664,"resident":7,"need_kb":3259592,"for":"den_joint_03"}
+11-09 19:51:30.081 I/IdolGraphs(31373): memory: {"t_ms":2149421528,"event":"close","graph":"dino_0","mem_available_kb":3885668,"resident":6}
+11-09 19:51:30.168 I/ActivityManager( 2824): Changes in 10095 5 to 10, 440 to 384
+11-09 19:51:30.170 I/ActivityManager( 2824): Changes in 10095 10 to 19, 384 to 128
+11-09 19:51:30.418 I/ActivityManager( 2824): Changes in 10069 15 to 19, 256 to 0
+11-09 19:51:30.560 I/IdolGraphs(31373): compiled den_joint_03 in 0.48 s (gpu, fp16_with_fp32_accum), MemAvailable 3794 -> 3169 MB, resident 7
+11-09 19:51:31.999 I/IdolGraphs(31373): memory: {"t_ms":2149423446,"event":"evict","graph":"den_ctx","mem_available_kb":3186084,"resident":7,"need_kb":3254560,"for":"den_joint_04"}
+11-09 19:51:32.050 I/IdolGraphs(31373): memory: {"t_ms":2149423497,"event":"close","graph":"den_ctx","mem_available_kb":3519280,"resident":6}
+11-09 19:51:32.592 I/IdolGraphs(31373): compiled den_joint_04 in 0.54 s (gpu, fp16_with_fp32_accum), MemAvailable 3436 -> 2789 MB, resident 7
+11-09 19:51:32.769 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:34.054 I/IdolGraphs(31373): memory: {"t_ms":2149425501,"event":"evict","graph":"den_joint_04","mem_available_kb":2817964,"resident":7,"need_kb":3291804,"for":"den_joint_05"}
+11-09 19:51:34.119 I/IdolGraphs(31373): memory: {"t_ms":2149425566,"event":"close","graph":"den_joint_04","mem_available_kb":3554132,"resident":6}
+11-09 19:51:34.420 I/ActivityManager( 2824): Start proc 11100:com.google.android.gm/u0a277 for broadcast {com.google.android.gm/com.google.firebase.iid.FirebaseInstanceIdReceiver}
+11-09 19:51:34.451 I/ActivityManager( 2824): Changes in 10277 20 to 19, 0 to 384
+11-09 19:51:34.655 I/IdolGraphs(31373): compiled den_joint_05 in 0.54 s (gpu, fp16_with_fp32_accum), MemAvailable 3470 -> 2786 MB, resident 7
+11-09 19:51:34.748 I/ActivityManager( 2824): Changes in 10277 11 to 19, 384 to 0
+11-09 19:51:35.556 I/ActivityManager( 2824): Changes in 10095 19 to 19, 128 to 0
+11-09 19:51:36.111 I/IdolGraphs(31373): memory: {"t_ms":2149427559,"event":"evict","graph":"den_joint_05","mem_available_kb":2694116,"resident":7,"need_kb":3256164,"for":"den_joint_06"}
+11-09 19:51:36.181 I/IdolGraphs(31373): memory: {"t_ms":2149427629,"event":"close","graph":"den_joint_05","mem_available_kb":3427156,"resident":6}
+11-09 19:51:36.754 I/IdolGraphs(31373): compiled den_joint_06 in 0.57 s (gpu, fp16_with_fp32_accum), MemAvailable 3346 -> 2725 MB, resident 7
+11-09 19:51:37.771 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:38.253 I/IdolGraphs(31373): memory: {"t_ms":2149429701,"event":"evict","graph":"den_joint_06","mem_available_kb":2721944,"resident":7,"need_kb":3258776,"for":"den_joint_07"}
+11-09 19:51:38.334 I/IdolGraphs(31373): memory: {"t_ms":2149429781,"event":"close","graph":"den_joint_06","mem_available_kb":3446196,"resident":6}
+11-09 19:51:38.967 I/IdolGraphs(31373): compiled den_joint_07 in 0.63 s (gpu, fp16_with_fp32_accum), MemAvailable 3365 -> 2710 MB, resident 7
+11-09 19:51:39.802 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:39.805 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:40.045 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:51:40.045 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:51:40.045 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:51:40.100 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:40.103 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:42.136 I/IdolGraphs(31373): memory: {"t_ms":2149433583,"event":"evict","graph":"den_joint_08","mem_available_kb":2734716,"resident":7,"need_kb":3251336,"for":"den_joint_09"}
+11-09 19:51:42.229 I/IdolGraphs(31373): memory: {"t_ms":2149433677,"event":"close","graph":"den_joint_08","mem_available_kb":3420304,"resident":6}
+11-09 19:51:42.772 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:42.918 I/IdolGraphs(31373): compiled den_joint_09 in 0.69 s (gpu, fp16_with_fp32_accum), MemAvailable 3340 -> 2680 MB, resident 7
+11-09 19:51:44.623 I/IdolGraphs(31373): memory: {"t_ms":2149436071,"event":"evict","graph":"den_joint_09","mem_available_kb":2726860,"resident":7,"need_kb":3275600,"for":"den_joint_10"}
+11-09 19:51:44.711 I/IdolGraphs(31373): memory: {"t_ms":2149436159,"event":"close","graph":"den_joint_09","mem_available_kb":3464920,"resident":6}
+11-09 19:51:45.268 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:51:45.386 I/IdolGraphs(31373): compiled den_joint_10 in 0.67 s (gpu, fp16_with_fp32_accum), MemAvailable 3383 -> 2721 MB, resident 7
+11-09 19:51:45.464 I/ActivityManager( 2824): Changes in 10182 15 to 19, 256 to 0
+11-09 19:51:45.556 I/ActivityManager( 2824): Changes in 10095 19 to 11, 0 to 384
+11-09 19:51:45.559 I/ActivityManager( 2824): Changes in 10095 11 to 19, 384 to 128
+11-09 19:51:46.462 I/ActivityManager( 2824): Changes in 10328 15 to 19, 256 to 0
+11-09 19:51:46.586 I/ActivityManager( 2824): Start proc 11363:com.sec.android.CcInfo/1000 for broadcast {com.sec.android.CcInfo/com.sec.android.CcInfo.WifiConnectionReceiver}
+11-09 19:51:46.887 I/ActivityManager( 2824): Start proc 11382:com.samsung.android.dqagent/1000 for broadcast {com.samsung.android.dqagent/com.samsung.android.dqagent.receiver.DQADataReceiver}
+11-09 19:51:47.037 I/IdolGraphs(31373): memory: {"t_ms":2149438485,"event":"evict","graph":"den_joint_10","mem_available_kb":2695956,"resident":7,"need_kb":3252560,"for":"den_joint_11"}
+11-09 19:51:47.120 I/IdolGraphs(31373): memory: {"t_ms":2149438568,"event":"close","graph":"den_joint_10","mem_available_kb":3433384,"resident":6}
+11-09 19:51:47.464 I/ActivityManager( 2824): Changes in 10120 15 to 19, 256 to 0
+11-09 19:51:47.772 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:47.795 I/IdolGraphs(31373): compiled den_joint_11 in 0.67 s (gpu, fp16_with_fp32_accum), MemAvailable 3352 -> 2725 MB, resident 7
+11-09 19:51:49.490 I/IdolGraphs(31373): memory: {"t_ms":2149440937,"event":"evict","graph":"den_joint_11","mem_available_kb":2734228,"resident":7,"need_kb":3261164,"for":"den_joint_12"}
+11-09 19:51:49.579 I/IdolGraphs(31373): memory: {"t_ms":2149441027,"event":"close","graph":"den_joint_11","mem_available_kb":3470040,"resident":6}
+11-09 19:51:50.070 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:50.074 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:50.163 I/ActivityManager( 2824): Changes in 10095 19 to 11, 128 to 384
+11-09 19:51:50.165 I/ActivityManager( 2824): Changes in 10095 11 to 19, 384 to 128
+11-09 19:51:50.269 I/IdolGraphs(31373): compiled den_joint_12 in 0.69 s (gpu, fp16_with_fp32_accum), MemAvailable 3388 -> 2790 MB, resident 7
+11-09 19:51:50.313 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:51:50.313 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:51:50.313 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:51:50.369 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:51:50.372 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:51:51.960 I/IdolGraphs(31373): memory: {"t_ms":2149443408,"event":"evict","graph":"den_joint_12","mem_available_kb":2800308,"resident":7,"need_kb":3277568,"for":"den_joint_13"}
+11-09 19:51:52.051 I/IdolGraphs(31373): memory: {"t_ms":2149443499,"event":"close","graph":"den_joint_12","mem_available_kb":3538948,"resident":6}
+11-09 19:51:52.706 I/IdolGraphs(31373): compiled den_joint_13 in 0.65 s (gpu, fp16_with_fp32_accum), MemAvailable 3456 -> 2771 MB, resident 7
+11-09 19:51:52.772 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:54.417 I/IdolGraphs(31373): memory: {"t_ms":2149445864,"event":"evict","graph":"den_joint_13","mem_available_kb":2785848,"resident":7,"need_kb":3260420,"for":"den_joint_14"}
+11-09 19:51:54.505 I/IdolGraphs(31373): memory: {"t_ms":2149445952,"event":"close","graph":"den_joint_13","mem_available_kb":3525876,"resident":6}
+11-09 19:51:55.190 I/IdolGraphs(31373): compiled den_joint_14 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3443 -> 2762 MB, resident 7
+11-09 19:51:55.563 I/ActivityManager( 2824): Changes in 10095 19 to 19, 128 to 0
+11-09 19:51:56.871 I/IdolGraphs(31373): memory: {"t_ms":2149448319,"event":"evict","graph":"den_joint_14","mem_available_kb":2783660,"resident":7,"need_kb":3280640,"for":"den_joint_15"}
+11-09 19:51:56.955 I/IdolGraphs(31373): memory: {"t_ms":2149448403,"event":"close","graph":"den_joint_14","mem_available_kb":3516516,"resident":6}
+11-09 19:51:57.646 I/IdolGraphs(31373): compiled den_joint_15 in 0.69 s (gpu, fp16_with_fp32_accum), MemAvailable 3434 -> 2767 MB, resident 7
+11-09 19:51:57.775 I/ActivityManager( 2824): Test idle passed
+11-09 19:51:59.347 I/IdolGraphs(31373): memory: {"t_ms":2149450795,"event":"evict","graph":"den_joint_15","mem_available_kb":2807892,"resident":7,"need_kb":3266384,"for":"den_joint_16"}
+11-09 19:51:59.431 I/IdolGraphs(31373): memory: {"t_ms":2149450878,"event":"close","graph":"den_joint_15","mem_available_kb":3542116,"resident":6}
+11-09 19:52:00.115 I/IdolGraphs(31373): compiled den_joint_16 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3459 -> 2782 MB, resident 7
+11-09 19:52:00.333 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:00.335 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:00.574 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:52:00.574 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:52:00.574 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:52:00.629 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:00.632 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:01.852 I/IdolGraphs(31373): memory: {"t_ms":2149453299,"event":"evict","graph":"den_joint_16","mem_available_kb":2761436,"resident":7,"need_kb":3271796,"for":"den_joint_17"}
+11-09 19:52:01.927 I/IdolGraphs(31373): memory: {"t_ms":2149453374,"event":"close","graph":"den_joint_16","mem_available_kb":3498768,"resident":6}
+11-09 19:52:02.560 I/IdolGraphs(31373): compiled den_joint_17 in 0.63 s (gpu, fp16_with_fp32_accum), MemAvailable 3416 -> 2743 MB, resident 7
+11-09 19:52:02.776 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:04.206 I/IdolGraphs(31373): memory: {"t_ms":2149455654,"event":"evict","graph":"den_joint_17","mem_available_kb":2795604,"resident":7,"need_kb":3289004,"for":"den_joint_18"}
+11-09 19:52:04.289 I/IdolGraphs(31373): memory: {"t_ms":2149455737,"event":"close","graph":"den_joint_17","mem_available_kb":3530428,"resident":6}
+11-09 19:52:04.992 I/IdolGraphs(31373): compiled den_joint_18 in 0.70 s (gpu, fp16_with_fp32_accum), MemAvailable 3447 -> 2792 MB, resident 7
+11-09 19:52:06.751 I/IdolGraphs(31373): memory: {"t_ms":2149458199,"event":"evict","graph":"den_joint_18","mem_available_kb":2867124,"resident":7,"need_kb":3253320,"for":"den_joint_19"}
+11-09 19:52:06.834 I/IdolGraphs(31373): memory: {"t_ms":2149458281,"event":"close","graph":"den_joint_18","mem_available_kb":3600292,"resident":6}
+11-09 19:52:07.528 I/IdolGraphs(31373): compiled den_joint_19 in 0.69 s (gpu, fp16_with_fp32_accum), MemAvailable 3515 -> 2863 MB, resident 7
+11-09 19:52:07.779 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:09.233 I/IdolGraphs(31373): memory: {"t_ms":2149460680,"event":"evict","graph":"den_joint_19","mem_available_kb":2847000,"resident":7,"need_kb":3278664,"for":"den_joint_20"}
+11-09 19:52:09.318 I/IdolGraphs(31373): memory: {"t_ms":2149460766,"event":"close","graph":"den_joint_19","mem_available_kb":3582848,"resident":6}
+11-09 19:52:09.971 I/IdolGraphs(31373): compiled den_joint_20 in 0.65 s (gpu, fp16_with_fp32_accum), MemAvailable 3498 -> 2832 MB, resident 7
+11-09 19:52:10.611 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:10.612 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:10.842 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:52:10.842 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:52:10.842 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:52:10.896 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:10.900 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:11.556 I/IdolGraphs(31373): memory: {"t_ms":2149463003,"event":"evict","graph":"den_joint_20","mem_available_kb":2856628,"resident":7,"need_kb":3268024,"for":"den_joint_21"}
+11-09 19:52:11.638 I/IdolGraphs(31373): memory: {"t_ms":2149463085,"event":"close","graph":"den_joint_20","mem_available_kb":3593628,"resident":6}
+11-09 19:52:12.320 I/IdolGraphs(31373): compiled den_joint_21 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3509 -> 2847 MB, resident 7
+11-09 19:52:12.781 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:14.087 I/IdolGraphs(31373): memory: {"t_ms":2149465535,"event":"evict","graph":"den_joint_21","mem_available_kb":2864916,"resident":7,"need_kb":3256784,"for":"den_joint_22"}
+11-09 19:52:14.169 I/IdolGraphs(31373): memory: {"t_ms":2149465616,"event":"close","graph":"den_joint_21","mem_available_kb":3594288,"resident":6}
+11-09 19:52:14.847 I/IdolGraphs(31373): compiled den_joint_22 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3510 -> 2880 MB, resident 7
+11-09 19:52:15.286 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:52:16.616 I/IdolGraphs(31373): memory: {"t_ms":2149468063,"event":"evict","graph":"den_joint_22","mem_available_kb":2938808,"resident":7,"need_kb":3176604,"for":"den_joint_23"}
+11-09 19:52:16.696 I/IdolGraphs(31373): memory: {"t_ms":2149468143,"event":"close","graph":"den_joint_22","mem_available_kb":3673336,"resident":6}
+11-09 19:52:17.380 I/IdolGraphs(31373): compiled den_joint_23 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3587 -> 2969 MB, resident 7
+11-09 19:52:17.786 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:20.869 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:20.870 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:21.074 I/ActivityManager( 2824): Process com.samsung.euicc (pid 10901) has died: fg  SVC (209,2185)
+11-09 19:52:21.109 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:52:21.109 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:52:21.109 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:52:21.163 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:21.166 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:23.036 I/ActivityManager( 2824): Start proc 11681:com.samsung.android.privacydashboard/u0a113 for content provider {com.samsung.android.privacydashboard/com.samsung.android.privacydashboard.provider.PermissionAccessInformationContentProvider}
+11-09 19:52:23.082 I/ActivityManager( 2824): Changes in 10113 20 to 19, 0 to 384
+11-09 19:52:23.131 I/ActivityManager( 2824): Changes in 10113 19 to 5, 384 to 400
+11-09 19:52:26.076 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:27.224 I/IdolGraphs(31373): memory: {"t_ms":2149478671,"event":"evict","graph":"den_joint_03","mem_available_kb":2964996,"resident":7,"need_kb":3254560,"for":"den_joint_04"}
+11-09 19:52:27.281 I/IdolGraphs(31373): memory: {"t_ms":2149478729,"event":"close","graph":"den_joint_03","mem_available_kb":3646628,"resident":6}
+11-09 19:52:27.871 I/IdolGraphs(31373): compiled den_joint_04 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3561 -> 2885 MB, resident 7
+11-09 19:52:29.183 I/ActivityManager( 2824): Changes in 10113 5 to 15, 400 to 256
+11-09 19:52:29.512 I/IdolGraphs(31373): memory: {"t_ms":2149480959,"event":"evict","graph":"den_joint_04","mem_available_kb":2939212,"resident":7,"need_kb":3291804,"for":"den_joint_05"}
+11-09 19:52:29.566 I/IdolGraphs(31373): memory: {"t_ms":2149481014,"event":"close","graph":"den_joint_04","mem_available_kb":3677972,"resident":6}
+11-09 19:52:30.157 I/IdolGraphs(31373): compiled den_joint_05 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3591 -> 2912 MB, resident 7
+11-09 19:52:31.078 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:31.140 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:31.141 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:31.389 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:52:31.389 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:52:31.389 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:52:31.445 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:31.448 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:31.789 I/IdolGraphs(31373): memory: {"t_ms":2149483237,"event":"evict","graph":"den_joint_05","mem_available_kb":2899224,"resident":7,"need_kb":3256164,"for":"den_joint_06"}
+11-09 19:52:31.835 I/IdolGraphs(31373): memory: {"t_ms":2149483283,"event":"close","graph":"den_joint_05","mem_available_kb":3632936,"resident":6}
+11-09 19:52:32.425 I/IdolGraphs(31373): compiled den_joint_06 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3547 -> 2873 MB, resident 7
+11-09 19:52:35.714 I/IdolGraphs(31373): memory: {"t_ms":2149487162,"event":"evict","graph":"den_joint_07","mem_available_kb":2972916,"resident":7,"need_kb":3259364,"for":"den_joint_08"}
+11-09 19:52:35.803 I/IdolGraphs(31373): memory: {"t_ms":2149487250,"event":"close","graph":"den_joint_07","mem_available_kb":3657508,"resident":6}
+11-09 19:52:36.080 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:36.487 I/IdolGraphs(31373): compiled den_joint_08 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3571 -> 2893 MB, resident 7
+11-09 19:52:38.221 I/IdolGraphs(31373): memory: {"t_ms":2149489669,"event":"evict","graph":"den_joint_08","mem_available_kb":2904116,"resident":7,"need_kb":3251336,"for":"den_joint_09"}
+11-09 19:52:38.309 I/IdolGraphs(31373): memory: {"t_ms":2149489756,"event":"close","graph":"den_joint_08","mem_available_kb":3640844,"resident":6}
+11-09 19:52:38.880 I/IdolGraphs(31373): compiled den_joint_09 in 0.57 s (gpu, fp16_with_fp32_accum), MemAvailable 3555 -> 2853 MB, resident 7
+11-09 19:52:40.603 I/IdolGraphs(31373): memory: {"t_ms":2149492050,"event":"evict","graph":"den_joint_09","mem_available_kb":2881100,"resident":7,"need_kb":3275600,"for":"den_joint_10"}
+11-09 19:52:40.690 I/IdolGraphs(31373): memory: {"t_ms":2149492138,"event":"close","graph":"den_joint_09","mem_available_kb":3608516,"resident":6}
+11-09 19:52:41.081 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:41.303 I/IdolGraphs(31373): compiled den_joint_10 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3523 -> 2857 MB, resident 7
+11-09 19:52:41.420 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:41.422 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:41.658 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:52:41.658 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:52:41.658 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:52:41.717 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:41.720 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:42.962 I/IdolGraphs(31373): memory: {"t_ms":2149494410,"event":"evict","graph":"den_joint_10","mem_available_kb":2904732,"resident":7,"need_kb":3252560,"for":"den_joint_11"}
+11-09 19:52:43.045 I/IdolGraphs(31373): memory: {"t_ms":2149494492,"event":"close","graph":"den_joint_10","mem_available_kb":3644696,"resident":6}
+11-09 19:52:43.659 I/IdolGraphs(31373): compiled den_joint_11 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3559 -> 2890 MB, resident 7
+11-09 19:52:45.302 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:52:45.400 I/IdolGraphs(31373): memory: {"t_ms":2149496847,"event":"evict","graph":"den_joint_11","mem_available_kb":2870024,"resident":7,"need_kb":3261164,"for":"den_joint_12"}
+11-09 19:52:45.480 I/IdolGraphs(31373): memory: {"t_ms":2149496928,"event":"close","graph":"den_joint_11","mem_available_kb":3600836,"resident":6}
+11-09 19:52:46.086 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:46.099 I/IdolGraphs(31373): compiled den_joint_12 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3516 -> 2850 MB, resident 7
+11-09 19:52:47.798 I/IdolGraphs(31373): memory: {"t_ms":2149499246,"event":"evict","graph":"den_joint_12","mem_available_kb":2902356,"resident":7,"need_kb":3277568,"for":"den_joint_13"}
+11-09 19:52:47.881 I/IdolGraphs(31373): memory: {"t_ms":2149499328,"event":"close","graph":"den_joint_12","mem_available_kb":3639832,"resident":6}
+11-09 19:52:48.517 I/IdolGraphs(31373): compiled den_joint_13 in 0.64 s (gpu, fp16_with_fp32_accum), MemAvailable 3554 -> 2899 MB, resident 7
+11-09 19:52:49.182 I/ActivityManager( 2824): Changes in 10113 15 to 19, 256 to 0
+11-09 19:52:50.225 I/IdolGraphs(31373): memory: {"t_ms":2149501672,"event":"evict","graph":"den_joint_13","mem_available_kb":2931116,"resident":7,"need_kb":3260420,"for":"den_joint_14"}
+11-09 19:52:50.307 I/IdolGraphs(31373): memory: {"t_ms":2149501755,"event":"close","graph":"den_joint_13","mem_available_kb":3663548,"resident":6}
+11-09 19:52:50.934 I/IdolGraphs(31373): compiled den_joint_14 in 0.63 s (gpu, fp16_with_fp32_accum), MemAvailable 3577 -> 2919 MB, resident 7
+11-09 19:52:51.088 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:51.697 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:51.698 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:51.942 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:52:51.942 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:52:51.942 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:52:51.997 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:52:52.001 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:52:52.641 I/IdolGraphs(31373): memory: {"t_ms":2149504088,"event":"evict","graph":"den_joint_14","mem_available_kb":2926428,"resident":7,"need_kb":3280640,"for":"den_joint_15"}
+11-09 19:52:52.721 I/IdolGraphs(31373): memory: {"t_ms":2149504169,"event":"close","graph":"den_joint_14","mem_available_kb":3657716,"resident":6}
+11-09 19:52:53.352 I/IdolGraphs(31373): compiled den_joint_15 in 0.63 s (gpu, fp16_with_fp32_accum), MemAvailable 3571 -> 2920 MB, resident 7
+11-09 19:52:55.065 I/IdolGraphs(31373): memory: {"t_ms":2149506512,"event":"evict","graph":"den_joint_15","mem_available_kb":2951788,"resident":7,"need_kb":3266384,"for":"den_joint_16"}
+11-09 19:52:55.148 I/IdolGraphs(31373): memory: {"t_ms":2149506595,"event":"close","graph":"den_joint_15","mem_available_kb":3694504,"resident":6}
+11-09 19:52:55.765 I/IdolGraphs(31373): compiled den_joint_16 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3607 -> 2941 MB, resident 7
+11-09 19:52:56.090 I/ActivityManager( 2824): Test idle passed
+11-09 19:52:57.459 I/IdolGraphs(31373): memory: {"t_ms":2149508907,"event":"evict","graph":"den_joint_16","mem_available_kb":3001436,"resident":7,"need_kb":3271796,"for":"den_joint_17"}
+11-09 19:52:57.541 I/IdolGraphs(31373): memory: {"t_ms":2149508989,"event":"close","graph":"den_joint_16","mem_available_kb":3735424,"resident":6}
+11-09 19:52:58.151 I/IdolGraphs(31373): compiled den_joint_17 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3647 -> 2977 MB, resident 7
+11-09 19:52:59.982 I/IdolGraphs(31373): memory: {"t_ms":2149511430,"event":"evict","graph":"den_joint_17","mem_available_kb":2981268,"resident":7,"need_kb":3289004,"for":"den_joint_18"}
+11-09 19:53:00.061 I/IdolGraphs(31373): memory: {"t_ms":2149511508,"event":"close","graph":"den_joint_17","mem_available_kb":3692312,"resident":6}
+11-09 19:53:00.677 I/IdolGraphs(31373): compiled den_joint_18 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3605 -> 2924 MB, resident 7
+11-09 19:53:01.092 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:01.972 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:01.974 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:02.215 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:53:02.215 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:53:02.215 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:53:02.272 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:02.275 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:02.448 I/IdolGraphs(31373): memory: {"t_ms":2149513895,"event":"evict","graph":"den_joint_18","mem_available_kb":2942076,"resident":7,"need_kb":3253320,"for":"den_joint_19"}
+11-09 19:53:02.530 I/IdolGraphs(31373): memory: {"t_ms":2149513978,"event":"close","graph":"den_joint_18","mem_available_kb":3676432,"resident":6}
+11-09 19:53:03.142 I/IdolGraphs(31373): compiled den_joint_19 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3590 -> 2916 MB, resident 7
+11-09 19:53:04.970 I/IdolGraphs(31373): memory: {"t_ms":2149516418,"event":"evict","graph":"den_joint_19","mem_available_kb":2986028,"resident":7,"need_kb":3278664,"for":"den_joint_20"}
+11-09 19:53:05.046 I/IdolGraphs(31373): memory: {"t_ms":2149516494,"event":"close","graph":"den_joint_19","mem_available_kb":3721536,"resident":6}
+11-09 19:53:05.616 I/IdolGraphs(31373): compiled den_joint_20 in 0.57 s (gpu, fp16_with_fp32_accum), MemAvailable 3634 -> 2969 MB, resident 7
+11-09 19:53:06.093 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:07.317 I/IdolGraphs(31373): memory: {"t_ms":2149518765,"event":"evict","graph":"den_joint_20","mem_available_kb":2948516,"resident":7,"need_kb":3268024,"for":"den_joint_21"}
+11-09 19:53:07.397 I/IdolGraphs(31373): memory: {"t_ms":2149518845,"event":"close","graph":"den_joint_20","mem_available_kb":3681040,"resident":6}
+11-09 19:53:08.014 I/IdolGraphs(31373): compiled den_joint_21 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3594 -> 2924 MB, resident 7
+11-09 19:53:09.781 I/IdolGraphs(31373): memory: {"t_ms":2149521228,"event":"evict","graph":"den_joint_21","mem_available_kb":2950696,"resident":7,"need_kb":3256784,"for":"den_joint_22"}
+11-09 19:53:09.862 I/IdolGraphs(31373): memory: {"t_ms":2149521310,"event":"close","graph":"den_joint_21","mem_available_kb":3688504,"resident":6}
+11-09 19:53:10.480 I/IdolGraphs(31373): compiled den_joint_22 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3602 -> 2931 MB, resident 7
+11-09 19:53:11.097 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:12.251 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:12.253 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:12.492 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:53:12.492 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:53:12.492 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:53:12.547 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:12.551 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:15.320 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:53:16.100 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:20.503 I/IdolGraphs(31373): memory: {"t_ms":2149531950,"event":"evict","graph":"den_joint_02","mem_available_kb":3005544,"resident":7,"need_kb":3259592,"for":"den_joint_03"}
+11-09 19:53:20.584 I/IdolGraphs(31373): memory: {"t_ms":2149532031,"event":"close","graph":"den_joint_02","mem_available_kb":3686440,"resident":6}
+11-09 19:53:21.103 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:21.273 I/IdolGraphs(31373): compiled den_joint_03 in 0.69 s (gpu, fp16_with_fp32_accum), MemAvailable 3600 -> 2923 MB, resident 7
+11-09 19:53:22.526 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:22.527 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:22.773 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:53:22.773 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:53:22.773 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:53:22.829 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:22.832 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:23.075 I/IdolGraphs(31373): memory: {"t_ms":2149534523,"event":"evict","graph":"den_joint_03","mem_available_kb":2975220,"resident":7,"need_kb":3254560,"for":"den_joint_04"}
+11-09 19:53:23.158 I/IdolGraphs(31373): memory: {"t_ms":2149534606,"event":"close","graph":"den_joint_03","mem_available_kb":3709244,"resident":6}
+11-09 19:53:23.835 I/IdolGraphs(31373): compiled den_joint_04 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3622 -> 2964 MB, resident 7
+11-09 19:53:25.668 I/IdolGraphs(31373): memory: {"t_ms":2149537115,"event":"evict","graph":"den_joint_04","mem_available_kb":2950852,"resident":7,"need_kb":3291804,"for":"den_joint_05"}
+11-09 19:53:25.753 I/IdolGraphs(31373): memory: {"t_ms":2149537201,"event":"close","graph":"den_joint_04","mem_available_kb":3680900,"resident":6}
+11-09 19:53:26.106 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:26.426 I/IdolGraphs(31373): compiled den_joint_05 in 0.67 s (gpu, fp16_with_fp32_accum), MemAvailable 3594 -> 2920 MB, resident 7
+11-09 19:53:29.922 I/IdolGraphs(31373): memory: {"t_ms":2149541369,"event":"evict","graph":"den_joint_06","mem_available_kb":3011764,"resident":7,"need_kb":3258776,"for":"den_joint_07"}
+11-09 19:53:29.968 I/IdolGraphs(31373): memory: {"t_ms":2149541415,"event":"close","graph":"den_joint_06","mem_available_kb":3695040,"resident":6}
+11-09 19:53:30.633 I/IdolGraphs(31373): compiled den_joint_07 in 0.66 s (gpu, fp16_with_fp32_accum), MemAvailable 3608 -> 2945 MB, resident 7
+11-09 19:53:31.109 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:32.347 I/IdolGraphs(31373): memory: {"t_ms":2149543795,"event":"evict","graph":"den_joint_07","mem_available_kb":2971660,"resident":7,"need_kb":3259364,"for":"den_joint_08"}
+11-09 19:53:32.401 I/IdolGraphs(31373): memory: {"t_ms":2149543848,"event":"close","graph":"den_joint_07","mem_available_kb":3717948,"resident":6}
+11-09 19:53:32.802 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:32.803 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:32.996 I/IdolGraphs(31373): compiled den_joint_08 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3630 -> 2995 MB, resident 7
+11-09 19:53:33.046 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:53:33.046 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:53:33.046 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:53:33.102 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:33.106 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:34.671 I/IdolGraphs(31373): memory: {"t_ms":2149546118,"event":"evict","graph":"den_joint_08","mem_available_kb":2970292,"resident":7,"need_kb":3278736,"for":"den_joint_09"}
+11-09 19:53:34.725 I/IdolGraphs(31373): memory: {"t_ms":2149546173,"event":"close","graph":"den_joint_08","mem_available_kb":3704360,"resident":6}
+11-09 19:53:35.313 I/IdolGraphs(31373): compiled den_joint_09 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3617 -> 2983 MB, resident 7
+11-09 19:53:36.112 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:36.941 I/IdolGraphs(31373): memory: {"t_ms":2149548388,"event":"evict","graph":"den_joint_09","mem_available_kb":3011564,"resident":7,"need_kb":3275600,"for":"den_joint_10"}
+11-09 19:53:36.993 I/IdolGraphs(31373): memory: {"t_ms":2149548441,"event":"close","graph":"den_joint_09","mem_available_kb":3745784,"resident":6}
+11-09 19:53:37.565 I/IdolGraphs(31373): compiled den_joint_10 in 0.57 s (gpu, fp16_with_fp32_accum), MemAvailable 3657 -> 2995 MB, resident 7
+11-09 19:53:39.202 I/IdolGraphs(31373): memory: {"t_ms":2149550649,"event":"evict","graph":"den_joint_10","mem_available_kb":3041560,"resident":7,"need_kb":3252560,"for":"den_joint_11"}
+11-09 19:53:39.248 I/IdolGraphs(31373): memory: {"t_ms":2149550696,"event":"close","graph":"den_joint_10","mem_available_kb":3773816,"resident":6}
+11-09 19:53:39.835 I/IdolGraphs(31373): compiled den_joint_11 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3685 -> 3016 MB, resident 7
+11-09 19:53:41.117 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:41.469 I/IdolGraphs(31373): memory: {"t_ms":2149552917,"event":"evict","graph":"den_joint_11","mem_available_kb":3031676,"resident":7,"need_kb":3261164,"for":"den_joint_12"}
+11-09 19:53:41.521 I/IdolGraphs(31373): memory: {"t_ms":2149552968,"event":"close","graph":"den_joint_11","mem_available_kb":3767724,"resident":6}
+11-09 19:53:42.112 I/IdolGraphs(31373): compiled den_joint_12 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3679 -> 2974 MB, resident 7
+11-09 19:53:43.082 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:43.083 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:43.322 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:53:43.322 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:53:43.322 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:53:43.377 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:43.381 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:43.775 I/IdolGraphs(31373): memory: {"t_ms":2149555222,"event":"evict","graph":"den_joint_12","mem_available_kb":2999572,"resident":7,"need_kb":3277568,"for":"den_joint_13"}
+11-09 19:53:43.822 I/IdolGraphs(31373): memory: {"t_ms":2149555270,"event":"close","graph":"den_joint_12","mem_available_kb":3733740,"resident":6}
+11-09 19:53:44.414 I/IdolGraphs(31373): compiled den_joint_13 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3646 -> 2972 MB, resident 7
+11-09 19:53:45.481 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:53:46.077 I/IdolGraphs(31373): memory: {"t_ms":2149557525,"event":"evict","graph":"den_joint_13","mem_available_kb":3042668,"resident":7,"need_kb":3260420,"for":"den_joint_14"}
+11-09 19:53:46.119 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:46.126 I/IdolGraphs(31373): memory: {"t_ms":2149557574,"event":"close","graph":"den_joint_13","mem_available_kb":3774752,"resident":6}
+11-09 19:53:46.715 I/IdolGraphs(31373): compiled den_joint_14 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3686 -> 3012 MB, resident 7
+11-09 19:53:48.351 I/IdolGraphs(31373): memory: {"t_ms":2149559798,"event":"evict","graph":"den_joint_14","mem_available_kb":2999776,"resident":7,"need_kb":3280640,"for":"den_joint_15"}
+11-09 19:53:48.399 I/IdolGraphs(31373): memory: {"t_ms":2149559846,"event":"close","graph":"den_joint_14","mem_available_kb":3733960,"resident":6}
+11-09 19:53:48.988 I/IdolGraphs(31373): compiled den_joint_15 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3646 -> 2972 MB, resident 7
+11-09 19:53:50.629 I/IdolGraphs(31373): memory: {"t_ms":2149562076,"event":"evict","graph":"den_joint_15","mem_available_kb":3003084,"resident":7,"need_kb":3266384,"for":"den_joint_16"}
+11-09 19:53:50.675 I/IdolGraphs(31373): memory: {"t_ms":2149562123,"event":"close","graph":"den_joint_15","mem_available_kb":3736832,"resident":6}
+11-09 19:53:51.125 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:51.263 I/IdolGraphs(31373): compiled den_joint_16 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3649 -> 2975 MB, resident 7
+11-09 19:53:52.924 I/IdolGraphs(31373): memory: {"t_ms":2149564372,"event":"evict","graph":"den_joint_16","mem_available_kb":3023280,"resident":7,"need_kb":3271796,"for":"den_joint_17"}
+11-09 19:53:52.979 I/IdolGraphs(31373): memory: {"t_ms":2149564426,"event":"close","graph":"den_joint_16","mem_available_kb":3769492,"resident":6}
+11-09 19:53:53.345 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:53.347 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:53.573 I/IdolGraphs(31373): compiled den_joint_17 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3681 -> 3015 MB, resident 7
+11-09 19:53:53.588 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:53:53.588 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:53:53.588 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:53:53.644 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:53:53.647 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:53:55.263 I/IdolGraphs(31373): memory: {"t_ms":2149566711,"event":"evict","graph":"den_joint_17","mem_available_kb":3004820,"resident":7,"need_kb":3289004,"for":"den_joint_18"}
+11-09 19:53:55.310 I/IdolGraphs(31373): memory: {"t_ms":2149566757,"event":"close","graph":"den_joint_17","mem_available_kb":3740376,"resident":6}
+11-09 19:53:55.923 I/IdolGraphs(31373): compiled den_joint_18 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3652 -> 2972 MB, resident 7
+11-09 19:53:56.128 I/ActivityManager( 2824): Test idle passed
+11-09 19:53:57.666 I/IdolGraphs(31373): memory: {"t_ms":2149569114,"event":"evict","graph":"den_joint_18","mem_available_kb":2996460,"resident":7,"need_kb":3253320,"for":"den_joint_19"}
+11-09 19:53:57.711 I/IdolGraphs(31373): memory: {"t_ms":2149569158,"event":"close","graph":"den_joint_18","mem_available_kb":3734388,"resident":6}
+11-09 19:53:58.377 I/IdolGraphs(31373): compiled den_joint_19 in 0.67 s (gpu, fp16_with_fp32_accum), MemAvailable 3646 -> 2987 MB, resident 7
+11-09 19:54:00.082 I/IdolGraphs(31373): memory: {"t_ms":2149571530,"event":"evict","graph":"den_joint_19","mem_available_kb":3031508,"resident":7,"need_kb":3278664,"for":"den_joint_20"}
+11-09 19:54:00.127 I/IdolGraphs(31373): memory: {"t_ms":2149571575,"event":"close","graph":"den_joint_19","mem_available_kb":3768524,"resident":6}
+11-09 19:54:00.743 I/IdolGraphs(31373): compiled den_joint_20 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3680 -> 3004 MB, resident 7
+11-09 19:54:01.131 I/ActivityManager( 2824): Test idle passed
+11-09 19:54:02.491 I/IdolGraphs(31373): memory: {"t_ms":2149573938,"event":"evict","graph":"den_joint_20","mem_available_kb":2969908,"resident":7,"need_kb":3268024,"for":"den_joint_21"}
+11-09 19:54:02.537 I/IdolGraphs(31373): memory: {"t_ms":2149573984,"event":"close","graph":"den_joint_20","mem_available_kb":3704220,"resident":6}
+11-09 19:54:03.158 I/IdolGraphs(31373): compiled den_joint_21 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3617 -> 2958 MB, resident 7
+11-09 19:54:03.611 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:03.612 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:03.856 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:54:03.856 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:54:03.856 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:54:03.910 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:03.915 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:06.132 I/ActivityManager( 2824): Test idle passed
+11-09 19:54:11.138 I/ActivityManager( 2824): Test idle passed
+11-09 19:54:13.888 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:13.890 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:13.931 I/IdolGraphs(31373): memory: {"t_ms":2149585379,"event":"evict","graph":"den_joint_01","mem_available_kb":3035440,"resident":7,"need_kb":3265356,"for":"den_joint_02"}
+11-09 19:54:14.021 I/IdolGraphs(31373): memory: {"t_ms":2149585469,"event":"close","graph":"den_joint_01","mem_available_kb":3719236,"resident":6}
+11-09 19:54:14.130 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:54:14.130 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:54:14.130 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:54:14.185 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:14.188 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:14.721 I/IdolGraphs(31373): compiled den_joint_02 in 0.70 s (gpu, fp16_with_fp32_accum), MemAvailable 3632 -> 2966 MB, resident 7
+11-09 19:54:15.495 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:54:16.139 I/ActivityManager( 2824): Test idle passed
+11-09 19:54:16.556 I/IdolGraphs(31373): memory: {"t_ms":2149588004,"event":"evict","graph":"den_joint_02","mem_available_kb":2964288,"resident":7,"need_kb":3259592,"for":"den_joint_03"}
+11-09 19:54:16.640 I/IdolGraphs(31373): memory: {"t_ms":2149588087,"event":"close","graph":"den_joint_02","mem_available_kb":3684448,"resident":6}
+11-09 19:54:17.254 I/IdolGraphs(31373): compiled den_joint_03 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3598 -> 2925 MB, resident 7
+11-09 19:54:19.099 I/IdolGraphs(31373): memory: {"t_ms":2149590546,"event":"evict","graph":"den_joint_03","mem_available_kb":2941688,"resident":7,"need_kb":3254560,"for":"den_joint_04"}
+11-09 19:54:19.187 I/IdolGraphs(31373): memory: {"t_ms":2149590635,"event":"close","graph":"den_joint_03","mem_available_kb":3671420,"resident":6}
+11-09 19:54:19.813 I/IdolGraphs(31373): compiled den_joint_04 in 0.63 s (gpu, fp16_with_fp32_accum), MemAvailable 3585 -> 2937 MB, resident 7
+11-09 19:54:23.441 I/IdolGraphs(31373): memory: {"t_ms":2149594889,"event":"evict","graph":"den_joint_05","mem_available_kb":3007280,"resident":7,"need_kb":3256164,"for":"den_joint_06"}
+11-09 19:54:23.517 I/IdolGraphs(31373): memory: {"t_ms":2149594964,"event":"close","graph":"den_joint_05","mem_available_kb":3660708,"resident":6}
+11-09 19:54:24.139 I/IdolGraphs(31373): compiled den_joint_06 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3574 -> 2925 MB, resident 7
+11-09 19:54:24.156 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:24.157 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:24.402 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:54:24.402 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:54:24.402 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:54:24.458 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:24.462 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:25.918 I/IdolGraphs(31373): memory: {"t_ms":2149597366,"event":"evict","graph":"den_joint_06","mem_available_kb":2940224,"resident":7,"need_kb":3258776,"for":"den_joint_07"}
+11-09 19:54:26.004 I/IdolGraphs(31373): memory: {"t_ms":2149597451,"event":"close","graph":"den_joint_06","mem_available_kb":3672892,"resident":6}
+11-09 19:54:26.617 I/IdolGraphs(31373): compiled den_joint_07 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3586 -> 2928 MB, resident 7
+11-09 19:54:28.463 I/IdolGraphs(31373): memory: {"t_ms":2149599911,"event":"evict","graph":"den_joint_07","mem_available_kb":2971880,"resident":7,"need_kb":3259364,"for":"den_joint_08"}
+11-09 19:54:28.548 I/IdolGraphs(31373): memory: {"t_ms":2149599996,"event":"close","graph":"den_joint_07","mem_available_kb":3712960,"resident":6}
+11-09 19:54:29.165 I/IdolGraphs(31373): compiled den_joint_08 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3625 -> 2953 MB, resident 7
+11-09 19:54:31.007 I/IdolGraphs(31373): memory: {"t_ms":2149602454,"event":"evict","graph":"den_joint_08","mem_available_kb":2929132,"resident":7,"need_kb":3278736,"for":"den_joint_09"}
+11-09 19:54:31.091 I/IdolGraphs(31373): memory: {"t_ms":2149602539,"event":"close","graph":"den_joint_08","mem_available_kb":3666028,"resident":6}
+11-09 19:54:31.746 I/IdolGraphs(31373): compiled den_joint_09 in 0.65 s (gpu, fp16_with_fp32_accum), MemAvailable 3580 -> 2935 MB, resident 7
+11-09 19:54:33.581 I/IdolGraphs(31373): memory: {"t_ms":2149605029,"event":"evict","graph":"den_joint_09","mem_available_kb":2953740,"resident":7,"need_kb":3275600,"for":"den_joint_10"}
+11-09 19:54:33.670 I/IdolGraphs(31373): memory: {"t_ms":2149605117,"event":"close","graph":"den_joint_09","mem_available_kb":3685852,"resident":6}
+11-09 19:54:34.377 I/IdolGraphs(31373): compiled den_joint_10 in 0.71 s (gpu, fp16_with_fp32_accum), MemAvailable 3599 -> 2995 MB, resident 7
+11-09 19:54:34.443 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:34.444 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:34.700 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:54:34.700 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:54:34.700 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:54:34.756 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:34.760 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:36.191 I/IdolGraphs(31373): memory: {"t_ms":2149607638,"event":"evict","graph":"den_joint_10","mem_available_kb":3028708,"resident":7,"need_kb":3252560,"for":"den_joint_11"}
+11-09 19:54:36.276 I/IdolGraphs(31373): memory: {"t_ms":2149607724,"event":"close","graph":"den_joint_10","mem_available_kb":3760860,"resident":6}
+11-09 19:54:36.938 I/IdolGraphs(31373): compiled den_joint_11 in 0.66 s (gpu, fp16_with_fp32_accum), MemAvailable 3672 -> 3018 MB, resident 7
+11-09 19:54:38.627 I/IdolGraphs(31373): memory: {"t_ms":2149610075,"event":"evict","graph":"den_joint_11","mem_available_kb":2993556,"resident":7,"need_kb":3282192,"for":"den_joint_12"}
+11-09 19:54:38.712 I/IdolGraphs(31373): memory: {"t_ms":2149610159,"event":"close","graph":"den_joint_11","mem_available_kb":3723788,"resident":6}
+11-09 19:54:39.395 I/IdolGraphs(31373): compiled den_joint_12 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3636 -> 2989 MB, resident 7
+11-09 19:54:41.068 I/IdolGraphs(31373): memory: {"t_ms":2149612515,"event":"evict","graph":"den_joint_12","mem_available_kb":3013684,"resident":7,"need_kb":3277568,"for":"den_joint_13"}
+11-09 19:54:41.145 I/IdolGraphs(31373): memory: {"t_ms":2149612592,"event":"close","graph":"den_joint_12","mem_available_kb":3744516,"resident":6}
+11-09 19:54:41.822 I/IdolGraphs(31373): compiled den_joint_13 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3656 -> 3008 MB, resident 7
+11-09 19:54:43.509 I/IdolGraphs(31373): memory: {"t_ms":2149614957,"event":"evict","graph":"den_joint_13","mem_available_kb":3038976,"resident":7,"need_kb":3260420,"for":"den_joint_14"}
+11-09 19:54:43.587 I/IdolGraphs(31373): memory: {"t_ms":2149615034,"event":"close","graph":"den_joint_13","mem_available_kb":3771708,"resident":6}
+11-09 19:54:44.264 I/IdolGraphs(31373): compiled den_joint_14 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3683 -> 3023 MB, resident 7
+11-09 19:54:44.741 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:44.743 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:44.990 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:54:44.990 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:54:44.990 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:54:45.045 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:45.048 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:45.510 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:54:45.904 I/IdolGraphs(31373): memory: {"t_ms":2149617352,"event":"evict","graph":"den_joint_14","mem_available_kb":3062804,"resident":7,"need_kb":3280640,"for":"den_joint_15"}
+11-09 19:54:45.980 I/IdolGraphs(31373): memory: {"t_ms":2149617428,"event":"close","graph":"den_joint_14","mem_available_kb":3795028,"resident":6}
+11-09 19:54:46.653 I/IdolGraphs(31373): compiled den_joint_15 in 0.67 s (gpu, fp16_with_fp32_accum), MemAvailable 3706 -> 3045 MB, resident 7
+11-09 19:54:48.322 I/IdolGraphs(31373): memory: {"t_ms":2149619770,"event":"evict","graph":"den_joint_15","mem_available_kb":3080548,"resident":7,"need_kb":3266384,"for":"den_joint_16"}
+11-09 19:54:48.398 I/IdolGraphs(31373): memory: {"t_ms":2149619846,"event":"close","graph":"den_joint_15","mem_available_kb":3814196,"resident":6}
+11-09 19:54:49.075 I/IdolGraphs(31373): compiled den_joint_16 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3724 -> 3051 MB, resident 7
+11-09 19:54:50.746 I/IdolGraphs(31373): memory: {"t_ms":2149622193,"event":"evict","graph":"den_joint_16","mem_available_kb":3101508,"resident":7,"need_kb":3271796,"for":"den_joint_17"}
+11-09 19:54:50.822 I/IdolGraphs(31373): memory: {"t_ms":2149622269,"event":"close","graph":"den_joint_16","mem_available_kb":3835744,"resident":6}
+11-09 19:54:51.517 I/IdolGraphs(31373): compiled den_joint_17 in 0.69 s (gpu, fp16_with_fp32_accum), MemAvailable 3745 -> 3081 MB, resident 7
+11-09 19:54:53.207 I/IdolGraphs(31373): memory: {"t_ms":2149624654,"event":"evict","graph":"den_joint_17","mem_available_kb":3066456,"resident":7,"need_kb":3289004,"for":"den_joint_18"}
+11-09 19:54:53.288 I/IdolGraphs(31373): memory: {"t_ms":2149624736,"event":"close","graph":"den_joint_17","mem_available_kb":3799284,"resident":6}
+11-09 19:54:53.911 I/IdolGraphs(31373): compiled den_joint_18 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3710 -> 3060 MB, resident 7
+11-09 19:54:55.022 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:55.023 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:55.267 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:54:55.267 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:54:55.267 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:54:55.321 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:54:55.324 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:54:55.610 I/IdolGraphs(31373): memory: {"t_ms":2149627057,"event":"evict","graph":"den_joint_18","mem_available_kb":3084220,"resident":7,"need_kb":3253320,"for":"den_joint_19"}
+11-09 19:54:55.675 I/IdolGraphs(31373): memory: {"t_ms":2149627123,"event":"close","graph":"den_joint_18","mem_available_kb":3816008,"resident":6}
+11-09 19:54:56.216 I/IdolGraphs(31373): compiled den_joint_19 in 0.54 s (gpu, fp16_with_fp32_accum), MemAvailable 3726 -> 3057 MB, resident 7
+11-09 19:54:57.877 I/IdolGraphs(31373): memory: {"t_ms":2149629325,"event":"evict","graph":"den_joint_19","mem_available_kb":3081124,"resident":7,"need_kb":3278664,"for":"den_joint_20"}
+11-09 19:54:57.950 I/IdolGraphs(31373): memory: {"t_ms":2149629397,"event":"close","graph":"den_joint_19","mem_available_kb":3813120,"resident":6}
+11-09 19:54:58.583 I/IdolGraphs(31373): compiled den_joint_20 in 0.63 s (gpu, fp16_with_fp32_accum), MemAvailable 3723 -> 3042 MB, resident 7
+11-09 19:55:05.306 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:05.307 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:05.547 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:55:05.547 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:55:05.547 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:55:05.600 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:05.602 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:05.948 I/IdolGraphs(31373): compiled den_ctx in 0.67 s (gpu, fp16_with_fp32_accum), MemAvailable 3098 -> 2832 MB, resident 8
+11-09 19:55:10.228 I/IdolGraphs(31373): memory: {"t_ms":2149641676,"event":"evict","graph":"den_joint_00","mem_available_kb":2805628,"resident":8,"need_kb":3258512,"for":"den_joint_01"}
+11-09 19:55:10.315 I/IdolGraphs(31373): memory: {"t_ms":2149641763,"event":"close","graph":"den_joint_00","mem_available_kb":3491252,"resident":7}
+11-09 19:55:10.992 I/IdolGraphs(31373): compiled den_joint_01 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3409 -> 2759 MB, resident 8
+11-09 19:55:12.829 I/IdolGraphs(31373): memory: {"t_ms":2149644276,"event":"evict","graph":"den_joint_01","mem_available_kb":2759580,"resident":8,"need_kb":3265356,"for":"den_joint_02"}
+11-09 19:55:12.919 I/IdolGraphs(31373): memory: {"t_ms":2149644367,"event":"close","graph":"den_joint_01","mem_available_kb":3466836,"resident":7}
+11-09 19:55:13.556 I/IdolGraphs(31373): compiled den_joint_02 in 0.64 s (gpu, fp16_with_fp32_accum), MemAvailable 3385 -> 2730 MB, resident 8
+11-09 19:55:15.348 I/IdolGraphs(31373): memory: {"t_ms":2149646795,"event":"evict","graph":"den_joint_02","mem_available_kb":2748584,"resident":8,"need_kb":3259592,"for":"den_joint_03"}
+11-09 19:55:15.436 I/IdolGraphs(31373): memory: {"t_ms":2149646884,"event":"close","graph":"den_joint_02","mem_available_kb":3472208,"resident":7}
+11-09 19:55:15.525 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:55:15.576 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:15.578 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:15.826 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:55:15.826 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:55:15.826 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:55:15.882 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:15.885 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:16.082 I/IdolGraphs(31373): compiled den_joint_03 in 0.64 s (gpu, fp16_with_fp32_accum), MemAvailable 3390 -> 2757 MB, resident 8
+11-09 19:55:19.425 I/IdolGraphs(31373): memory: {"t_ms":2149650872,"event":"evict","graph":"den_joint_04","mem_available_kb":2824840,"resident":8,"need_kb":3291804,"for":"den_joint_05"}
+11-09 19:55:19.509 I/IdolGraphs(31373): memory: {"t_ms":2149650957,"event":"close","graph":"den_joint_04","mem_available_kb":3506496,"resident":7}
+11-09 19:55:20.185 I/IdolGraphs(31373): compiled den_joint_05 in 0.68 s (gpu, fp16_with_fp32_accum), MemAvailable 3424 -> 2766 MB, resident 8
+11-09 19:55:21.849 I/IdolGraphs(31373): memory: {"t_ms":2149653296,"event":"evict","graph":"den_joint_05","mem_available_kb":2810792,"resident":8,"need_kb":3256164,"for":"den_joint_06"}
+11-09 19:55:21.935 I/IdolGraphs(31373): memory: {"t_ms":2149653382,"event":"close","graph":"den_joint_05","mem_available_kb":3550800,"resident":7}
+11-09 19:55:22.551 I/IdolGraphs(31373): compiled den_joint_06 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3467 -> 2801 MB, resident 8
+11-09 19:55:24.237 I/IdolGraphs(31373): memory: {"t_ms":2149655685,"event":"evict","graph":"den_joint_06","mem_available_kb":2764588,"resident":8,"need_kb":3258776,"for":"den_joint_07"}
+11-09 19:55:24.323 I/IdolGraphs(31373): memory: {"t_ms":2149655770,"event":"close","graph":"den_joint_06","mem_available_kb":3498504,"resident":7}
+11-09 19:55:24.934 I/IdolGraphs(31373): compiled den_joint_07 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3416 -> 2749 MB, resident 8
+11-09 19:55:25.862 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:25.863 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:26.099 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:55:26.099 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:55:26.099 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:55:26.153 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:26.157 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:26.630 I/IdolGraphs(31373): memory: {"t_ms":2149658077,"event":"evict","graph":"den_joint_07","mem_available_kb":2776784,"resident":8,"need_kb":3259364,"for":"den_joint_08"}
+11-09 19:55:26.714 I/IdolGraphs(31373): memory: {"t_ms":2149658162,"event":"close","graph":"den_joint_07","mem_available_kb":3508972,"resident":7}
+11-09 19:55:27.367 I/IdolGraphs(31373): compiled den_joint_08 in 0.65 s (gpu, fp16_with_fp32_accum), MemAvailable 3426 -> 2755 MB, resident 8
+11-09 19:55:29.057 I/IdolGraphs(31373): memory: {"t_ms":2149660505,"event":"evict","graph":"den_joint_08","mem_available_kb":2777316,"resident":8,"need_kb":3278736,"for":"den_joint_09"}
+11-09 19:55:29.144 I/IdolGraphs(31373): memory: {"t_ms":2149660591,"event":"close","graph":"den_joint_08","mem_available_kb":3510060,"resident":7}
+11-09 19:55:29.766 I/IdolGraphs(31373): compiled den_joint_09 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3427 -> 2759 MB, resident 8
+11-09 19:55:31.464 I/IdolGraphs(31373): memory: {"t_ms":2149662911,"event":"evict","graph":"den_joint_09","mem_available_kb":2779632,"resident":8,"need_kb":3275600,"for":"den_joint_10"}
+11-09 19:55:31.550 I/IdolGraphs(31373): memory: {"t_ms":2149662997,"event":"close","graph":"den_joint_09","mem_available_kb":3518260,"resident":7}
+11-09 19:55:32.163 I/IdolGraphs(31373): compiled den_joint_10 in 0.61 s (gpu, fp16_with_fp32_accum), MemAvailable 3435 -> 2761 MB, resident 8
+11-09 19:55:33.871 I/IdolGraphs(31373): memory: {"t_ms":2149665318,"event":"evict","graph":"den_joint_10","mem_available_kb":2784312,"resident":8,"need_kb":3252560,"for":"den_joint_11"}
+11-09 19:55:33.961 I/IdolGraphs(31373): memory: {"t_ms":2149665408,"event":"close","graph":"den_joint_10","mem_available_kb":3517020,"resident":7}
+11-09 19:55:34.577 I/IdolGraphs(31373): compiled den_joint_11 in 0.62 s (gpu, fp16_with_fp32_accum), MemAvailable 3434 -> 2773 MB, resident 8
+11-09 19:55:36.125 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:36.127 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:36.272 I/IdolGraphs(31373): memory: {"t_ms":2149667720,"event":"evict","graph":"den_joint_11","mem_available_kb":2820148,"resident":8,"need_kb":3282192,"for":"den_joint_12"}
+11-09 19:55:36.351 I/IdolGraphs(31373): memory: {"t_ms":2149667799,"event":"close","graph":"den_joint_11","mem_available_kb":3542956,"resident":7}
+11-09 19:55:36.370 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:55:36.370 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:55:36.370 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:55:36.424 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:36.427 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:36.954 I/IdolGraphs(31373): compiled den_joint_12 in 0.60 s (gpu, fp16_with_fp32_accum), MemAvailable 3459 -> 2790 MB, resident 8
+11-09 19:55:38.690 I/IdolGraphs(31373): memory: {"t_ms":2149670138,"event":"evict","graph":"den_joint_12","mem_available_kb":2761004,"resident":8,"need_kb":3277568,"for":"den_joint_13"}
+11-09 19:55:38.770 I/IdolGraphs(31373): memory: {"t_ms":2149670217,"event":"close","graph":"den_joint_12","mem_available_kb":3492468,"resident":7}
+11-09 19:55:39.423 I/IdolGraphs(31373): compiled den_joint_13 in 0.65 s (gpu, fp16_with_fp32_accum), MemAvailable 3410 -> 2749 MB, resident 8
+11-09 19:55:41.125 I/IdolGraphs(31373): memory: {"t_ms":2149672572,"event":"evict","graph":"den_joint_13","mem_available_kb":2766456,"resident":8,"need_kb":3260420,"for":"den_joint_14"}
+11-09 19:55:41.210 I/IdolGraphs(31373): memory: {"t_ms":2149672657,"event":"close","graph":"den_joint_13","mem_available_kb":3501968,"resident":7}
+11-09 19:55:41.851 I/IdolGraphs(31373): compiled den_joint_14 in 0.64 s (gpu, fp16_with_fp32_accum), MemAvailable 3419 -> 2775 MB, resident 8
+11-09 19:55:43.584 I/IdolGraphs(31373): memory: {"t_ms":2149675032,"event":"evict","graph":"den_joint_14","mem_available_kb":2800192,"resident":8,"need_kb":3280640,"for":"den_joint_15"}
+11-09 19:55:43.663 I/IdolGraphs(31373): memory: {"t_ms":2149675111,"event":"close","graph":"den_joint_14","mem_available_kb":3530676,"resident":7}
+11-09 19:55:44.303 I/IdolGraphs(31373): compiled den_joint_15 in 0.64 s (gpu, fp16_with_fp32_accum), MemAvailable 3447 -> 2791 MB, resident 8
+11-09 19:55:45.545 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:55:46.045 I/IdolGraphs(31373): memory: {"t_ms":2149677493,"event":"evict","graph":"den_joint_15","mem_available_kb":2816704,"resident":8,"need_kb":3266384,"for":"den_joint_16"}
+11-09 19:55:46.125 I/IdolGraphs(31373): memory: {"t_ms":2149677573,"event":"close","graph":"den_joint_15","mem_available_kb":3549500,"resident":7}
+11-09 19:55:46.406 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:46.407 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:46.662 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:55:46.662 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:55:46.662 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:55:46.717 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:46.721 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:46.763 I/IdolGraphs(31373): compiled den_joint_16 in 0.64 s (gpu, fp16_with_fp32_accum), MemAvailable 3466 -> 2794 MB, resident 8
+11-09 19:55:48.451 I/IdolGraphs(31373): memory: {"t_ms":2149679899,"event":"evict","graph":"den_joint_16","mem_available_kb":2814760,"resident":8,"need_kb":3271796,"for":"den_joint_17"}
+11-09 19:55:48.525 I/IdolGraphs(31373): memory: {"t_ms":2149679973,"event":"close","graph":"den_joint_16","mem_available_kb":3552440,"resident":7}
+11-09 19:55:49.118 I/IdolGraphs(31373): compiled den_joint_17 in 0.59 s (gpu, fp16_with_fp32_accum), MemAvailable 3469 -> 2813 MB, resident 8
+11-09 19:55:50.756 I/IdolGraphs(31373): memory: {"t_ms":2149682204,"event":"evict","graph":"den_joint_17","mem_available_kb":2854008,"resident":8,"need_kb":3289004,"for":"den_joint_18"}
+11-09 19:55:50.830 I/IdolGraphs(31373): memory: {"t_ms":2149682277,"event":"close","graph":"den_joint_17","mem_available_kb":3586408,"resident":7}
+11-09 19:55:51.410 I/IdolGraphs(31373): compiled den_joint_18 in 0.58 s (gpu, fp16_with_fp32_accum), MemAvailable 3502 -> 2835 MB, resident 8
+11-09 19:55:53.116 I/IdolGraphs(31373): memory: {"t_ms":2149684563,"event":"evict","graph":"den_joint_18","mem_available_kb":2833072,"resident":8,"need_kb":3253320,"for":"den_joint_19"}
+11-09 19:55:53.197 I/IdolGraphs(31373): memory: {"t_ms":2149684644,"event":"close","graph":"den_joint_18","mem_available_kb":3553596,"resident":7}
+11-09 19:55:53.772 I/IdolGraphs(31373): compiled den_joint_19 in 0.57 s (gpu, fp16_with_fp32_accum), MemAvailable 3469 -> 2818 MB, resident 8
+11-09 19:55:56.688 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:56.690 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:55:56.931 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:55:56.931 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:55:56.931 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:55:56.987 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:55:56.990 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:02.051 I/IdolGraphs(31373): memory: {"t_ms":2149693498,"event":"evict","graph":"den_joint_23","mem_available_kb":2916640,"resident":8,"need_kb":4037436,"for":"oct"}
+11-09 19:56:02.129 I/IdolGraphs(31373): memory: {"t_ms":2149693577,"event":"close","graph":"den_joint_23","mem_available_kb":3541808,"resident":7}
+11-09 19:56:02.129 I/IdolGraphs(31373): memory: {"t_ms":2149693577,"event":"evict","graph":"den_joint_22","mem_available_kb":3541808,"resident":7,"need_kb":4037436,"for":"oct"}
+11-09 19:56:02.217 I/IdolGraphs(31373): memory: {"t_ms":2149693665,"event":"close","graph":"den_joint_22","mem_available_kb":4220208,"resident":6}
+11-09 19:56:06.171 I/IdolGraphs(31373): compiled oct in 3.95 s (gpu, fp16_with_fp32_accum), MemAvailable 4121 -> 2699 MB, resident 7
+11-09 19:56:06.675 I/ActivityManager( 2824): Start proc 13382:com.android.externalstorage/u0a76 for content provider {com.android.externalstorage/com.android.externalstorage.ExternalStorageProvider}
+11-09 19:56:06.725 I/ActivityManager( 2824): Changes in 10076 20 to 19, 0 to 384
+11-09 19:56:06.772 I/ActivityManager( 2824): Changes in 10076 19 to 5, 384 to 400
+11-09 19:56:06.962 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:06.963 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:07.212 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:56:07.212 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:56:07.212 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:56:07.268 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:07.271 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:12.800 I/ActivityManager( 2824): Changes in 10076 5 to 15, 400 to 256
+11-09 19:56:15.558 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:56:16.722 I/IdolGraphs(31373): memory: {"t_ms":2149708169,"event":"evict","graph":"oct","mem_available_kb":2444332,"resident":7,"need_kb":3060196,"for":"gs_0"}
+11-09 19:56:16.927 I/IdolGraphs(31373): memory: {"t_ms":2149708375,"event":"close","graph":"oct","mem_available_kb":3940776,"resident":6}
+11-09 19:56:17.246 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:17.248 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:17.502 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:56:17.502 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:56:17.502 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:56:17.556 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:17.558 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:18.226 I/IdolGraphs(31373): compiled gs_0 in 1.30 s (gpu, fp16_with_fp32_accum), MemAvailable 3848 -> 3443 MB, resident 7
+11-09 19:56:22.165 I/IdolGraphs(31373): compiled gs_1 in 1.24 s (gpu, fp16_with_fp32_accum), MemAvailable 3373 -> 2918 MB, resident 8
+11-09 19:56:24.941 I/IdolGraphs(31373): memory: {"t_ms":2149716389,"event":"evict","graph":"gs_1","mem_available_kb":2906220,"resident":8,"need_kb":3085496,"for":"gs_2"}
+11-09 19:56:25.036 I/IdolGraphs(31373): memory: {"t_ms":2149716484,"event":"close","graph":"gs_1","mem_available_kb":3429084,"resident":7}
+11-09 19:56:26.307 I/IdolGraphs(31373): compiled gs_2 in 1.27 s (gpu, fp16_with_fp32_accum), MemAvailable 3348 -> 2854 MB, resident 8
+11-09 19:56:27.531 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:27.533 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:27.785 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:56:27.785 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:56:27.785 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:56:27.839 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:27.842 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:29.063 I/IdolGraphs(31373): memory: {"t_ms":2149720511,"event":"evict","graph":"gs_2","mem_available_kb":2875428,"resident":8,"need_kb":3030208,"for":"gs_3"}
+11-09 19:56:29.156 I/IdolGraphs(31373): memory: {"t_ms":2149720604,"event":"close","graph":"gs_2","mem_available_kb":3427524,"resident":7}
+11-09 19:56:30.373 I/IdolGraphs(31373): compiled gs_3 in 1.22 s (gpu, fp16_with_fp32_accum), MemAvailable 3347 -> 2876 MB, resident 8
+11-09 19:56:32.803 I/ActivityManager( 2824): Changes in 10076 15 to 19, 256 to 0
+11-09 19:56:33.128 I/IdolGraphs(31373): memory: {"t_ms":2149724575,"event":"evict","graph":"gs_3","mem_available_kb":2855504,"resident":8,"need_kb":3093012,"for":"gs_4"}
+11-09 19:56:33.223 I/IdolGraphs(31373): memory: {"t_ms":2149724671,"event":"close","graph":"gs_3","mem_available_kb":3447028,"resident":7}
+11-09 19:56:34.433 I/IdolGraphs(31373): compiled gs_4 in 1.21 s (gpu, fp16_with_fp32_accum), MemAvailable 3366 -> 2871 MB, resident 8
+11-09 19:56:37.204 I/IdolGraphs(31373): memory: {"t_ms":2149728652,"event":"evict","graph":"gs_4","mem_available_kb":2900600,"resident":8,"need_kb":3060820,"for":"gs_5"}
+11-09 19:56:37.289 I/IdolGraphs(31373): memory: {"t_ms":2149728736,"event":"close","graph":"gs_4","mem_available_kb":3423692,"resident":7}
+11-09 19:56:37.815 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:37.817 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:38.063 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:56:38.063 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:56:38.063 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:56:38.118 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:38.121 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:38.517 I/IdolGraphs(31373): compiled gs_5 in 1.23 s (gpu, fp16_with_fp32_accum), MemAvailable 3343 -> 2875 MB, resident 8
+11-09 19:56:41.298 I/IdolGraphs(31373): memory: {"t_ms":2149732745,"event":"evict","graph":"gs_5","mem_available_kb":2861280,"resident":8,"need_kb":3064668,"for":"gs_6"}
+11-09 19:56:41.387 I/IdolGraphs(31373): memory: {"t_ms":2149732835,"event":"close","graph":"gs_5","mem_available_kb":3413324,"resident":7}
+11-09 19:56:42.612 I/IdolGraphs(31373): compiled gs_6 in 1.22 s (gpu, fp16_with_fp32_accum), MemAvailable 3333 -> 2840 MB, resident 8
+11-09 19:56:45.388 I/IdolGraphs(31373): memory: {"t_ms":2149736835,"event":"evict","graph":"gs_6","mem_available_kb":2861872,"resident":8,"need_kb":3126956,"for":"gs_7"}
+11-09 19:56:45.487 I/IdolGraphs(31373): memory: {"t_ms":2149736935,"event":"close","graph":"gs_6","mem_available_kb":3447156,"resident":7}
+11-09 19:56:45.576 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:56:46.701 I/IdolGraphs(31373): compiled gs_7 in 1.21 s (gpu, fp16_with_fp32_accum), MemAvailable 3366 -> 2900 MB, resident 8
+11-09 19:56:48.092 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:48.093 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:48.332 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:56:48.332 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:56:48.332 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:56:48.386 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:48.389 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:49.966 I/IdolEngine(31373): run done: matting 10.12, preprocess 11.09, dinov3 19.43, vae 5.83, denoiser 279.65, octree 13.98, gaussian_decoder 33.46, ply 0.11, generate 352.87, all 363.98
+11-09 19:56:50.067 I/ActivityManager( 2824): Start proc 13787:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:2/u0i185 for  {com.idol/org.chromium.content.app.SandboxedProcessService0:2}
+11-09 19:56:50.090 I/ActivityManager( 2824): Changes in 99185 20 to 19, 0 to 384
+11-09 19:56:50.105 I/ActivityManager( 2824): Changes in 99185 19 to 3, 384 to 440
+11-09 19:56:50.123 W/chromium(13787): [WARNING:content/app/android/content_main_android.cc:82] android_setCpu already initialized
+11-09 19:56:50.152 W/chromium(13787): [WARNING:content/child/runtime_features.cc:478] Fenced frames cannot be enabled in this configuration. Use --enable-features=FencedFrames instead.
+11-09 19:56:50.155 I/chromium(13787): [INFO:third_party/skia/src/ports/SkFontMgr_android_parser.cpp:724] [SkFontMgr Android Parser] '/product/etc/fonts_customization.xml' could not be opened
+11-09 19:56:50.155 I/chromium(13787): 
+11-09 19:56:50.260 I/chromium(31373): [INFO:CONSOLE:795] "[object Response]", source: https://appassets.androidplatform.net/assets/viewer/main.js (795)
+11-09 19:56:50.263 I/chromium(31373): [INFO:CONSOLE:807] "content-length 17826208, 17826208", source: https://appassets.androidplatform.net/assets/viewer/main.js (807)
+11-09 19:56:50.263 I/chromium(31373): [INFO:CONSOLE:812] "557069 0.3333333333333333", source: https://appassets.androidplatform.net/assets/viewer/main.js (812)
+11-09 19:56:50.415 I/chromium(31373): [INFO:CONSOLE:186] "Vertex Count 262144", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (186)
+11-09 19:56:50.415 I/chromium(31373): [INFO:CONSOLE:209] "Bytes per row 68 [object Object] [object Object]", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (209)
+11-09 19:56:50.553 I/chromium(31373): [INFO:CONSOLE:242] "calculate importance: 136.343017578125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (242)
+11-09 19:56:50.698 I/chromium(31373): [INFO:CONSOLE:246] "sort: 145.84814453125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (246)
+11-09 19:56:51.233 I/chromium(31373): [INFO:CONSOLE:320] "build buffer: 534.6220703125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (320)
+11-09 19:56:51.328 I/chromium(31373): [INFO:CONSOLE:169] "sort: 15.989013671875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:53.654 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.81103515625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:53.972 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.3330078125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:54.287 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.02294921875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:54.605 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.947998046875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:54.923 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.95703125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:55.237 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.44091796875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:55.555 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.224853515625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:55.871 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.360107421875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:56.187 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.0859375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:56.505 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.10009765625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:56.820 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.490966796875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:57.137 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.285888671875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:57.454 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.944091796875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:57.770 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.419189453125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:58.086 I/chromium(31373): [INFO:CONSOLE:169] "sort: 7.81396484375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:58.364 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:58.365 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:58.402 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.27392578125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:58.607 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:56:58.607 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:56:58.607 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:56:58.661 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:56:58.666 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:56:58.720 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.5361328125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:59.036 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.06298828125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:59.355 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.18798828125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:59.670 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.29296875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:56:59.988 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.31689453125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:00.305 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.408203125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:00.620 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.6640625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:00.936 I/chromium(31373): [INFO:CONSOLE:169] "sort: 7.823974609375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:01.254 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.35009765625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:01.571 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.781005859375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:01.887 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.786865234375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:02.204 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.43603515625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:02.522 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.071044921875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:02.837 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.4990234375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:03.153 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.767822265625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:03.470 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.48291015625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:03.786 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.39111328125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:04.105 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.865966796875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:04.421 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.091064453125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:04.739 I/chromium(31373): [INFO:CONSOLE:169] "sort: 11.046875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:05.053 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.281982421875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:05.369 I/chromium(31373): [INFO:CONSOLE:169] "sort: 7.93408203125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:05.688 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.406982421875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:06.004 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.943115234375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:06.321 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.760986328125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:06.638 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.675048828125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:06.954 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.154052734375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:07.271 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.242919921875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:07.587 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.02099609375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:07.903 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.19921875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:08.220 I/chromium(31373): [INFO:CONSOLE:169] "sort: 7.827880859375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:08.537 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.671875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:08.631 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:57:08.632 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:57:08.854 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.078857421875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:08.876 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:57:08.876 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:57:08.876 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:57:08.932 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:57:08.934 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:57:09.172 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.32080078125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:09.487 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.77001953125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:09.803 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.120849609375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:10.121 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.0771484375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:10.436 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.113037109375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:10.755 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.596923828125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:11.071 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.862060546875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:11.387 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.9140625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:11.705 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.10107421875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:12.020 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.47705078125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:12.338 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.205810546875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:12.655 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.48095703125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:12.970 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.876953125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:13.287 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.416015625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:13.603 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.580078125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:13.922 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.179931640625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:14.237 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.69189453125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:14.554 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.572021484375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:14.871 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.01806640625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:15.187 I/chromium(31373): [INFO:CONSOLE:169] "sort: 7.958984375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:15.504 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.888916015625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:15.594 I/ActivityManager( 2824): heapdump is not allowed
+11-09 19:57:15.821 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.301025390625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:16.136 I/chromium(31373): [INFO:CONSOLE:169] "sort: 7.617919921875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:16.455 I/chromium(31373): [INFO:CONSOLE:169] "sort: 11.03515625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:16.736 I/ActivityManager( 2824): Broadcasting: Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }
+11-09 19:57:16.737 I/ActivityManager( 2824): Enqueued broadcast Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }: 0
+11-09 19:57:16.745 I/ActivityManager( 2824): Broadcast completed: result=0
+11-09 19:57:16.768 I/chromium(31373): [INFO:CONSOLE:169] "sort: 7.114013671875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:17.087 I/chromium(31373): [INFO:CONSOLE:169] "sort: 8.8701171875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:17.404 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.240966796875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:17.721 I/chromium(31373): [INFO:CONSOLE:169] "sort: 9.070068359375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:18.041 I/chromium(31373): [INFO:CONSOLE:169] "sort: 13.5810546875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:18.357 I/chromium(31373): [INFO:CONSOLE:169] "sort: 11.9609375 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:18.674 I/chromium(31373): [INFO:CONSOLE:169] "sort: 12.180908203125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:18.910 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:57:18.913 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:57:18.992 I/chromium(31373): [INFO:CONSOLE:169] "sort: 12.505126953125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:19.158 E/ActivityManager( 2824): Sending non-protected broadcast com.samsung.android.nfc.cardemulation.action.CLOSE_TAP_DIALOG from system 4790:com.android.nfc/1027 pkg com.android.nfc
+11-09 19:57:19.158 E/ActivityManager( 2824): java.lang.Throwable
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:252)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:355)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:22)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:106)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact$broadcastIntentWithFeature$(IActivityManager.java:12564)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:3278)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at com.android.server.am.ActivityManagerService.onTransact(qb/113356254 53535f71e3255670f8de6276576031c4c7cd21e3368271bf860c3cdecc905e2e:426)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at android.os.Binder.execTransactInternal(Binder.java:1509)
+11-09 19:57:19.158 E/ActivityManager( 2824): 	at android.os.Binder.execTransact(Binder.java:1454)
+11-09 19:57:19.215 I/ActivityManager( 2824): Changes in 10359 8 to 8, 256 to 384
+11-09 19:57:19.218 I/ActivityManager( 2824): Changes in 10359 8 to 8, 384 to 256
+11-09 19:57:19.308 I/chromium(31373): [INFO:CONSOLE:169] "sort: 12.73291015625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:19.625 I/chromium(31373): [INFO:CONSOLE:169] "sort: 14.080078125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:19.939 I/chromium(31373): [INFO:CONSOLE:169] "sort: 11.06982421875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:20.258 I/chromium(31373): [INFO:CONSOLE:169] "sort: 13.2890625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:20.573 I/chromium(31373): [INFO:CONSOLE:169] "sort: 10.783935546875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:20.890 I/chromium(31373): [INFO:CONSOLE:169] "sort: 11.671142578125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:21.206 I/chromium(31373): [INFO:CONSOLE:169] "sort: 11.5751953125 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:21.524 I/chromium(31373): [INFO:CONSOLE:169] "sort: 12.337890625 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)
+11-09 19:57:21.833 I/chromium(31373): [INFO:CONSOLE:169] "sort: 5.998046875 ms", source: blob:https://appassets.androidplatform.net/928737cd-c74d-4636-98aa-c697066062f0 (169)

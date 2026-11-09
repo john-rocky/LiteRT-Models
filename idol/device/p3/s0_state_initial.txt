@@ -1,0 +1,16 @@
+time: 2026-11-09 21:42:04
+uptime: 2156056.65 16171800.31
+thermal: Thermal Status: 0
+skin: mValue=31.4, mType=3, mName=SKIN
+hal_temps: mValue=30.8, mType=0, mName=AP;mValue=29.9, mType=2, mName=BAT;mValue=30.7, mType=5, mName=PA;mValue=31.4, mType=3, mName=SKIN;mValue=0.0, mType=2, mName=SUBBAT;mValue=30.2, mType=4, mName=USB;
+cooling: cpufreq-cpu0=0/27;cpufreq-cpu6=0/30;ddr-cdev=0/1;cpu-cluster0=0/27;cpu-cluster1=0/30;cdsp_ss=0/12;cdsp_hw=0/1;kgsl=0/18;cdsp=0/12;gpu=0/18;cdsp_sw_hvx=0/11;cdsp_sw_hmx=0/12;
+battery_temp: temperature:299
+battery_level: level:79
+screen: mWakefulness=Awake
+top:       topResumedActivity=ActivityRecord{265695405 u0 com.sec.android.app.launcher/.activities.LauncherActivity t3091}
+gpu: kind=kgsl
+kgsl: temp=33700 clock_mhz=222 max_clock_mhz=1300 thermal_pwrlevel=0
+freq (policy cur scaling_max cpuinfo_max): policy0 1113600 3628800 3628800;policy6 883200 4742400 4742400;
+freq_capped: none
+mem: MemAvailable:    6636388 kB
+data_free: /dev/block/dm-73 221G 152G   69G  69% /data/user/0

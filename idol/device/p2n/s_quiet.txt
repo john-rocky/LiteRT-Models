@@ -1,0 +1,4 @@
+2026-11-09 20:23:45 inputs 179947899 B: start; no window
+2026-11-09 20:23:50 inputs 179947899 B: end, 20:23:45 to 20:23:50 (5 s); 0 s inside a window
+2026-11-09 20:27:35 setup 174191780 B: start; no window
+2026-11-09 20:27:48 setup 174191780 B: end, 20:27:35 to 20:27:48 (13 s); 0 s inside a window

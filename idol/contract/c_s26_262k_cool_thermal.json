@@ -1,0 +1,10 @@
+{
+ "run": "e2e_cool run 0 (D1, plan 01:55:00-01:59:30)",
+ "samples": 27,
+ "cap_mhz_start": 1300.0,
+ "cap_mhz_min": 500.0,
+ "status_start": 0,
+ "status_max": 2,
+ "skin_c_start": 34.6,
+ "skin_c_max": 44.9
+}

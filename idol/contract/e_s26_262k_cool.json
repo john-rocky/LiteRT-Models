@@ -1,0 +1,22 @@
+{
+ "where": "Galaxy S26 (SM-S942Q), the sample app, LiteRT 2.3.0, the first release's form (262k/, the bytes uploaded); from a cool phone (GPU clock cap 1,300 MHz, thermal status 0 and skin <= 34.0 C at the start)",
+ "run_dir": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/s26/D1/e2e_cool",
+ "vmhwm_kb_max": 5255652,
+ "gpu_page_alloc_max_bytes": 6029357056,
+ "per_run": [
+  {
+   "run": 0,
+   "vmhwm_kb": 5255652,
+   "vmswap_kb": 231892,
+   "gpu_page_alloc_max_bytes": 6029357056,
+   "mem_available_kb_start": 5966632,
+   "mem_available_kb_end": 2738392
+  }
+ ],
+ "sampler": {
+  "vmhwm_kb_max": 5255652,
+  "kgsl_page_alloc_max_bytes": 6029357056,
+  "mem_available_kb_min": 1856884,
+  "samples": 395
+ }
+}

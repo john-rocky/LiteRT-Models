@@ -1,0 +1,17 @@
+plan: /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/plan_p3.tsv
+c512                       gpu      fp16  den_joint_mid_c512 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+c256                       gpu      fp16  den_joint_mid_c256 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+c1024                      gpu      fp16  den_joint_mid_c1024 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+c2048                      gpu      fp16  den_joint_mid_c2048 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+c2048b                     gpu      fp16  den_joint_mid_c2048 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+c1024b                     gpu      fp16  den_joint_mid_c1024 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+c256b                      gpu      fp16  den_joint_mid_c256 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+c512b                      gpu      fp16  den_joint_mid_c512 p2_den_mid_01    1   1   5  000 -                         300 gate      rest=5
+inputs (sha256):
+  f4c96ff1c3d9ca92… 116436 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_mid_c1024.tflite
+  657ba3ff0f8263ba… 79836 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_mid_c2048.tflite
+  b09c0ba6c1e9383f… 341028 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_mid_c256.tflite
+  4c757a29e36ff1f3… 191364 B /Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_mid_c512.tflite
+  runner 7e7539e5bd0c73ed… 3257376 B device/stage/r3_rt_runner
+  libs: 2/2 OK against /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/stage/libs230g/SHA256SUMS
+  p2_den_mid_01: 33 files, 106295552 B, concat sha256 9c84bf0964c58dd3…

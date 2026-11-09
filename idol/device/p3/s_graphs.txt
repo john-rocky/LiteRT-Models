@@ -1,0 +1,20 @@
+push den_joint_mid_c512.tflite rc=0 bytes 191364/191364 sha256 phone=4c757a29e36ff1f34f27228bd408a692b0a79184ce403e5619697c2fb5ba312d mac=4c757a29e36ff1f34f27228bd408a692b0a79184ce403e5619697c2fb5ba312d MATCH in 0s
+data free with den_joint_mid_c512.tflite: 73543340032 B
+push den_joint_mid_c256.tflite rc=0 bytes 341028/341028 sha256 phone=b09c0ba6c1e9383f583eda8744c99c4dc06c428ee237ba3d71c7e4afb57f70ee mac=b09c0ba6c1e9383f583eda8744c99c4dc06c428ee237ba3d71c7e4afb57f70ee MATCH in 0s
+data free with den_joint_mid_c256.tflite: 73543012352 B
+push den_joint_mid_c1024.tflite rc=0 bytes 116436/116436 sha256 phone=f4c96ff1c3d9ca92de152978107c5280d4212591608cd19c6bbab8c301a291be mac=f4c96ff1c3d9ca92de152978107c5280d4212591608cd19c6bbab8c301a291be MATCH in 0s
+data free with den_joint_mid_c1024.tflite: 73542852608 B
+push den_joint_mid_c2048.tflite rc=0 bytes 79836/79836 sha256 phone=657ba3ff0f8263ba844c04b4578b35869d999158371b7d42558665d96b7b0505 mac=657ba3ff0f8263ba844c04b4578b35869d999158371b7d42558665d96b7b0505 MATCH in 0s
+data free with den_joint_mid_c2048.tflite: 73542742016 B
+graph den_joint_mid_c2048.tflite already on the phone (sha256 MATCH)
+data free with den_joint_mid_c2048.tflite: 73542717440 B
+removed graph den_joint_mid_c2048.tflite 2026-11-09 21:47:52
+graph den_joint_mid_c1024.tflite already on the phone (sha256 MATCH)
+data free with den_joint_mid_c1024.tflite: 73542782976 B
+removed graph den_joint_mid_c1024.tflite 2026-11-09 21:48:17
+graph den_joint_mid_c256.tflite already on the phone (sha256 MATCH)
+data free with den_joint_mid_c256.tflite: 73542885376 B
+removed graph den_joint_mid_c256.tflite 2026-11-09 21:48:44
+graph den_joint_mid_c512.tflite already on the phone (sha256 MATCH)
+data free with den_joint_mid_c512.tflite: 73543233536 B
+removed graph den_joint_mid_c512.tflite 2026-11-09 21:49:11

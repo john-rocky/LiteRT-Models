@@ -1,0 +1,2 @@
+20:27:50 ready? dj_npuo2: thermal 3 cap none kgsl_pwrlevel 0 rested 27s mode gate
+dj_npuo2 ready gate: gate leg, not waited for clean (thermal 3, cap none, kgsl_pwrlevel 0); rested 27s since 20:27:23

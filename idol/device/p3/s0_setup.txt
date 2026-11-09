@@ -1,0 +1,15 @@
+setup start 2026-11-09 21:42:10; data free before: 73662251008 B
+lib libLiteRt.so sha256 MATCH
+lib libLiteRtClGlAccelerator.so sha256 MATCH
+runner r3_rt_runner sha256 MATCH (7e7539e5bd0c73ed121a211a7021017e220757c526b6bca72a8d9089eefe68a1)
+push p2_den_mid_01 files 33/33 concat sha256 phone=9c84bf0964c58dd33d7e93d3dd9fe2b7e6fcc8f450dfb5e73e086f2258ee1c51 mac=9c84bf0964c58dd33d7e93d3dd9fe2b7e6fcc8f450dfb5e73e086f2258ee1c51 MATCH in 62s
+device: SM-S942Q 16 BP4A.251205.006.S942QOPS1AZH9
+total 11886
+drwxrwxrwx  3 shell shell    3452 2026-11-09 21:42 .
+drwxrwx--x 11 shell shell   20480 2026-11-09 21:42 ..
+-rw-rw-rw-  1 shell shell 5629696 2026-11-09 13:45 libLiteRt.so
+-rw-rw-rw-  1 shell shell 3253032 2026-11-09 13:45 libLiteRtClGlAccelerator.so
+drwxrwxrwx  2 shell shell    3452 2026-11-09 21:43 p2_den_mid_01
+-rwxr-xr-x  1 shell shell 3257376 2026-11-09 13:45 r3_rt_runner
+/dev/block/dm-73 221G 152G   68G  70% /data/user/0
+setup end 2026-11-09 21:43:31 in 81s; data free 73543536640 B; bad=0

@@ -1,0 +1,22 @@
+pid=20503 accel=gpu gpu_precision=fp16acc32 burst=1 models=1 fixtures=1 warmup=1 rounds=5 ab_fixture=000 libdir=/data/local/tmp/idol_p2 cache_dir= dump=full signature=(0) profile=0 npu_vendor=qualcomm ref=- ref2=- stop_nonfinite=0 llm_chain_flags=0 wall_ms=1794222446876
+model[0] signature[0] serving_default
+model[0] input[0] sig_name=args_0 logical=args_0 type=1 bytes=33554432 rank=3 ext=.f32
+model[0] input[1] sig_name=args_1 logical=args_1 type=1 bytes=16797696 rank=3 ext=.f32
+model[0] input[2] sig_name=args_2 logical=args_2 type=1 bytes=4096 rank=3 ext=.f32
+model[0] input[3] sig_name=args_3 logical=args_3 type=1 bytes=24576 rank=2 ext=.f32
+model[0] input[4] sig_name=args_4 logical=args_4 type=1 bytes=256 rank=2 ext=.f32
+compile_start model[0] wall_ms=1794222446929
+INFO: Loaded OpenCL library with dlopen.
+compile_end model[0] wall_ms=1794222447799
+model[0]=/data/local/tmp/idol_p2/den_joint_00.tflite signature=serving_default index=0 inputs=5 outputs=1 out0_elems=12589056 compile_ms=870.3 fully_accelerated=true
+parity model[0] fixture 000 ms=877.758 run_ms=0.296 nonfinite=0 out0[0..3]=3.25781,1.29395,1.26074,0.385742 l2=43105.5 maxabs=2320
+parity_summary model[0] /data/local/tmp/idol_p2/den_joint_00.tflite fixtures=1 nonfinite_values=0 first_run_ms=904.1 mean_ms=877.758 outdir=/data/local/tmp/idol_p2/out_dj_accb/model0
+latency_start wall_ms=1794222449664
+warmup 0 model[0] 900.061 ms run_ms=0.257
+round 0 model[0] write+run+readback_ms=909.481 run_ms=0.492
+round 1 model[0] write+run+readback_ms=914.100 run_ms=0.357
+round 2 model[0] write+run+readback_ms=913.055 run_ms=0.265
+round 3 model[0] write+run+readback_ms=909.560 run_ms=0.172
+round 4 model[0] write+run+readback_ms=932.126 run_ms=0.264
+summary model[0] /data/local/tmp/idol_p2/den_joint_00.tflite n=5 median=913.055 min=909.481 max=932.126 nonfinite_rounds=0 compile_ms=870.3 fully_accelerated=true
+done wall_ms=1794222455298

@@ -1,0 +1,3 @@
+com.android.settings +4s
+surfaceflinger +2s
+system_server +2s

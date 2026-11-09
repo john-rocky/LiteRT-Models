@@ -1,0 +1,6 @@
+push den_joint_00.tflite rc=0 bytes 56134468/56134468 sha256 phone=37e269459ef1325bd4a84d1df1545afacf8e33d6d5c232c62f834f343a882f86 mac=37e269459ef1325bd4a84d1df1545afacf8e33d6d5c232c62f834f343a882f86 MATCH in 2s
+data free with den_joint_00.tflite: 73425039360 B
+removed graph den_joint_00.tflite 2026-11-09 20:29:36
+push gs_0.tflite rc=0 bytes 122497768/122497768 sha256 phone=244ae2ffc6d510c8eab99d2381cb20edb8a7c1715272f7a7efeba5fcd77cfa39 mac=244ae2ffc6d510c8eab99d2381cb20edb8a7c1715272f7a7efeba5fcd77cfa39 MATCH in 2s
+data free with gs_0.tflite: 73358589952 B
+removed graph gs_0.tflite 2026-11-09 20:30:39

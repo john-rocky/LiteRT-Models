@@ -1,0 +1,451 @@
+{
+ "tag": "armchair",
+ "where": "Pixel 11 Pro, the app, LiteRT 2.3.0, form H (2,048 anchors, shared middle denoiser and Gaussian decoder graphs, GPU FP16), run 0 (first photo after start)",
+ "psnr_db": 33.58473144016746,
+ "psnr_per_view_db": [
+  32.423477536850186,
+  34.81212671281065,
+  31.903009408016803,
+  36.89390681662704
+ ],
+ "line_db": 25.0,
+ "pass_": true,
+ "ply": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/p11p/H/e2e_cool/e2e_cool.0.ply",
+ "ply_sha256": "2a25b70054f5d1a91ff485e4b21587db76f00d47bfb6288de6e042da23926b0e",
+ "ply_bytes": 4456863,
+ "app_run": {
+  "id": "e2e_cool",
+  "run": 0,
+  "warmup": true,
+  "fixture": "fx/armchair",
+  "mode": "synthetic",
+  "noise": "fixture armchair",
+  "options": {
+   "preload": true,
+   "reserve_mb": 2500,
+   "mem_check": true,
+   "handoff": "host",
+   "matting": "bir",
+   "cpu_threads": 6,
+   "gpu_priority": "default",
+   "dis_floor": 8
+  },
+  "thermal_start": 0,
+  "mem_available_kb_start": 4936708,
+  "vmhwm_reset": true,
+  "cpuset": "3:cpuset:/top-app",
+  "wall_s": 342.667769319,
+  "thermal_end": 2,
+  "vmhwm_kb": 6249896,
+  "vmrss_kb": 3017432,
+  "vmswap_kb": 169332,
+  "gpu_page_alloc_max_bytes": -1,
+  "mem_available_kb_end": 2538512,
+  "status": "done",
+  "stages": {
+   "matting": 17.38040733,
+   "preprocess": 18.00889576,
+   "dinov3": 8.517553381,
+   "vae": 36.059438783,
+   "denoiser": 242.27267606,
+   "octree": 12.930792194,
+   "gaussian_decoder": 23.717992104,
+   "ply": 0.240457418
+  },
+  "generate": 324.561323091,
+  "total": 342.617744866,
+  "ply": "e2e_cool.0.ply",
+  "ply_bytes": 4456863,
+  "gaussians": 65536,
+  "box": [
+   1,
+   1,
+   1023,
+   1022
+  ],
+  "alpha_size": [
+   1024,
+   1024
+  ],
+  "own_alpha": false,
+  "handoff": "host",
+  "compiles_in_run": {
+   "count": 15,
+   "seconds": 75.19767734799998,
+   "graphs": [
+    {
+     "graph": "bir",
+     "seconds": 1.391464513,
+     "mem_available_before_kb": 5820772,
+     "mem_available_after_kb": 4193880,
+     "phase": "run"
+    },
+    {
+     "graph": "vae_1",
+     "seconds": 2.107174644,
+     "mem_available_before_kb": 5680264,
+     "mem_available_after_kb": 4807060,
+     "phase": "run"
+    },
+    {
+     "graph": "vae_2",
+     "seconds": 7.89004502,
+     "mem_available_before_kb": 4747312,
+     "mem_available_after_kb": 4325136,
+     "phase": "run"
+    },
+    {
+     "graph": "vae_3",
+     "seconds": 15.16048143,
+     "mem_available_before_kb": 4287788,
+     "mem_available_after_kb": 4000312,
+     "phase": "run"
+    },
+    {
+     "graph": "vae_attn",
+     "seconds": 0.851002384,
+     "mem_available_before_kb": 3971748,
+     "mem_available_after_kb": 3717872,
+     "phase": "run"
+    },
+    {
+     "graph": "vae_4",
+     "seconds": 5.640008548,
+     "mem_available_before_kb": 3687448,
+     "mem_available_after_kb": 3530760,
+     "phase": "run"
+    },
+    {
+     "graph": "den_ctx",
+     "seconds": 7.164916169,
+     "mem_available_before_kb": 3522408,
+     "mem_available_after_kb": 3284808,
+     "phase": "run"
+    },
+    {
+     "graph": "den_in",
+     "seconds": 5.615317881,
+     "mem_available_before_kb": 3269168,
+     "mem_available_after_kb": 2638544,
+     "phase": "run"
+    },
+    {
+     "graph": "den_joint_00",
+     "seconds": 2.637688221,
+     "mem_available_before_kb": 3240796,
+     "mem_available_after_kb": 2427208,
+     "phase": "run"
+    },
+    {
+     "graph": "den_joint_mid",
+     "seconds": 0.548451712,
+     "mem_available_before_kb": 3862412,
+     "mem_available_after_kb": 2676456,
+     "phase": "run"
+    },
+    {
+     "graph": "den_joint_23",
+     "seconds": 3.304496703,
+     "mem_available_before_kb": 3923340,
+     "mem_available_after_kb": 3690384,
+     "phase": "run"
+    },
+    {
+     "graph": "oct",
+     "seconds": 5.609196464,
+     "mem_available_before_kb": 3759880,
+     "mem_available_after_kb": 2056516,
+     "phase": "run"
+    },
+    {
+     "graph": "gs_0",
+     "seconds": 8.518282808,
+     "mem_available_before_kb": 3196284,
+     "mem_available_after_kb": 3387292,
+     "phase": "run"
+    },
+    {
+     "graph": "gs_mid",
+     "seconds": 0.515706946,
+     "mem_available_before_kb": 3381760,
+     "mem_available_after_kb": 2826140,
+     "phase": "run"
+    },
+    {
+     "graph": "gs_7",
+     "seconds": 8.243443905,
+     "mem_available_before_kb": 2751128,
+     "mem_available_after_kb": 2561000,
+     "phase": "run"
+    }
+   ]
+  },
+  "memory_events": [
+   {
+    "t_ms": 676519142,
+    "event": "evict",
+    "graph": "vae_1",
+    "mem_available_kb": 4891476,
+    "resident": 6,
+    "need_kb": 5292604,
+    "for": "bir"
+   },
+   {
+    "t_ms": 676519146,
+    "event": "close",
+    "graph": "vae_1",
+    "mem_available_kb": 4891476,
+    "resident": 5
+   },
+   {
+    "t_ms": 676520640,
+    "event": "compile",
+    "graph": "bir",
+    "mem_available_kb": 4193880,
+    "resident": 6,
+    "seconds": 1.391464513
+   },
+   {
+    "t_ms": 676535752,
+    "event": "peak",
+    "graph": "bir",
+    "mem_available_kb": 2580112,
+    "resident": 6,
+    "before_kb": 5820772,
+    "drop_kb": 3240660,
+    "estimate_kb": 3240660
+   },
+   {
+    "t_ms": 676536348,
+    "event": "close",
+    "graph": "bir",
+    "mem_available_kb": 5829188,
+    "resident": 5
+   },
+   {
+    "t_ms": 676549494,
+    "event": "compile",
+    "graph": "vae_1",
+    "mem_available_kb": 4807060,
+    "resident": 6,
+    "seconds": 2.107174644
+   },
+   {
+    "t_ms": 676558541,
+    "event": "compile",
+    "graph": "vae_2",
+    "mem_available_kb": 4325136,
+    "resident": 7,
+    "seconds": 7.89004502
+   },
+   {
+    "t_ms": 676574203,
+    "event": "compile",
+    "graph": "vae_3",
+    "mem_available_kb": 4000312,
+    "resident": 8,
+    "seconds": 15.16048143
+   },
+   {
+    "t_ms": 676575294,
+    "event": "compile",
+    "graph": "vae_attn",
+    "mem_available_kb": 3717872,
+    "resident": 9,
+    "seconds": 0.851002384
+   },
+   {
+    "t_ms": 676581414,
+    "event": "compile",
+    "graph": "vae_4",
+    "mem_available_kb": 3530760,
+    "resident": 10,
+    "seconds": 5.640008548
+   },
+   {
+    "t_ms": 676589140,
+    "event": "compile",
+    "graph": "den_ctx",
+    "mem_available_kb": 3284808,
+    "resident": 11,
+    "seconds": 7.164916169
+   },
+   {
+    "t_ms": 676595243,
+    "event": "compile",
+    "graph": "den_in",
+    "mem_available_kb": 2638544,
+    "resident": 12,
+    "seconds": 5.615317881
+   },
+   {
+    "t_ms": 676596663,
+    "event": "evict",
+    "graph": "vae_4",
+    "mem_available_kb": 2584864,
+    "resident": 12,
+    "need_kb": 3226697,
+    "for": "den_joint_00"
+   },
+   {
+    "t_ms": 676596670,
+    "event": "close",
+    "graph": "vae_4",
+    "mem_available_kb": 2584864,
+    "resident": 11
+   },
+   {
+    "t_ms": 676596774,
+    "event": "evict",
+    "graph": "vae_attn",
+    "mem_available_kb": 2693932,
+    "resident": 11,
+    "need_kb": 3226697,
+    "for": "den_joint_00"
+   },
+   {
+    "t_ms": 676596799,
+    "event": "close",
+    "graph": "vae_attn",
+    "mem_available_kb": 2710200,
+    "resident": 10
+   },
+   {
+    "t_ms": 676596902,
+    "event": "evict",
+    "graph": "vae_3",
+    "mem_available_kb": 2952900,
+    "resident": 10,
+    "need_kb": 3226697,
+    "for": "den_joint_00"
+   },
+   {
+    "t_ms": 676596910,
+    "event": "close",
+    "graph": "vae_3",
+    "mem_available_kb": 2953292,
+    "resident": 9
+   },
+   {
+    "t_ms": 676599652,
+    "event": "compile",
+    "graph": "den_joint_00",
+    "mem_available_kb": 2427208,
+    "resident": 10,
+    "seconds": 2.637688221
+   },
+   {
+    "t_ms": 676601110,
+    "event": "evict",
+    "graph": "vae_2",
+    "mem_available_kb": 2377204,
+    "resident": 10,
+    "need_kb": 3199344,
+    "for": "den_joint_mid"
+   },
+   {
+    "t_ms": 676601120,
+    "event": "close",
+    "graph": "vae_2",
+    "mem_available_kb": 2386808,
+    "resident": 9
+   },
+   {
+    "t_ms": 676601224,
+    "event": "evict",
+    "graph": "vae_1",
+    "mem_available_kb": 2848988,
+    "resident": 9,
+    "need_kb": 3199344,
+    "for": "den_joint_mid"
+   },
+   {
+    "t_ms": 676601229,
+    "event": "close",
+    "graph": "vae_1",
+    "mem_available_kb": 2848652,
+    "resident": 8
+   },
+   {
+    "t_ms": 676601880,
+    "event": "compile",
+    "graph": "den_joint_mid",
+    "mem_available_kb": 2676456,
+    "resident": 9,
+    "seconds": 0.548451712
+   },
+   {
+    "t_ms": 676637651,
+    "event": "evict",
+    "graph": "vae_0",
+    "mem_available_kb": 2669696,
+    "resident": 9,
+    "need_kb": 3226746,
+    "for": "den_joint_23"
+   },
+   {
+    "t_ms": 676637655,
+    "event": "close",
+    "graph": "vae_0",
+    "mem_available_kb": 2674400,
+    "resident": 8
+   },
+   {
+    "t_ms": 676641163,
+    "event": "compile",
+    "graph": "den_joint_23",
+    "mem_available_kb": 3690384,
+    "resident": 9,
+    "seconds": 3.304496703
+   },
+   {
+    "t_ms": 676829937,
+    "event": "compile",
+    "graph": "oct",
+    "mem_available_kb": 2056516,
+    "resident": 10,
+    "seconds": 5.609196464
+   },
+   {
+    "t_ms": 676837537,
+    "event": "evict",
+    "graph": "oct",
+    "mem_available_kb": 2005676,
+    "resident": 10,
+    "need_kb": 2726162,
+    "for": "gs_0"
+   },
+   {
+    "t_ms": 676837736,
+    "event": "close",
+    "graph": "oct",
+    "mem_available_kb": 2111436,
+    "resident": 9
+   },
+   {
+    "t_ms": 676847486,
+    "event": "compile",
+    "graph": "gs_0",
+    "mem_available_kb": 3387292,
+    "resident": 10,
+    "seconds": 8.518282808
+   },
+   {
+    "t_ms": 676848491,
+    "event": "compile",
+    "graph": "gs_mid",
+    "mem_available_kb": 2826140,
+    "resident": 11,
+    "seconds": 0.515706946
+   },
+   {
+    "t_ms": 676860516,
+    "event": "compile",
+    "graph": "gs_7",
+    "mem_available_kb": 2561000,
+    "resident": 12,
+    "seconds": 8.243443905
+   }
+  ]
+ }
+}

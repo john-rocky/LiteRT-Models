@@ -1,0 +1,43 @@
+{
+ "image": "/Users/majimadaisuke/code/idol_work/inputs/fig-axolotl.webp",
+ "mode": "synthetic",
+ "seed": 42,
+ "steps": 5,
+ "turbo": true,
+ "cfg": 0.0,
+ "rescale_t": 3.0,
+ "num_gaussians": 65536,
+ "encode_size": 1024,
+ "device": "cpu",
+ "native": false,
+ "box": [
+  0,
+  2,
+  1023,
+  1024
+ ],
+ "camera": {
+  "yaw": 2.245698810085313,
+  "pitch": -0.025871681891051664,
+  "radius": 4.386952638151798,
+  "fov": 26.342075969507945
+ },
+ "glue_ply_bytes_equal": true,
+ "octree_rows": [
+  1,
+  8,
+  36,
+  154,
+  540,
+  1685,
+  2044,
+  2048
+ ],
+ "seconds": {
+  "load": 31.9,
+  "encode": 6.6,
+  "sample": 88.7,
+  "octree": 1.1,
+  "gaussians": 1.5
+ }
+}

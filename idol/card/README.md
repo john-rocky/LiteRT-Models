@@ -18,8 +18,8 @@ tags:
 
 {SEAT}
 
-[speridlabs/idol](https://huggingface.co/speridlabs/idol) turns one photo of an object into a 3D Gaussian splat of
-262,144 Gaussians that you can turn around, including the sides the picture never showed. This repo holds the
+[speridlabs/idol](https://huggingface.co/speridlabs/idol) turns one photo of an object into a 3D Gaussian splat (262,144 Gaussians at its
+defaults) that you can turn around, including the sides the picture never showed. This repo holds the
 author's denoiser with the [speridlabs/idol-turbo](https://huggingface.co/speridlabs/idol-turbo) LoRA (5 steps, no
 guidance), its octree and
 Gaussian decoders, the FLUX.2 VAE encoder, and the author's BiRefNet background remover. The DINOv3 image encoder is
@@ -30,12 +30,19 @@ in a separate, gated repo under its own licence:
 
 *{HERO_CAPTION}*
 
+## Two forms
+
+{FORMS_SENTENCE}
+
+{FORMS_TABLE}
+
+The rest of this card describes the default form; the first release's card ([commit {PREV_SHORT}]({PREV_CARD_URL})) has the
+per-stage tables of the `262k/` form.
+
 ## Speed
 
 {SPEED_PARAGRAPH} Background removal (BiRefNet) runs on the CPU: {BIR_S26} s of that time on the Galaxy S26. The
-other networks run on the GPU.
-
-Speed still being tuned (updates follow).
+other networks run on the GPU at FP16.
 
 {SPEED_TABLE}
 
@@ -44,8 +51,10 @@ Speed still being tuned (updates follow).
 Each check runs the author's PyTorch pipeline (float32, CPU) and these graphs on the same input with the same random
 numbers, against thresholds fixed before the first run. The inputs are two images from the author's gallery
 (`nb-armchair`, `fig-axolotl`) and one photo (a succulent, Pexels). Per part, each graph gets the author's own input
-for that part and its output is compared with the author's (cosine; the threshold is 0.99). The whole pipeline is compared
-by rendering both splats from four sides with the same renderer (PSNR; the threshold is 25 dB).
+for that part and its output is compared with the author's (cosine; the threshold is 0.99); the octree and Gaussian
+decoders are compared with the author's model run at this form's 65,536 Gaussians (`--num-gaussians 65536`). The
+whole pipeline is compared with the author's default (262,144 Gaussians) by rendering both splats from four sides with
+the same renderer (PSNR; the threshold is 25 dB).
 
 {FACTS}
 
@@ -54,15 +63,15 @@ by rendering both splats from four sides with the same renderer (PSNR; the thres
 ### Python: the whole pipeline
 
 ```bash
-hf download litert-community/Idol --local-dir Idol
+hf download litert-community/Idol --exclude "262k/*" --local-dir Idol   # the default form; drop --exclude for both
 cd Idol
 pip install -r python/requirements.txt
-python python/run_idol.py photo.jpg --out out --models .   # writes out/gaussian.ply
+python python/run_idol.py photo.jpg --out out --models .   # writes out/gaussian.ply{PY_262K}
 ```
 
 `run_idol.py` downloads the DINOv3 repo (accept its licence on the Hub and `hf auth login` first) and runs every
 graph with `CompiledModel`, the GPU for all but BiRefNet. The steps between graphs are in `python/idol_runner.py` and
-`python/idol_glue.py`. On an M4 Max Mac (Metal GPU) one photo took 64 s and up to 22 GB of memory.
+`python/idol_glue.py`. {MAC_RUN}
 
 ### Python: one graph with `CompiledModel` (background removal)
 
@@ -80,12 +89,13 @@ The Android sample app (photo or camera → progress per stage → a splat you c
 The graphs are too large for the APK; a script copies them into the app's files folder over adb:
 
 ```bash
-hf download litert-community/Idol --local-dir ~/Downloads/Idol
+hf download litert-community/Idol --exclude "262k/*" --local-dir ~/Downloads/Idol   # the default form; drop --exclude to get 262k/ too
 hf download litert-community/DINOv3-ViT-H16plus-Idol-LiteRT --local-dir ~/Downloads/DINOv3-ViT-H16plus-Idol-LiteRT
 cd ~/Downloads/Idol/android
 chmod +x gradlew scripts/install_to_device.sh        # the Hub does not keep the executable bit
 ./gradlew :app:installDebug
 IDOL_DIR=~/Downloads/Idol DINO_DIR=~/Downloads/DINOv3-ViT-H16plus-Idol-LiteRT ./scripts/install_to_device.sh
+# the first release's form instead (download without --exclude first): IDOL_DIR=~/Downloads/Idol/262k, same DINO_DIR
 ```
 
 Background removal (BiRefNet on the CPU) needs about 2,670 MB of free memory for one call. Before compiling it, the
@@ -100,13 +110,20 @@ the call.
 | Background removal (BiRefNet) | `bir.tflite` | CPU | 1 |
 | DINOv3 ViT-H+/16 image encoder | `dino_0..3.tflite` (DINOv3 repo) | GPU | 4 |
 | FLUX.2 VAE encoder | `vae_0..3.tflite`, `vae_attn.tflite`, `vae_4.tflite` | GPU | 6 |
-| Denoiser with the turbo LoRA | `den_ctx.tflite`, `den_in.tflite`, `den_joint_00..23.tflite` | GPU | 5 steps × 25, plus `den_ctx` once per LoRA phase |
+| Denoiser with the turbo LoRA | `den_ctx.tflite`, `den_in.tflite`, `den_joint_00.tflite`, `den_joint_mid.tflite` (blocks 1–22, weights from `den_joint_w.f32`), `den_joint_23.tflite` | GPU | 5 steps × 25, plus `den_ctx` once per LoRA phase |
 | Octree decoder | `oct.tflite` (5 signatures by row count) | GPU | 8 levels |
-| Gaussian decoder | `gs_0..7.tflite` | GPU | 8 |
+| Gaussian decoder | `gs_0.tflite`, `gs_mid.tflite` (graphs 1–6, weights from `gs_w.f32`), `gs_7.tflite` | GPU | 8 |
 | Octree sampling, Gaussian activation, PLY | host code | CPU | — |
 
-`manifest.json` lists every graph with its signatures, accelerator and precision. On Android the GPU graphs run with
-`FP16_WITH_FP32_ACCUM` precision.
+`262k/` holds the first release's form: `den_joint_01..22.tflite` and `gs_1..6.tflite` in place of the two shared
+graphs, the Gaussian decoder at 8,192 anchors, and its own `manifest.json` (GPU precision FP16 with fp32 accumulation);
+the files with the same name in both folders are the same bytes, except `gs_0.tflite`, `gs_7.tflite` and
+`manifest.json`.
+
+`manifest.json` lists every graph with its signatures, accelerator and precision; the GPU graphs run with `FP16`
+precision. `den_joint_mid` and `gs_mid` are one graph each for blocks of the same shape: before each call the app
+copies that block's weights from the side file into the graph's weight inputs (`shared_blocks`, `block_weights` and
+`first_weight_input` in `manifest.json`), so each is compiled once per photo.
 
 ## Notes
 
@@ -125,6 +142,11 @@ the call.
 - **Keep each GPU call short on the Galaxy S26.** In the feasibility run the VAE encoder ran as one graph, about 9 s
   per GPU call; the screen compositor stalled and the process was killed (signal 9) on its fifth call. Every stage here
   is split into several graphs for that reason ({CALL_LENGTHS}).
+- **The denoiser did not compile for the NPU on the phone.** Compiled on the Galaxy S26 for its NPU (Qualcomm HTP;
+  LiteRT 2.3.0, QAIRT 2.50), one denoiser block did not finish in 15 minutes at the default optimization level (O3)
+  and ran out of memory after 28 s at `optimization_level=1` (optimize for prepare); the HTP compiler warned it has
+  no tiling rule for the block's concatenations along the 12,294-token axis. In the shipped app every network but
+  BiRefNet (CPU) runs on the GPU.
 
 ## Licence and provenance
 

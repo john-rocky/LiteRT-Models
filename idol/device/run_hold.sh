@@ -79,6 +79,10 @@ run_plan() {  # $1 = plan name
     [[ -n "$plan" ]] || { log "empty plan name"; exit 2; }
     adb shell run-as "$PKG" rm -r -f "files/runs/$plan"
     adb logcat -c
+    # LiteRT's delegate line per compile ("Replacing N out of N node(s) with delegate (LITERT_CL) node, yielding P
+    # partitions", tag tflite) read while the plan runs: a dump at the end can lose the first compiles to the ring buffer
+    adb logcat -v threadtime -s tflite:I IdolAutoRun:V > "$OUT/$plan.tflite.txt" 2> /dev/null &
+    local reader=$!
     rm -f "$csv.stop"
     sample_memory "$csv" &
     local sampler=$!
@@ -103,6 +107,7 @@ run_plan() {  # $1 = plan name
         sleep 5
     done
     touch "$csv.stop"; wait "$sampler" || true
+    kill "$reader" 2> /dev/null || true; wait "$reader" 2> /dev/null || true
     adb logcat -d -v time -s IdolAutoRun:V AndroidRuntime:E libc:F DEBUG:F lowmemorykiller:I lmkd:I > "$OUT/$plan.logcat.txt" || true
     log "plan $plan: end after $((SECONDS - t0)) s; $(grep -c ROW "$OUT/$plan.logcat.txt" || true) ROW lines"
 }

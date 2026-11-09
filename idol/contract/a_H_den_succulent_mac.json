@@ -1,0 +1,101 @@
+{
+ "models": "/Users/majimadaisuke/code/idol_work/models_H",
+ "ref": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/succulent",
+ "accel": "gpu",
+ "precision": "metal default (fp16)",
+ "denoiser step 0 latent velocity": {
+  "cos": 0.9997064283259223,
+  "rel_l2": 0.02450824244100937,
+  "max_abs_diff": 0.4427216053009033,
+  "max_abs_ref": 8.97691822052002,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 0 camera (metered)": {
+  "cos": 0.9999828523548565,
+  "rel_l2": 0.005914031023645099,
+  "max_abs_diff": 0.010028243064880371,
+  "max_abs_ref": 2.0038974285125732,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 1 latent velocity": {
+  "cos": 0.9993074687542477,
+  "rel_l2": 0.0374775792444787,
+  "max_abs_diff": 1.1026172637939453,
+  "max_abs_ref": 8.074945449829102,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 1 camera (metered)": {
+  "cos": 0.9999544939361081,
+  "rel_l2": 0.011974363956118563,
+  "max_abs_diff": 0.03291761875152588,
+  "max_abs_ref": 2.130896806716919,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 2 latent velocity": {
+  "cos": 0.9994250262668518,
+  "rel_l2": 0.03423078755066399,
+  "max_abs_diff": 1.6040832996368408,
+  "max_abs_ref": 6.49279260635376,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 2 camera (metered)": {
+  "cos": 0.9999713177258598,
+  "rel_l2": 0.010629250819138044,
+  "max_abs_diff": 0.03133225440979004,
+  "max_abs_ref": 1.9635603427886963,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 3 latent velocity": {
+  "cos": 0.9996331685771626,
+  "rel_l2": 0.02735417359316275,
+  "max_abs_diff": 1.5653901100158691,
+  "max_abs_ref": 6.260188102722168,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 3 camera (metered)": {
+  "cos": 0.9999503996709873,
+  "rel_l2": 0.011432974385833032,
+  "max_abs_diff": 0.025490760803222656,
+  "max_abs_ref": 1.9022436141967773,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "denoiser step 4 latent velocity": {
+  "cos": 0.9995720732013582,
+  "rel_l2": 0.029268366305434196,
+  "max_abs_diff": 1.5195000171661377,
+  "max_abs_ref": 6.556818962097168,
+  "finite": true,
+  "line": 0.99,
+  "pass": true
+ },
+ "denoiser step 4 camera (metered)": {
+  "cos": 0.9999454577988299,
+  "rel_l2": 0.010874675319436655,
+  "max_abs_diff": 0.026482880115509033,
+  "max_abs_ref": 2.198033332824707,
+  "finite": true,
+  "line": null,
+  "pass": null
+ },
+ "all_pass": true,
+ "wall_s": 25.5,
+ "stage_s": {
+  "denoiser": 25.4
+ }
+}

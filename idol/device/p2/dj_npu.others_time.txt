@@ -1,0 +1,13 @@
+[crtc_event:209] +2s
+[kswapd0] +2s
+[kworker/u34:1-memlat_wq] +3s
+[kworker/u34:2-memlat_wq] +2s
+adbd +4s
+com.android.nfc +2s
+com.android.phone +2s
+com.android.systemui +2s
+com.google.android.gms +2s
+com.samsung.android.smartsuggestions +3s
+com.sec.android.sdhms +2s
+system_server +19s
+vendor.samsung.hardware.thermal-service +2s

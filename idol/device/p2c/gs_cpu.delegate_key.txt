@@ -1,0 +1,1 @@
+11-09 20:29:45.382 12152 12152 I tflite  : Replacing 2087 out of 2091 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 9 partitions for subgraph 0 (main).

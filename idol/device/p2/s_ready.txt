@@ -1,0 +1,28 @@
+20:04:23 ready? dj_acc: thermal 0 cap none kgsl_pwrlevel 0 rested 37s mode gate
+dj_acc ready gate: clean; rested 37s since 20:03:46
+20:04:39 ready? dj_f16: thermal 0 cap policy0:2496000/3628800 policy6:2438400/4742400  kgsl_pwrlevel 6 rested 6s mode gate
+dj_f16 ready gate: gate leg, not waited for clean (thermal 0, cap policy0:2496000/3628800 policy6:2438400/4742400 , kgsl_pwrlevel 6); rested 6s since 20:04:33
+20:04:59 ready? gs_acc: thermal 1 cap policy0:1996800/3628800 policy6:1977600/4742400  kgsl_pwrlevel 9 rested 10s mode gate
+gs_acc ready gate: gate leg, not waited for clean (thermal 1, cap policy0:1996800/3628800 policy6:1977600/4742400 , kgsl_pwrlevel 9); rested 10s since 20:04:49
+20:05:22 ready? gs_f16: thermal 1 cap policy0:3513600/3628800 policy6:4185600/4742400  kgsl_pwrlevel 0 rested 6s mode gate
+gs_f16 ready gate: gate leg, not waited for clean (thermal 1, cap policy0:3513600/3628800 policy6:4185600/4742400 , kgsl_pwrlevel 0); rested 6s since 20:05:16
+20:05:45 ready? dj01_acc: thermal 2 cap policy0:3513600/3628800 policy6:4262400/4742400  kgsl_pwrlevel 0 rested 8s mode gate
+dj01_acc ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3513600/3628800 policy6:4262400/4742400 , kgsl_pwrlevel 0); rested 8s since 20:05:37
+20:06:06 ready? djm_acc: thermal 2 cap policy0:3513600/3628800 policy6:4185600/4742400  kgsl_pwrlevel 0 rested 10s mode gate
+djm_acc ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3513600/3628800 policy6:4185600/4742400 , kgsl_pwrlevel 0); rested 10s since 20:05:56
+20:06:22 ready? dj_wo8: thermal 2 cap policy0:3513600/3628800 policy6:3974400/4742400  kgsl_pwrlevel 1 rested 6s mode gate
+dj_wo8 ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3513600/3628800 policy6:3974400/4742400 , kgsl_pwrlevel 1); rested 7s since 20:06:16
+20:06:36 ready? dj_dyn8: thermal 2 cap none kgsl_pwrlevel 0 rested 9s mode gate
+dj_dyn8 ready gate: gate leg, not waited for clean (thermal 2, cap none, kgsl_pwrlevel 0); rested 9s since 20:06:27
+20:06:46 ready? gs_wo8: thermal 2 cap none kgsl_pwrlevel 0 rested 7s mode gate
+gs_wo8 ready gate: gate leg, not waited for clean (thermal 2, cap none, kgsl_pwrlevel 0); rested 8s since 20:06:39
+20:06:57 ready? gs_dyn8: thermal 2 cap none kgsl_pwrlevel 0 rested 5s mode gate
+gs_dyn8 ready gate: gate leg, not waited for clean (thermal 2, cap none, kgsl_pwrlevel 0); rested 5s since 20:06:52
+20:07:09 ready? dj_f16b: thermal 2 cap none kgsl_pwrlevel 0 rested 8s mode gate
+dj_f16b ready gate: gate leg, not waited for clean (thermal 2, cap none, kgsl_pwrlevel 0); rested 8s since 20:07:01
+20:07:25 ready? dj_accb: thermal 2 cap policy6:4339200/4742400  kgsl_pwrlevel 0 rested 5s mode gate
+dj_accb ready gate: gate leg, not waited for clean (thermal 2, cap policy6:4339200/4742400 , kgsl_pwrlevel 0); rested 5s since 20:07:20
+20:07:45 ready? dj_npu: thermal 2 cap policy0:3398400/3628800 policy6:3859200/4742400  kgsl_pwrlevel 1 rested 9s mode gate
+dj_npu ready gate: gate leg, not waited for clean (thermal 2, cap policy0:3398400/3628800 policy6:3859200/4742400 , kgsl_pwrlevel 1); rested 10s since 20:07:36
+20:23:06 ready? gs_npu: thermal 3 cap policy0:3513600/3628800 policy6:4185600/4742400  kgsl_pwrlevel 0 rested 13s mode gate
+gs_npu ready gate: gate leg, not waited for clean (thermal 3, cap policy0:3513600/3628800 policy6:4185600/4742400 , kgsl_pwrlevel 0); rested 13s since 20:22:53

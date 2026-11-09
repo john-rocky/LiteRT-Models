@@ -1,0 +1,6 @@
+gs_wo8.stderr.txt:VERBOSE: Replacing 2113 out of 2113 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 19:47:07.405 18227 18227 I tflite  : Replacing 2113 out of 2113 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (main).
+11-09 19:47:07.879 18227 18227 E native  : E0000 00:00:1794221227.879763   18227 delegate_opencl.cc:341] Failed to create litert::ml_drift::DelegateKernelLiteRt: INVALID_ARGUMENT: Shape mismatch: {bhwc, {1024, 1, 1, 3}} vs {bhwc, {1, 1, 1024, 3}}
+11-09 19:47:07.879 18227 18227 E litert  : [error_reporter.cc:27] Failed to initialize kernel.
+11-09 19:47:07.889 18227 18227 E litert  : [error_reporter.cc:27] Restored original execution plan after delegate application failure.
+11-09 19:47:07.924 18227 18227 E pvr-gralloc-integration: vendor/imgtec/powervr/android/graphicshal_customer/global_pvr_services.cpp:521: eErr == PVRSRV_OK FAILED

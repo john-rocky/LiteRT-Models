@@ -1,0 +1,1 @@
+gate leg, not waited for clean (thermal 1, cap thermal-uclamp-2=5 thermal-uclamp-6=11 thermal-uclamp-0=9 , gpu_cooling 0 (budget 4614000 of 4614000)); rested 7s since 19:47:53; front com.android.settings (a system app: left alone)

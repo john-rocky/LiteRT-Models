@@ -1,0 +1,1 @@
+11-09 20:07:49.177 20858 20858 I litert  : [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 1233 ops, from a total of 1233 ops. resulted in 1 partitions.
