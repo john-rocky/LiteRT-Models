@@ -1,0 +1,15 @@
+# tag accel prec graph fx count warmup rounds ab cache compile_s ready extras
+# p2p: the p2 probe legs on the Pixel 11 Pro (PowerVR), GPU only, as the pre-filter before the S26 (device rule:
+# form comparisons on the Pixel 11 Pro first). Same graphs and fixtures as p2; no NPU legs.
+dj_acc      gpu      fp16acc32 den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+dj_f16      gpu      fp16      den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+gs_acc      gpu      fp16acc32 gs_0               g1_gs_0         1 1 5 000 -           300 gate rest=5
+gs_f16      gpu      fp16      gs_0               g1_gs_0         1 1 5 000 -           300 gate rest=5
+dj01_acc    gpu      fp16acc32 den_joint_01       g1_den_joint_01 1 1 5 000 -           300 gate rest=5
+djm_acc     gpu      fp16acc32 den_joint_mid      p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+dj_wo8      gpu      fp16acc32 den_joint_00.wo8   g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+dj_dyn8     gpu      fp16acc32 den_joint_00.dyn8  g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+gs_wo8      gpu      fp16acc32 gs_0.wo8           g1_gs_0         1 1 5 000 -           300 gate rest=5
+gs_dyn8     gpu      fp16acc32 gs_0.dyn8          g1_gs_0         1 1 5 000 -           300 gate rest=5
+dj_f16b     gpu      fp16      den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+dj_accb     gpu      fp16acc32 den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5

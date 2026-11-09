@@ -50,9 +50,46 @@ class IdolLiteRT:
         self.times = {}
         # graphs that run in fp32 precision (their fp16 form fails a CONTRACT.md line): the manifest's, as the app does
         self.fp32_graphs = set()
+        # anchor points of the octree / Gaussian decoder: the first input of gs_0 is [1, anchors, 3] (8,192 by default)
+        self.num_points = 8192
+        # shared graphs (den_joint_mid, gs_mid: the middle blocks' weights as runtime inputs) and their weights files
+        self.shared = {}
         if os.path.exists(f('manifest.json')):
             man = json.load(open(f('manifest.json')))
             self.fp32_graphs = {n for n, g in man['graphs'].items() if g['precision'] == 'fp32'}
+            if 'gs_0' in man['graphs']:
+                self.num_points = int(next(iter(man['graphs']['gs_0']['signatures'].values()))['inputs'][0][1][1])
+            for n, g in man['graphs'].items():
+                if g.get('shared_blocks'):
+                    ins = next(iter(g['signatures'].values()))['inputs']
+                    first = g.get('first_weight_input', 3)   # the inputs before the weights
+                    shapes = [s for _, s in sorted(ins, key=lambda t: int(t[0].split('_')[-1]))][first:]
+                    w = np.memmap(f(g['block_weights']), '<f4', 'r').reshape(len(g['shared_blocks']), -1)
+                    self.shared[n] = (g['shared_blocks'], shapes, w)
+        self.joint_steps = self._steps(lambda k: f'den_joint_{k:02d}', range(1, 23), 'den_joint_')
+        self.gs_steps = self._steps(lambda k: f'gs_{k}', range(1, 8), 'gs_')
+
+    def _steps(self, own_name, blocks, prefix):
+        """Blocks in run order as (graph, block): a shared graph whose name starts with prefix stands for each of its
+        blocks (block weights written before the call), an ordinary graph has block -1."""
+        steps = []
+        for k in blocks:
+            own = os.path.exists(os.path.join(self.dir, f'{own_name(k)}.tflite'))
+            name = None if own else next(
+                (n for n, (bl, _, _) in self.shared.items() if n.startswith(prefix) and k in bl), None)
+            steps.append((name, k) if name else (own_name(k), -1))
+        return steps
+
+    def block_weights(self, name, block):
+        blocks, shapes, w = self.shared[name]
+        row = np.asarray(w[blocks.index(block)])
+        out, o = [], 0
+        for s in shapes:
+            n = int(np.prod(s))
+            out.append(row[o:o + n].reshape(s))
+            o += n
+        assert o == row.size, (name, o, row.size)
+        return out
 
     def graph(self, name):
         if name not in self.g:
@@ -125,8 +162,12 @@ class IdolLiteRT:
         h_x, h_cam, t_mod, t_emb = self.run1('den_in', [x_lat, x_cam, IG.sinusoid(1000 * t).numpy(), self.pos_emb,
                                                          gate])
         h = self.run1('den_joint_00', [h_x, h_cond, h_cam, t_mod, gate])[0]
-        for k in range(1, 23):
-            h = self.run1(f'den_joint_{k:02d}', [h, t_mod, gate])[0]
+        for name, block in self.joint_steps:
+            if block >= 0:   # by name: the signature lists 33 inputs as args_0, args_1, args_10, ...
+                args = [h, t_mod, gate] + self.block_weights(name, block)
+                h = self.run1(name, {f'args_{i}': a for i, a in enumerate(args)})[0]
+            else:
+                h = self.run1(name, [h, t_mod, gate])[0]
         v, vc = self.run1('den_joint_23', [h, t_mod, t_emb, gate])
         self._t('denoiser', t0)
         return v, vc
@@ -155,12 +196,13 @@ class IdolLiteRT:
 
     def anchors(self, latent, noise, rec=None):
         t0 = time.time()
-        pool, leaf = torch.from_numpy(noise['octree_pool']), torch.from_numpy(noise['leaf_pool'])
+        pool = torch.from_numpy(noise['octree_pool'])
+        leaf = torch.from_numpy(noise['leaf_pool'][:, :self.num_points])
 
         def probs_fn(cells, level):
             logits = torch.from_numpy(self.octree_logits(cells.numpy(), level, latent))
             return torch.softmax(logits.float(), dim=-1)
-        out = GL.octree_descend(probs_fn, pool, leaf, rec=rec).numpy()
+        out = GL.octree_descend(probs_fn, pool, leaf, num_points=self.num_points, rec=rec).numpy()
         self._t('octree', t0)
         return out
 
@@ -168,8 +210,12 @@ class IdolLiteRT:
         t0 = time.time()
         pe = IG.point_pe(torch.from_numpy(anchors[0])).numpy()[None]
         h = self.run1('gs_0', [anchors, pe, latent])[0]
-        for i in range(1, 8):
-            h = self.run1(f'gs_{i}', [h, latent])[0]
+        for name, block in self.gs_steps:
+            if block >= 0:   # by name: the signature lists the inputs as args_0, args_1, args_10, ...
+                args = [h, latent] + self.block_weights(name, block)
+                h = self.run1(name, {f'args_{i}': a for i, a in enumerate(args)})[0]
+            else:
+                h = self.run1(name, [h, latent])[0]
         self._t('gaussian_decoder', t0)
         g = GL.to_gaussians(torch.from_numpy(anchors), torch.from_numpy(h), self.rep, self.perturbation,
                             torch.tensor(self.base_offset_scale))

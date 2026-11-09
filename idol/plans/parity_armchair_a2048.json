@@ -1,0 +1,8 @@
+{
+ "comment": "CONTRACT.md (a) for a form with 2,048 anchors: each part on the armchair fixture's reference input (the author's pipeline at --num-gaussians 65536, probe_r2/anchors2048/armchair), outputs dumped as <id>.<name>.f32.",
+ "reserve_mb": 1000,
+ "mem_check": true,
+ "rows": [
+  {"id": "parity_armchair_a2048", "kind": "parity", "fixture": "fx/armchair_a2048"}
+ ]
+}

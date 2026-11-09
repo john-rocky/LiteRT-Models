@@ -1,0 +1,5 @@
+# p2c (S26): one denoiser block and the first Gaussian decoder block on the CPU (XNNPACK, the runner's single thread),
+# to size the all-CPU ladder row before running it in the app (6 threads). Same graphs and fixtures as p2.
+# tag accel prec graph fx count warmup rounds ab cache compile_s ready extras
+dj_cpu      cpu      -         den_joint_00       g1_den_joint_00 1 1 1 000 -           300 gate rest=5
+gs_cpu      cpu      -         gs_0               g1_gs_0         1 1 1 000 -           300 gate rest=5

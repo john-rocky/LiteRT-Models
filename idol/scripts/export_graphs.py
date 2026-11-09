@@ -179,7 +179,7 @@ def part_gs(out, ref, do_export, chunk=512):
     if do_export:
         res['export'] = {}
         for i, p in enumerate(parts):
-            args = (anchors, pe, latent) if i == 0 else (torch.randn(1, 8192, 1024), latent)
+            args = (anchors, pe, latent) if i == 0 else (torch.randn(1, anchors.shape[1], 1024), latent)
             res['export'][f'gs_{i}'] = export(p, args, os.path.join(out, f'gs_{i}.tflite'))
     return res
 

@@ -31,7 +31,7 @@ esac
 export ANDROID_SERIAL=$SERIAL
 NAME=${NAME:-idol-${DEVICE:-s26}}
 STEPS=${STEPS:?STEPS is required}
-OUT=$K/device/results/${DEVICE:-s26}
+OUT=${OUT:-$K/device/results/${DEVICE:-s26}}   # a form run passes its own folder (one per form and device)
 APK=$K/app/build/outputs/apk/debug/app-debug.apk
 mkdir -p "$OUT"
 log() { printf '%s %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$OUT/hold.log"; }

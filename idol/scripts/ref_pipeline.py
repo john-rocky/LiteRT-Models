@@ -243,6 +243,9 @@ def main():
     ap.add_argument('--device', default='cpu')
     ap.add_argument('--native', action='store_true', help='the SDK precisions (bf16 encoders, fp16 blocks)')
     ap.add_argument('--out', required=True)
+    ap.add_argument('--encode-size', type=int, default=0,
+                    help='speed-ladder probe: the encoders see the preprocessed picture resized (Lanczos) to this size; '
+                         'matting and crop stay at the model size; 0 = the model size')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     torch.set_grad_enabled(False)
@@ -264,9 +267,16 @@ def main():
     assert np.array_equal(np.asarray(author), np.asarray(composite)), 'glue preprocessing differs from idol-sdk'
     composite.save(os.path.join(a.out, 'input.png'))
     Image.fromarray(alpha, mode='L').save(os.path.join(a.out, 'alpha_birefnet.png'))
-    pixels = torch.from_numpy(GL.pixels_of(composite)).to(dev)
+    enc_img = composite
+    if a.encode_size and a.encode_size != cfg['image_size']:
+        enc_img = composite.resize((a.encode_size, a.encode_size), Image.LANCZOS)
+        enc_img.save(os.path.join(a.out, f'input_{a.encode_size}.png'))
+    pixels = torch.from_numpy(GL.pixels_of(enc_img)).to(dev)
 
     noise = GL.make_noise(a.seed, den.q_token_length, den.in_channels, den.cam_channels)
+    if enc_img is not composite:  # the VAE posterior noise of the smaller latent: its top-left corner
+        h = a.encode_size // 8
+        noise['vae_noise'] = np.ascontiguousarray(noise['vae_noise'][:, :, :h, :h])
     np.savez(os.path.join(a.out, 'noise.npz'), **noise)
     rec = {'pixels': pixels.cpu().numpy(), 'alpha_birefnet': alpha, 'box': np.asarray(box)}
 
@@ -312,6 +322,7 @@ def main():
     cam = decode_camera(x['camera'][0, 0].float().cpu())
     meta = {'image': a.image, 'mode': a.mode, 'seed': a.seed, 'steps': a.steps, 'turbo': a.turbo,
             'cfg': 0.0 if a.turbo else a.cfg, 'rescale_t': a.rescale_t, 'num_gaussians': a.num_gaussians,
+            'encode_size': a.encode_size or cfg['image_size'],
             'device': a.device, 'native': a.native, 'box': box, 'camera': cam, 'glue_ply_bytes_equal': same_bytes,
             'octree_rows': [int(rec[f'oct_cells_{l}'].shape[1]) for l in range(1, cfg['max_voxel_level'] + 1)],
             'seconds': {'load': round(t1 - t0, 1), 'encode': round(t2 - t1, 1), 'sample': round(t3 - t2, 1),

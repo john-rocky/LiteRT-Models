@@ -21,9 +21,8 @@ MODULE = os.path.dirname(HERE)
 # one folder: the runner and the export scripts share idol_graphs.py / gpu_blocks.py / idol_glue.py
 PYTHON = ['run_idol.py', 'idol_runner.py', 'idol_glue.py', 'idol_graphs.py', 'gpu_blocks.py', 'lrt.py',
           'export_graphs.py', 'f0_export.py', 'deform_conv.py', 'bir_lean.py', 'make_manifest.py', 'ref_pipeline.py',
-          'render_views.py', 'requirements.txt']
+          'render_views.py', 'export_shared_joint.py', 'export_shared_gauss.py', 'requirements.txt']
 DINO_SIDE = ['dino_rope_cos.f32', 'dino_rope_sin.f32']
-MAIN_SIDE = ['den_pos_emb.f32', 'gs_perturbation.f32']
 SKIP_DIRS = {'build', '.gradle', '.idea', '.cxx', '.externalNativeBuild', 'captures'}
 
 

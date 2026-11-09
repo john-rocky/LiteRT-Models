@@ -1,0 +1,24 @@
+# p2 (round 2, speed-ladder probes per graph on the S26): precision FP16 against FP16_WITH_FP32_ACCUM (the shipped
+# setting), the Qualcomm HTP through the LiteRT compiler plugin (JIT on the phone; LiteRT 2.3.0 Maven + QAIRT
+# 2.50.0.260828 libraries staged by phonon2_work, never published), and int8 weights from the AI Edge Quantizer 0.10.1
+# (wo8 = weight_only_wi8_afp32, dyn8 = dynamic_wi8_afp32) on the GPU. Fixtures = g1 (the armchair's real inputs).
+# GRAPH_DIR = ~/code/idol_work/probe_r2/graphs (den_joint_00 and gs_0 = the shipped files, sha256 = models_v3
+# manifest; the int8 files from probe_r2/quant/make_int8.py). Order: the precision A/B first, then the HTP, then int8,
+# then the precision legs again in reverse (B A) for the thermal drift. dj01_acc / djm_acc: the state lever's shared
+# joint-block graph (den_joint_mid: block weights as runtime inputs, BATCH_MATMUL) against den_joint_01 on the same input.
+# tag accel prec graph fx count warmup rounds ab cache compile_s ready extras
+dj_acc      gpu      fp16acc32 den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+dj_f16      gpu      fp16      den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+gs_acc      gpu      fp16acc32 gs_0               g1_gs_0         1 1 5 000 -           300 gate rest=5
+gs_f16      gpu      fp16      gs_0               g1_gs_0         1 1 5 000 -           300 gate rest=5
+dj01_acc    gpu      fp16acc32 den_joint_01       g1_den_joint_01 1 1 5 000 -           300 gate rest=5
+djm_acc     gpu      fp16acc32 den_joint_mid      p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+dj_wo8      gpu      fp16acc32 den_joint_00.wo8   g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+dj_dyn8     gpu      fp16acc32 den_joint_00.dyn8  g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+gs_wo8      gpu      fp16acc32 gs_0.wo8           g1_gs_0         1 1 5 000 -           300 gate rest=5
+gs_dyn8     gpu      fp16acc32 gs_0.dyn8          g1_gs_0         1 1 5 000 -           300 gate rest=5
+dj_f16b     gpu      fp16      den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+dj_accb     gpu      fp16acc32 den_joint_00       g1_den_joint_00 1 1 5 000 -           300 gate rest=5
+dj_npu      npu+cpu  -         den_joint_00       g1_den_joint_00 1 1 5 000 new:cache_dj 900 gate rest=5
+dj_npuc     npu+cpu  -         den_joint_00       g1_den_joint_00 1 1 5 000 use:cache_dj 300 gate rest=5 needs=dj_npu
+gs_npu      npu+cpu  -         gs_0               g1_gs_0         1 1 5 000 new:cache_gs 900 gate rest=5

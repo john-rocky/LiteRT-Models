@@ -1,0 +1,6 @@
+# p2n (S26): the denoiser block on the HTP again with the Qualcomm optimization level set to "prepare" (QNN
+# kHtpOptimizeForPrepare = optimization_level 1; LiteRT's default is InferenceO3 = 2, which p2's dj_npu ran with).
+# memory npu-aot-sdk: O3 can retry its VTCM sequencing for 18-23 min per attempt; O2 / prepare is the fastest prepare.
+# tag accel prec graph fx count warmup rounds ab cache compile_s ready extras
+dj_npuo2    npu+cpu  -         den_joint_00       g1_den_joint_00 1 1 5 000 new:cache_djo2 900 gate rest=5 args=--qnn-toml,optimization_level=1
+dj_npuo2c   npu+cpu  -         den_joint_00       g1_den_joint_00 1 1 5 000 use:cache_djo2 300 gate rest=5 needs=dj_npuo2 args=--qnn-toml,optimization_level=1

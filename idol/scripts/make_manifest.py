@@ -3,6 +3,13 @@ accelerator and precision it runs at, which matting graph the app uses, and the 
 Also writes gs_perturbation.f32 next to gs_perturbation.npy.
 
   python make_manifest.py models/v1 [--dis PATH_TO_dis.tflite]
+
+With den_joint_mid.tflite and den_joint_w.f32 in the folder (export_shared_joint.py) and no den_joint_01..22, the
+manifest lists den_joint_mid in their place with `shared_blocks` [1..22], `block_weights` and `first_weight_input`
+(the inputs before the weights), and the weights file as a side file [22, floats per block]. gs_mid.tflite and
+gs_w.f32 (export_shared_gauss.py) with no gs_1..6 likewise stand for gs_1..6.
+
+--precision fp16 runs the GPU graphs at FP16 without fp32 accumulation (the default keeps FP16_WITH_FP32_ACCUM).
 """
 import argparse
 import hashlib
@@ -23,6 +30,9 @@ CPU_GRAPHS = {'bir'}  # BiRefNet: its deformable convolutions lower to GATHER_ND
 RUN_PEAK_BYTES = {'bir': 2_732_604 * 1024}
 ORDER = (['bir', 'dis'] + [f'dino_{i}' for i in range(4)] + ['vae_0', 'vae_1', 'vae_2', 'vae_3', 'vae_attn', 'vae_4'] +
          ['den_ctx', 'den_in'] + [f'den_joint_{k:02d}' for k in range(24)] + ['oct'] + [f'gs_{i}' for i in range(8)])
+# shared graph -> (the json its export script writes, its weights file, the graph name of block k)
+SHARED = {'den_joint_mid': ('shared_joint.json', 'den_joint_w.f32', lambda k: f'den_joint_{k:02d}'),
+          'gs_mid': ('shared_gs.json', 'gs_w.f32', lambda k: f'gs_{k}')}
 SIDE = {'den_pos_emb.f32': [1, 8192, 1024], 'dino_rope_cos.f32': [1, 1, 4101, 64], 'dino_rope_sin.f32': [1, 1, 4101, 64],
         'gs_perturbation.f32': None}
 
@@ -40,23 +50,42 @@ def main():
     ap.add_argument('models')
     ap.add_argument('--dis', default=None)
     ap.add_argument('--no-sha', action='store_true')
+    ap.add_argument('--precision', choices=['fp16_with_fp32_accum', 'fp16'], default='fp16_with_fp32_accum',
+                    help='precision of the GPU graphs')
     a = ap.parse_args()
     d = a.models
     pert = np.load(os.path.join(d, 'gs_perturbation.npy')).astype('<f4')
-    pert.tofile(os.path.join(d, 'gs_perturbation.f32'))
+    pf = os.path.join(d, 'gs_perturbation.f32')
+    pert.tofile(pf + '.tmp')
+    os.replace(pf + '.tmp', pf)   # a new file: model folders share files by hard link
     SIDE['gs_perturbation.f32'] = list(pert.shape)
+    order = list(ORDER)
+    shared = {}
+    for name, (js, wfile, block_name) in SHARED.items():
+        if not os.path.exists(os.path.join(d, f'{name}.tflite')):
+            continue
+        sj = json.load(open(os.path.join(d, js)))
+        mids = [block_name(k) for k in sj['blocks']]
+        if os.path.exists(os.path.join(d, f'{mids[0]}.tflite')):
+            continue   # the per-block graphs are there: the folder runs them
+        i = order.index(mids[0])
+        order = order[:i] + [name] + [n for n in order[i:] if n not in mids]
+        SIDE[wfile] = [len(sj['blocks']), sj['per_block_floats']]
+        shared[name] = {'shared_blocks': sj['blocks'], 'block_weights': wfile,
+                        'first_weight_input': sj.get('first_weight_input', 3)}
     graphs = {}
-    for name in ORDER:
+    for name in order:
         path = a.dis if name == 'dis' else os.path.join(d, f'{name}.tflite')
         if not path or not os.path.exists(path):
             print('missing', name)
             continue
         graphs[name] = {'file': 'dis.tflite' if name == 'dis' else f'{name}.tflite', 'bytes': os.path.getsize(path),
                         'accelerator': 'cpu' if name in CPU_GRAPHS else 'gpu',
-                        'precision': 'fp32' if name in FP32_GRAPHS | CPU_GRAPHS else 'fp16_with_fp32_accum',
+                        'precision': 'fp32' if name in FP32_GRAPHS | CPU_GRAPHS else a.precision,
                         'signatures': sig_io(path)}
         if name in RUN_PEAK_BYTES:
             graphs[name]['run_peak_bytes'] = RUN_PEAK_BYTES[name]
+        graphs[name].update(shared.get(name, {}))
         if not a.no_sha:
             graphs[name]['sha256'] = sha256(path)
     side = {}

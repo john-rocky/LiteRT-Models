@@ -37,6 +37,15 @@ class Graph(val spec: GraphSpec, private val model: CompiledModel) : AutoCloseab
 
     private fun sig(key: String?): SignatureSpec = spec.signature(key)
 
+    /**
+     * The index of input `args_<n>` in signature [key]: signatures list inputs by name, so a graph with more than 10
+     * inputs has args_10 before args_2. [n] itself when no input has that name.
+     */
+    fun argIndex(n: Int, key: String? = null): Int {
+        val i = sig(key).inputs.indexOfFirst { it.name == "args_$n" }
+        return if (i >= 0) i else n
+    }
+
     /** Writes [data] to input [index] of signature [key], unless the buffer already holds [tag]. */
     fun write(index: Int, data: FloatArray, tag: Any? = null, key: String? = null) {
         val s = sig(key)

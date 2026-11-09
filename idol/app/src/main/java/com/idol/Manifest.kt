@@ -28,6 +28,14 @@ class GraphSpec(
      * Null when the manifest does not say.
      */
     val runPeakBytes: Long? = null,
+    /**
+     * A graph that runs several blocks of one chain with each block's weights as runtime inputs (`shared_blocks`: the
+     * blocks it stands for, in order; `block_weights`: the side file with their weights; `first_weight_input`: the
+     * number of inputs before the weights, args_0 .. args_<n-1>). Empty for an ordinary graph.
+     */
+    val sharedBlocks: List<Int> = emptyList(),
+    val blockWeights: String? = null,
+    val firstWeightInput: Int = 3,
 ) {
     val onCpu: Boolean get() = accelerator == "cpu"
 
@@ -85,6 +93,10 @@ class Manifest(
                     precision = e.optString("precision", "fp16_with_fp32_accum"),
                     signatures = sigs,
                     runPeakBytes = if (e.has("run_peak_bytes")) e.getLong("run_peak_bytes") else null,
+                    sharedBlocks = e.optJSONArray("shared_blocks")?.let { a -> List(a.length()) { a.getInt(it) } }
+                        ?: emptyList(),
+                    blockWeights = e.optString("block_weights", "").ifEmpty { null },
+                    firstWeightInput = e.optInt("first_weight_input", 3),
                 )
             }
             val side = LinkedHashMap<String, SideFile>()

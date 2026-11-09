@@ -1,0 +1,15 @@
+# p3 (round 2, speed-ladder probe on the S26): the shared middle denoiser block (den_joint_mid, block weights as runtime
+# inputs) with other attention query chunks against the chunk of 512 in form F (export_shared_joint.py's file, 191,364 B,
+# linked as den_joint_mid_c512), GPU FP16 (form F's precision), fixture p2_den_mid_01 (block 1's real input and weights).
+# A query chunk only splits the scores into row blocks; each query row's arithmetic is unchanged. The other files come
+# from ~/code/idol_work/probe_r2/chunk/export_chunk.py (same module, chunk changed), hard-linked into GRAPH_DIR =
+# ~/code/idol_work/probe_r2/graphs. Order A B C D, then D C B A for the thermal drift.
+# tag accel prec graph fx count warmup rounds ab cache compile_s ready extras
+c512        gpu      fp16      den_joint_mid_c512   p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+c256        gpu      fp16      den_joint_mid_c256   p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+c1024       gpu      fp16      den_joint_mid_c1024  p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+c2048       gpu      fp16      den_joint_mid_c2048  p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+c2048b      gpu      fp16      den_joint_mid_c2048  p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+c1024b      gpu      fp16      den_joint_mid_c1024  p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+c256b       gpu      fp16      den_joint_mid_c256   p2_den_mid_01   1 1 5 000 -           300 gate rest=5
+c512b       gpu      fp16      den_joint_mid_c512   p2_den_mid_01   1 1 5 000 -           300 gate rest=5

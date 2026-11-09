@@ -114,6 +114,7 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
 
     override fun close() {
         pool.close()
+        for (w in blockWeights.values) runCatching { w.close() }
         runCatching { env.close() }
     }
 
@@ -126,7 +127,28 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
     private val dinoNames = chain("dino_")
     private val vaeNames = chain("vae_")
     private val jointNames = chain("den_joint_")
+
     private val gsNames = chain("gs_")
+
+    /**
+     * A chain's blocks in run order as (graph, block): a shared graph (`shared_blocks` in the manifest) stands for
+     * each of its blocks in turn, with that block's weights written before its call; an ordinary graph has block -1.
+     */
+    private fun steps(names: List<String>): List<Pair<String, Int>> = names.flatMap { n ->
+        val spec = manifest.graph(n)
+        if (spec.sharedBlocks.isEmpty()) listOf(n to -1) else spec.sharedBlocks.map { n to it }
+    }
+    private val jointSteps = steps(jointNames)
+    private val gsSteps = steps(gsNames)
+    private val blockWeights: Map<String, BlockWeights> = (jointNames + gsNames).map { manifest.graph(it) }
+        .filter { it.sharedBlocks.isNotEmpty() }
+        .associate { spec ->
+            val file = requireNotNull(spec.blockWeights) { "${spec.name} has shared_blocks but no block_weights" }
+            spec.name to BlockWeights(File(modelDir, file), spec)
+        }
+
+    /** Anchors per run, from the Gaussian decoder's first input [1, anchors, 3] (8,192 = the author's default). */
+    val numPoints: Int = manifest.graph(gsNames[0]).signature().inputs[0].shape[1]
 
     /** The order a run asks for graphs in. */
     fun runSchedule(): List<String> {
@@ -140,10 +162,10 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
             if (slow != phase) s.add("den_ctx")
             phase = slow
             s.add("den_in")
-            s.addAll(jointNames)
+            s.addAll(jointSteps.map { it.first })
         }
         repeat(Glue.MAX_LEVEL) { s.add("oct") }
-        s.addAll(gsNames)
+        s.addAll(gsSteps.map { it.first })
         return s
     }
 
@@ -248,7 +270,7 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         val anchors = Glue.octreeDescend({ cells, rows, level ->
             progress.stage(Stage.OCTREE, "level $level of ${Glue.MAX_LEVEL}", null, false)
             Glue.softmax8(octreeLogits(cells, rows, level, latent, latentTag), rows)
-        }, noise.pool, noise.leaf)
+        }, noise.pool, noise.leaf, numPoints)
         times["octree"] = since(t)
         progress.stage(Stage.OCTREE, null, times["octree"], true)
         if (!options.preload) pool.release("oct")
@@ -331,7 +353,7 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
      * (the read waits for [from]'s GPU work), or handed over as the buffer itself at [run] with direct handoff.
      */
     private fun link(from: Graph, fromOut: Int, toName: String, toIn: Int = 0): Link {
-        if (direct) {
+        if (direct && from.name != toName) {
             pool.pin(from.name)
             try {
                 return Link(from, fromOut, graph(toName), toIn, true)
@@ -450,7 +472,8 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         val tEmb = din.read(3)
         val tModTag = nextTag()
         var prev = din
-        for ((k, name) in jointNames.withIndex()) {
+        for ((k, step) in jointSteps.withIndex()) {
+            val (name, block) = step
             val l = link(prev, 0, name)
             val j = l.to
             when (k) {
@@ -460,14 +483,15 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
                     j.write(3, tMod, tModTag)
                     j.write(4, gate, gateTag)
                 }
-                jointNames.size - 1 -> {
+                jointSteps.size - 1 -> {
                     j.write(1, tMod, tModTag)
                     j.write(2, tEmb)
                     j.write(3, gate, gateTag)
                 }
                 else -> {
-                    j.write(1, tMod, tModTag)
-                    j.write(2, gate, gateTag)
+                    j.write(j.argIndex(1), tMod, tModTag)
+                    j.write(j.argIndex(2), gate, gateTag)
+                    if (block >= 0) blockWeights.getValue(name).write(j, block)
                 }
             }
             run(l)
@@ -493,19 +517,21 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         return g.read(0, key).copyOf(n * 8)
     }
 
-    /** The Gaussian decoder's 8 graphs: anchors [8192, 3] + latent -> features [8192, 480]. */
+    /** The Gaussian decoder's 8 steps: anchors [numPoints, 3] + latent -> features [numPoints, 480]. */
     private fun gaussianFeatures(anchors: FloatArray, latent: FloatArray, latentTag: Any?): FloatArray {
-        val pe = Glue.pointPe(anchors, Glue.NUM_POINTS)
-        var g = graph(gsNames[0])
+        val pe = Glue.pointPe(anchors, numPoints)
+        var g = graph(gsSteps[0].first)
         g.write(0, anchors)
         g.write(1, pe)
         g.write(2, latent, latentTag)
         g.run()
-        for (name in gsNames.drop(1)) {
+        for ((name, block) in gsSteps.drop(1)) {
             val l = link(g, 0, name)
-            l.to.write(1, latent, latentTag)
+            val next = l.to
+            next.write(next.argIndex(1), latent, latentTag)
+            if (block >= 0) blockWeights.getValue(name).write(next, block)
             run(l)
-            g = l.to
+            g = next
         }
         return g.read(0)
     }
@@ -567,7 +593,7 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         for (i in 0 until timeGrid.size - 1) {
             progress.stage(Stage.DENOISER, "step ${i + 1} of ${timeGrid.size - 1}", null, false)
             val (v, vc) = velocity(fx.floats("x_latent_$i"), fx.floats("x_camera_$i"), timeGrid[i], f1, f2, condTag, ctx)
-            dump("v_latent_$i", v, intArrayOf(1, Glue.NUM_POINTS, Glue.IN_CH))
+            dump("v_latent_$i", v, intArrayOf(1, Glue.LATENT_TOKENS, Glue.IN_CH))
             dump("v_camera_$i", vc, intArrayOf(1, 1, Glue.CAM_CH))
         }
         seconds.put("denoiser", since(t))
@@ -593,7 +619,7 @@ class IdolEngine(val modelDir: File, val manifest: Manifest, val options: Engine
         val feats = gaussianFeatures(anchors, latent, latentTag)
         seconds.put("gaussian_decoder", since(t))
         pool.releaseIf { it.startsWith("gs_") }
-        dump("gs_features", feats, intArrayOf(1, Glue.NUM_POINTS, 480))
+        dump("gs_features", feats, intArrayOf(1, numPoints, 480))
         val g = Glue.toGaussians(anchors, feats, rep, perturbation)
         dump("g_xyz", g.xyz, intArrayOf(g.count, 3))
         dump("g_features_dc", g.featuresDc, intArrayOf(g.count, 1, 3))

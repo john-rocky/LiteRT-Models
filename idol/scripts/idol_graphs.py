@@ -403,3 +403,143 @@ def point_pe(points, channels=1024, max_res=10):
     ang = points.float().unsqueeze(-1) * freqs * torch.pi
     emb = torch.cat([torch.sin(ang), torch.cos(ang)], dim=-1).reshape(points.shape[0], -1)
     return torch.cat([emb, torch.zeros(points.shape[0], channels - emb.shape[1])], dim=-1)
+
+
+# ---------------------------------------------------------------- shared middle joint block (state lever, round 2)
+
+# The weight inputs of the shared joint graph after (h, t_mod, gate), in input order args_3 .. args_32. Linear weights
+# are passed transposed ([1, in, out]), so each projection is one BATCH_MATMUL with a runtime operand.
+SHARED_WEIGHT_NAMES = ['repo_norm_w', 'repo_norm_b', 'repo_gate_t', 'repo_content_t', 'repo_ang_t',
+                       'q_t', 'q_b', 'k_t', 'k_b', 'v_t', 'v_b', 'gq', 'gk', 'out_t', 'out_b', 'fc1_t', 'fc1_b',
+                       'fc2_t', 'fc2_b', 'shift', 'lqkv_a_t', 'lq_b_t', 'lk_b_t', 'lv_b_t', 'lout_a_t', 'lout_b_t',
+                       'lfc1_a_t', 'lfc1_b_t', 'lfc2_a_t', 'lfc2_b_t']
+
+
+def shared_block_weights(jb):
+    """A middle DenJoint's weights in SHARED_WEIGHT_NAMES order (float32 tensors, the shapes of the graph inputs)."""
+    def tw(lin):
+        return lin.weight.detach().float().t().contiguous()[None]
+
+    def row(v):
+        return v.detach().float()[None, None]
+
+    b = jb.block
+    r = b.repo
+    return [row(r.norm_w), row(r.norm_b), tw(r.gate), tw(r.content), tw(r.ang),
+            tw(b.q), row(b.q.bias), tw(b.k), row(b.k.bias), tw(b.v), row(b.v.bias), b.gq.detach().float(),
+            b.gk.detach().float(), tw(b.out), row(b.out.bias), tw(b.fc1), row(b.fc1.bias), tw(b.fc2), row(b.fc2.bias),
+            b.shift_table.detach().float(), tw(b.qkv_a), tw(b.q_b), tw(b.k_b), tw(b.v_b), tw(b.out_a), tw(b.out_b),
+            tw(b.fc1_a), tw(b.fc1_b), tw(b.fc2_a), tw(b.fc2_b)]
+
+
+class DenJointShared(nn.Module):
+    """One graph for every middle joint block: (h [1, L, 1024], t_mod [1, 6144], gate [1, 64], *weights) -> h, the
+    block's weights as runtime inputs (shared_block_weights order). Same arithmetic as DenBlock.forward; compiled once
+    per photo on the phone instead of once per block."""
+
+    def __init__(self, ref_joint):
+        super().__init__()
+        b = ref_joint.block
+        self.c, self.h, self.d, self.chunk = b.c, b.h, b.d, b.chunk
+        self.eps1, self.eps2, self.repo_eps, self.repo_half = b.eps1, b.eps2, b.repo.eps, b.repo.half
+
+    def forward(self, x, mod, gate, *w):
+        W = dict(zip(SHARED_WEIGHT_NAMES, w))
+        c, H, d = self.c, self.h, self.d
+        bsz, L, _ = x.shape
+        mm = torch.matmul
+        g = gate[:, None, :]
+        hr = G.safe_layer_norm(x, self.repo_eps, W['repo_norm_w'], W['repo_norm_b'])
+        a = mm(F.silu(mm(hr, W['repo_gate_t'])) * mm(hr, W['repo_content_t']), W['repo_ang_t'])
+        a = a.reshape(bsz, L, H, self.repo_half)
+        cos, sin = torch.cos(a), torch.sin(a)
+        m = mod + W['shift']
+        shift_msa, scale_msa, gate_msa = m[:, 0:c], m[:, c:2 * c], m[:, 2 * c:3 * c]
+        shift_mlp, scale_mlp, gate_mlp = m[:, 3 * c:4 * c], m[:, 4 * c:5 * c], m[:, 5 * c:6 * c]
+        hh = G.safe_layer_norm(x, self.eps1) * (1 + scale_msa.unsqueeze(1)) + shift_msa.unsqueeze(1)
+        half = d // 2
+
+        def rope(t):
+            t0, t1 = t[..., :half], t[..., half:]
+            return torch.cat([t0 * cos - t1 * sin, t0 * sin + t1 * cos], dim=-1)
+
+        ax = mm(hh, W['lqkv_a_t']) * g
+        q = G.safe_rms_unit(rope((mm(hh, W['q_t']) + W['q_b'] + mm(ax, W['lq_b_t'])).reshape(bsz, L, H, d))) * W['gq']
+        k = G.safe_rms_unit(rope((mm(hh, W['k_t']) + W['k_b'] + mm(ax, W['lk_b_t'])).reshape(bsz, L, H, d))) * W['gk']
+        v = (mm(hh, W['v_t']) + W['v_b'] + mm(ax, W['lv_b_t'])).reshape(bsz, L, H, d)
+        o = G.attention(q.permute(0, 2, 1, 3), k.permute(0, 2, 1, 3), v.permute(0, 2, 1, 3), self.chunk)
+        o = o.reshape(bsz, L, c)
+        x = x + (mm(o, W['out_t']) + W['out_b'] + mm(mm(o, W['lout_a_t']) * g, W['lout_b_t'])) * gate_msa.unsqueeze(1)
+        hh = G.safe_layer_norm(x, self.eps2) * (1 + scale_mlp.unsqueeze(1)) + shift_mlp.unsqueeze(1)
+        u = G._gelu_tanh(mm(hh, W['fc1_t']) + W['fc1_b'] + mm(mm(hh, W['lfc1_a_t']) * g, W['lfc1_b_t']))
+        return x + (mm(u, W['fc2_t']) + W['fc2_b'] + mm(mm(u, W['lfc2_a_t']) * g, W['lfc2_b_t'])) * gate_mlp.unsqueeze(1)
+
+
+# ---------------------------------------------------------------- shared middle Gaussian decoder graph (state lever)
+
+# One GaussianBlockGPU's weights as graph inputs, in input order: self-attention, cross-attention, norm2's affine, MLP.
+# Linear weights are passed transposed ([1, in, out]), as for the shared joint block.
+GAUSS_BLOCK_WEIGHT_NAMES = ['sa_q_t', 'sa_q_b', 'sa_k_t', 'sa_k_b', 'sa_v_t', 'sa_v_b', 'sa_gq', 'sa_gk', 'sa_out_t',
+                            'sa_out_b', 'ca_q_t', 'ca_q_b', 'ca_k_t', 'ca_k_b', 'ca_v_t', 'ca_v_b', 'ca_gq', 'ca_gk',
+                            'ca_out_t', 'ca_out_b', 'n2_w', 'n2_b', 'fc1_t', 'fc1_b', 'fc2_t', 'fc2_b']
+
+
+def gauss_block_weights(gb):
+    """One GaussianBlockGPU's weights in GAUSS_BLOCK_WEIGHT_NAMES order (float32 tensors, the graph input shapes)."""
+    def tw(lin):
+        return lin.weight.detach().float().t().contiguous()[None]
+
+    def row(v):
+        return v.detach().float().reshape(1, 1, -1)
+
+    def mha(m):
+        return [tw(m.q), row(m.q.bias), tw(m.k), row(m.k.bias), tw(m.v), row(m.v.bias), m.gq.detach().float(),
+                m.gk.detach().float(), tw(m.out), row(m.out.bias)]
+
+    assert gb.n2w is not None and gb.n2b is not None
+    return (mha(gb.self_attn) + mha(gb.cross_attn) +
+            [row(gb.n2w), row(gb.n2b), tw(gb.fc1), row(gb.fc1.bias), tw(gb.fc2), row(gb.fc2.bias)])
+
+
+def gauss_shared_weights(g):
+    """A middle Gauss graph's weights: its blocks' gauss_block_weights one after another."""
+    return [t for b in g.blocks for t in gauss_block_weights(b)]
+
+
+class GaussShared(nn.Module):
+    """One graph for the Gaussian decoder's middle graphs (gs_1 .. gs_6, two blocks each): (h [1, A, 1024],
+    latent [1, 8192, 16], *weights) -> h, the blocks' weights as runtime inputs (gauss_shared_weights order). Same
+    arithmetic as Gauss.forward for a middle graph; compiled once per photo on the phone instead of six times."""
+
+    def __init__(self, ref):
+        super().__init__()
+        assert not ref.first and not ref.last
+        b0 = ref.blocks[0]
+        self.n = len(ref.blocks)
+        self.eps = (b0.e1, b0.e2, b0.e3)
+        self.sa = (b0.self_attn.h, b0.self_attn.c, b0.self_attn.d, b0.self_attn.chunk)
+        self.ca = (b0.cross_attn.h, b0.cross_attn.c, b0.cross_attn.d, b0.cross_attn.chunk)
+
+    @staticmethod
+    def _mha(x, src, W, p, heads, c, d, chunk):
+        mm = torch.matmul
+        b, lq, _ = x.shape
+        lk = src.shape[1]
+        q = G.safe_rms_unit((mm(x, W[p + 'q_t']) + W[p + 'q_b']).reshape(b, lq, heads, d)) * W[p + 'gq']
+        k = G.safe_rms_unit((mm(src, W[p + 'k_t']) + W[p + 'k_b']).reshape(b, lk, heads, d)) * W[p + 'gk']
+        v = (mm(src, W[p + 'v_t']) + W[p + 'v_b']).reshape(b, lk, heads, d)
+        o = G.attention(q.permute(0, 2, 1, 3), k.permute(0, 2, 1, 3), v.permute(0, 2, 1, 3), chunk)
+        return mm(o.reshape(b, lq, c), W[p + 'out_t']) + W[p + 'out_b']
+
+    def forward(self, h, latent, *w):
+        n = len(GAUSS_BLOCK_WEIGHT_NAMES)
+        assert len(w) == n * self.n, len(w)
+        e1, e2, e3 = self.eps
+        for i in range(self.n):
+            W = dict(zip(GAUSS_BLOCK_WEIGHT_NAMES, w[i * n:(i + 1) * n]))
+            x = G.safe_layer_norm(h, e1)
+            h = h + self._mha(x, x, W, 'sa_', *self.sa)
+            h = h + self._mha(G.safe_layer_norm(h, e2, W['n2_w'], W['n2_b']), latent, W, 'ca_', *self.ca)
+            u = G._gelu_tanh(torch.matmul(G.safe_layer_norm(h, e3), W['fc1_t']) + W['fc1_b'])
+            h = h + (torch.matmul(u, W['fc2_t']) + W['fc2_b'])
+        return h

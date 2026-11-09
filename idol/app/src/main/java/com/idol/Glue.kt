@@ -21,20 +21,20 @@ import kotlin.math.tanh
 class Noise(
     /** [1, 32, 128, 128] normal: the VAE posterior noise. */
     val vae: FloatArray,
-    /** [1, 8192, 16] normal: x at t = 1. */
+    /** [1, 8192, 16] normal: x at t = 1 (the denoiser's latent tokens). */
     val latent: FloatArray,
     /** [1, 1, 5] normal: the camera at t = 1. */
     val camera: FloatArray,
     /** [8, 8192] uniform: the octree sampler's per-row offsets. */
     val pool: FloatArray,
-    /** [1, 8192, 3] uniform: the leaf positions. */
+    /** [1, 8192, 3] uniform: the leaf positions (a decoder with fewer anchors uses the first rows). */
     val leaf: FloatArray,
     /** "seed <n>" or the fixture it came from. */
     val source: String,
 ) {
     init {
-        require(vae.size == 32 * 128 * 128 && latent.size == Glue.NUM_POINTS * Glue.IN_CH && camera.size == Glue.CAM_CH)
-        require(pool.size == Glue.MAX_LEVEL * Glue.NUM_POINTS && leaf.size == Glue.NUM_POINTS * 3)
+        require(vae.size == 32 * 128 * 128 && latent.size == Glue.LATENT_TOKENS * Glue.IN_CH && camera.size == Glue.CAM_CH)
+        require(pool.size == Glue.MAX_LEVEL * Glue.LATENT_TOKENS && leaf.size == Glue.LATENT_TOKENS * 3)
     }
 
     companion object {
@@ -47,10 +47,10 @@ class Noise(
             fun normal(n: Int) = FloatArray(n) { r.nextGaussian().toFloat() }
             fun uniform(n: Int) = FloatArray(n) { r.nextFloat() }
             val vae = normal(32 * 128 * 128)
-            val latent = normal(Glue.NUM_POINTS * Glue.IN_CH)
+            val latent = normal(Glue.LATENT_TOKENS * Glue.IN_CH)
             val camera = normal(Glue.CAM_CH)
-            val pool = uniform(Glue.MAX_LEVEL * Glue.NUM_POINTS)
-            val leaf = uniform(Glue.NUM_POINTS * 3)
+            val pool = uniform(Glue.MAX_LEVEL * Glue.LATENT_TOKENS)
+            val leaf = uniform(Glue.LATENT_TOKENS * 3)
             return Noise(vae, latent, camera, pool, leaf, "seed $seed")
         }
     }
@@ -109,6 +109,13 @@ object Glue {
     const val MAX_LEVEL = 8
     const val PER_ANCHOR = 32
     const val PHASE_THRESHOLD = 0.5
+    /** The denoiser's latent tokens; also the row count of the shared octree noise ([8, 8192], [1, 8192, 3]). */
+    const val LATENT_TOKENS = 8192
+
+    /**
+     * The author's anchor count (num_gaussians 262,144 / 32). The graphs set the count a run uses: the Gaussian
+     * decoder's first input is [1, anchors, 3] (a form exported with fewer anchors makes fewer Gaussians).
+     */
     const val NUM_POINTS = 8192
     const val IN_CH = 16
     const val CAM_CH = 5
@@ -293,7 +300,8 @@ object Glue {
 
     /**
      * octree_descend: idol OctreeProbabilityFixedlenDecoder.sample for one batch. [probsFn] (cells [rows, 3], rows,
-     * level) -> child probabilities [rows, 8]. pool [8, 8192], leaf [8192, 3] -> anchors [8192, 3] in [0, 1]^3.
+     * level) -> child probabilities [rows, 8]. pool [8, >= rows], leaf [>= numPoints, 3] -> anchors [numPoints, 3]
+     * in [0, 1]^3 (each level reads the first rows of its pool row, the leaves are the first numPoints rows).
      * [cellsOut], when given, receives each level's cells (the parity record).
      */
     fun octreeDescend(
@@ -303,6 +311,8 @@ object Glue {
         numPoints: Int = NUM_POINTS,
         levels: Int = MAX_LEVEL,
     ): FloatArray {
+        val poolRow = pool.size / levels
+        require(poolRow >= numPoints && leaf.size >= numPoints * 3) { "octree noise is smaller than $numPoints points" }
         var prev = IntArray(3)
         var rows = 1
         var counts = intArrayOf(numPoints)
@@ -310,7 +320,7 @@ object Glue {
             val res = (1 shl (l - 1)).toFloat()
             val cells = FloatArray(rows * 3) { (prev[it].toFloat() + 0.5f) / res }
             val probs = probsFn(cells, rows, l)
-            val u = FloatArray(rows) { pool[(l - 1) * numPoints + it] }
+            val u = FloatArray(rows) { pool[(l - 1) * poolRow + it] }
             val sampled = systematicRows(probs, counts, u, rows)
             var m = 0
             for (v in sampled) if (v > 0) m++
