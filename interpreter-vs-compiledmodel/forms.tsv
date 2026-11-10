@@ -1,0 +1,21 @@
+# row	--accel	--gpu-precision	flags
+A1d	cpu	-	--runtime tflite
+A1t4	cpu	-	--runtime tflite --cpu-threads 4
+A1x	cpu	-	--runtime tflite --xnnpack 1
+A1xt4	cpu	-	--runtime tflite --xnnpack 1 --cpu-threads 4
+A2d	gpu	default	--runtime tflite
+A2h	gpu	fp16	--runtime tflite
+A3n	npu	-	--runtime tflite
+B1d	cpu	-	--runtime litert
+B1t4	cpu	-	--runtime litert --cpu-threads 4
+B2d	gpu	default	--runtime litert --cpu-fallback 1
+B2h	gpu	fp16	--runtime litert --cpu-fallback 1
+B2f	gpu	fp32	--runtime litert --cpu-fallback 1
+B2g	gpu	default	--runtime litert
+B2dH	gpu	default	--runtime litert --cpu-fallback 1 --host-buffers 1
+B2hH	gpu	fp16	--runtime litert --cpu-fallback 1 --host-buffers 1
+B2fH	gpu	fp32	--runtime litert --cpu-fallback 1 --host-buffers 1
+B3c	npu+cpu	-	--runtime litert --cache-dir <empty dir>
+B3	npu+cpu	-	--runtime litert --cache-dir <the dir B3c wrote>
+B3b	npu+cpu	-	--runtime litert --cache-dir <the dir B3c wrote> --qnn-burst 1
+X1t4	cpu	-	--runtime tflite --tflite-lib libLiteRt.so --cpu-threads 4

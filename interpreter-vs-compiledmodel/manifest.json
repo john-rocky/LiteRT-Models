@@ -1,0 +1,113 @@
+{
+ "written": "2026-11-10T22:57:55+0900",
+ "models": {
+  "det": {
+   "url": "https://tfhub.dev/tensorflow/lite-model/efficientdet/lite0/int8/1?lite-format=tflite",
+   "sha256": "33a3b622c7cac0762f96089353cd61495f3e993968d133af7871bfc2d5396704",
+   "bytes": 4561184,
+   "name": "EfficientDet-Lite0 int8",
+   "license": "Apache-2.0",
+   "also": "react-native-fast-tflite example/assets/efficientdet.tflite (same bytes)"
+  },
+  "pose": {
+   "url": "https://tfhub.dev/google/lite-model/movenet/singlepose/lightning/tflite/int8/4?lite-format=tflite",
+   "sha256": "cd7cc22fa946e5d146a7b98d496853e1923e22828d3972d579973f27f91bb105",
+   "bytes": 2894840,
+   "name": "MoveNet SinglePose Lightning int8 v4",
+   "license": "Apache-2.0"
+  },
+  "seg": {
+   "url": "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+   "sha256": "191ac9529ae506ee0beefa6b2c945a172dab9d07d1e802a290a4e4038226658b",
+   "bytes": 249537,
+   "name": "MediaPipe Selfie Segmenter float16 256x256",
+   "license": "Apache-2.0",
+   "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Selfie%20Segmentation.pdf"
+  }
+ },
+ "runtimes": {
+  "litert-1.4.0.aar": {
+   "url": "https://dl.google.com/android/maven2/com/google/ai/edge/litert/litert/1.4.0/litert-1.4.0.aar",
+   "sha256": "54b567572cb2d1295571c785198f87597809cbf22d6cb8acfeac23869041887d",
+   "bytes": 8264240
+  },
+  "litert-gpu-1.4.0.aar": {
+   "url": "https://dl.google.com/android/maven2/com/google/ai/edge/litert/litert-gpu/1.4.0/litert-gpu-1.4.0.aar",
+   "sha256": "48f69a7809d82bdcc4d10d401a786c4124dc7932be6b1255eea806cd25f03274",
+   "bytes": 4116036
+  },
+  "litert-2.3.2.aar": {
+   "url": "https://dl.google.com/android/maven2/com/google/ai/edge/litert/litert/2.3.2/litert-2.3.2.aar",
+   "sha256": "4d1f26b47f89e501940cbfb6e165faf3e600a7213af02e9816d39a49614bf702",
+   "bytes": 7640090
+  },
+  "litert-gpu-2.3.2.aar": {
+   "url": "https://dl.google.com/android/maven2/com/google/ai/edge/litert/litert-gpu/2.3.2/litert-gpu-2.3.2.aar",
+   "sha256": "9caa8648d710ac2a310643d64751c955b43877041e260c6fb1841c1d2e68a21c",
+   "bytes": 4695499
+  },
+  "litert-npu-runtime-qualcomm-2.3.2.aar": {
+   "url": "https://dl.google.com/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-qualcomm/2.3.2/litert-npu-runtime-qualcomm-2.3.2.aar",
+   "sha256": "6808cd32464ebade002fbe8a5f6722a5002e608c33209db462845ee83c28bc8f",
+   "bytes": 509900
+  },
+  "litert_cc_sdk.zip (v2.3.0, C headers for the CompiledModel path)": {
+   "url": "https://github.com/google-ai-edge/LiteRT/releases/download/v2.3.0/litert_cc_sdk.zip",
+   "sha256": "44ebb188ae1a510f233639fa499928fdaaba46436a153a2dbfbb9d87d59728d2",
+   "bytes": 302776
+  },
+  "QAIRT": {
+   "version": "2.50.0.260828",
+   "note": "Qualcomm AI Runtime libraries for the NPU rows (libQnnHtp.so and 7 more), from Qualcomm; not included"
+  }
+ },
+ "photos": [
+  {
+   "name": "portrait",
+   "page": "https://commons.wikimedia.org/wiki/File:Smiling_woman_pink_shirt_(cropped).jpg",
+   "url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Smiling_woman_pink_shirt_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+   "sha256": "cd3f9de45c405f159094619429397e83fbc0f3058f0a5812a4bb9851a0bf788a",
+   "bytes": 560355,
+   "license": "CC0",
+   "artist": "Joshua McKnight"
+  },
+  {
+   "name": "cyclist",
+   "page": "https://commons.wikimedia.org/wiki/File:Man_riding_bicycle_(Unsplash).jpg",
+   "url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Man_riding_bicycle_%28Unsplash%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+   "sha256": "7be004b8cfd9a98678e7b37465790fc5ede21d1d3f2a79fa6dabe0fc0d31259b",
+   "bytes": 8223061,
+   "license": "CC0",
+   "artist": "Clem Onojeghuo clemono2"
+  },
+  {
+   "name": "dog",
+   "page": "https://commons.wikimedia.org/wiki/File:Dog_lying_on_grass.JPG",
+   "url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Dog_lying_on_grass.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+   "sha256": "cd8180fe7831a39da23ee97ffd16d2d42abb343a20edde077a4b76187d07e7e1",
+   "bytes": 7886566,
+   "license": "CC0",
+   "artist": "Editor abcdef"
+  },
+  {
+   "name": "jogger",
+   "page": "https://commons.wikimedia.org/wiki/File:Young_woman_jogging,_Portugal_2010.jpg",
+   "url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Young_woman_jogging%2C_Portugal_2010.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+   "sha256": "bfad1cfb901c7540b7c9d562e638c70e36d3b4a8273a412265620e3252871adb",
+   "bytes": 222662,
+   "license": "CC0",
+   "artist": "Keymeulen"
+  },
+  {
+   "name": "park",
+   "page": "https://commons.wikimedia.org/wiki/File:Port_Pirie_-_four_people_walking_in_park(GN15151).jpg",
+   "url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Port_Pirie_-_four_people_walking_in_park%28GN15151%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+   "sha256": "b0b24c0c66cf0c790bbd2c8d7ee26636437c614db26b8cbbf57904d349ad92cc",
+   "bytes": 1038449,
+   "license": "CC0",
+   "artist": "State Government Photographer"
+  }
+ ],
+ "inputs": "tools/make_fixtures.py: letterbox (black) to a square, bilinear resize; uint8 RGB (det, pose) or float32 RGB / 255 (seg)",
+ "runner_binary_sha256": "e8b5798c830b97644f98e7a8e93c3e5227765d8ad80b4a9c6de45d4e9e6d1abf"
+}

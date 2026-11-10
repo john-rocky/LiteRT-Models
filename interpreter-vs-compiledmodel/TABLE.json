@@ -1,0 +1,7537 @@
+{
+ "models": {
+  "det": {
+   "fastest_1_4_0": "A1xt4",
+   "median_1_4_0": 9.007,
+   "fastest_2_3_2": "B3b",
+   "median_2_3_2": 4.146,
+   "ratio_1_4_0_over_2_3_2": 2.172
+  },
+  "pose": {
+   "fastest_1_4_0": "A1xt4",
+   "median_1_4_0": 1.9185,
+   "fastest_2_3_2": "B1t4",
+   "median_2_3_2": 1.8935,
+   "ratio_1_4_0_over_2_3_2": 1.013
+  },
+  "seg": {
+   "fastest_1_4_0": "A1xt4",
+   "median_1_4_0": 1.182,
+   "fastest_2_3_2": "B2g",
+   "median_2_3_2": 0.9915,
+   "ratio_1_4_0_over_2_3_2": 1.192
+  }
+ },
+ "runs": {
+  "det_A1d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 5.8,
+   "first_call_ms": 62.528,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 24.873,
+    "p10": 24.351,
+    "p90": 25.873,
+    "min": 23.927,
+    "max": 26.051
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 24.864,
+    "p10": 24.343,
+    "p90": 25.864,
+    "min": 23.919,
+    "max": 26.043
+   },
+   "cpu_clock_ceiling_min": 0.915,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 2492.3,
+    "wall_ms": 2502.8,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 1,
+      "pairs_back": 0,
+      "min_iou": 0.9362,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "Mac CPU"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 1,
+      "pairs_back": 0,
+      "min_iou": 0.9362,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": []
+  },
+  "det_A1t4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 6.6,
+   "first_call_ms": 34.843,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 27.1115,
+    "p10": 23.592,
+    "p90": 34.338,
+    "min": 21.281,
+    "max": 43.854
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 27.0985,
+    "p10": 23.576,
+    "p90": 34.325,
+    "min": 21.266,
+    "max": 43.842
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 1.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 7904.3,
+    "wall_ms": 2818.6,
+    "cpu_over_wall": 2.8
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 1,
+      "pairs_back": 0,
+      "min_iou": 0.9362,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": []
+  },
+  "det_A1x": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 16.5,
+   "first_call_ms": 26.363,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 10.3105,
+    "p10": 10.123,
+    "p90": 10.52,
+    "min": 9.968,
+    "max": 10.885
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 10.3015,
+    "p10": 10.114,
+    "p90": 10.504,
+    "min": 9.959,
+    "max": 10.876
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 1026.7,
+    "wall_ms": 1032.2,
+    "cpu_over_wall": 0.99
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_A1x.stderr.txt:VERBOSE: Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0.",
+    "11-10 20:20:28.640 23227 23227 I tflite  : Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0."
+   ]
+  },
+  "det_A1xt4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 18.0,
+   "first_call_ms": 19.546,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 9.007,
+    "p10": 7.583,
+    "p90": 9.73,
+    "min": 6.932,
+    "max": 10.491
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 8.9975,
+    "p10": 7.575,
+    "p90": 9.721,
+    "min": 6.923,
+    "max": 10.482
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 4.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 2520.9,
+    "wall_ms": 887.8,
+    "cpu_over_wall": 2.84
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_A1xt4.stderr.txt:VERBOSE: Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0.",
+    "11-10 20:20:53.810 23534 23534 I tflite  : Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0."
+   ]
+  },
+  "det_A2d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 529.0,
+   "first_call_ms": 32.536,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 19.541,
+    "p10": 16.279,
+    "p90": 21.762,
+    "min": 14.262,
+    "max": 24.444
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 19.5215,
+    "p10": 16.262,
+    "p90": 21.748,
+    "min": 14.249,
+    "max": 24.426
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1615.7,
+    "wall_ms": 1919.3,
+    "cpu_over_wall": 0.84
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 83.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 83.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9467,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9533,
+      "max_abs_score": 0.04297,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 40.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9644,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9467,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9239,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.8864,
+      "max_abs_score": 0.04297,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 1,
+      "pairs_back": 0,
+      "min_iou": 0.92,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 40.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_A2d.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 2 partitions for subgraph 0.",
+    "11-10 20:21:47.741 24253 24253 E tflite  : Following operations are not supported by GPU delegate:",
+    "11-10 20:21:47.741 24253 24253 I tflite  : Replacing 266 out of 267 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 2 partitions for subgraph 0."
+   ]
+  },
+  "det_A2h": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 512.8,
+   "first_call_ms": 33.634,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 13.7105,
+    "p10": 12.728,
+    "p90": 14.776,
+    "min": 11.879,
+    "max": 16.235
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 13.696,
+    "p10": 12.713,
+    "p90": 14.763,
+    "min": 11.867,
+    "max": 16.22
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1279.9,
+    "wall_ms": 1376.6,
+    "cpu_over_wall": 0.93
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 1,
+    "max_abs_dp": 76.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9444,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9343,
+      "max_abs_score": 0.03125,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 2.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.8807,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 40.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 1,
+    "max_abs_dp": 76.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9287,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9343,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 2.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.8749,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 1,
+      "pairs_back": 0,
+      "min_iou": 0.9527,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 38.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_A2h.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 2 partitions for subgraph 0.",
+    "11-10 20:22:42.118 24957 24957 E tflite  : Following operations are not supported by GPU delegate:",
+    "11-10 20:22:42.118 24957 24957 I tflite  : Replacing 266 out of 267 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 2 partitions for subgraph 0."
+   ]
+  },
+  "det_A3n": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "npu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 87.5,
+   "first_call_ms": 29.567,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 24.5785,
+    "p10": 24.111,
+    "p90": 24.85,
+    "min": 23.913,
+    "max": 25.488
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 24.5705,
+    "p10": 24.101,
+    "p90": 24.841,
+    "min": 23.904,
+    "max": 25.479
+   },
+   "cpu_clock_ceiling_min": 0.9717,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 2442.6,
+    "wall_ms": 2454.5,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 1,
+      "pairs_back": 0,
+      "min_iou": 0.9362,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "11-10 20:25:50.166 27426 27426 W ServerFlag: Failed to parse result of GetServerConfigurableFlag, errno=34",
+    "11-10 20:25:50.167 27426 27426 W HidlServiceManagement: hwservicemanager is not supported on the device."
+   ]
+  },
+  "det_B1d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 172.5,
+   "first_call_ms": 11.671,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 8.6785,
+    "p10": 8.422,
+    "p90": 8.964,
+    "min": 8.379,
+    "max": 9.284
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 8.67,
+    "p10": 8.412,
+    "p90": 8.954,
+    "min": 8.37,
+    "max": 9.275
+   },
+   "cpu_clock_ceiling_min": 0.9717,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 864.9,
+    "wall_ms": 869.6,
+    "cpu_over_wall": 0.99
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_B1d.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B1d.stderr.txt:VERBOSE: Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0 (main).",
+    "11-10 20:19:10.345 22123 22123 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:19:10.345 22123 22123 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:19:10.349 22123 22123 I tflite  : Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0 (main)."
+   ]
+  },
+  "det_B1t4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 76.1,
+   "first_call_ms": 10.718,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 8.9315,
+    "p10": 7.902,
+    "p90": 9.357,
+    "min": 6.626,
+    "max": 9.957
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 8.923,
+    "p10": 7.894,
+    "p90": 9.349,
+    "min": 6.618,
+    "max": 9.949
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 4.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 2600.5,
+    "wall_ms": 878.0,
+    "cpu_over_wall": 2.96
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9648,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9246,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 0.9277,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 3,
+      "pairs": 3,
+      "pairs_back": 3,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_B1t4.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B1t4.stderr.txt:VERBOSE: Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0 (main).",
+    "11-10 20:20:03.174 22810 22810 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:20:03.174 22810 22810 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:20:03.175 22810 22810 I tflite  : Replacing 253 out of 267 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 27 partitions for subgraph 0 (main)."
+   ]
+  },
+  "det_B2d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 734.4,
+   "first_call_ms": 14.392,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 13.199,
+    "p10": 11.098,
+    "p90": 14.458,
+    "min": 9.108,
+    "max": 18.338
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 13.183,
+    "p10": 11.084,
+    "p90": 14.442,
+    "min": 9.094,
+    "max": 18.313
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1016.1,
+    "wall_ms": 1312.6,
+    "cpu_over_wall": 0.77
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 4,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 83.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 76.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "det_B2d.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B2d.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:22:15.487 24644 24644 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:22:15.487 24644 24644 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:22:15.532 24644 24644 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "det_B2dH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 709.1,
+   "first_call_ms": 14.786,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 13.3555,
+    "p10": 11.422,
+    "p90": 14.845,
+    "min": 9.201,
+    "max": 19.53
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 13.341,
+    "p10": 11.406,
+    "p90": 14.83,
+    "min": 9.188,
+    "max": 19.51
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1028.0,
+    "wall_ms": 1324.5,
+    "cpu_over_wall": 0.78
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 4,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 83.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 76.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "det_B2dH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B2dH.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:24:28.940 26223 26223 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:24:28.940 26223 26223 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:24:28.974 26223 26223 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "det_B2f": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp32",
+   "cpu_threads_flag": "0",
+   "load_ms": 631.9,
+   "first_call_ms": 16.117,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 18.9815,
+    "p10": 13.589,
+    "p90": 21.517,
+    "min": 11.106,
+    "max": 24.132
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 18.9625,
+    "p10": 13.572,
+    "p90": 21.497,
+    "min": 11.092,
+    "max": 24.109
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1377.3,
+    "wall_ms": 1843.5,
+    "cpu_over_wall": 0.75
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 4,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 79.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 57.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 76.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 57.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "det_B2f.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B2f.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:23:37.294 25605 25605 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:23:37.295 25605 25605 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:23:37.329 25605 25605 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "det_B2fH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp32",
+   "cpu_threads_flag": "0",
+   "load_ms": 656.5,
+   "first_call_ms": 16.487,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 18.7735,
+    "p10": 14.874,
+    "p90": 21.266,
+    "min": 11.698,
+    "max": 24.396
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 18.753,
+    "p10": 14.857,
+    "p90": 21.246,
+    "min": 11.682,
+    "max": 24.375
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1366.7,
+    "wall_ms": 1835.5,
+    "cpu_over_wall": 0.74
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 4,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 79.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 57.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 76.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 57.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "det_B2fH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B2fH.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:25:22.518 27072 27072 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:25:22.518 27072 27072 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:25:22.552 27072 27072 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "det_B2g": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: LiteRtCreateCompiledModel status 504",
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "det_B2g.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B2g.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:24:03.924 25935 25935 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:24:03.924 25935 25935 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:24:03.958 25935 25935 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "det_B2h": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 736.9,
+   "first_call_ms": 15.061,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 13.2695,
+    "p10": 11.127,
+    "p90": 15.077,
+    "min": 9.262,
+    "max": 16.791
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 13.252,
+    "p10": 11.109,
+    "p90": 15.06,
+    "min": 9.245,
+    "max": 16.775
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1013.0,
+    "wall_ms": 1314.6,
+    "cpu_over_wall": 0.77
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 4,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 83.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 76.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "det_B2h.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B2h.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:23:10.832 25277 25277 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:23:10.832 25277 25277 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:23:10.865 25277 25277 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "det_B2hH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 702.2,
+   "first_call_ms": 14.437,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 13.253,
+    "p10": 11.576,
+    "p90": 15.335,
+    "min": 9.227,
+    "max": 18.534
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 13.233,
+    "p10": 11.561,
+    "p90": 15.32,
+    "min": 9.213,
+    "max": 18.515
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 1040.0,
+    "wall_ms": 1338.6,
+    "cpu_over_wall": 0.78
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 4,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 83.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 86.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 76.0,
+      "pass": false
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 85.0,
+      "pass": false
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 70.0,
+      "pass": false
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 86.0,
+      "pass": false
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 0,
+      "pairs": 0,
+      "pairs_back": 0,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 71.0,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "det_B2hH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "det_B2hH.stderr.txt:VERBOSE: Replacing 266 out of 267 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:24:56.365 26524 26524 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:24:56.366 26524 26524 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 20:24:56.399 26524 26524 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "det_B3": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "npu+cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 170.1,
+   "first_call_ms": 27.279,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 18.047,
+    "p10": 14.113,
+    "p90": 20.578,
+    "min": 12.202,
+    "max": 21.868
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 18.031,
+    "p10": 14.097,
+    "p90": 20.565,
+    "min": 12.187,
+    "max": 21.845
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 8.0,
+    "threads_calls": 8.0,
+    "threads_end": 8.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 1327.9,
+    "wall_ms": 1784.5,
+    "cpu_over_wall": 0.74
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9644,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9807,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9527,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9127,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9805,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.8974,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9071,
+      "max_abs_score": 0.04297,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9535,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 14.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_B3.stderr.txt:INFO: [compiled_model.cc:1380] Flatbuffer model initialized from cached model.",
+    "det_B3.stderr.txt:VERBOSE: Replacing 1 out of 2 node(s) with delegate (DispatchDelegate) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:26:48.051 28155 28155 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:26:48.051 28155 28155 I litert  : [compiled_model.cc:1380] Flatbuffer model initialized from cached model.",
+    "11-10 20:26:48.051 28155 28155 I litert  : [dispatch_delegate.cc:98] DispatchDelegate::DispatchDelegate"
+   ]
+  },
+  "det_B3b": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "npu+cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 733.6,
+   "first_call_ms": 7.151,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 4.146,
+    "p10": 4.002,
+    "p90": 4.28,
+    "min": 3.975,
+    "max": 5.329
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 4.1385,
+    "p10": 3.994,
+    "p90": 4.271,
+    "min": 3.968,
+    "max": 5.304
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 20.0,
+    "threads_calls": 20.0,
+    "threads_end": 20.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 417.1,
+    "wall_ms": 415.4,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9644,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9807,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9527,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9127,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9805,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.8974,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9071,
+      "max_abs_score": 0.04297,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9535,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 14.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_B3b.stderr.txt:INFO: [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 266 ops, from a total of 267 ops. resulted in 1 partitions.",
+    "det_B3b.stderr.txt:INFO: [compiled_model.cc:1397] 1 compiler plugins were applied successfully: Qualcomm compiler plugin (ver 0.1.0)",
+    "det_B3b.stderr.txt:VERBOSE: Replacing 1 out of 2 node(s) with delegate (DispatchDelegate) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:27:14.598 28485 28485 I litert  : |              ::qnn::Options              |",
+    "11-10 20:27:14.598 28485 28485 I litert  :   QnnLibDir                :"
+   ]
+  },
+  "det_B3c": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "npu+cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 729.2,
+   "first_call_ms": 23.403,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 17.3655,
+    "p10": 13.292,
+    "p90": 20.602,
+    "min": 10.531,
+    "max": 25.949
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 17.3485,
+    "p10": 13.277,
+    "p90": 20.588,
+    "min": 10.517,
+    "max": 25.93
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 19.0,
+    "threads_calls": 19.0,
+    "threads_end": 19.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 1287.7,
+    "wall_ms": 1736.5,
+    "cpu_over_wall": 0.74
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9644,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9807,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 26.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9527,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9127,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9805,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.8974,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9071,
+      "max_abs_score": 0.04297,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9535,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 14.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "det_B3c.stderr.txt:INFO: [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 266 ops, from a total of 267 ops. resulted in 1 partitions.",
+    "det_B3c.stderr.txt:INFO: [compiled_model.cc:1397] 1 compiler plugins were applied successfully: Qualcomm compiler plugin (ver 0.1.0)",
+    "det_B3c.stderr.txt:VERBOSE: Replacing 1 out of 2 node(s) with delegate (DispatchDelegate) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 20:26:17.804 27791 27791 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 20:26:17.805 27791 27791 I qnn     : QnnDsp <I> QnnLog_create started."
+   ]
+  },
+  "det_X1t4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 14.0,
+   "first_call_ms": 27.86,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 10.8815,
+    "p10": 10.323,
+    "p90": 11.562,
+    "min": 9.905,
+    "max": 13.538
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 10.873,
+    "p10": 10.314,
+    "p90": 11.554,
+    "min": 9.896,
+    "max": 13.53
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 1.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 3712.4,
+    "wall_ms": 1095.6,
+    "cpu_over_wall": 3.39
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 76.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9644,
+      "max_abs_score": 0.00781,
+      "max_abs_raw": 76.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 29.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9703,
+      "max_abs_score": 0.01953,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9005,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 74.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 0,
+      "cand_boxes": 1,
+      "pairs": 0,
+      "pairs_back": 1,
+      "min_iou": 1.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 15.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 81.0,
+    "fixtures": {
+     "000": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 81.0,
+      "pass": true
+     },
+     "001": {
+      "ref_boxes": 2,
+      "cand_boxes": 2,
+      "pairs": 2,
+      "pairs_back": 2,
+      "min_iou": 0.9819,
+      "max_abs_score": 0.01562,
+      "max_abs_raw": 30.0,
+      "pass": true
+     },
+     "002": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.8981,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 2.0,
+      "pass": true
+     },
+     "003": {
+      "ref_boxes": 3,
+      "cand_boxes": 2,
+      "pairs": 3,
+      "pairs_back": 2,
+      "min_iou": 0.9473,
+      "max_abs_score": 0.02344,
+      "max_abs_raw": 50.0,
+      "pass": true
+     },
+     "004": {
+      "ref_boxes": 1,
+      "cand_boxes": 1,
+      "pairs": 1,
+      "pairs_back": 1,
+      "min_iou": 0.9204,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 14.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": []
+  },
+  "pose_A1d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 4.5,
+   "first_call_ms": 24.841,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 7.8225,
+    "p10": 7.795,
+    "p90": 7.995,
+    "min": 7.778,
+    "max": 8.559
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 7.8205,
+    "p10": 7.794,
+    "p90": 7.993,
+    "min": 7.777,
+    "max": 8.558
+   },
+   "cpu_clock_ceiling_min": 0.9717,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 783.8,
+    "wall_ms": 787.5,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    },
+    "reference_leg": "Mac CPU"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    }
+   },
+   "delegation": []
+  },
+  "pose_A1t4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 3.7,
+   "first_call_ms": 11.061,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 8.8595,
+    "p10": 7.875,
+    "p90": 12.193,
+    "min": 6.876,
+    "max": 22.423
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 8.8535,
+    "p10": 7.871,
+    "p90": 12.188,
+    "min": 6.873,
+    "max": 22.419
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 1.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 2613.2,
+    "wall_ms": 960.7,
+    "cpu_over_wall": 2.72
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    }
+   },
+   "delegation": []
+  },
+  "pose_A1x": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 10.7,
+   "first_call_ms": 7.301,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 2.324,
+    "p10": 2.296,
+    "p90": 2.441,
+    "min": 2.294,
+    "max": 2.569
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 2.3225,
+    "p10": 2.294,
+    "p90": 2.44,
+    "min": 2.292,
+    "max": 2.567
+   },
+   "cpu_clock_ceiling_min": 0.9717,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 234.1,
+    "wall_ms": 234.7,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.00819,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "pose_A1x.stderr.txt:VERBOSE: Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0.",
+    "11-10 21:58:25.999 24892 24892 I tflite  : Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0."
+   ]
+  },
+  "pose_A1xt4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 12.5,
+   "first_call_ms": 4.816,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.9185,
+    "p10": 1.803,
+    "p90": 2.01,
+    "min": 1.677,
+    "max": 2.798
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.9165,
+    "p10": 1.801,
+    "p90": 2.008,
+    "min": 1.676,
+    "max": 2.793
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 4.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 600.4,
+    "wall_ms": 192.9,
+    "cpu_over_wall": 3.11
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.00819,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "pose_A1xt4.stderr.txt:VERBOSE: Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0.",
+    "11-10 21:59:02.942 25215 25215 I tflite  : Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0."
+   ]
+  },
+  "pose_A2d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 659.2,
+   "first_call_ms": 11.099,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 7.0845,
+    "p10": 5.842,
+    "p90": 7.49,
+    "min": 4.997,
+    "max": 7.567
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 7.0735,
+    "p10": 5.838,
+    "p90": 7.48,
+    "min": 4.992,
+    "max": 7.556
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 611.4,
+    "wall_ms": 693.4,
+    "cpu_over_wall": 0.88
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.270392,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.18436,
+      "max_abs_raw": 0.184358,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 16,
+      "rate": 0.9412,
+      "max_abs_y": 0.04507,
+      "max_abs_x": 0.04507,
+      "max_abs_score": 0.20484,
+      "max_abs_raw": 0.204843,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.16797,
+      "max_abs_raw": 0.167971,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.0041,
+      "max_abs_score": 0.16797,
+      "max_abs_raw": 0.167971,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.303167,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.30317,
+      "max_abs_raw": 0.303167,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.03277,
+      "max_abs_x": 0.04507,
+      "max_abs_score": 0.1352,
+      "max_abs_raw": 0.135196,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.00819,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.03277,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.23352,
+      "max_abs_raw": 0.233521,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.02868,
+      "max_abs_score": 0.16797,
+      "max_abs_raw": 0.167971,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "pose_A2d.stderr.txt:VERBOSE: Replacing 100 out of 157 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 3 partitions for subgraph 0.",
+    "11-10 21:59:53.565 25794 25794 E tflite  : Following operations are not supported by GPU delegate:",
+    "11-10 21:59:53.565 25794 25794 E tflite  : ARG_MAX: Operation is not supported.",
+    "11-10 21:59:53.565 25794 25794 E tflite  : CAST: Not supported Cast case. Input type: UINT8 and output type: FLOAT32",
+    "11-10 21:59:53.565 25794 25794 E tflite  : GATHER_ND: Operation is not supported.",
+    "11-10 21:59:53.565 25794 25794 I tflite  : Replacing 100 out of 157 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 3 partitions for subgraph 0."
+   ]
+  },
+  "pose_A2h": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 677.5,
+   "first_call_ms": 10.5,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 6.2115,
+    "p10": 5.944,
+    "p90": 6.52,
+    "min": 5.792,
+    "max": 7.036
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 6.201,
+    "p10": 5.934,
+    "p90": 6.509,
+    "min": 5.783,
+    "max": 7.024
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 597.4,
+    "wall_ms": 622.4,
+    "cpu_over_wall": 0.96
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.340039,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.34004,
+      "max_abs_raw": 0.340039,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 16,
+      "rate": 0.9412,
+      "max_abs_y": 0.04916,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.15158,
+      "max_abs_raw": 0.151584,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.19255,
+      "max_abs_raw": 0.192552,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 16,
+      "rate": 0.9412,
+      "max_abs_y": 0.04916,
+      "max_abs_x": 0.03687,
+      "max_abs_score": 0.254,
+      "max_abs_raw": 0.254005,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02868,
+      "max_abs_score": 0.10652,
+      "max_abs_raw": 0.106518,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.278586,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.03687,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.15158,
+      "max_abs_raw": 0.151584,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 16,
+      "rate": 0.9412,
+      "max_abs_y": 0.06965,
+      "max_abs_x": 0.03277,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.00819,
+      "max_abs_score": 0.10652,
+      "max_abs_raw": 0.106518,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "pose_A2h.stderr.txt:VERBOSE: Replacing 100 out of 157 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 3 partitions for subgraph 0.",
+    "11-10 22:00:48.269 26502 26502 E tflite  : Following operations are not supported by GPU delegate:",
+    "11-10 22:00:48.269 26502 26502 E tflite  : ARG_MAX: Operation is not supported.",
+    "11-10 22:00:48.269 26502 26502 E tflite  : CAST: Not supported Cast case. Input type: UINT8 and output type: FLOAT32",
+    "11-10 22:00:48.269 26502 26502 E tflite  : GATHER_ND: Operation is not supported.",
+    "11-10 22:00:48.269 26502 26502 I tflite  : Replacing 100 out of 157 node(s) with delegate (TfLiteGpuDelegateV2) node, yielding 3 partitions for subgraph 0."
+   ]
+  },
+  "pose_A3n": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "npu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 78.1,
+   "first_call_ms": 10.032,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 7.78,
+    "p10": 7.621,
+    "p90": 7.941,
+    "min": 7.591,
+    "max": 8.257
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 7.778,
+    "p10": 7.619,
+    "p90": 7.939,
+    "min": 7.589,
+    "max": 8.255
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 775.8,
+    "wall_ms": 778.6,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "11-10 22:03:48.746 28695 28695 W ServerFlag: Failed to parse result of GetServerConfigurableFlag, errno=34",
+    "11-10 22:03:48.747 28695 28695 W HidlServiceManagement: hwservicemanager is not supported on the device."
+   ]
+  },
+  "pose_B1d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 288.0,
+   "first_call_ms": 7.149,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 2.225,
+    "p10": 2.219,
+    "p90": 2.248,
+    "min": 2.216,
+    "max": 2.341
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 2.2235,
+    "p10": 2.217,
+    "p90": 2.247,
+    "min": 2.214,
+    "max": 2.339
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 222.7,
+    "wall_ms": 223.4,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.00819,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "pose_B1d.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B1d.stderr.txt:VERBOSE: Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0 (main).",
+    "11-10 21:56:58.286 23821 23821 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 21:56:58.286 23821 23821 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 21:56:58.288 23821 23821 I tflite  : Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0 (main)."
+   ]
+  },
+  "pose_B1t4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 65.2,
+   "first_call_ms": 3.382,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.8935,
+    "p10": 1.741,
+    "p90": 1.991,
+    "min": 1.691,
+    "max": 2.122
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.8915,
+    "p10": 1.74,
+    "p90": 1.989,
+    "min": 1.69,
+    "max": 2.12
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 4.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 607.6,
+    "wall_ms": 187.7,
+    "cpu_over_wall": 3.24
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.323651,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.27449,
+      "max_abs_raw": 0.274489,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.13929,
+      "max_abs_raw": 0.139293,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.32365,
+      "max_abs_raw": 0.323651,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.00819,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.11881,
+      "max_abs_raw": 0.118809,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.0,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.0,
+      "max_abs_x": 0.0,
+      "max_abs_score": 0.0,
+      "max_abs_raw": 0.0,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "pose_B1t4.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B1t4.stderr.txt:VERBOSE: Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0 (main).",
+    "11-10 21:58:00.872 24579 24579 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 21:58:00.872 24579 24579 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 21:58:00.874 24579 24579 I tflite  : Replacing 129 out of 157 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 14 partitions for subgraph 0 (main)."
+   ]
+  },
+  "pose_B2d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 730.1,
+   "first_call_ms": 7.999,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 2.6285,
+    "p10": 2.095,
+    "p90": 2.742,
+    "min": 1.481,
+    "max": 2.997
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 2.5275,
+    "p10": 2.05,
+    "p90": 2.633,
+    "min": 1.46,
+    "max": 2.782
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 179.2,
+    "wall_ms": 252.7,
+    "cpu_over_wall": 0.71
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 7,
+      "rate": 0.7778,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 9,
+      "rate": 0.5294,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.15978,
+      "max_abs_score": 0.15978,
+      "max_abs_raw": 0.159777,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 6,
+      "rate": 0.75,
+      "max_abs_y": 0.06965,
+      "max_abs_x": 0.06555,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 13,
+      "rate": 0.7647,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.05736,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 6,
+      "rate": 0.6,
+      "max_abs_y": 0.12291,
+      "max_abs_x": 0.14339,
+      "max_abs_score": 0.36872,
+      "max_abs_raw": 0.368717,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 11,
+      "rate": 0.7333,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.07784,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 4,
+      "rate": 0.5,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.11062,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 14,
+      "rate": 0.8235,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 2,
+      "rate": 0.3333,
+      "max_abs_y": 0.03687,
+      "max_abs_x": 0.127,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B2d.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B2d.stderr.txt:VERBOSE: Replacing 112 out of 157 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "pose_B2d.stderr.txt:VERBOSE: Replacing 28 out of 46 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 10 partitions for subgraph 0 (main).",
+    "11-10 22:00:20.080 26189 26189 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:00:20.080 26189 26189 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: "
+   ]
+  },
+  "pose_B2dH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 697.2,
+   "first_call_ms": 7.225,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 2.6505,
+    "p10": 2.598,
+    "p90": 2.744,
+    "min": 2.363,
+    "max": 2.856
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 2.6375,
+    "p10": 2.586,
+    "p90": 2.731,
+    "min": 2.353,
+    "max": 2.844
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 198.4,
+    "wall_ms": 266.3,
+    "cpu_over_wall": 0.75
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 7,
+      "rate": 0.7778,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 9,
+      "rate": 0.5294,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.15978,
+      "max_abs_score": 0.15978,
+      "max_abs_raw": 0.159777,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 6,
+      "rate": 0.75,
+      "max_abs_y": 0.06965,
+      "max_abs_x": 0.06555,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 13,
+      "rate": 0.7647,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.05736,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 6,
+      "rate": 0.6,
+      "max_abs_y": 0.12291,
+      "max_abs_x": 0.14339,
+      "max_abs_score": 0.36872,
+      "max_abs_raw": 0.368717,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 11,
+      "rate": 0.7333,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.07784,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 4,
+      "rate": 0.5,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.11062,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 14,
+      "rate": 0.8235,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 2,
+      "rate": 0.3333,
+      "max_abs_y": 0.03687,
+      "max_abs_x": 0.127,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B2dH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B2dH.stderr.txt:VERBOSE: Replacing 112 out of 157 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "pose_B2dH.stderr.txt:VERBOSE: Replacing 28 out of 46 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 10 partitions for subgraph 0 (main).",
+    "11-10 22:02:30.780 27781 27781 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:02:30.780 27781 27781 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: "
+   ]
+  },
+  "pose_B2f": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp32",
+   "cpu_threads_flag": "0",
+   "load_ms": 536.3,
+   "first_call_ms": 8.13,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 3.272,
+    "p10": 3.008,
+    "p90": 3.425,
+    "min": 2.142,
+    "max": 3.702
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 3.168,
+    "p10": 2.93,
+    "p90": 3.331,
+    "min": 2.121,
+    "max": 3.509
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 185.7,
+    "wall_ms": 323.6,
+    "cpu_over_wall": 0.57
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 5,
+      "rate": 0.5556,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.10242,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 8,
+      "rate": 0.4706,
+      "max_abs_y": 0.09013,
+      "max_abs_x": 0.19665,
+      "max_abs_score": 0.15978,
+      "max_abs_raw": 0.196649,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 2,
+      "rate": 0.25,
+      "max_abs_y": 0.06965,
+      "max_abs_x": 0.06555,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 13,
+      "rate": 0.7647,
+      "max_abs_y": 0.05326,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 1,
+      "rate": 0.5,
+      "max_abs_y": 0.05326,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 5,
+      "rate": 0.5,
+      "max_abs_y": 0.37691,
+      "max_abs_x": 0.12291,
+      "max_abs_score": 0.36872,
+      "max_abs_raw": 0.376911,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 10,
+      "rate": 0.6667,
+      "max_abs_y": 0.07784,
+      "max_abs_x": 0.19255,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 2,
+      "rate": 0.25,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.08603,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 14,
+      "rate": 0.8235,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 1,
+      "rate": 0.1667,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.15158,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B2f.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B2f.stderr.txt:VERBOSE: Replacing 112 out of 157 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "pose_B2f.stderr.txt:VERBOSE: Replacing 28 out of 46 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 10 partitions for subgraph 0 (main).",
+    "11-10 22:01:40.336 27131 27131 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:01:40.336 27131 27131 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: "
+   ]
+  },
+  "pose_B2fH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp32",
+   "cpu_threads_flag": "0",
+   "load_ms": 528.5,
+   "first_call_ms": 8.162,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 3.3205,
+    "p10": 3.184,
+    "p90": 3.618,
+    "min": 2.166,
+    "max": 4.4
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 3.303,
+    "p10": 3.171,
+    "p90": 3.601,
+    "min": 2.163,
+    "max": 4.327
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 184.1,
+    "wall_ms": 334.6,
+    "cpu_over_wall": 0.55
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 5,
+      "rate": 0.5556,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.10242,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 8,
+      "rate": 0.4706,
+      "max_abs_y": 0.09013,
+      "max_abs_x": 0.19665,
+      "max_abs_score": 0.15978,
+      "max_abs_raw": 0.196649,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 2,
+      "rate": 0.25,
+      "max_abs_y": 0.06965,
+      "max_abs_x": 0.06555,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 13,
+      "rate": 0.7647,
+      "max_abs_y": 0.05326,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 1,
+      "rate": 0.5,
+      "max_abs_y": 0.05326,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 5,
+      "rate": 0.5,
+      "max_abs_y": 0.37691,
+      "max_abs_x": 0.12291,
+      "max_abs_score": 0.36872,
+      "max_abs_raw": 0.376911,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 10,
+      "rate": 0.6667,
+      "max_abs_y": 0.07784,
+      "max_abs_x": 0.19255,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 2,
+      "rate": 0.25,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.08603,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 14,
+      "rate": 0.8235,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 1,
+      "rate": 0.1667,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.15158,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B2fH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B2fH.stderr.txt:VERBOSE: Replacing 112 out of 157 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "pose_B2fH.stderr.txt:VERBOSE: Replacing 28 out of 46 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 10 partitions for subgraph 0 (main).",
+    "11-10 22:03:22.624 28413 28413 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:03:22.624 28413 28413 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: "
+   ]
+  },
+  "pose_B2g": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: LiteRtCreateCompiledModel status 504",
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "pose_B2g.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B2g.stderr.txt:VERBOSE: Replacing 112 out of 157 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "11-10 22:02:05.218 27439 27439 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:02:05.218 27439 27439 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 22:02:05.252 27439 27439 E tflite  : Following operations are not supported by GPU delegate:"
+   ]
+  },
+  "pose_B2h": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 707.1,
+   "first_call_ms": 7.285,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 2.65,
+    "p10": 2.593,
+    "p90": 2.774,
+    "min": 2.405,
+    "max": 3.054
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 2.5445,
+    "p10": 2.503,
+    "p90": 2.652,
+    "min": 2.343,
+    "max": 2.766
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 198.0,
+    "wall_ms": 266.8,
+    "cpu_over_wall": 0.74
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 7,
+      "rate": 0.7778,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 9,
+      "rate": 0.5294,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.15978,
+      "max_abs_score": 0.15978,
+      "max_abs_raw": 0.159777,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 6,
+      "rate": 0.75,
+      "max_abs_y": 0.06965,
+      "max_abs_x": 0.06555,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 13,
+      "rate": 0.7647,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.05736,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 6,
+      "rate": 0.6,
+      "max_abs_y": 0.12291,
+      "max_abs_x": 0.14339,
+      "max_abs_score": 0.36872,
+      "max_abs_raw": 0.368717,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 11,
+      "rate": 0.7333,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.07784,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 4,
+      "rate": 0.5,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.11062,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 14,
+      "rate": 0.8235,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 2,
+      "rate": 0.3333,
+      "max_abs_y": 0.03687,
+      "max_abs_x": 0.127,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B2h.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B2h.stderr.txt:VERBOSE: Replacing 112 out of 157 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "pose_B2h.stderr.txt:VERBOSE: Replacing 28 out of 46 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 10 partitions for subgraph 0 (main).",
+    "11-10 22:01:14.927 26814 26814 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:01:14.927 26814 26814 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: "
+   ]
+  },
+  "pose_B2hH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 701.9,
+   "first_call_ms": 7.342,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 2.6475,
+    "p10": 2.091,
+    "p90": 2.754,
+    "min": 1.868,
+    "max": 2.838
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 2.631,
+    "p10": 2.083,
+    "p90": 2.735,
+    "min": 1.861,
+    "max": 2.821
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 186.7,
+    "wall_ms": 257.1,
+    "cpu_over_wall": 0.73
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 7,
+      "rate": 0.7778,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 9,
+      "rate": 0.5294,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.15978,
+      "max_abs_score": 0.15978,
+      "max_abs_raw": 0.159777,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 6,
+      "rate": 0.75,
+      "max_abs_y": 0.06965,
+      "max_abs_x": 0.06555,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 13,
+      "rate": 0.7647,
+      "max_abs_y": 0.05736,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.02868,
+      "max_abs_x": 0.05736,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.401492,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 6,
+      "rate": 0.6,
+      "max_abs_y": 0.12291,
+      "max_abs_x": 0.14339,
+      "max_abs_score": 0.36872,
+      "max_abs_raw": 0.368717,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 11,
+      "rate": 0.7333,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.07784,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 4,
+      "rate": 0.5,
+      "max_abs_y": 0.06145,
+      "max_abs_x": 0.11062,
+      "max_abs_score": 0.27859,
+      "max_abs_raw": 0.278586,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 14,
+      "rate": 0.8235,
+      "max_abs_y": 0.07374,
+      "max_abs_x": 0.04916,
+      "max_abs_score": 0.40149,
+      "max_abs_raw": 0.401492,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 2,
+      "rate": 0.3333,
+      "max_abs_y": 0.03687,
+      "max_abs_x": 0.127,
+      "max_abs_score": 0.32775,
+      "max_abs_raw": 0.327748,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B2hH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "pose_B2hH.stderr.txt:VERBOSE: Replacing 112 out of 157 node(s) with delegate (LITERT_CL) node, yielding 2 partitions for subgraph 0 (main).",
+    "pose_B2hH.stderr.txt:VERBOSE: Replacing 28 out of 46 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 10 partitions for subgraph 0 (main).",
+    "11-10 22:02:57.064 28098 28098 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:02:57.064 28098 28098 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: "
+   ]
+  },
+  "pose_B3": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "npu+cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 196.0,
+   "first_call_ms": 47.361,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 17.4625,
+    "p10": 15.739,
+    "p90": 22.102,
+    "min": 14.986,
+    "max": 25.812
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 17.4165,
+    "p10": 15.717,
+    "p90": 22.076,
+    "min": 14.966,
+    "max": 25.792
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 8.0,
+    "threads_calls": 8.0,
+    "threads_end": 8.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 138.9,
+    "wall_ms": 1832.0,
+    "cpu_over_wall": 0.08
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.766112,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.46704,
+      "max_abs_x": 0.21304,
+      "max_abs_score": 0.76611,
+      "max_abs_raw": 0.766112,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.31546,
+      "max_abs_x": 0.1311,
+      "max_abs_score": 0.54898,
+      "max_abs_raw": 0.548978,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29497,
+      "max_abs_x": 0.10242,
+      "max_abs_score": 0.37281,
+      "max_abs_raw": 0.385104,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29907,
+      "max_abs_x": 0.11471,
+      "max_abs_score": 0.76611,
+      "max_abs_raw": 0.766112,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.27449,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.30726,
+      "max_abs_raw": 0.426073,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.831661,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.47114,
+      "max_abs_x": 0.21713,
+      "max_abs_score": 0.80708,
+      "max_abs_raw": 0.80708,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 1,
+      "rate": 0.0667,
+      "max_abs_y": 0.31955,
+      "max_abs_x": 0.17207,
+      "max_abs_score": 0.45885,
+      "max_abs_raw": 0.458848,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29907,
+      "max_abs_x": 0.11881,
+      "max_abs_score": 0.53259,
+      "max_abs_raw": 0.532591,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.31955,
+      "max_abs_x": 0.11062,
+      "max_abs_score": 0.83166,
+      "max_abs_raw": 0.831661,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.40149,
+      "max_abs_x": 0.09423,
+      "max_abs_score": 0.37281,
+      "max_abs_raw": 0.405589,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B3.stderr.txt:INFO: [compiled_model.cc:1380] Flatbuffer model initialized from cached model.",
+    "pose_B3.stderr.txt:VERBOSE: Replacing 5 out of 9 node(s) with delegate (DispatchDelegate) node, yielding 9 partitions for subgraph 0 (main).",
+    "11-10 22:04:42.094 29416 29416 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:04:42.094 29416 29416 I litert  : [compiled_model.cc:1380] Flatbuffer model initialized from cached model.",
+    "11-10 22:04:42.095 29416 29416 I litert  : [dispatch_delegate.cc:98] DispatchDelegate::DispatchDelegate"
+   ]
+  },
+  "pose_B3b": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "npu+cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 494.5,
+   "first_call_ms": 8.565,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 2.383,
+    "p10": 2.361,
+    "p90": 2.43,
+    "min": 2.349,
+    "max": 2.474
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 2.381,
+    "p10": 2.359,
+    "p90": 2.428,
+    "min": 2.347,
+    "max": 2.472
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 20.0,
+    "threads_calls": 20.0,
+    "threads_end": 20.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 246.7,
+    "wall_ms": 239.0,
+    "cpu_over_wall": 1.03
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.766112,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.46704,
+      "max_abs_x": 0.21304,
+      "max_abs_score": 0.76611,
+      "max_abs_raw": 0.766112,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.31546,
+      "max_abs_x": 0.1311,
+      "max_abs_score": 0.54898,
+      "max_abs_raw": 0.548978,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29497,
+      "max_abs_x": 0.10242,
+      "max_abs_score": 0.37281,
+      "max_abs_raw": 0.385104,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29907,
+      "max_abs_x": 0.11471,
+      "max_abs_score": 0.76611,
+      "max_abs_raw": 0.766112,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.27449,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.30726,
+      "max_abs_raw": 0.426073,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.831661,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.47114,
+      "max_abs_x": 0.21713,
+      "max_abs_score": 0.80708,
+      "max_abs_raw": 0.80708,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 1,
+      "rate": 0.0667,
+      "max_abs_y": 0.31955,
+      "max_abs_x": 0.17207,
+      "max_abs_score": 0.45885,
+      "max_abs_raw": 0.458848,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29907,
+      "max_abs_x": 0.11881,
+      "max_abs_score": 0.53259,
+      "max_abs_raw": 0.532591,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.31955,
+      "max_abs_x": 0.11062,
+      "max_abs_score": 0.83166,
+      "max_abs_raw": 0.831661,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.40149,
+      "max_abs_x": 0.09423,
+      "max_abs_score": 0.37281,
+      "max_abs_raw": 0.405589,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B3b.stderr.txt:INFO: [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 153 ops, from a total of 157 ops. resulted in 5 partitions.",
+    "pose_B3b.stderr.txt:INFO: [compiled_model.cc:1397] 1 compiler plugins were applied successfully: Qualcomm compiler plugin (ver 0.1.0)",
+    "pose_B3b.stderr.txt:VERBOSE: Replacing 5 out of 9 node(s) with delegate (DispatchDelegate) node, yielding 9 partitions for subgraph 0 (main).",
+    "11-10 22:05:11.092 29775 29775 I litert  : |              ::qnn::Options              |",
+    "11-10 22:05:11.092 29775 29775 I litert  :   QnnLibDir                :"
+   ]
+  },
+  "pose_B3c": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "npu+cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 644.8,
+   "first_call_ms": 65.504,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 16.5915,
+    "p10": 14.938,
+    "p90": 21.342,
+    "min": 14.736,
+    "max": 26.306
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 16.565,
+    "p10": 14.932,
+    "p90": 21.319,
+    "min": 14.73,
+    "max": 26.285
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 19.0,
+    "threads_calls": 19.0,
+    "threads_end": 19.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 107.8,
+    "wall_ms": 1719.7,
+    "cpu_over_wall": 0.06
+   },
+   "agreement": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.766112,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.46704,
+      "max_abs_x": 0.21304,
+      "max_abs_score": 0.76611,
+      "max_abs_raw": 0.766112,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.31546,
+      "max_abs_x": 0.1311,
+      "max_abs_score": 0.54898,
+      "max_abs_raw": 0.548978,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29497,
+      "max_abs_x": 0.10242,
+      "max_abs_score": 0.37281,
+      "max_abs_raw": 0.385104,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29907,
+      "max_abs_x": 0.11471,
+      "max_abs_score": 0.76611,
+      "max_abs_raw": 0.766112,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.27449,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.30726,
+      "max_abs_raw": 0.426073,
+      "pass": false
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "FAIL",
+    "counted": 5,
+    "failed": 5,
+    "max_abs_dp": 0.831661,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.47114,
+      "max_abs_x": 0.21713,
+      "max_abs_score": 0.80708,
+      "max_abs_raw": 0.80708,
+      "pass": false
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 1,
+      "rate": 0.0667,
+      "max_abs_y": 0.31955,
+      "max_abs_x": 0.17207,
+      "max_abs_score": 0.45885,
+      "max_abs_raw": 0.458848,
+      "pass": false
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.29907,
+      "max_abs_x": 0.11881,
+      "max_abs_score": 0.53259,
+      "max_abs_raw": 0.532591,
+      "pass": false
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.31955,
+      "max_abs_x": 0.11062,
+      "max_abs_score": 0.83166,
+      "max_abs_raw": 0.831661,
+      "pass": false
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 0,
+      "rate": 0.0,
+      "max_abs_y": 0.40149,
+      "max_abs_x": 0.09423,
+      "max_abs_score": 0.37281,
+      "max_abs_raw": 0.405589,
+      "pass": false
+     }
+    }
+   },
+   "delegation": [
+    "pose_B3c.stderr.txt:INFO: [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 153 ops, from a total of 157 ops. resulted in 5 partitions.",
+    "pose_B3c.stderr.txt:INFO: [compiled_model.cc:1397] 1 compiler plugins were applied successfully: Qualcomm compiler plugin (ver 0.1.0)",
+    "pose_B3c.stderr.txt:VERBOSE: Replacing 5 out of 9 node(s) with delegate (DispatchDelegate) node, yielding 9 partitions for subgraph 0 (main).",
+    "11-10 22:04:14.110 28990 28990 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 22:04:14.111 28990 28990 I qnn     : QnnDsp <I> QnnLog_create started."
+   ]
+  },
+  "pose_X1t4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 11.2,
+   "first_call_ms": 10.652,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 3.374,
+    "p10": 3.084,
+    "p90": 3.493,
+    "min": 3.071,
+    "max": 3.5
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 3.373,
+    "p10": 3.082,
+    "p90": 3.492,
+    "min": 3.07,
+    "max": 3.499
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 1.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 1322.6,
+    "wall_ms": 329.7,
+    "cpu_over_wall": 4.01
+   },
+   "agreement": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.581753,
+    "fixtures": {
+     "000": {
+      "keypoints": 9,
+      "within_0.05": 9,
+      "rate": 1.0,
+      "max_abs_y": 0.01229,
+      "max_abs_x": 0.02458,
+      "max_abs_score": 0.58175,
+      "max_abs_raw": 0.581753,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.02458,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.02048,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.18436,
+      "max_abs_raw": 0.184358,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 17,
+      "rate": 1.0,
+      "max_abs_y": 0.03277,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.20484,
+      "max_abs_raw": 0.204843,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 2,
+      "within_0.05": 2,
+      "rate": 1.0,
+      "max_abs_y": 0.02458,
+      "max_abs_x": 0.03687,
+      "max_abs_score": 0.18436,
+      "max_abs_raw": 0.184358,
+      "pass": true
+     }
+    },
+    "reference_leg": "A1d"
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.581753,
+    "fixtures": {
+     "000": {
+      "keypoints": 10,
+      "within_0.05": 10,
+      "rate": 1.0,
+      "max_abs_y": 0.00819,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.58175,
+      "max_abs_raw": 0.581753,
+      "pass": true
+     },
+     "001": {
+      "keypoints": 15,
+      "within_0.05": 15,
+      "rate": 1.0,
+      "max_abs_y": 0.02458,
+      "max_abs_x": 0.04097,
+      "max_abs_score": 0.20484,
+      "max_abs_raw": 0.204843,
+      "pass": true
+     },
+     "002": {
+      "keypoints": 8,
+      "within_0.05": 8,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.00819,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "003": {
+      "keypoints": 17,
+      "within_0.05": 16,
+      "rate": 0.9412,
+      "max_abs_y": 0.05326,
+      "max_abs_x": 0.02048,
+      "max_abs_score": 0.27039,
+      "max_abs_raw": 0.270392,
+      "pass": true
+     },
+     "004": {
+      "keypoints": 6,
+      "within_0.05": 6,
+      "rate": 1.0,
+      "max_abs_y": 0.01639,
+      "max_abs_x": 0.01639,
+      "max_abs_score": 0.18436,
+      "max_abs_raw": 0.184358,
+      "pass": true
+     }
+    }
+   },
+   "delegation": []
+  },
+  "seg_A1d": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: TfLiteInterpreterAllocateTensors status 7",
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": "Mac CPU"
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "11-10 22:59:47.757 23338 23338 E tflite  : Node number 244 (Convolution2DTransposeBias) failed to prepare."
+   ]
+  },
+  "seg_A1t4": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: TfLiteInterpreterAllocateTensors status 7",
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "11-10 23:01:08.689 24149 24149 E tflite  : Node number 244 (Convolution2DTransposeBias) failed to prepare."
+   ]
+  },
+  "seg_A1x": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 6.8,
+   "first_call_ms": 5.974,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.614,
+    "p10": 1.603,
+    "p90": 1.713,
+    "min": 1.602,
+    "max": 1.796
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.6,
+    "p10": 1.588,
+    "p90": 1.698,
+    "min": 1.588,
+    "max": 1.781
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 162.9,
+    "wall_ms": 163.5,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 1.5e-05,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.38809,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 8e-06,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.05582,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.5e-05,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.02065,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 6e-06,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.13326,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.4e-05,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 7e-06,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_A1x.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0.",
+    "11-10 23:02:12.282 24822 24822 I tflite  : Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0."
+   ]
+  },
+  "seg_A1xt4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 7.8,
+   "first_call_ms": 9.16,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.182,
+    "p10": 1.065,
+    "p90": 1.223,
+    "min": 1.046,
+    "max": 1.472
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.164,
+    "p10": 1.048,
+    "p90": 1.195,
+    "min": 1.029,
+    "max": 1.444
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 4.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 458.3,
+    "wall_ms": 117.4,
+    "cpu_over_wall": 3.9
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 1.5e-05,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.38809,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 8e-06,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.05582,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.5e-05,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.02065,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 6e-06,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.13326,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.4e-05,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 7e-06,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_A1xt4.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0.",
+    "11-10 23:02:48.260 25150 25150 I tflite  : Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0."
+   ]
+  },
+  "seg_A2d": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: TfLiteInterpreterCreate returned null",
+   "runtime": "tflite",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "11-10 23:03:58.896 25818 25818 E tflite  : Node number 244 (Convolution2DTransposeBias) failed to prepare."
+   ]
+  },
+  "seg_A2h": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: TfLiteInterpreterCreate returned null",
+   "runtime": "tflite",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "11-10 23:05:10.295 26779 26779 E tflite  : Node number 244 (Convolution2DTransposeBias) failed to prepare."
+   ]
+  },
+  "seg_A3n": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: TfLiteInterpreterCreate returned null",
+   "runtime": "tflite",
+   "accel": "npu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "11-10 23:08:05.537 29233 29233 W ServerFlag: Failed to parse result of GetServerConfigurableFlag, errno=34",
+    "11-10 23:08:05.538 29233 29233 W HidlServiceManagement: hwservicemanager is not supported on the device.",
+    "11-10 23:08:05.539 29233 29233 E tflite  : Node number 244 (Convolution2DTransposeBias) failed to prepare."
+   ]
+  },
+  "seg_B1d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 216.0,
+   "first_call_ms": 3.55,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.692,
+    "p10": 1.581,
+    "p90": 1.704,
+    "min": 1.579,
+    "max": 1.765
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.6775,
+    "p10": 1.567,
+    "p90": 1.69,
+    "min": 1.565,
+    "max": 1.749
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 1.0,
+    "threads_calls": 1.0,
+    "threads_end": 1.0,
+    "tasks_with_cpu": 1.0,
+    "cpu_ms": 165.3,
+    "wall_ms": 165.7,
+    "cpu_over_wall": 1.0
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 1.7e-05,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.38809,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.2e-05,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.05582,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 2e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.7e-05,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.02065,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 6e-06,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.13326,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 7e-06,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1e-05,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B1d.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B1d.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:00:13.153 23652 23652 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:00:13.153 23652 23652 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:00:13.154 23652 23652 I tflite  : Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B1t4": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": 77.2,
+   "first_call_ms": 5.033,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.4215,
+    "p10": 1.378,
+    "p90": 1.457,
+    "min": 1.322,
+    "max": 1.726
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.404,
+    "p10": 1.36,
+    "p90": 1.439,
+    "min": 1.304,
+    "max": 1.705
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 4.0,
+    "threads_load": 4.0,
+    "threads_calls": 4.0,
+    "threads_end": 4.0,
+    "tasks_with_cpu": 4.0,
+    "cpu_ms": 567.2,
+    "wall_ms": 142.0,
+    "cpu_over_wall": 3.99
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 1.7e-05,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.38809,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.2e-05,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.05582,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 2e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.7e-05,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.02065,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 6e-06,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.13326,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 7e-06,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1e-05,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B1t4.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B1t4.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:01:47.055 24540 24540 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:01:47.055 24540 24540 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:01:47.056 24540 24540 I tflite  : Replacing 246 out of 246 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B2d": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 620.0,
+   "first_call_ms": 1.823,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 0.9995,
+    "p10": 0.963,
+    "p90": 1.043,
+    "min": 0.657,
+    "max": 1.366
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 0.167,
+    "p10": 0.121,
+    "p90": 0.195,
+    "min": 0.044,
+    "max": 0.386
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 47.7,
+    "wall_ms": 99.0,
+    "cpu_over_wall": 0.48
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.177488,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 0.9993,
+      "ref_foreground": 0.38809,
+      "iou": 0.99819,
+      "iou_counted": true,
+      "max_abs": 0.13339,
+      "mean_abs": 0.000411,
+      "max_abs_raw": 0.13339,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 0.99991,
+      "ref_foreground": 0.05582,
+      "iou": 0.99836,
+      "iou_counted": true,
+      "max_abs": 0.17749,
+      "mean_abs": 0.000188,
+      "max_abs_raw": 0.177488,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 0.99998,
+      "ref_foreground": 0.02065,
+      "iou": 0.99926,
+      "iou_counted": true,
+      "max_abs": 0.04972,
+      "mean_abs": 3.2e-05,
+      "max_abs_raw": 0.049717,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 0.99983,
+      "ref_foreground": 0.13326,
+      "iou": 0.99874,
+      "iou_counted": true,
+      "max_abs": 0.08375,
+      "mean_abs": 0.000119,
+      "max_abs_raw": 0.083746,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 0.02995,
+      "mean_abs": 2.9e-05,
+      "max_abs_raw": 0.029953,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B2d.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B2d.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:04:34.401 26172 26172 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:04:34.401 26172 26172 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:04:34.492 26172 26172 I tflite  : Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B2dH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 474.2,
+   "first_call_ms": 6.585,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.0755,
+    "p10": 0.675,
+    "p90": 1.137,
+    "min": 0.657,
+    "max": 1.531
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 0.9875,
+    "p10": 0.625,
+    "p90": 1.037,
+    "min": 0.614,
+    "max": 1.431
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 52.6,
+    "wall_ms": 101.4,
+    "cpu_over_wall": 0.52
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.177488,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 0.9993,
+      "ref_foreground": 0.38809,
+      "iou": 0.99819,
+      "iou_counted": true,
+      "max_abs": 0.13339,
+      "mean_abs": 0.000411,
+      "max_abs_raw": 0.13339,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 0.99991,
+      "ref_foreground": 0.05582,
+      "iou": 0.99836,
+      "iou_counted": true,
+      "max_abs": 0.17749,
+      "mean_abs": 0.000188,
+      "max_abs_raw": 0.177488,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 0.99998,
+      "ref_foreground": 0.02065,
+      "iou": 0.99926,
+      "iou_counted": true,
+      "max_abs": 0.04972,
+      "mean_abs": 3.2e-05,
+      "max_abs_raw": 0.049717,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 0.99983,
+      "ref_foreground": 0.13326,
+      "iou": 0.99874,
+      "iou_counted": true,
+      "max_abs": 0.08375,
+      "mean_abs": 0.000119,
+      "max_abs_raw": 0.083746,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 0.02995,
+      "mean_abs": 2.9e-05,
+      "max_abs_raw": 0.029953,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B2dH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B2dH.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:06:51.817 28353 28353 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:06:51.817 28353 28353 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:06:51.849 28353 28353 I tflite  : Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B2f": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp32",
+   "cpu_threads_flag": "0",
+   "load_ms": 393.6,
+   "first_call_ms": 6.004,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.231,
+    "p10": 0.951,
+    "p90": 1.265,
+    "min": 0.805,
+    "max": 1.728
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 0.165,
+    "p10": 0.116,
+    "p90": 0.175,
+    "min": 0.051,
+    "max": 0.341
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 45.7,
+    "wall_ms": 120.3,
+    "cpu_over_wall": 0.38
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.000108,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.38809,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 0.00011,
+      "mean_abs": 0.0,
+      "max_abs_raw": 0.000108,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.05582,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 3e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 3e-05,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.02065,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.4e-05,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.13326,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 4e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 3.9e-05,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 2e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.7e-05,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B2f.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B2f.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:06:01.124 27679 27679 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:06:01.124 27679 27679 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:06:01.156 27679 27679 I tflite  : Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B2fH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp32",
+   "cpu_threads_flag": "0",
+   "load_ms": 404.9,
+   "first_call_ms": 6.183,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.337,
+    "p10": 1.224,
+    "p90": 1.385,
+    "min": 1.033,
+    "max": 1.645
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.239,
+    "p10": 1.164,
+    "p90": 1.283,
+    "min": 1.004,
+    "max": 1.54
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 59.9,
+    "wall_ms": 134.0,
+    "cpu_over_wall": 0.45
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.000108,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.38809,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 0.00011,
+      "mean_abs": 0.0,
+      "max_abs_raw": 0.000108,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.05582,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 3e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 3e-05,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.02065,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 1e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.4e-05,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.13326,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 4e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 3.9e-05,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 2e-05,
+      "mean_abs": 0.0,
+      "max_abs_raw": 1.7e-05,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B2fH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B2fH.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:07:42.629 28936 28936 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:07:42.629 28936 28936 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:07:42.661 28936 28936 I tflite  : Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B2g": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "default",
+   "cpu_threads_flag": "0",
+   "load_ms": 475.4,
+   "first_call_ms": 6.45,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 0.9915,
+    "p10": 0.666,
+    "p90": 1.02,
+    "min": 0.636,
+    "max": 1.099
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 0.163,
+    "p10": 0.096,
+    "p90": 0.176,
+    "min": 0.08,
+    "max": 0.261
+   },
+   "cpu_clock_ceiling_min": 0.9798,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 42.8,
+    "wall_ms": 91.3,
+    "cpu_over_wall": 0.47
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.177488,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 0.9993,
+      "ref_foreground": 0.38809,
+      "iou": 0.99819,
+      "iou_counted": true,
+      "max_abs": 0.13339,
+      "mean_abs": 0.000411,
+      "max_abs_raw": 0.13339,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 0.99991,
+      "ref_foreground": 0.05582,
+      "iou": 0.99836,
+      "iou_counted": true,
+      "max_abs": 0.17749,
+      "mean_abs": 0.000188,
+      "max_abs_raw": 0.177488,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 0.99998,
+      "ref_foreground": 0.02065,
+      "iou": 0.99926,
+      "iou_counted": true,
+      "max_abs": 0.04972,
+      "mean_abs": 3.2e-05,
+      "max_abs_raw": 0.049717,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 0.99983,
+      "ref_foreground": 0.13326,
+      "iou": 0.99874,
+      "iou_counted": true,
+      "max_abs": 0.08375,
+      "mean_abs": 0.000119,
+      "max_abs_raw": 0.083746,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 0.02995,
+      "mean_abs": 2.9e-05,
+      "max_abs_raw": 0.029953,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B2g.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B2g.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:06:26.275 27987 27987 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:06:26.275 27987 27987 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:06:26.307 27987 27987 I tflite  : Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B2h": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 534.3,
+   "first_call_ms": 6.135,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.006,
+    "p10": 0.991,
+    "p90": 1.04,
+    "min": 0.925,
+    "max": 1.415
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 0.165,
+    "p10": 0.157,
+    "p90": 0.184,
+    "min": 0.126,
+    "max": 0.517
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 49.8,
+    "wall_ms": 102.0,
+    "cpu_over_wall": 0.49
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.177488,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 0.9993,
+      "ref_foreground": 0.38809,
+      "iou": 0.99819,
+      "iou_counted": true,
+      "max_abs": 0.13339,
+      "mean_abs": 0.000411,
+      "max_abs_raw": 0.13339,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 0.99991,
+      "ref_foreground": 0.05582,
+      "iou": 0.99836,
+      "iou_counted": true,
+      "max_abs": 0.17749,
+      "mean_abs": 0.000188,
+      "max_abs_raw": 0.177488,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 0.99998,
+      "ref_foreground": 0.02065,
+      "iou": 0.99926,
+      "iou_counted": true,
+      "max_abs": 0.04972,
+      "mean_abs": 3.2e-05,
+      "max_abs_raw": 0.049717,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 0.99983,
+      "ref_foreground": 0.13326,
+      "iou": 0.99874,
+      "iou_counted": true,
+      "max_abs": 0.08375,
+      "mean_abs": 0.000119,
+      "max_abs_raw": 0.083746,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 0.02995,
+      "mean_abs": 2.9e-05,
+      "max_abs_raw": 0.029953,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B2h.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B2h.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:05:35.524 27324 27324 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:05:35.524 27324 27324 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:05:35.568 27324 27324 I tflite  : Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B2hH": {
+   "status": "DONE",
+   "failure": null,
+   "runtime": "litert",
+   "accel": "gpu",
+   "precision": "fp16",
+   "cpu_threads_flag": "0",
+   "load_ms": 509.2,
+   "first_call_ms": 6.197,
+   "per_call_ms_write_run_read": {
+    "n": 100,
+    "median": 1.11,
+    "p10": 1.008,
+    "p90": 1.145,
+    "min": 0.712,
+    "max": 1.445
+   },
+   "run_ms": {
+    "n": 100,
+    "median": 1.01,
+    "p10": 0.933,
+    "p90": 1.043,
+    "min": 0.657,
+    "max": 1.343
+   },
+   "cpu_clock_ceiling_min": 1.0,
+   "cpu_clock_ceiling_ok": true,
+   "threads": {
+    "requested": 0.0,
+    "threads_load": 3.0,
+    "threads_calls": 3.0,
+    "threads_end": 3.0,
+    "tasks_with_cpu": 2.0,
+    "cpu_ms": 59.1,
+    "wall_ms": 109.7,
+    "cpu_over_wall": 0.54
+   },
+   "agreement": {
+    "verdict": "NO_REF",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "PASS",
+    "counted": 5,
+    "failed": 0,
+    "max_abs_dp": 0.177488,
+    "fixtures": {
+     "000": {
+      "pixel_agreement": 0.9993,
+      "ref_foreground": 0.38809,
+      "iou": 0.99819,
+      "iou_counted": true,
+      "max_abs": 0.13339,
+      "mean_abs": 0.000411,
+      "max_abs_raw": 0.13339,
+      "pass": true
+     },
+     "001": {
+      "pixel_agreement": 0.99991,
+      "ref_foreground": 0.05582,
+      "iou": 0.99836,
+      "iou_counted": true,
+      "max_abs": 0.17749,
+      "mean_abs": 0.000188,
+      "max_abs_raw": 0.177488,
+      "pass": true
+     },
+     "002": {
+      "pixel_agreement": 0.99998,
+      "ref_foreground": 0.02065,
+      "iou": 0.99926,
+      "iou_counted": true,
+      "max_abs": 0.04972,
+      "mean_abs": 3.2e-05,
+      "max_abs_raw": 0.049717,
+      "pass": true
+     },
+     "003": {
+      "pixel_agreement": 0.99983,
+      "ref_foreground": 0.13326,
+      "iou": 0.99874,
+      "iou_counted": true,
+      "max_abs": 0.08375,
+      "mean_abs": 0.000119,
+      "max_abs_raw": 0.083746,
+      "pass": true
+     },
+     "004": {
+      "pixel_agreement": 1.0,
+      "ref_foreground": 0.01114,
+      "iou": 1.0,
+      "iou_counted": true,
+      "max_abs": 0.02995,
+      "mean_abs": 2.9e-05,
+      "max_abs_raw": 0.029953,
+      "pass": true
+     }
+    }
+   },
+   "delegation": [
+    "seg_B2hH.stderr.txt:INFO: [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "seg_B2hH.stderr.txt:VERBOSE: Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:07:17.415 28644 28644 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:07:17.415 28644 28644 I litert  : [compiled_model.cc:1397] 0 compiler plugins were applied successfully: ",
+    "11-10 23:07:17.448 28644 28644 I tflite  : Replacing 246 out of 246 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated)."
+   ]
+  },
+  "seg_B3c": {
+   "status": "RUNNER_FAILED",
+   "failure": "run: LiteRtRunCompiledModel status 3",
+   "runtime": "litert",
+   "accel": "npu+cpu",
+   "precision": "-",
+   "cpu_threads_flag": "0",
+   "load_ms": 632.5,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "seg_B3c.stderr.txt:INFO: [compiler_plugin.cc:742] Partitioned subgraph<0>, selected 245 ops, from a total of 246 ops. resulted in 2 partitions.",
+    "seg_B3c.stderr.txt:INFO: [compiled_model.cc:1397] 1 compiler plugins were applied successfully: Qualcomm compiler plugin (ver 0.1.0)",
+    "seg_B3c.stderr.txt:VERBOSE: Replacing 2 out of 3 node(s) with delegate (DispatchDelegate) node, yielding 3 partitions for subgraph 0 (keras2tflite_selfiesegmentation_mlkit-256x256-2021_01_19-v1215.tflite.generated).",
+    "11-10 23:08:41.516 29573 29573 I litert  : [qnn_manager.cc:200] Loaded qnn shared library",
+    "11-10 23:08:41.518 29573 29573 I qnn     : QnnDsp <I> QnnLog_create started."
+   ]
+  },
+  "seg_X1t4": {
+   "status": "RUNNER_FAILED",
+   "failure": "load: TfLiteInterpreterAllocateTensors status 7",
+   "runtime": "tflite",
+   "accel": "cpu",
+   "precision": "-",
+   "cpu_threads_flag": "4",
+   "load_ms": null,
+   "first_call_ms": null,
+   "per_call_ms_write_run_read": null,
+   "run_ms": null,
+   "cpu_clock_ceiling_min": null,
+   "cpu_clock_ceiling_ok": null,
+   "threads": null,
+   "agreement": {
+    "verdict": "LEG_RUNNER_FAILED",
+    "reference_leg": null
+   },
+   "agreement_vs_mac": {
+    "verdict": "LEG_RUNNER_FAILED"
+   },
+   "delegation": [
+    "11-10 23:03:33.689 25515 25515 E tflite  : Node number 244 (Convolution2DTransposeBias) failed to prepare."
+   ]
+  }
+ }
+}

@@ -188,6 +188,8 @@ LiteRT is TensorFlow Lite renamed (2024-09-04). The `.tflite` format and the mod
 | `pip install ai-edge-torch` | `pip install litert-torch` (`litert_torch.convert(model, sample_inputs)`) | every model in this zoo was converted with it |
 | MediaPipe LLM Inference API | LiteRT-LM (`com.google.ai.edge.litertlm:litertlm-android` 0.16.1) | MediaPipe LLM Inference is maintenance-only |
 
+What moving from LiteRT 1.4.0's `Interpreter` C API to LiteRT 2.3.2's `CompiledModel` changes on a Galaxy S26 (latency and output agreement, three models, 2026-11-10): [interpreter-vs-compiledmodel/](interpreter-vs-compiledmodel/).
+
 Two `CompiledModel` GPU rules: every op in the graph must be GPU-compatible (no CPU fallback), and tensors are rank 4 at most. Full mapping with sources: [docs/LITERT_CONVERSION_GUIDE.md § Three PyTorch → Android routes](docs/LITERT_CONVERSION_GUIDE.md#three-pytorch--android-routes-on-one-model-measured-2026-09-05) <!-- TODO(lane B, articles): replace this in-repo anchor with the published article URL -->
 
 ## Shared components
