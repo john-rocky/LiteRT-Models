@@ -174,7 +174,7 @@ One model (conv stem + `nn.MultiheadAttention` block + head, 1×3×224×224, ran
 | attention re-expressed in 4-D `(B, heads, N, head_dim)`, same weights | fully accelerated, default fp16 | 2.8e-3, argmax 9/9 |
 | same 4-D graph, `GpuOptions(enforce_f32=True)` | fully accelerated | 3.6e-7 |
 
-Android side: `org.pytorch:executorch-android:1.4.0` ships only `XnnpackBackend`; `onnxruntime-android` 1.29.0's NNAPI provider loads on an API 36 emulator but NNAPI is deprecated from Android 15; `com.google.ai.edge.litert:litert:2.2.0` gives GPU/NPU through `CompiledModel.Options`. Write-up with the emulator numbers: pending publication — until then see the naming table in [README § LiteRT or TensorFlow Lite? The names](../README.md#litert-or-tensorflow-lite-the-names) <!-- TODO(lane B, articles): replace this in-repo anchor with the published article URL -->
+Android side: `org.pytorch:executorch-android:1.4.0` ships only `XnnpackBackend`; `onnxruntime-android` 1.29.0's NNAPI provider loads on an API 36 emulator but NNAPI is deprecated from Android 15; `com.google.ai.edge.litert:litert:2.2.0` gives GPU/NPU through `CompiledModel.Options`. Write-up with the emulator numbers: pending publication — until then see the naming table in [LiteRT or TensorFlow Lite? The names](litert-names.md) <!-- TODO(lane B, articles): replace this in-repo anchor with the published article URL -->
 
 ## Model-Specific Notes
 
@@ -1032,7 +1032,7 @@ the anchor → per-class NMS. The tflite output order is `(cls, box)` per level;
 IoU 0.99**. FP16 recipe = `ai_edge_quantizer` `AlgorithmName.FLOAT_CASTING` +
 `ComputePrecision.FLOAT` (the inline `op_config` dict throws `KeyError: compute_precision`).
 
-## 2026-09-19 追記 — GLiNER2.5 Small (DeBERTa-v3-xsmall boundary extractor) on S26 GPU
+## 2026-09-19 addendum — GLiNER2.5 Small (DeBERTa-v3-xsmall boundary extractor) on S26 GPU
 
 Shipped as `litert-community/GLiNER2.5-Small-LiteRT` (windows 128/256/512, fp32 + fp16-weight files, host contract). Run dir with every gate JSON: `~/code/codex-conversions/2026-09-19/gliner25-small/` (supervised Codex run, 8 rounds).
 
@@ -1118,7 +1118,7 @@ INT64 are rejected), shape metadata promoted to rank 4 for the AR step's 24 rank
 first tap 1.8–2.9 s after a 3.5 s Ready (GPU compiles); all-CPU 3.34 s / 0.64. Device transfer rule: an app cannot copy into
 /data/local/tmp under SELinux — pull with `adb exec-out run-as <pkg> tar -cf - files/<dir>`.
 
-## 2026-09-22 追記 — Laya Multilingual (mmBERT-base typed-decision scorer) on S26 GPU
+## 2026-09-22 addendum — Laya Multilingual (mmBERT-base typed-decision scorer) on S26 GPU
 
 Shipped as `litert-community/Laya-Multilingual-LiteRT` (windows 256/512, fp32 + fp16-weight files, act head, fp16 token table, calibration JSON, Python host, Android sample `laya/`). The facts in this section were written by Codex (gpt-6-astra) in two supervised runs and re-checked by the supervisor from the raw evidence (gate rows recounted from the pulled logits): `~/code/codex-conversions/2026-09-21/laya/` (conversion, 8 rounds) and `~/code/codex-conversions/2026-09-21/laya-android/` (Kotlin host + S26 gates, 8 rounds).
 
@@ -1138,7 +1138,7 @@ Shipped as `litert-community/Laya-Multilingual-LiteRT` (windows 256/512, fp32 + 
 
 **English and typed-decisions checkpoints (ModernBERT-large) — same cut, 2026-09-22.** Shipped as `litert-community/Laya-English-LiteRT` (root = English, `typed-decisions/` = the fine-tune; run `~/code/codex-conversions/2026-09-22/laya-en-gpu/`, 5 rounds, supervisor recounts from the raw logits). Facts a port needs: (1) hidden 1024, 28 layers, vocab 50368, PAD 50283; the fp16 token table is exact for both checkpoints (max fp32→fp16→fp32 difference 0 over 51.6M values), 103 MB each. (2) The two attention layer types use **different RoPE tables** (full attention theta 160000, sliding 10000): export them as separate contiguous clones and audit the exported constants against the instantiated transformers 5.x rotary module — equal constants may be deduplicated by value, different ones must stay separate (litert-torch #1061 merges equal buffers). (3) Builder budgets differ from the graph window: English builds with max_len 512 / head 192, typed-decisions with 1024 / 256; a row is run at a window only if its built sequence fits (140/209 English rows fit 256/512, 100/175 typed-decisions rows); the graph window never replaces the builder budget. (4) Device gate without a tokenizer port: a debug copy of the sample with a separate `applicationId` (`com.laya.gate`) reads the graphs, the table and a rows file of captured ids + markers from `/data/local/tmp`, runs them with `GpuOptions(precision = FP32)` and dumps the raw marker/act logits; the Mac decodes them with the same arithmetic as the CPU parity. The shipped `com.laya` release and its files stay untouched; the gate package and the tmp files are removed afterwards. (5) S26 (LiteRT 2.2.0, GPU FP32): one partition for every graph (2223/2223 fp16-FC, 2100/2100 fp32, act 4/4); warm main+act medians 122.9 ms (English s256 wfp16), 125.9 ms (typed-decisions s256 wfp16), 616–623 ms for the s512 graphs measured after the phone had warmed to 40–44 °C (the cold first rows were 290–632 ms) — label such runs contended; compile 2.5–5.8 s; process PSS 3.9–4.7 GB with the 1.48 GB fp32 file loaded. CPU (XNNPACK, 4 threads) 583 ms warm for English s256 wfp16. (6) The typed-decisions oracle: `laya` 0.3.4 defines the four workflow question-id sets (`laya.router._TYPED_DECISION_WORKFLOWS`), not full question presets; fixtures must author wording and criteria in the upstream format and freeze `agent.predict` outputs before conversion.
 
-## 2026-09-26 追記 — GLiFormer Large v1 (layout-DeBERTa-large, 575M) NER path on S26 GPU — and the unrolled-BiLSTM compile wall
+## 2026-09-26 addendum — GLiFormer Large v1 (layout-DeBERTa-large, 575M) NER path on S26 GPU — and the unrolled-BiLSTM compile wall
 
 Shipped as `litert-community/GLiFormer-Large-NER-LiteRT` (s128 single graph; s256/s512 as encoder + head graphs; fp32 references; fp32 + fp16 token tables; Python host runtime). The facts in this section were written by Codex (gpt-6-astra) in one supervised run of 11 rounds and re-checked by the supervisor from the raw evidence (span sets and score deltas recounted from the gate JSON, the offline example re-run): `~/code/codex-conversions/2026-09-26/gliformer-large-v1/` (ROUNDS.md, results/).
 
@@ -1152,7 +1152,7 @@ Shipped as `litert-community/GLiFormer-Large-NER-LiteRT` (s128 single graph; s25
 
 **Toolchain.** `pytorch_model.bin` (2.30 GB, 506 fp32 tensors) loads under torch 2.12's default `weights_only=True`; `gliformer` 0.1.2 (PyPI, GitHub `b5c0a0fd`) + `gliner` 0.2.29 (pins transformers < 5.17; 5.16.1 used) + litert-torch 0.9.3 / ai-edge-litert 2.1.6 / ai-edge-quantizer 0.8.0 `FLOAT_CASTING` (FC weights only; BATCH_MATMUL relative tables stay fp32). The base encoder card `knowledgator/DeBERTa-large-joint-3000` is not readable (HTTP 401); only the model's Apache-2.0 is asserted.
 
-## 2026-09-26 追記 — GLiNER2.5-Decide (DeBERTa-v3-large classification) on S26 GPU
+## 2026-09-26 addendum — GLiNER2.5-Decide (DeBERTa-v3-large classification) on S26 GPU
 
 Shipped as `litert-community/GLiNER2.5-Decide-LiteRT` (windows 128/256/512, fp16-weight defaults + fp32 references, float16 embedding table, host contract, Python runtime, Android sample `gliner25decide/`). Run dir with every gate JSON: `~/code/codex-conversions/2026-09-26/gliner25-decide-litert/` (supervised run, 6 rounds; `SUPERVISOR.md` holds the recomputed numbers).
 
@@ -1170,7 +1170,7 @@ Shipped as `litert-community/GLiNER2.5-Decide-LiteRT` (windows 128/256/512, fp16
 
 **Tokenizer.** Decide's `tokenizer.json` marks `[UNK]` as `normalized: true` (Small's has `false`), and the Small Kotlin tokenizer refused to load it. Normalized added tokens must be matched the way Hugging Face tokenizers' `AddedVocabulary::extract_and_normalize` does: split out the non-normalized added tokens on the raw text, normalize each remaining segment once, then split it on the normalized tokens (`"a [UNK] b"` → `▁a ▁ [UNK] ▁b`). A tokenizer port is per checkpoint; re-check `added_tokens` flags when reusing it.
 
-## 2026-09-29 追記 — Laya Multilingual on fp16: the NPU passes after three fp32-exact rewrites, GPU fp16 does not
+## 2026-09-29 addendum — Laya Multilingual on fp16: the NPU passes after three fp32-exact rewrites, GPU fp16 does not
 
 Evidence: `~/code/codex-conversions/2026-09-29/laya-fp16-gate/` (`STATUS.md`, `device/`, `device_zoo/`, `emulation/`).
 Galaxy S26 SM-S942Q, LiteRT 2.2.0, S256 WFP16 graph, 201 fixture rows, thermal status none before each run.
@@ -1234,7 +1234,7 @@ file with identical weight values (0.0068 against 0.0115) — take the wfp16 fil
 (38/38, 5.3e-3) only with 16-bit weights and the few input columns above 16× the median column max (the neurons above)
 kept in float. Weight-only int8 / int4 does not change NPU speed anyway (NPU factor lane).
 
-## 2026-09-30 追記 — Julia-1 (mmBERT-small decision model) on the S26 GPU: an F32 checkpoint pays for fp16 storage, and fp16 arithmetic changes its answers
+## 2026-09-30 addendum — Julia-1 (mmBERT-small decision model) on the S26 GPU: an F32 checkpoint pays for fp16 storage, and fp16 arithmetic changes its answers
 
 Shipped as `litert-community/Julia-1-LiteRT` (S512 and S1024 fp32 graphs, float16 token table, the source
 `tokenizer.json`, Python host, conversion scripts). Evidence: `~/code/codex-conversions/2026-09-30/julia1-litert/`
@@ -1332,7 +1332,7 @@ questions over 512 tokens + 65 others, 18 boundary), 100/100, max Δp 0.0077, me
 status 2. Publish the minimum and the start state next to the median, as the GLiNER2.5-Decide section says; a median
 alone does not reproduce.
 
-## 2026-10-01 追記 — Open Decision (DeBERTa-v3-large typed decisions, com-kotobalabs/open-jev-deberta-v3-large) on the S26 GPU: the GLiNER2.5 shaped-DeBERTa layer reuses as is, the mask constant is the fp16 NaN but not the fp16 wall, and the NPU prepare runs out of memory at S512
+## 2026-10-01 addendum — Open Decision (DeBERTa-v3-large typed decisions, com-kotobalabs/open-jev-deberta-v3-large) on the S26 GPU: the GLiNER2.5 shaped-DeBERTa layer reuses as is, the mask constant is the fp16 NaN but not the fp16 wall, and the NPU prepare runs out of memory at S512
 
 Shipped as `litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT` (S256 and S512 fp16-weight graphs, float16
 word table, the source `tokenizer.json`, Python host, Kotlin snippet, conversion scripts). Evidence:
@@ -1399,7 +1399,7 @@ and reproduces the official ids and spans on all 1,809 requests on the JVM and 2
 full-width letters, emoji, IPA, Japanese). The official path is the fast tokenizer; `spm.model` (slow) differs on
 exotic characters (an IPA "ꜜ" → `[UNK]` vs byte pieces), so a port must follow `tokenizer.json`.
 
-## 2026-10-02 追記 — ModernBERT-Ja-310M Decision (argos1111/modernbert-ja-310m-jev, Japanese cross-encoder) on the S26 GPU and NPU: the Laya ModernBERT cut as a one-logit pair scorer, the NPU keeps every answer but one probability by 0.0113, and fp16 computation still moves answers after the exact rewrites
+## 2026-10-02 addendum — ModernBERT-Ja-310M Decision (argos1111/modernbert-ja-310m-jev, Japanese cross-encoder) on the S26 GPU and NPU: the Laya ModernBERT cut as a one-logit pair scorer, the NPU keeps every answer but one probability by 0.0113, and fp16 computation still moves answers after the exact rewrites
 
 Shipped as `mlboydaisuke/ModernBERT-Ja-310M-Decision-LiteRT` (CC BY-SA 4.0, the source weights' license, so not litert-community;
 S256 and S512 fp16-weight graphs, float16 token table, the source `tokenizer.json`, Python host, Kotlin block, the debug gate app,
@@ -1484,7 +1484,7 @@ number and the cool-phone S256 time was not measured.
 files through their API; the card's printed example (0.9996 for `billing — 請求・返金`) is 0.9981 in fp32 on CPU with either
 transformers version (the author trained and ran with bf16 autocast).
 
-## 2026-10-02 追記 — GLiClass-Edge v3.0 (ModernBERT ettin-encoder-32m zero-shot classifier) on the S26 GPU and NPU: the label read-out is one routing matmul, `torch.matmul` lowers below rank 4, and a LayerNorm pre-scale makes fp16 close but not exact
+## 2026-10-02 addendum — GLiClass-Edge v3.0 (ModernBERT ettin-encoder-32m zero-shot classifier) on the S26 GPU and NPU: the label read-out is one routing matmul, `torch.matmul` lowers below rank 4, and a LayerNorm pre-scale makes fp16 close but not exact
 
 Shipped as `litert-community/GLiClass-Edge-v3.0-LiteRT` (S128 / S256 graphs, fp32 and fp16-weight, float16 token
 table, Python host, Kotlin snippet, conversion scripts, the Android sample). Evidence:
@@ -1527,7 +1527,7 @@ The Kotlin host matches Python `tokenizers` on 552/552 oracle strings and 261/26
 2.2.0, GPU explicit FP32) the sample gives the official answers on 552/552 requests from text to labels: graph median
 5.86 / 8.23 ms (s128 / s256), a request right after a cold start 8.05–8.38 ms end to end.
 
-## 2026-10-02 追記 — GLiNER2.5 Multi (mDeBERTa-v3-base boundary extractor) on S26 GPU + NPU
+## 2026-10-02 addendum — GLiNER2.5 Multi (mDeBERTa-v3-base boundary extractor) on S26 GPU + NPU
 
 Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-weight + fp32 graphs, fp16 + fp32 host tables, host contract, Python host). Run dir with every gate JSON: `~/code/codex-conversions/2026-09-19/gliner25-multi/` (supervised Codex run, 8 rounds over 2026-09-19 and 2026-10-02).
 
@@ -1545,7 +1545,7 @@ Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-
 
 **Japanese.** The official `word_splitter="char"` is the caller's choice (no detector); the processor appends `.` after `。`, so a 48-slot window holds 47 Japanese characters. Upstream organization recall on ten early Japanese sentences was 4/10 — upstream behaviour, preserved by the conversion (the gate is agreement with the official implementation, not accuracy).
 
-## 2026-10-04 追記 — Kev-0.8B (Qwen3.5 hybrid + pointer head, typed decisions) on the S26 GPU: one graph call per question under explicit FP32, the checkpoint's own tokenizer.json, and a Kotlin host that reproduces CPython's float sum and round
+## 2026-10-04 addendum — Kev-0.8B (Qwen3.5 hybrid + pointer head, typed decisions) on the S26 GPU: one graph call per question under explicit FP32, the checkpoint's own tokenizer.json, and a Kotlin host that reproduces CPython's float sum and round
 
 Model repo: `litert-community/Kev-0.8B-LiteRT` (row-prefill graphs L64 / L128 / L256 / L512 / L1024 / L2048, shared-state
 pairs Ls128 / Ls256, pointer head, tokenizer); Android sample `kev/`. Evidence:
@@ -1812,7 +1812,7 @@ writes a kill as `Reclaim '<package>' (<pid>) … oom_score_adj …`, followed b
 timeout instead. Evidence: `ROUND1.md` §2, `ROUND2.md` §1–2, `ROUND5.md`,
 `device/r5_autoplay_long.logcat_all_grep.txt`.
 
-## 2026-11-03 追記 — NVIDIA NemotronLabs RE-USE (universal speech enhancement, 30 bidirectional Mamba blocks) on phone GPUs and the Galaxy S26 NPU
+## 2026-11-03 addendum — NVIDIA NemotronLabs RE-USE (universal speech enhancement, 30 bidirectional Mamba blocks) on phone GPUs and the Galaxy S26 NPU
 
 Model repo: `litert-community/NVIDIA-NemotronLabs-RE-USE-LiteRT` (fixed 2 s float32 graphs at 16 kHz:
 `reuse_16k_2s_fp32.tflite`, 91,014 ops, and `reuse_16k_2s_fastload_fp32.tflite`, 33,114 ops); Android sample `reuse/`

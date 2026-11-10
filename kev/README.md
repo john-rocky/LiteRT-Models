@@ -223,7 +223,7 @@ scripts/fetch_npu_libs.sh /path/to/the/libraries   # copies them into app/src/ma
 ./gradlew :app:assembleDebug
 ```
 
-The root README section [Running on the NPU](../README.md#running-on-the-npu) lists each file and
+The section [Running on the NPU](../MODELS.md#running-on-the-npu) lists each file and
 where it comes from; this module already sets `useLegacyPackaging = true`, which the DSP needs to
 open its library. The APK grows from 14.6 MB to 61.6 MB. An APK built without the libraries runs on
 the GPU and the CPU: the NPU choice is disabled and the screen says "NPU: this APK has no NPU

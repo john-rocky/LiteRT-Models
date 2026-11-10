@@ -29,7 +29,7 @@ dependencies {
 
 - `com.google.ai.edge.litert:litert` is the current name of the runtime formerly published as
   `org.tensorflow:tensorflow-lite`. Do not add both; see the
-  [naming table](../README.md#litert-or-tensorflow-lite-the-names) if your app still has the old
+  [naming table](../docs/litert-names.md) if your app still has the old
   coordinates.
 - Kotlin 2.x (this module uses 2.3.21 with AGP 8.7.3); `arm64-v8a` is the ABI this was verified on.
 

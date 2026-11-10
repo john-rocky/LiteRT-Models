@@ -10,11 +10,13 @@ inputBuffers[0].writeFloat(floatArray)
 val result = model.run(inputBuffers)[0].readFloat()
 ```
 
-Dependency: `com.google.ai.edge.litert:litert` from Google Maven and, from 2.3.0, `com.google.ai.edge.litert:litert-gpu` at the same version for the GPU; the version each sample pins and the old-name → new-name mapping are in the README.
+Dependency: `com.google.ai.edge.litert:litert` from Google Maven and, from 2.3.0, `com.google.ai.edge.litert:litert-gpu` at the same version for the GPU; the version each sample pins and the old-name → new-name mapping are in `docs/litert-names.md`.
 
 ## Start here
 
-- [README](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/README.md): the model table (task, device, latency, download), "How to use", the TensorFlow Lite → LiteRT name mapping, then one section per model with shapes, preprocessing, output format and its sample app.
+- [README](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/README.md): what the repo holds, the code to run one model, and the models by task.
+- [MODELS.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/MODELS.md): the model table (task, device, latency, download), "How to use", then one section per model with shapes, preprocessing, output format and its sample app.
+- [docs/litert-names.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/litert-names.md): the TensorFlow Lite → LiteRT name mapping.
 - [AGENTS.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/AGENTS.md): for coding agents. Task → API → file, and the GPU rules that fail on a real device.
 - [ormbg/INTEGRATION.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/ormbg/INTEGRATION.md): add background removal to an existing Android app on the GPU; one dependency, one Kotlin file, one model; Pixel 8a numbers dated 2026-09-05. Machine-readable: [ormbg/recipe.json](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/ormbg/recipe.json).
 - [common/README.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/common/README.md): the canonical Kotlin helpers every sample vendors: `CompiledModelRunner`, `ImageTensor`, `RealtimeCameraPipeline`, `AudioCapture`, `MathOps`.
@@ -27,7 +29,7 @@ Dependency: `com.google.ai.edge.litert:litert` from Google Maven and, from 2.3.0
 
 ## Sample apps
 
-- Each model directory is an independent Gradle project (`cd <model>/ && ./gradlew :app:installDebug`); the README section for the model names it.
+- Each model directory is an independent Gradle project (`cd <model>/ && ./gradlew :app:installDebug`); the `MODELS.md` section for the model names it.
 - [asr_litertlm/](https://github.com/john-rocky/LiteRT-Models/tree/main/asr_litertlm): speech to text with three LiteRT-LM bundles (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2) through `litertlm-android` 0.17.1 on the phone CPU; model picker, microphone up to 30 s, three bundled clips, a device check; Galaxy S26 numbers dated 2026-10-09.
 - [bonsai_image/](https://github.com/john-rocky/LiteRT-Models/tree/main/bonsai_image): type a prompt and get a 256×256 image on the phone with Bonsai Image 4B; three graphs on `CompiledModel` CPU (XNNPACK), 23.5 s on a Galaxy S26 (2026-10-09).
 - [docs/COMPOSE_MVVM_SAMPLE_GUIDE.md](https://raw.githubusercontent.com/john-rocky/LiteRT-Models/main/docs/COMPOSE_MVVM_SAMPLE_GUIDE.md): the Compose + MVVM shape for a litert-samples pull request, distilled from 32 samples.

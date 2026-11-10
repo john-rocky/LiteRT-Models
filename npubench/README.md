@@ -3,8 +3,8 @@
 Latency harness for the Qualcomm Hexagon NPU, run as an instrumentation test so it
 works on a cloud device farm where there is no shell. It reports median and minimum
 over 50 iterations, plus the device's thermal headroom at the start of each
-measurement. Background and results: the **Snapdragon NPU** section of the root
-[README](../README.md).
+measurement. Background and results: the **Snapdragon NPU** section of
+[MODELS.md](../MODELS.md#snapdragon-npu-hexagon).
 
 ## What you have to fetch
 
