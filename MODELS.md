@@ -1,8 +1,8 @@
 <!-- Adding a model: add its row and section here, and its name to the task table in README.md. -->
 
-LiteRT is Google's on-device ML runtime for Android and the successor to TensorFlow Lite (renamed 2024-09): PyTorch models are converted with Google's `litert-torch` into `.tflite` files that run every op on the phone's GPU through [`CompiledModel`](https://ai.google.dev/edge/litert) (ML Drift), e.g. DINOv2 ViT-S/14 at 448² runs in 53.6 ms on a Galaxy S26 GPU ([npubench](npubench/), LiteRT 2.2.0, median of 50 runs, 2026-08).
+LiteRT is Google's on-device ML runtime and the successor to TensorFlow Lite (renamed 2024-09): PyTorch models are converted with Google's `litert-torch` into `.tflite` files that run every op on the phone's GPU through [`CompiledModel`](https://ai.google.dev/edge/litert) (ML Drift), e.g. DINOv2 ViT-S/14 at 448² runs in 53.6 ms on a Galaxy S26 GPU ([npubench](npubench/), LiteRT 2.2.0, median of 50 runs, 2026-08).
 
-This repository is the model zoo for that path: **91 converted models** (as of 2026-09-08), each with its download, input/output shapes, preprocessing, the conversion script that produced it, and a standalone Android sample app (Kotlin). No MediaPipe and no vendor SDK: the `.tflite` graphs run on `CompiledModel` GPU with every op delegated (no CPU fallback), and the chat models run on LiteRT-LM. The GPU-compatibility rewrites these conversions need are catalogued in [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) and packaged in [`litert_gpu_toolkit/`](litert_gpu_toolkit/).
+This repository is the model zoo for that path: **more than 120 converted models**, most with their download, input/output shapes, preprocessing, the conversion script that produced them, and a standalone Android sample app (Kotlin). No MediaPipe and no vendor SDK: the `.tflite` graphs run on `CompiledModel` GPU with every op delegated (no CPU fallback), and the chat models run on LiteRT-LM. The GPU-compatibility rewrites these conversions need are catalogued in [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md) and packaged in [`litert_gpu_toolkit/`](litert_gpu_toolkit/).
 
 # Models
 

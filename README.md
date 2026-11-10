@@ -1,6 +1,6 @@
 # LiteRT-Models
 
-This repo has more than 120 models converted to run on LiteRT, Google's on-device ML runtime for Android. LiteRT is the new name of TensorFlow Lite. Most models come with input and output shapes, preprocessing, the conversion script and a standalone Kotlin sample app.
+This repo has more than 120 models converted to run on Android with LiteRT, Google's on-device ML runtime. LiteRT is the new name of TensorFlow Lite. Most models come with input and output shapes, preprocessing, the conversion script and a standalone Kotlin sample app.
 
 <img src="https://github.com/user-attachments/assets/3c764bf0-32ac-4b65-814b-a73e1aba1cfc" width="100%">
 
