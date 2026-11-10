@@ -16,7 +16,7 @@ MediaPipe. Independent, not affiliated with Google.
 | Task | Do | Where |
 |---|---|---|
 | Find a model, its download and its measured latency | The table at the top of the README (model, task, device, latency, download); each row links the model's section | README "Models" |
-| Run a `.tflite` in an existing app on the GPU | Dependency `com.google.ai.edge.litert:litert` (Google Maven), then `CompiledModel.create(context.assets, "model.tflite", CompiledModel.Options(Accelerator.GPU), null)`, `createInputBuffers()`, `run()` | README "How to use" |
+| Run a `.tflite` in an existing app on the GPU | Dependency `com.google.ai.edge.litert:litert` (Google Maven) and, from 2.3.0, `com.google.ai.edge.litert:litert-gpu` at the same version, then `CompiledModel.create(context.assets, "model.tflite", CompiledModel.Options(Accelerator.GPU), null)`, `createInputBuffers()`, `run()` | README "How to use" |
 | Generate an image from a typed prompt on the phone | Bonsai Image 4B: three graphs on `CompiledModel` CPU (XNNPACK); type a prompt, tap Generate; 256×256 in 23.5 s on a Galaxy S26 (2026-10-09) | [bonsai_image/README.md](bonsai_image/README.md) |
 | Add one feature end to end, verified on a device | Background removal: one dependency, one Kotlin file, one 176 MB model; Pixel 8a numbers dated 2026-09-05; data in [ormbg/recipe.json](ormbg/recipe.json) | [ormbg/INTEGRATION.md](ormbg/INTEGRATION.md) |
 | Turn typed text into speech in a chosen or recorded voice | Text-to-speech with zero-shot voice cloning (Audio8-TTS-Preview-0.6b, 11 languages): `Audio8Tts.speak(text, voice)` returns 44.1 kHz samples; autoregressive graphs on the CPU, codec decoder on the GPU only after an output check; Galaxy S26 numbers dated 2026-10-10 | [audio8_tts/README.md](audio8_tts/README.md) |
@@ -24,7 +24,7 @@ MediaPipe. Independent, not affiliated with Google.
 | A complete sample app for a model | Each model directory is its own Gradle project: `cd <model>/ && ./gradlew :app:installDebug` | README, the model's section names its app |
 | Speech to text on the phone CPU with a `.litertlm` bundle (Qwen3-ASR-1.7B, Fun-ASR-Nano-2512, Confucius4-R2T2) | `com.google.ai.edge.litertlm:litertlm-android` 0.17.1: one `Engine`, a new `Conversation` per clip, the audio file as the whole message; model picker, microphone up to 30 s, device check; Galaxy S26 numbers dated 2026-10-09 | [asr_litertlm/README.md](asr_litertlm/README.md) |
 | Convert a PyTorch model yourself | litert-torch for Vision Transformers and attention (NCHW preserved); onnx2tf only for pure CNNs; `litert_gpu_toolkit.convert_for_gpu(model, dummy_input, output_path)` applies the GPU patches | [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md), `litert_gpu_toolkit/` |
-| The TensorFlow Lite name for something, or the LiteRT name | The mapping (Maven, pip, delegates, MediaPipe LLM → LiteRT-LM), verified 2026-09-05 | README "LiteRT or TensorFlow Lite? The names" |
+| The TensorFlow Lite name for something, or the LiteRT name | The mapping (Maven, pip, delegates, MediaPipe LLM → LiteRT-LM), verified 2026-11-11 | README "LiteRT or TensorFlow Lite? The names" |
 | What moving from the TensorFlow Lite C API (LiteRT 1.4.0 `Interpreter`) to `CompiledModel` (LiteRT 2.3.2) changes on a phone | A measured table on a Galaxy S26: three models (detection, pose, segmentation), the CPU, GPU and NNAPI rows of 1.4.0 and the CPU, GPU and NPU rows of 2.3.2, output agreement on five photos, and what a wrapper would have to change for each row; dated 2026-11-10 | [interpreter-vs-compiledmodel/README.md](interpreter-vs-compiledmodel/README.md) |
 | Restructure a sample into Compose + MVVM for a litert-samples PR | The second-pass guide | [docs/COMPOSE_MVVM_SAMPLE_GUIDE.md](docs/COMPOSE_MVVM_SAMPLE_GUIDE.md) |
 | Work on this repository itself | Module layout, build, how model files reach the device, conventions | [CLAUDE.md](CLAUDE.md) |
@@ -39,7 +39,11 @@ MediaPipe. Independent, not affiliated with Google.
    (correlation about 0.29 against 0.99).
 3. **Use the current coordinates.** `com.google.ai.edge.litert:litert` on Google Maven, not
    `org.tensorflow:tensorflow-lite`; `pip install litert-torch`, not `ai-edge-torch`;
-   `pip install ai-edge-litert`, not `tflite-runtime`. NNAPI is deprecated; the NPU is
+   `pip install ai-edge-litert`, not `tflite-runtime`. From 2.3.0 the GPU also needs
+   `com.google.ai.edge.litert:litert-gpu` at the same version as `litert`; without it
+   `Accelerator.GPU` alone throws at `create`, GPU + CPU runs on the CPU, and Logcat shows
+   `GPU accelerator could not be loaded and registered`. Versions, minSdk and the Kotlin flag:
+   README "LiteRT or TensorFlow Lite? The names". NNAPI is deprecated; the NPU is
    `Accelerator.NPU` on `CompiledModel`.
 4. **Model files are not in git.** Small models sit in `app/src/main/assets/` with
    `noCompress += "tflite"`; large ones are staged by the module's `install_to_device.sh`.

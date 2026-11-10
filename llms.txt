@@ -10,7 +10,7 @@ inputBuffers[0].writeFloat(floatArray)
 val result = model.run(inputBuffers)[0].readFloat()
 ```
 
-Dependency: `com.google.ai.edge.litert:litert` from Google Maven; the version each sample pins and the old-name → new-name mapping are in the README.
+Dependency: `com.google.ai.edge.litert:litert` from Google Maven and, from 2.3.0, `com.google.ai.edge.litert:litert-gpu` at the same version for the GPU; the version each sample pins and the old-name → new-name mapping are in the README.
 
 ## Start here
 
