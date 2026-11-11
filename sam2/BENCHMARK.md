@@ -67,7 +67,7 @@ fixed 1024² input (removes the bicubic `GATHER_ND` and the tiled `BROADCAST_TO`
 partition / unpartition with ≤4-D tensors; replace the fused 5-D `qkv` reshape with a channel-wise q/k/v
 slice. Result: encoder `GPU_BAD = 0`, `>4-D = 0`. The SAM 2 mask decoder converted unchanged.
 
-**Worth recording for the team.** The published `litert-community` SAM 2.1 mask decoder was pinned to the
+**Worth recording.** The published `litert-community` SAM 2.1 mask decoder was pinned to the
 CPU because its GPU output was wrong on a Pixel 8a. We reproduced it headlessly and bisected it on
 device. The cause is **not fp16 and not LayerNorm** — the decoder's attention was written with the batch
 dim collapsed (q/k/v shaped `[heads, N, d]`, rank 3), and the ML Drift GPU delegate **silently
@@ -159,5 +159,5 @@ correctness bug, not an fp16 precision wall.
 
 - The same-silicon Mac row was measured through the iOS simulator (M4 Max GPU); a native macOS LiteRT GPU
   path for vision `.tflite` would tighten it (`litert-mac-verify` is LiteRT-LM / LLM-only).
-- Larger sizes (small / base+ / large) if the team wants the full curve.
+- Larger sizes (small / base+ / large) for the full curve.
 - The rank-3 attention miscompute deserves its own bug report against the ML Drift delegate.

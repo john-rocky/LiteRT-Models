@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """SAM 2.1 (Hiera, Meta, Apache-2.0) -> LiteRT CompiledModel GPU (ML Drift).
 
-First-pass converter for the LiteRT-vs-MLX SAM2 benchmark (Lu Wang request,
-2026-07-09). Target = ``facebook/sam2.1-hiera-tiny`` so the LiteRT graph matches
+First-pass converter for the LiteRT-vs-MLX SAM2 benchmark.
+Target = ``facebook/sam2.1-hiera-tiny`` so the LiteRT graph matches
 ``avbiswas/sam2.1-hiera-tiny-mlx`` (and ``apple/coreml-sam2-tiny``) for a clean
 same-model, same-size comparison. Image-segment path only (encoder once +
 decoder per point); the video memory path (memory attention + RoPE) is a later
