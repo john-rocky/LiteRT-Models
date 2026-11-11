@@ -35,7 +35,7 @@ any one op. It reproduces identically on OpenCL and OpenGL and under every buffe
 constant-sharing option, so it is a graph-assembly buffer/scheduling bug in ML Drift's shared
 compilation layer — not precision (it fails at fp32), not a backend, not a kernel. Splitting the
 decoder does not help (a single block already trips it), so the decoder runs on CPU, where it is
-bit-exact with the reference. (A minimal reproducer has been kept for the LiteRT team.)
+bit-exact with the reference. (A minimal reproducer has been kept.)
 
 ## Pipeline
 
