@@ -86,9 +86,9 @@ Most of these patches are pre-packaged in `litert_gpu_toolkit` — prefer `conve
 - **Build testing is done on the actual device** — do not run `./gradlew assemble` etc. as a validation step. Edit, then hand off.
 - Code comments and UI strings are in **English**, even though the user often communicates in Japanese.
 
-## Google style guide — strict SECOND PASS (Shuangfeng requirement, 2026-07-07)
+## Google style guide — strict SECOND PASS (2026-07-07)
 
-All code destined for litert-samples PRs is **teaching material** ("high quality codes to share with humans to learn") and must END UP strictly following https://google.github.io/styleguide/. But the workflow is **two-phase, by the user's explicit policy**:
+All code destined for litert-samples PRs is **teaching material** (code that people read to learn from) and must END UP strictly following https://google.github.io/styleguide/. But the workflow is **two-phase, by the user's explicit policy**:
 
 1. **Draft phase — write freely.** While solving the problem (conversion debugging, app wiring, device iteration), do NOT constrain the writing with style rules; that risks regressing the agent's problem-solving. Quick names, scratch logging, long functions are all fine here.
 2. **Style pass — before commit/PR.** Once it works, rewrite to strict Google style (rules below) as a dedicated pass. Nothing reaches a PR without this pass.
