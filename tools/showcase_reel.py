@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the LiteRT showcase reel from curated demo media.
 
-Port of CoreML-Models/scripts/hf_demo_video.py (the format Lu praised) to
+Port of CoreML-Models/scripts/hf_demo_video.py to
 the LiteRT-Models zoo: pairs wipe from input to output, stills hold, clips
 play. Frames are generated with PIL and piped straight into ffmpeg — no
 intermediate image files, and no drawtext dependency (the local ffmpeg

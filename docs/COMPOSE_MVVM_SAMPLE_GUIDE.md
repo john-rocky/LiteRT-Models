@@ -1,7 +1,7 @@
 # litert-samples Compose + MVVM sample guide
 
 Practical, battle-tested recipe for restructuring (or building) a `google-ai-edge/litert-samples`
-Android sample into the canonical **Jetpack Compose + MVVM** shape the reviewers require.
+Android sample into the canonical **Jetpack Compose + MVVM** shape.
 
 This is a **SECOND-pass guide**, by the project's explicit two-phase policy (see `CLAUDE.md`):
 while getting the model to run on device, scaffold the app however is fastest (one Activity,
@@ -17,8 +17,8 @@ Companion docs: `docs/LITERT_CONVERSION_GUIDE.md` (getting the model GPU-clean),
 
 ## 1. The reference is the law
 
-Mirror **`compiled_model_api/image_segmentation/kotlin_cpu_gpu/android`** (the reviewer's named
-reference). Pick the concrete template by **output type**:
+Mirror **`compiled_model_api/image_segmentation/kotlin_cpu_gpu/android`**. Pick the concrete
+template by **output type**:
 
 | Output | Copy this sample |
 |---|---|
