@@ -1,5 +1,5 @@
 #!/bin/bash
-# Idol S26 clip v2 (window code-a6, 2026-11-09): GUI takes only, no captions. The armchair's whole flow (start screen,
+# Idol S26 clip v2 (2026-11-09): GUI takes only, no captions. The armchair's whole flow (start screen,
 # photo picker, progress with the cutout, the last steps, one full turn of the splat at 1.2x), then four subjects each
 # as the progress screen with the photo (0.8 s) and the turning splat (1.6x), ending on the turning axolotl.
 set -euo pipefail

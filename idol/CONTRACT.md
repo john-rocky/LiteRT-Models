@@ -128,7 +128,7 @@ kept as side matmuls with a phase input (one set), decided by measurement; the l
   above a memory reserve and compiles the others during each run. (c) is measured as the contract says otherwise
   (median `generate` of runs 1–3 after a warm-up), with the graphs compiled inside each measured run reported next
   to it (count and seconds). The e2e plans keep a 2.5 GB reserve (a 1 GB reserve let lmkd kill the app during a
-  preload, LANE.md 17:11).
+  preload, measured 2026-11-09 17:11).
 
 - 2026-11-09 17:00: input 4 is shot in the first device hold that runs the app, before any app run of inputs 1–3
   (the table's "first device hold after the go" was round g1, and round g2 followed it: both ran the graph runner,
@@ -168,7 +168,7 @@ kept as side matmuls with a phase input (one set), decided by measurement; the l
   excluded; `scripts/calibrate_matting_floor.py`, `contract/matting_floor.json`) as the floor whose crop box best
   matches BiRefNet's: mean error 0.14 % of the side, worst 0.59 % (no floor: mean 9.0 %, 20 of 31 images over 2 %).
   Line (a′) thresholds at 128 and is unaffected. The first numbers stay recorded (`contract/standin_v1/`,
-  `contract/a_<input>_mac_v1.json`, LANE.md).
+  `contract/a_<input>_mac_v1.json`).
 - 2026-11-09 15:05: the graph set became v2 (DINOv3 and the context refiner with the key-chunked attention from
   4,096 keys); no line changed.
 

@@ -87,11 +87,11 @@ def main():
     for f in PYTHON:
         copy(os.path.join(HERE, f), os.path.join(main_dir, 'python', f))
     # the licence record without the work-dir pointer and the notes from before the hosting decision
-    lic = open(os.path.join(MODULE, 'LICENSES.md')).read().split('\n## Before D-912')[0].rstrip() + '\n'
+    lic = open(os.path.join(MODULE, 'LICENSES.md')).read().split('\n## Before the hosting decision')[0].rstrip() + '\n'
     lic = '\n'.join(line for line in lic.split('\n') if not line.startswith('Copies of the texts read are in'))
     lic = lic.replace('\n\n\n', '\n\n').replace(' (`~/code/idol_work/probe/vae_equal.py`)', '')
-    lic = lic.replace('## Hosting (window decision D-912, 2026-11-09)', '## Hosting')
-    assert 'idol_work' not in lic and 'D-912' not in lic
+    lic = lic.replace('## Hosting (decided 2026-11-09)', '## Hosting')
+    assert 'idol_work' not in lic and 'decided 2026-11-09' not in lic and 'hosting decision' not in lic
     with open(os.path.join(main_dir, 'LICENSES.md'), 'w') as f:
         f.write(lic)
     copy(os.path.expanduser('~/code/idol_work/licenses/dinov3_LICENSE.md'), os.path.join(dino_dir, 'LICENSE.md'))

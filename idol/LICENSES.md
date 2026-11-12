@@ -29,7 +29,7 @@ Copies of the texts read are in `~/code/idol_work/licenses/` (SSD work dir). Lin
 - The klein-4B `vae/` dir is ungated and tagged apache-2.0; the Idol pipeline loads the VAE in bf16 (`conditioning.py` `torch_dtype=torch.bfloat16`) and klein-4B's file is bf16.
 - Verified 2026-11-09 14:04 (`~/code/idol_work/probe/vae_equal.py`): klein-4B `vae/diffusion_pytorch_model.safetensors` (sha256 ca70d220…, bf16) = the FLUX.2-dev VAE cast to bf16. The FLUX.2-dev VAE was read from Comfy-Org/Idol `vae/flux2-vae.safetensors`, whose LFS sha256 868fe7b3… equals FLUX.2-dev's `ae.safetensors` (Hub API, FLUX.2-dev @26afe3a7): the same file. All 250 float tensors match bit for bit after the bf16 cast (84,046,372 values; 8 attention projections are [512, 512] in klein and [512, 512, 1, 1] in BFL, same values). The one other tensor differs: `bn.num_batches_tracked` (int64 training counter, 0 vs 400000), unused at inference.
 
-## Hosting (window decision D-912, 2026-11-09)
+## Hosting (decided 2026-11-09)
 
 - litert-community/Idol (ungated, Apache-2.0, with the per-part provenance above): the denoiser, octree and Gaussian
   decoder graphs, the VAE encoder graphs, BiRefNet (`bir.tflite`, MIT part named in the card), the side files, the
@@ -38,7 +38,7 @@ Copies of the texts read are in `~/code/idol_work/licenses/` (SSD work dir). Lin
   the full DINOv3 License text and the provenance (base_model facebook/dinov3-vith16plus-pretrain-lvd1689m), the way
   litert-community/Llama-3.2-1B carries the Llama licence.
 
-## Before D-912 (kept as written)
+## Before the hosting decision (kept as written)
 
 - Apache-2.0 parts (denoiser, decoders, turbo LoRA, VAE encoder) and MIT BiRefNet: may be converted and hosted on litert-community with their licence and attribution.
 - DINOv3 encoder: the licence permits hosting a converted derivative with the DINOv3 License attached and offered under it (precedent on the Hub: needle-tools/IDOL-webgpu `imageEncoder/` and ddalcu/Idol-MLX-Serve-* `dinov3/`, both with the licence text). Whether litert-community (a Google org) carries a Meta-licensed file is the window's / user's call. Until it answers, the encoder conversion stays local and the day-0 repo ships the Idol graphs plus `scripts/convert_encoders.py` for the user to convert the encoder from weights they accepted.

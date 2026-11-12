@@ -1,4 +1,4 @@
-"""The gate block of the DINOv3 repo's card (window decision D-912: gated auto, the full DINOv3 License as the prompt,
+"""The gate block of the DINOv3 repo's card (the 2026-11-09 hosting decision: gated auto, the full DINOv3 License as the prompt,
 the source repo's gate fields, as litert-community/Llama-3.2-1B does for Llama 3.2).
 
   python gate_front_matter.py --source-api hf_meta/dinov3_source_api.json --license dinov3_LICENSE.md

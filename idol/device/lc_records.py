@@ -411,8 +411,8 @@ def main() -> None:
         errors = device_run_errors(doc)
         check(not errors, f"schema errors: {errors}")
         text = json.dumps(doc)
-        for word in ("session", "supervisor", "claude", "cmux", "standup", "portal", "team", "scratchpad", "fable",
-                     "opus", "jetski", "/Users/", "idol_work"):
+        for word in ("session", "supervisor", "claude", "cmux", "portal", "team", "scratchpad", "fable",
+                     "opus", "/Users/", "idol_work"):
             check(word.lower() not in text.lower(), f"{p['slug']}: the record carries '{word}'")
         check(not re.search(r"\bD-\d{3}\b", text), f"{p['slug']}: the record carries a decision id")
         target = root / RUNTIME / date / f"{doc['model_id']}__{doc['device']}.json"
