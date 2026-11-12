@@ -110,7 +110,7 @@ All code destined for litert-samples PRs is **teaching material** (code that peo
 
 ### Sample app STRUCTURE — also a SECOND pass, never a draft-phase constraint (2026-07-09)
 
-Same two-phase rule as the style guide, for the same reason: **while getting the model to run on device, scaffold the app however is fastest** (one Activity, hardcoded strings, whatever). Structure constraints during debugging regress problem-solving. Then, **before the litert-samples PR**, restructure to the canonical shape — the reviewer's named reference is `compiled_model_api/image_segmentation/kotlin_cpu_gpu`.
+Same two-phase rule as the style guide, for the same reason: **while getting the model to run on device, scaffold the app however is fastest** (one Activity, hardcoded strings, whatever). Structure constraints during debugging regress problem-solving. Then, **before the litert-samples PR**, restructure to the canonical shape: `compiled_model_api/image_segmentation/kotlin_cpu_gpu`.
 
 **Pick the template by OUTPUT TYPE** (all three are device-verified, in-repo):
 
