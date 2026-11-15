@@ -1625,7 +1625,7 @@ and merges but a regex with `\p{M}` and 22 added tokens; raw `tokenizers` on it 
 probe strings (Devanagari, `<think>`, `<tool_response>`, `<tts_pad>`). The fixture's 2,038 user strings give
 identical IDs with either file, so a 402/402 row parity cannot tell them apart; only the probes do. The Kotlin host
 reads the Kev file as it is (regex, added tokens, vocabulary, merges) and matches `AutoTokenizer` on 54/54 probes on
-the JVM and on the S26. Evidence: `ROUND1.md` §1, `r1_evidence/probe_three.py`, `r1_evidence/probe_added.py`.
+the JVM and on the S26. Evidence: `r1_evidence/probe_three.py`, `r1_evidence/probe_added.py`.
 
 **The split regex follows different Unicode rules in onig, java.util.regex and ICU.** onig's case-insensitive
 contractions fold `ſ` (U+017F): `'ſtuff` splits as `'ſ` + `tuff`. Java's `(?i)` folds ASCII only, so the port spells
@@ -1633,7 +1633,7 @@ the class out (`'[sSſ]`, written `ſ` in the source). `\s` becomes onig's White
 because Java's `\s` is ASCII-only and Android rejects `UNICODE_CHARACTER_CLASS`. Java 17's regex classes follow
 Unicode 13 and onig (tokenizers 0.23.2) Unicode 16: 9,787 letters and 130 digits exist only in onig's `\p{L}` /
 `\p{N}`. On the JVM 6,000 random strings still gave identical IDs, 2,254 of them with code points Java 17 does not
-define; on the S26 the 54 probes pass under Android's ICU. Evidence: `ROUND1.md` §2, `r1_evidence/probe_fold.py`,
+define; on the S26 the 54 probes pass under Android's ICU. Evidence: `r1_evidence/probe_fold.py`,
 `r1_evidence/Fold.java`, `r1_evidence/onig_classes.json`, `r1_evidence/ClassDiff.java`.
 
 **The response is bit-identical only with CPython's float semantics.** `to_answers` normalizes and takes
@@ -1643,7 +1643,7 @@ both 0.1235, and `round(0.03125, 4)` is 0.0312. The port sums in the same order 
 (`KevAnswers.pythonSum`) and rounds with `BigDecimal(x).setScale(4, HALF_EVEN)`; with a plain loop the score and the
 confidences do not match bit for bit. A JSON state needs Python's semantics as well: keys keep the file's order (the
 JVM `org.json` artifact uses a HashMap), and `1` and `1.0` render differently, so the reader keeps number literals.
-Evidence: `KevAnswersTest`, `kev/app/src/test/resources/python_numbers.json`, `ROUND1.md` §1.
+Evidence: `KevAnswersTest`, `kev/app/src/test/resources/python_numbers.json`.
 
 **Time to the read-back, and pick the smallest window.** `CompiledModel.run()` returns before the GPU finishes, so
 the app times each question from the input writes through `run()` to `readFloat()` of `hidden`; every ms on the
@@ -1682,7 +1682,7 @@ questions 0.0110, and the 9 L2048 rows 0.0093 with mean 1.84e-3 (0.0015 and 4.3e
 so the README gives it and the FP32 switch). On the same file it takes about a quarter less time than FP32: L128
 102.0 against 137.8 ms, L256 196.0 against 272.1 ms. The precision is a per-graph default in the app: a file of a
 size the repository published before the rewrite runs at FP32, and `--es precision fp32` forces FP32 everywhere.
-Evidence: `ROUND7.md`, `r7.facts.md`, `device/r7_G1_gate_L128_C7_fp16acc.json`,
+Evidence: `r7.facts.md`, `device/r7_G1_gate_L128_C7_fp16acc.json`,
 `device/r7_G4_gate_pair256_fp16acc_noshare.json`, `device/r7_T1_timing_L128_fp16acc.json`,
 `device/r7_F3_timing_L128_fp32.json`, `device/r7_T2_timing_L256_fp16acc.json`, `device/r7_F4_timing_L256_fp32.json`.
 
@@ -1736,14 +1736,14 @@ at 1,300 MHz, and the others are given apart. In the conversion run a compile al
 during a 7.6 s compile, the ceiling at 1,050–1,100 MHz at the opening call), so the runner also waits after the
 compile and before each set until the ceiling and the temperature are back to their values before the compile
 (`--ei cool_ms`); in this app's legs that wait took 0 s. Evidence: `kev/app/src/main/java/com/kev/KevTimingCore.kt`,
-`KevCool.kt`, `device/r7_chain1_table.md`, `device/r7_chain3_table.md`, `kev_work/ROUND14.md`.
+`KevCool.kt`, `device/r7_chain1_table.md`, `device/r7_chain3_table.md`.
 
 **A 360 dp screen sets the demo layout.** The S26 reports density 3.0, a 360 × 780 dp screen; a layout planned at
 density 2.625 cut the ticket's last line even at its 16 sp floor. Compose Material 1 `Text` inherits body1's 24 sp
 line height, which cut a three-line footer until each line height was explicit. The presentation now measures every
 fitted text with `rememberTextMeasurer` inside the layout pass and draws it once, at the size that fits, instead of
 shrinking it frame by frame. The editing screen's footer wrapped inside "GPU FP32" at 360 dp; it now puts one group
-per line and joins the words of an item with non-breaking spaces. Evidence: `ROUND3.md` §1–2,
+per line and joins the words of an item with non-breaking spaces. Evidence:
 `device/s4_autoplay_done.png`, `device/u10_answers.png`.
 
 **Heat decides which timing legs count.** About 2.5 minutes of GPU FP32 at L512 (the 172-row gate) took the S26
@@ -1756,7 +1756,7 @@ leg. And `am force-stop` right after a leg briefly caps the prime cluster during
 the caps when the next leg starts. Thermal status 0 does not hold the GPU clock either: in a five-question leg at
 L256 that started and ended at status 0, the GPU clock ceiling fell from 1,300 to 646 MHz, and the requests went
 from 1,596–1,626 ms to 2,390–2,412 ms. Record the ceiling (`/sys/class/kgsl/kgsl-3d0/max_clock_mhz`) before and
-after each leg. Evidence: `ROUND3.md` §1–3, `device/wake_keeper.log`, `device/legs_status.txt`,
+after each leg. Evidence: `device/wake_keeper.log`, `device/legs_status.txt`,
 `device/r3b_chain.sh`, `device/r5_timing_gpu_L256_fiveq.state_after.txt`.
 
 **The NPU backend: NPU + CPU, BURST on every graph, a compile cache keyed by the file's content (2026-10-05).**
@@ -1794,7 +1794,7 @@ performance mode L64 takes 157.4 ms (122.5–240.8) against 47.6 ms with BURST. 
 NPU number against logcat: `Partitioned subgraph<0>, selected N ops, from a total of M ops. resulted in 2
 partitions.` for a JIT compile, `Flatbuffer model initialized from cached model.` for a cache load, and `Replacing 2
 out of 3 node(s) with delegate (DispatchDelegate)` for the NPU; `with delegate (TfLiteXNNPackDelegate)` or `Failed to
-apply compiler plugins` mean the CPU, without an error. Evidence: `ROUND8.md`, `r8.facts.md`,
+apply compiler plugins` mean the CPU, without an error. Evidence: `r8.facts.md`,
 `device/r8_N1_gate_L64_npu.json`, `device/r8_N2_gate_L128_npu.json`, `device/r8_N3_gate_L256_npu.json`,
 `device/r8_T1_timing_L64_npu.json`, `device/r8_T2_timing_L128_npu.json`, `device/r8_T3_timing_L256_npu.json`,
 `device/r8_M1.l64_modify.txt`, `device/r8_P1_gate_pair128_npu.logcat_all_grep.txt`,
@@ -1808,7 +1808,7 @@ JVM has the method, so run `:app:lintDebug` after host changes. (3) Gradle repor
 change as UP-TO-DATE and prints no results; evidence logs need `--rerun` or `--rerun-tasks`. (4) Samsung's lmkd
 writes a kill as `Reclaim '<package>' (<pid>) … oom_score_adj …`, followed by ActivityManager's `Process <package>
 (pid N) has died`; a check that looks only for `lowmemorykiller` or `Kill '<package>'` misses it and reports a
-timeout instead. Evidence: `ROUND1.md` §2, `ROUND2.md` §1–2, `ROUND5.md`,
+timeout instead. Evidence:
 `device/r5_autoplay_long.logcat_all_grep.txt`.
 
 ## 2026-11-03 addendum — NVIDIA NemotronLabs RE-USE (universal speech enhancement, 30 bidirectional Mamba blocks) on phone GPUs and the Galaxy S26 NPU
