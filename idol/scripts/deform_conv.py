@@ -1,6 +1,6 @@
 """torchvision.ops.deform_conv2d (modulated, stride 1, dilation 1, one offset group) in plain tensor ops that the LiteRT
 converter lowers (GATHER on the token axis, elementwise bilinear weights, one matmul), for a CPU graph of BiRefNet's
-decoder: the GPU has no gather, so the dense deformable convolution is a GPU wall (memory project_birefnet_park).
+decoder: the GPU has no gather, so the dense deformable convolution is a GPU wall.
 
 Same arithmetic as torchvision: for output pixel (h, w) and kernel tap k = (i, j), sample the input at
 (h - pad + i + dy_k, w - pad + j + dx_k) bilinearly, corners outside the image count as 0, multiply by mask_k, then
