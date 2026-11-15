@@ -1,5 +1,5 @@
 {
- "models": "/Users/majimadaisuke/code/idol_work/models_H",
+ "models": "/Users/USER/code/idol_work/models_H",
  "ref": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/armchair",
  "accel": "gpu",
  "precision": "metal default (fp16)",

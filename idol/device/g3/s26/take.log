@@ -1,4 +1,4 @@
-19:13:45 armchair: /Users/majimadaisuke/code/idol_work/demo_photos/p11112734.jpg
+19:13:45 armchair: /Users/USER/code/idol_work/demo_photos/p11112734.jpg
 19:13:59 armchair: tap Pick a photo at 540 955
 19:14:03 armchair: tap the newest photo at 179 1370
 19:14:08 armchair: tap Done at 881 2112
@@ -7,13 +7,13 @@
 19:18:28 armchair: done after 269 s
 19:18:42 armchair: viewer screenshot
 19:19:40 armchair: take B done
-19:19:47 backhoe: /Users/majimadaisuke/code/idol_work/demo_photos/p40271031.jpg
+19:19:47 backhoe: /Users/USER/code/idol_work/demo_photos/p40271031.jpg
 19:28:35 backhoe: tapped NEW by hand (the script's ^New$ missed the label 'NEW ')
 19:28:42 backhoe: tap Pick a photo at 540 955
 19:28:46 backhoe: tap the newest photo at 179 1370
 19:28:51 backhoe: tap Done at 881 2112
 19:29:15 backhoe: take A done
-19:30:25 r2_hold_gui: s26 idol-s26-r2b steps stop,state,wait:1500,stop,state subjects axolotl=/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/fx/axolotl/input.webp puppyside=/Users/majimadaisuke/code/idol_work/demo_photos/p1638724.jpg sneaker=/Users/majimadaisuke/code/idol_work/demo_photos/p14174467.jpg camera=/Users/majimadaisuke/code/idol_work/demo_photos/p1203803.jpg
+19:30:25 r2_hold_gui: s26 idol-s26-r2b steps stop,state,wait:1500,stop,state subjects axolotl=/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/fx/axolotl/input.webp puppyside=/Users/USER/code/idol_work/demo_photos/p1638724.jpg sneaker=/Users/USER/code/idol_work/demo_photos/p14174467.jpg camera=/Users/USER/code/idol_work/demo_photos/p1203803.jpg
 19:34:25 backhoe: run state octree after 343 s
 19:35:14 backhoe: done after 392 s
 19:35:28 backhoe: viewer screenshot
@@ -31,7 +31,7 @@
 19:42:44 axolotl: done after 360 s
 19:42:59 axolotl: viewer screenshot
 19:43:20 axolotl: take B done
-19:43:24 puppyside: /Users/majimadaisuke/code/idol_work/demo_photos/p1638724.jpg
+19:43:24 puppyside: /Users/USER/code/idol_work/demo_photos/p1638724.jpg
 19:43:37 puppyside: mode photo checked
 19:43:39 puppyside: tap Pick a photo at 540 955
 19:43:45 puppyside: tap the newest photo at 179 1370
@@ -41,7 +41,7 @@
 19:49:49 puppyside: done after 370 s
 19:50:04 puppyside: viewer screenshot
 19:50:18 puppyside: take B done
-19:50:21 sneaker: /Users/majimadaisuke/code/idol_work/demo_photos/p14174467.jpg
+19:50:21 sneaker: /Users/USER/code/idol_work/demo_photos/p14174467.jpg
 19:50:34 sneaker: mode photo checked
 19:50:36 sneaker: tap Pick a photo at 540 955
 19:50:41 sneaker: tap the newest photo at 179 1370

@@ -1,7 +1,7 @@
 {
  "ply": [
   "ref/armchair/gaussian.ply",
-  "/Users/majimadaisuke/code/idol_work/hf_test_262k_s7/out/gaussian.ply"
+  "/Users/USER/code/idol_work/hf_test_262k_s7/out/gaussian.ply"
  ],
  "cameras": {
   "azimuth_deg": [

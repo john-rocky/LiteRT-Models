@@ -35,5 +35,5 @@
  "dis_alpha_floor": null,
  "pass_": true,
  "precision": "metal default (fp16)",
- "models": "/Users/majimadaisuke/code/idol_work/models_v3"
+ "models": "/Users/USER/code/idol_work/models_v3"
 }

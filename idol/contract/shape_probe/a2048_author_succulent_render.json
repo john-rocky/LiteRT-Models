@@ -1,7 +1,7 @@
 {
  "ply": [
   "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/succulent/gaussian.ply",
-  "/Users/majimadaisuke/code/idol_work/probe_r2/anchors2048/succulent/gaussian.ply"
+  "/Users/USER/code/idol_work/probe_r2/anchors2048/succulent/gaussian.ply"
  ],
  "cameras": {
   "azimuth_deg": [

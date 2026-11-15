@@ -1,6 +1,6 @@
 {
- "models": "/Users/majimadaisuke/code/idol_work/models_a2048full",
- "ref": "/Users/majimadaisuke/code/idol_work/probe_r2/anchors2048/axolotl",
+ "models": "/Users/USER/code/idol_work/models_a2048full",
+ "ref": "/Users/USER/code/idol_work/probe_r2/anchors2048/axolotl",
  "accel": "gpu",
  "precision": "metal default (fp16)",
  "octree level 1 probs": {

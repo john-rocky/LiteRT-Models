@@ -7,13 +7,13 @@ vae3v3                     gpu      fp16acc32 vae_3              g1_vae_3    1  
 vaeattnv3                  gpu      fp16acc32 vae_attn           g1_vae_attn    1   1   3  000 -                         300 gate      rest=5
 vae4v3                     gpu      fp16acc32 vae_4              g1_vae_4    1   1   3  000 -                         300 gate      rest=5
 inputs (sha256):
-  42b98bf0e497dd59… 930410016 B /Users/majimadaisuke/code/idol_work/models_v3_parts/bir.tflite
-  a8c8b881165717d8… 3036028 B /Users/majimadaisuke/code/idol_work/models_v3_parts/vae_0.tflite
-  07e357358a2e50a1… 10858720 B /Users/majimadaisuke/code/idol_work/models_v3_parts/vae_1.tflite
-  203175990bbbf43a… 43164896 B /Users/majimadaisuke/code/idol_work/models_v3_parts/vae_2.tflite
-  d3375079a1558cdd… 56792512 B /Users/majimadaisuke/code/idol_work/models_v3_parts/vae_3.tflite
-  6ea00886e1fb2beb… 20179348 B /Users/majimadaisuke/code/idol_work/models_v3_parts/vae_4.tflite
-  4bec7ec37ad58661… 4423776 B /Users/majimadaisuke/code/idol_work/models_v3_parts/vae_attn.tflite
+  42b98bf0e497dd59… 930410016 B /Users/USER/code/idol_work/models_v3_parts/bir.tflite
+  a8c8b881165717d8… 3036028 B /Users/USER/code/idol_work/models_v3_parts/vae_0.tflite
+  07e357358a2e50a1… 10858720 B /Users/USER/code/idol_work/models_v3_parts/vae_1.tflite
+  203175990bbbf43a… 43164896 B /Users/USER/code/idol_work/models_v3_parts/vae_2.tflite
+  d3375079a1558cdd… 56792512 B /Users/USER/code/idol_work/models_v3_parts/vae_3.tflite
+  6ea00886e1fb2beb… 20179348 B /Users/USER/code/idol_work/models_v3_parts/vae_4.tflite
+  4bec7ec37ad58661… 4423776 B /Users/USER/code/idol_work/models_v3_parts/vae_attn.tflite
   runner 7e7539e5bd0c73ed… 3257376 B device/stage/r3_rt_runner
   libs: 2/2 OK against /Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/stage/libs230g/SHA256SUMS
   g1_bir: 1 files, 12582912 B, concat sha256 91b606ce2d8ae1f3…

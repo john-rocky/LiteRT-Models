@@ -4,7 +4,7 @@
  "accel": "cpu",
  "precision": "-",
  "graph": "bir",
- "graph_file": "/Users/majimadaisuke/code/idol_work/models_v2_ssd/bir.tflite",
+ "graph_file": "/Users/USER/code/idol_work/models_v2_ssd/bir.tflite",
  "fx": "g1_bir",
  "manifest": "device/fx/g1_bir.manifest.json",
  "mac_dir": "device/fx/mac/bir/model0",

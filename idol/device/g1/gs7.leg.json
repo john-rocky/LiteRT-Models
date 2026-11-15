@@ -4,7 +4,7 @@
  "accel": "gpu",
  "precision": "fp16acc32",
  "graph": "gs_7",
- "graph_file": "/Users/majimadaisuke/code/idol_work/models_v2_ssd/gs_7.tflite",
+ "graph_file": "/Users/USER/code/idol_work/models_v2_ssd/gs_7.tflite",
  "fx": "g1_gs_7",
  "manifest": "device/fx/g1_gs_7.manifest.json",
  "mac_dir": "device/fx/mac/gs_7/model0",

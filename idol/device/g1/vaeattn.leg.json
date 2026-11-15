@@ -4,7 +4,7 @@
  "accel": "gpu",
  "precision": "fp16acc32",
  "graph": "vae_attn",
- "graph_file": "/Users/majimadaisuke/code/idol_work/models_v2_ssd/vae_attn.tflite",
+ "graph_file": "/Users/USER/code/idol_work/models_v2_ssd/vae_attn.tflite",
  "fx": "g1_vae_attn",
  "manifest": "device/fx/g1_vae_attn.manifest.json",
  "mac_dir": "device/fx/mac/vae_attn/model0",

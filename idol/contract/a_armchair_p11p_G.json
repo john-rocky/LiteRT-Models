@@ -1,6 +1,6 @@
 {
  "where": "Pixel 11 Pro, the app, LiteRT 2.3.0, form G (2,048 anchors, shared middle denoiser block and Gaussian decoder graph, GPU FP16)",
- "ref": "/Users/majimadaisuke/code/idol_work/probe_r2/anchors2048/armchair",
+ "ref": "/Users/USER/code/idol_work/probe_r2/anchors2048/armchair",
  "run": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/device/results/p11p/G/parity_armchair_a2048",
  "app_row": {
   "id": "parity_armchair_a2048",

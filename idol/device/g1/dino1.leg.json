@@ -4,7 +4,7 @@
  "accel": "gpu",
  "precision": "fp16acc32",
  "graph": "dino_1",
- "graph_file": "/Users/majimadaisuke/code/idol_work/models_v2_ssd/dino_1.tflite",
+ "graph_file": "/Users/USER/code/idol_work/models_v2_ssd/dino_1.tflite",
  "fx": "g1_dino_1",
  "manifest": "device/fx/g1_dino_1.manifest.json",
  "mac_dir": "device/fx/mac/dino_1/model0",

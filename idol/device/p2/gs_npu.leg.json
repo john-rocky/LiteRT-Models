@@ -4,7 +4,7 @@
  "accel": "npu+cpu",
  "precision": "-",
  "graph": "gs_0",
- "graph_file": "/Users/majimadaisuke/code/idol_work/probe_r2/graphs/gs_0.tflite",
+ "graph_file": "/Users/USER/code/idol_work/probe_r2/graphs/gs_0.tflite",
  "fx": "g1_gs_0",
  "manifest": "device/fx/g1_gs_0.manifest.json",
  "mac_dir": "device/fx/mac/gs_0/model0",

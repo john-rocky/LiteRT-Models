@@ -1,5 +1,5 @@
 {
- "models": "/Users/majimadaisuke/code/idol_work/models_v3",
+ "models": "/Users/USER/code/idol_work/models_v3",
  "ref": "/Volumes/HD-SGDA/archive/Downloads/LiteRT-Models-idol-wt/idol/ref/axolotl",
  "accel": "gpu",
  "precision": "metal default (fp16)",

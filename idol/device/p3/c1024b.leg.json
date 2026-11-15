@@ -4,7 +4,7 @@
  "accel": "gpu",
  "precision": "fp16",
  "graph": "den_joint_mid_c1024",
- "graph_file": "/Users/majimadaisuke/code/idol_work/probe_r2/graphs/den_joint_mid_c1024.tflite",
+ "graph_file": "/Users/USER/code/idol_work/probe_r2/graphs/den_joint_mid_c1024.tflite",
  "fx": "p2_den_mid_01",
  "manifest": "device/fx/p2_den_mid_01.manifest.json",
  "mac_dir": "device/fx/mac/den_joint_mid_c1024/model0",

@@ -4,7 +4,7 @@
  "accel": "gpu",
  "precision": "fp16acc32",
  "graph": "den_joint_13",
- "graph_file": "/Users/majimadaisuke/code/idol_work/models_v2_ssd/den_joint_13.tflite",
+ "graph_file": "/Users/USER/code/idol_work/models_v2_ssd/den_joint_13.tflite",
  "fx": "g1_den_joint_13",
  "manifest": "device/fx/g1_den_joint_13.manifest.json",
  "mac_dir": "device/fx/mac/den_joint_13/model0",

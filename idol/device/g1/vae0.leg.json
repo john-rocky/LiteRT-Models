@@ -4,7 +4,7 @@
  "accel": "gpu",
  "precision": "fp16acc32",
  "graph": "vae_0",
- "graph_file": "/Users/majimadaisuke/code/idol_work/models_v2_ssd/vae_0.tflite",
+ "graph_file": "/Users/USER/code/idol_work/models_v2_ssd/vae_0.tflite",
  "fx": "g1_vae_0",
  "manifest": "device/fx/g1_vae_0.manifest.json",
  "mac_dir": "device/fx/mac/vae_0/model0",

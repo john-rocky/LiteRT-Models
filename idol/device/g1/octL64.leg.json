@@ -4,7 +4,7 @@
  "accel": "gpu",
  "precision": "fp16acc32",
  "graph": "oct",
- "graph_file": "/Users/majimadaisuke/code/idol_work/models_v2_ssd/oct.tflite",
+ "graph_file": "/Users/USER/code/idol_work/models_v2_ssd/oct.tflite",
  "fx": "g1_oct_L64",
  "manifest": "device/fx/g1_oct_L64.manifest.json",
  "mac_dir": "device/fx/mac/oct/model0",
