@@ -1034,7 +1034,7 @@ IoU 0.99**. FP16 recipe = `ai_edge_quantizer` `AlgorithmName.FLOAT_CASTING` +
 
 ## 2026-09-19 addendum — GLiNER2.5 Small (DeBERTa-v3-xsmall boundary extractor) on S26 GPU
 
-Shipped as `litert-community/GLiNER2.5-Small-LiteRT` (windows 128/256/512, fp32 + fp16-weight files, host contract). Run dir with every gate JSON: `~/code/codex-conversions/2026-09-19/gliner25-small/` (supervised Codex run, 8 rounds).
+Shipped as `litert-community/GLiNER2.5-Small-LiteRT` (windows 128/256/512, fp32 + fp16-weight files, host contract). Run dir with every gate JSON: `<work>/2026-09-19/gliner25-small/`.
 
 **Graph cut.** Export the dense prefix only (DeBERTa encoder → routing → boundary encoder → boundary query head → per-token/per-query projections) and stop at the first data-dependent op (top-k / `unique` / `nonzero` in the upstream proposer). The host keeps the upstream sparse pool/scorer/decoder (16 tensors, 466 KB) and the word-embedding lookup (`inputs_embeds` input). Emit ONE packed rank-4 leaf `[1,1,1,1108*T+4574]` holding the 17 logical outputs (no `[1,N,C]` fan-out).
 
@@ -1046,7 +1046,7 @@ Shipped as `litert-community/GLiNER2.5-Small-LiteRT` (windows 128/256/512, fp32 
 
 **Weight storage.** Dynamic-range int8 (ai-edge-quantizer 0.8.0 `dynamic_wi8_afp32`) compiles nowhere on S26 2.2.0 GPU: full recipe and FULLY_CONNECTED-only recipe both fail with `Unable to parse bc coord for BATCH axis` (catalog D13), while an empty-recipe control compiles — the int8 FC constants themselves are the trigger, even with rank-4 inputs. `FLOAT_CASTING` float16 on the 96 FC weights (+ DEQUANTIZE) compiles fully, F1 unchanged, 54–84 MB vs 98–128 MB. CPU int8 F1 was 0.993–0.995 (evidence only).
 
-**Android host port (Kotlin, `gliner25/`).** The tokenizer / input construction / sparse decoder were ported to pure Kotlin and checked two ways: JVM unit tests against captured Python inputs and the Python host decoder (195/195 window-input pairs, max confidence diff 4.2e-7), then an in-app gate on the S26 that also compares the ON-DEVICE tokenizer output with the captured Python inputs (70/70 on GPU FP32 and CPU). The second check is not optional: `Pattern.compile(..., Pattern.UNICODE_CHARACTER_CLASS)` passes every JVM test and throws `IllegalArgumentException: UNICODE_CHARACTER_CLASS flag not supported` at tokenizer init on Android — desktop-JVM parity does not prove Android parity for regex-based splitters; spell the Unicode classes out explicitly and use no flags. The upstream default word splitter is `WhitespaceTokenSplitter` (`DEFAULT_WORD_SPLITTER = "whitespace"`), not the `CharLevelSplitter` regex. Cost split on the S26 at s128 (debug build): graph to readback ~12 ms, Kotlin sparse decode ~10 ms after optimization (first port: ~47–58 ms). Two facts from that pass: ~70% of the first port's decode time came from the app being debuggable (non-debuggable build 15.6 ms vs 58 ms, same code) — time host code in a non-debuggable variant before optimizing it; the rest went with flat primitive buffers, cached tensor views, primitive stable sorts and a small persistent worker pool, with reduction order and top-k/tie semantics untouched (confidences bit-identical on device). A fast steady state is not what the user sees: the first request after launch still ran cold (decode 56.6 ms, tokenize+embed 21.6 ms vs ~7 ms / ~3 ms hot) because only the graph was warmed. Repeating the full pipeline 12 times before the UI reports Ready (0.5–0.6 s at startup) brought the first request to 25–38 ms total; measure it screen-on — with the screen off the S26 power-saves and the same first request is 1.5–2x slower. Evidence: `~/code/codex-conversions/2026-09-19/gliner25-android/` (supervised Codex run, 8 rounds).
+**Android host port (Kotlin, `gliner25/`).** The tokenizer / input construction / sparse decoder were ported to pure Kotlin and checked two ways: JVM unit tests against captured Python inputs and the Python host decoder (195/195 window-input pairs, max confidence diff 4.2e-7), then an in-app gate on the S26 that also compares the ON-DEVICE tokenizer output with the captured Python inputs (70/70 on GPU FP32 and CPU). The second check is not optional: `Pattern.compile(..., Pattern.UNICODE_CHARACTER_CLASS)` passes every JVM test and throws `IllegalArgumentException: UNICODE_CHARACTER_CLASS flag not supported` at tokenizer init on Android — desktop-JVM parity does not prove Android parity for regex-based splitters; spell the Unicode classes out explicitly and use no flags. The upstream default word splitter is `WhitespaceTokenSplitter` (`DEFAULT_WORD_SPLITTER = "whitespace"`), not the `CharLevelSplitter` regex. Cost split on the S26 at s128 (debug build): graph to readback ~12 ms, Kotlin sparse decode ~10 ms after optimization (first port: ~47–58 ms). Two facts from that pass: ~70% of the first port's decode time came from the app being debuggable (non-debuggable build 15.6 ms vs 58 ms, same code) — time host code in a non-debuggable variant before optimizing it; the rest went with flat primitive buffers, cached tensor views, primitive stable sorts and a small persistent worker pool, with reduction order and top-k/tie semantics untouched (confidences bit-identical on device). A fast steady state is not what the user sees: the first request after launch still ran cold (decode 56.6 ms, tokenize+embed 21.6 ms vs ~7 ms / ~3 ms hot) because only the graph was warmed. Repeating the full pipeline 12 times before the UI reports Ready (0.5–0.6 s at startup) brought the first request to 25–38 ms total; measure it screen-on — with the screen off the S26 power-saves and the same first request is 1.5–2x slower. Evidence: `<work>/2026-09-19/gliner25-android/`.
 
 ### Sopro v2 turbo (zero-shot voice-cloning TTS) — domain gates for reduced precision, exact right-padding of causal conv stacks, the fp32-FFT host trap
 
@@ -1172,7 +1172,7 @@ Shipped as `litert-community/GLiNER2.5-Decide-LiteRT` (windows 128/256/512, fp16
 
 ## 2026-09-29 addendum — Laya Multilingual on fp16: the NPU passes after three fp32-exact rewrites, GPU fp16 does not
 
-Evidence: `~/code/codex-conversions/2026-09-29/laya-fp16-gate/` (`STATUS.md`, `device/`, `device_zoo/`, `emulation/`).
+Evidence: `<work>/2026-09-29/laya-fp16-gate/` (`STATUS.md`, `device/`, `device_zoo/`, `emulation/`).
 Galaxy S26 SM-S942Q, LiteRT 2.2.0, S256 WFP16 graph, 201 fixture rows, thermal status none before each run.
 
 **The shipped graph returns no finite row in fp16.** On the S26 GPU at `Precision.FP16`, on the Hexagon NPU (which
@@ -1237,7 +1237,7 @@ kept in float. Weight-only int8 / int4 does not change NPU speed anyway (NPU fac
 ## 2026-09-30 addendum — Julia-1 (mmBERT-small decision model) on the S26 GPU: an F32 checkpoint pays for fp16 storage, and fp16 arithmetic changes its answers
 
 Shipped as `litert-community/Julia-1-LiteRT` (S512 and S1024 fp32 graphs, float16 token table, the source
-`tokenizer.json`, Python host, conversion scripts). Evidence: `~/code/codex-conversions/2026-09-30/julia1-litert/`
+`tokenizer.json`, Python host, conversion scripts). Evidence: `<work>/2026-09-30/julia1-litert/`
 (`scripts/julia_graph.py`, `scripts/safe_v*.json`, `results/`, `device/`; `card/README.facts.md` names the source file
 of every number). Galaxy S26 SM-S942Q, LiteRT 2.2.0, a debug gate app in the Laya English pattern (captured ids +
 markers from `/data/local/tmp`, raw marker logits back to the Mac). Reference = the author's runtime raw logits on CPU
@@ -1336,7 +1336,7 @@ alone does not reproduce.
 
 Shipped as `litert-community/Open-Decision-DeBERTa-v3-Large-LiteRT` (S256 and S512 fp16-weight graphs, float16
 word table, the source `tokenizer.json`, Python host, Kotlin snippet, conversion scripts). Evidence:
-`~/code/codex-conversions/2026-10-01/openjev-deberta-litert/` (`scripts/graph.py`, `results/`, `device/`;
+`<work>/2026-10-01/openjev-deberta-litert/` (`scripts/graph.py`, `results/`, `device/`;
 `card/README.facts.md` names the source file of every number). Reference = the checkpoint's own
 `typed_decisions` package (CPU fp32, transformers 4.57.6) on the author's public test files
 (`kotoba-lang/typed-decisions`: 1,809 requests / 4,327 questions, 1,830 of them boundary = top-1 < 0.9).
@@ -1403,7 +1403,7 @@ exotic characters (an IPA "ꜜ" → `[UNK]` vs byte pieces), so a port must foll
 
 Shipped as `mlboydaisuke/ModernBERT-Ja-310M-Decision-LiteRT` (CC BY-SA 4.0, the source weights' license, so not litert-community;
 S256 and S512 fp16-weight graphs, float16 token table, the source `tokenizer.json`, Python host, Kotlin block, the debug gate app,
-conversion scripts). Evidence: `~/code/codex-conversions/2026-10-02/modernbert-ja-decision-litert/` (`scripts/graph.py`,
+conversion scripts). Evidence: `<work>/2026-10-02/modernbert-ja-decision-litert/` (`scripts/graph.py`,
 `results/`, `device/`; `card/README.facts.md` names the source file of every number). Galaxy S26 SM-S942Q, LiteRT 2.2.0, a debug
 gate app in the Laya English pattern. Reference = the card's own transformers snippet with transformers 5.17.0 (the author's
 version) on CPU FP32: 547 requests / 621 questions / 2,357 pairs (JGLUE v1.3 test 250 JNLI + 250 JCommonsenseQA, the author's
@@ -1488,7 +1488,7 @@ transformers version (the author trained and ran with bf16 autocast).
 
 Shipped as `litert-community/GLiClass-Edge-v3.0-LiteRT` (S128 / S256 graphs, fp32 and fp16-weight, float16 token
 table, Python host, Kotlin snippet, conversion scripts, the Android sample). Evidence:
-`~/code/codex-conversions/2026-10-02/gliclass-edge-litert/` (`card/README.facts.md` names the source of every number).
+`<work>/2026-10-02/gliclass-edge-litert/` (`card/README.facts.md` names the source of every number).
 Reference = pip `gliclass` 0.1.20 on CPU fp32 (it needs transformers ≥ 5): 552 requests (SemIf authored144, ag_news
 test 200, banking77 test 200 as 25-label own subsets, the card's 2, invented 6), 482 fit 128 tokens.
 
@@ -1529,7 +1529,7 @@ The Kotlin host matches Python `tokenizers` on 552/552 oracle strings and 261/26
 
 ## 2026-10-02 addendum — GLiNER2.5 Multi (mDeBERTa-v3-base boundary extractor) on S26 GPU + NPU
 
-Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-weight + fp32 graphs, fp16 + fp32 host tables, host contract, Python host). Run dir with every gate JSON: `~/code/codex-conversions/2026-09-19/gliner25-multi/` (supervised Codex run, 8 rounds over 2026-09-19 and 2026-10-02).
+Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-weight + fp32 graphs, fp16 + fp32 host tables, host contract, Python host). Run dir with every gate JSON: `<work>/2026-09-19/gliner25-multi/` (runs on 2026-09-19 and 2026-10-02).
 
 **Recipe reuse.** The GLiNER2.5 Small graph type (dense prefix, rank-4 attention, baked log-bucket relative positions, one packed output) exported mDeBERTa-v3-base (hidden 768, 12 layers, vocab 250,112) on the first attempt at all three windows; packed length `1492·T+6494`, 1,148–1,149 ops after fp16 weight casting, no ML Drift rejection. Only the hard-coded dimensions and the sparse-decoder parameter list (traced, 16 tensors, 860,676 B) changed.
 
