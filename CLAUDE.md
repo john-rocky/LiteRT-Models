@@ -57,13 +57,13 @@ cd <module>/                # e.g. cd mobilesam/
 ./gradlew :app:installDebug  # install to a connected device
 ```
 
-The user builds and tests on a real device — do not run build/test commands speculatively to "verify" Android code (per global instructions). Just edit and let the user build.
+Builds and tests run on a real device — do not run build/test commands speculatively to "verify" Android code. Just edit; the build and the test happen on the device.
 
 `minSdk = 26`, `compileSdk = 35`, Kotlin JVM target 17, AGP 8.7.3, Kotlin 2.1.10, `arm64-v8a` only. Every module pins LiteRT `com.google.ai.edge.litert:litert:2.1.3`. Modules that also use ONNX add `com.microsoft.onnxruntime:onnxruntime-android:1.24.3`.
 
 ## Model files: how they get to the device
 
-Model files are **never committed** (CoreML, `.tflite` over a few MB, build outputs, etc. are gitignored / excluded by user policy). Each sample app has one of two patterns:
+Model files are **never committed** (CoreML, `.tflite` over a few MB, build outputs, etc. are gitignored or kept out of the repo). Each sample app has one of two patterns:
 
 1. **Small models** — bundled in `app/src/main/assets/` and loaded with `CompiledModel.create(context.assets, "model.tflite", options, null)`. `aaptOptions { noCompress += "tflite" }` is set so the file is mmappable.
 2. **Large models (>~150 MB)** — staged via `adb push /data/local/tmp/...`, then moved into the app's private `filesDir` by an `install_to_device.sh` script (see `voiceassistant/scripts/install_to_device.sh`, `kokoro/scripts/install_to_device.sh`, etc.). The app loads them with the file-path overload `CompiledModel.create(path, options, null)`. The first launch is expected to fail with "model not found" before the install script has been run.
@@ -83,16 +83,15 @@ When working on a new module, follow whichever pattern its peers use. Don't intr
 
 Most of these patches are pre-packaged in `litert_gpu_toolkit` — prefer `convert_for_gpu(model, dummy_input, output_path)` over hand-rolling the patches again.
 
-## Project conventions (from user's global CLAUDE.md)
+## Project conventions
 
-- **Do not include "claude" in commit messages or as a committer.**
 - Keep the repo small. Do not commit CoreML models, build outputs, or other large/derived files.
-- **Build testing is done on the actual device** — do not run `./gradlew assemble` etc. as a validation step. Edit, then hand off.
-- Code comments and UI strings are in **English**, even though the user often communicates in Japanese.
+- **Build testing is done on the actual device** — do not run `./gradlew assemble` etc. as a validation step.
+- Code comments and UI strings are in **English**.
 
 ## Google style guide — strict SECOND PASS (2026-07-07)
 
-All code destined for litert-samples PRs is **teaching material** (code that people read to learn from) and must END UP strictly following https://google.github.io/styleguide/. But the workflow is **two-phase, by the user's explicit policy**:
+All code destined for litert-samples PRs is **teaching material** (code that people read to learn from) and must END UP strictly following https://google.github.io/styleguide/. But the workflow is **two-phase**:
 
 1. **Draft phase — write freely.** While solving the problem (conversion debugging, app wiring, device iteration), do NOT constrain the writing with style rules; that risks regressing the agent's problem-solving. Quick names, scratch logging, long functions are all fine here.
 2. **Style pass — before commit/PR.** Once it works, rewrite to strict Google style (rules below) as a dedicated pass. Nothing reaches a PR without this pass.
@@ -110,7 +109,7 @@ All code destined for litert-samples PRs is **teaching material** (code that peo
 - Module docstring, Google-format function docstrings (Args/Returns/Raises), type hints on public functions.
 - Top-level UPPER_SNAKE constants; `if __name__ == "__main__":` guard; 4-space indent, 80-col target.
 
-**Verification for multi-file refactors (user-approved exception 2026-07-07):** before pushing a style-only sweep commit, run a compile check (`./gradlew compileDebugKotlin` for the touched app, `python -m py_compile` for scripts). This is breakage-verification, not build testing — the on-device rule still stands for functional validation.
+**Verification for multi-file refactors:** before pushing a style-only sweep commit, run a compile check (`./gradlew compileDebugKotlin` for the touched app, `python -m py_compile` for scripts). This is breakage-verification, not build testing — the on-device rule still stands for functional validation.
 
 ### Sample app STRUCTURE — also a SECOND pass, never a draft-phase constraint (2026-07-09)
 
