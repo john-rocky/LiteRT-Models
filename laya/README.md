@@ -121,7 +121,7 @@ Graph timings cover input writes, `run()`, and output readback for the main and 
 Embedding lookup is measured separately. Request totals also include host preparation and
 decoding. Compilation and automatic warm-up are initialization work.
 
-## Reproduce host and device gates
+## Reproduce host and device tests
 
 The JVM suite uses a separate local fixture bundle and does not invoke model inference. Set
 `LAYA_TEST_DATA` as described in [scripts/TEST_DATA.md](scripts/TEST_DATA.md), then run:
@@ -130,7 +130,7 @@ The JVM suite uses a separate local fixture bundle and does not invoke model inf
 ./gradlew --no-daemon :app:testDebugUnitTest
 ```
 
-For a device gate, install the debug APK, models, and supplied S256 gate file, then use:
+For a device test, install the debug APK, models, and supplied S256 gate file, then use:
 
 ```bash
 export ANDROID_SERIAL=your-device-serial
