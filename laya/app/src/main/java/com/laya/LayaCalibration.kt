@@ -26,7 +26,7 @@ class LayaCalibration(
         }]
 
   companion object {
-    /** Leaves logits uncalibrated for the captured T=1 reference gate. */
+    /** Leaves logits uncalibrated for the captured T=1 reference check. */
     fun identity(): LayaCalibration = LayaCalibration()
 
     /** Loads calibration from an installed JSON file. */

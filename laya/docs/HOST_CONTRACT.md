@@ -57,7 +57,7 @@ of `1e-9`, and `k/255`. Action probability is `softmax(act_logits)[0]`; it is un
 
 Option temperature first uses `temperature_by_options` with bucket suffix `2`, `3-5`, `6-10`,
 or `11+`, then `temperature[qtype]`. Its floor is `1e-3`. **Calibrated** loads the supplied JSON;
-**T=1 (uncalibrated)** uses identity temperatures. The calibrated UI and T=1 conversion gates
+**T=1 (uncalibrated)** uses identity temperatures. The calibrated UI and T=1 conversion checks
 are intentionally separate measurements.
 
 Choice returns the first argmax label and ordered probabilities. Score returns the expected
@@ -73,4 +73,4 @@ The host implementation is in `app/src/main/java/com/laya/`: `LayaTokenizer.kt`,
 `LayaEngine.kt`. JVM parity tests compare all captured IDs, marker positions, official and
 calibrated answer dictionaries, state serialization, and embedding values. Fixture layout and
 counts are documented in [TEST_DATA.md](../scripts/TEST_DATA.md). No JVM parity result substitutes
-for the on-device tokenizer and numerical gate.
+for the on-device tokenizer and numerical check.

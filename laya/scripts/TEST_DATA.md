@@ -21,7 +21,7 @@ validation-data/
     fp16_conversion_reference.bin
     embedding_lookup_reference.json
     embedding_lookup_reference.bin
-    gate_rows_s256.json          # optional: debug device gate
+    gate_rows_s256.json          # optional: debug device check
 ```
 
 Run from the module root after supplying this bundle:
@@ -32,7 +32,7 @@ export LAYA_TEST_DATA="$PWD/validation-data"
 ```
 
 `LAYA_TEST_RESULTS` optionally selects a separate report directory. A missing or incomplete
-bundle must not be counted as a passing parity gate. The model graphs are not used by JVM
+bundle must not be counted as a passing parity check. The model graphs are not used by JVM
 host-parity tests.
 
 ## Captures and checks
@@ -68,12 +68,12 @@ the Android runner can tokenize and build each row independently before model in
 The current file is **1,018,117 bytes**, SHA-256
 `037bd3c83f02f5aade4c559984a55d31cd4c231af493aee5fb880a4af35a7aa8`.
 
-The module does not bundle the gate file or raw calibration corpora. Supply the independently
+The module does not bundle the rows file or raw calibration corpora. Supply the independently
 prepared file with `scripts/install_to_device.sh --gate-rows FILE` alongside the model assets.
 The installer places it in the app's private `files/fixtures/` directory. The `gate=true` intent
 entry exists only in the debug source set; release builds launch the normal product UI.
 
-Gate acceptance compares all 201 token sequences and marker lists exactly, all 81 choice/score
+Device acceptance compares all 201 token sequences and marker lists exactly, all 81 choice/score
 argmax results under the recorded tie rule, every option/noul/action probability within 0.01 of
 the captured official dictionary, and finite outputs. GPU acceptance additionally requires
 explicit FP32 precision and the runtime's full-residency, one-partition delegate evidence.

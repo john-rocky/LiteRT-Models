@@ -54,7 +54,7 @@ adb -s "$ANDROID_SERIAL" shell am start -n com.laya/.MainActivity
 The installer validates the selected files before contacting the device, stages them on the
 device, and copies them into this app's private files with `run-as com.laya`. Install the debug
 APK first because `run-as` needs a debuggable package. `--graph wfp16` or `--graph fp32` installs
-one variant; `wfp16` is the default. Use `--graph both` to install both for a comparative gate.
+one variant; `wfp16` is the default. Use `--graph both` to install both for a comparison.
 The current default is WFP16 storage. For the alternate storage, stop this app and launch it
 with `--es storage fp32`; the extra is named `storage`, not `graph`.
 
@@ -65,8 +65,8 @@ an application.
 
 ## External files
 
-The selected WFP16 graph and shared assets total **679,274,514 bytes**. The optional FP32
-graph adds 500,970,372 bytes (1,180,244,886 bytes with both); only one main graph is loaded per process. The embedding table is
+The selected WFP16 graph and shared assets total **679,274,443 bytes**. The optional FP32
+graph adds 500,970,372 bytes (1,180,244,815 bytes with both); only one main graph is loaded per process. The embedding table is
 memory-mapped read-only. Hashes and exact sizes are checked by the installer manifest.
 
 | File | Bytes | Purpose |
@@ -74,14 +74,14 @@ memory-mapped read-only. Hashes and exact sizes are checked by the installer man
 | `laya_ml_s256_embeds_wfp16.tflite` | 250,889,040 | S256 main graph; FP16 fully connected weight storage |
 | `laya_ml_s256_embeds_fp32.tflite` | 500,970,372 | Optional S256 main graph; FP32 weight storage |
 | `laya_ml_act_head_fp32.tflite` | 795,816 | Shared action head |
-| `laya_ml_calibration.json` | 9,145 | Option-count temperatures and calibration provenance |
+| `laya_ml_calibration.json` | 9,074 | Option-count temperatures and calibration provenance |
 | `tokenizer.json` | 34,363,188 | Complete BPE vocabulary, added tokens, and merge ranks |
 | `tokenizer_config.json` | 524 | Checkpoint tokenizer metadata |
 | `token_embeddings_fp16.bin` | 393,216,000 | Little-endian FP16 table, shape `[256000,768]` |
 | `token_embeddings.json` | 801 | Table shape, hash, source revision, and PAD policy |
 
-For a debug numerical gate, also pass `--gate-rows FILE` to the installer. The current S256
-gate file is 1,018,117 bytes and is validation data, not part of the app download. See
+For a debug numerical check, also pass `--gate-rows FILE` to the installer. The current S256
+rows file is 1,018,117 bytes and is validation data, not part of the app download. See
 [test data](scripts/TEST_DATA.md). The three preset schemas are bundled in
 `app/src/main/assets/presets.json`.
 
@@ -130,7 +130,7 @@ The JVM suite uses a separate local fixture bundle and does not invoke model inf
 ./gradlew --no-daemon :app:testDebugUnitTest
 ```
 
-For a device test, install the debug APK, models, and supplied S256 gate file, then use:
+For a device test, install the debug APK, models, and supplied S256 rows file, then use:
 
 ```bash
 export ANDROID_SERIAL=your-device-serial
@@ -146,7 +146,7 @@ Wait for completion before pulling the report. Use `--es storage fp32` for the o
 CPU, and force-stop this app between configurations. The output filename
 contains accelerator and window, so save each variant before starting another. Reports include
 on-device token IDs, marker positions, numerical outputs, creation and per-row timings;
-completion uses the `LAYA_GATE` log tag. The gate entry is debug-only; release launches the UI.
+completion uses the `LAYA_GATE` log tag. The `gate` extra is debug-only; release launches the UI.
 
 ## Verified on
 
@@ -165,7 +165,7 @@ four-decimal dictionaries was **0.0001 FP32** and **0.0014 WFP16**. Runtime: ai-
 Galaxy S26 SM-S942Q, Android 16, LiteRT 2.2.0, no other workload, screen on, thermal status
 none before each run. GPU: main 1809/1809 ops and act 4/4 ops in one partition each, precision
 explicitly FP32. NPU (Hexagon v81, JIT): `NPU accelerator registered.` and the main graph replaced by
-one `DispatchDelegate` node; the act head runs on the CPU. Each gate has 201/201 exact on-device IDs
+one `DispatchDelegate` node; the act head runs on the CPU. Each run has 201/201 exact on-device IDs
 and markers, 81/81 choice/score argmax matches and finite outputs. The probability comparison
 includes noul and act_probability.
 
@@ -176,7 +176,7 @@ includes noul and act_probability.
 
 These per-question times include main+act writes, run enqueue and readback, excluding
 host preparation, embedding lookup and decode. Before this graph revision (2026-09-21) the GPU
-gate measured 50.881 ms WFP16, 50.754 ms FP32 storage and 163.020 ms on the CPU; the revision
+check measured 50.881 ms WFP16, 50.754 ms FP32 storage and 163.020 ms on the CPU; the revision
 changes neither answers nor GPU time. The tokenizer loads in about 1.5 s in the debug build.
 
 GPU fp16 arithmetic was measured on the same phone with this graph and is not used: FP16 with

@@ -13,8 +13,8 @@ class LayaGateRunner(private val context: Context, private val engine: LayaEngin
   data class Report(val path: String, val status: String, val error: String? = null)
 
   fun run(backend: LayaEngine.Backend, window: Int): Report {
-    check(BuildConfig.DEBUG) { "The fixture gate is available only in the debug build" }
-    require(window == 256 || window == 512) { "Expected gate window 256 or 512" }
+    check(BuildConfig.DEBUG) { "The fixture check is available only in the debug build" }
+    require(window == 256 || window == 512) { "Expected window 256 or 512" }
     val output = File(context.filesDir, "laya_gate_${backend.name.lowercase()}_$window.json")
     val report =
       linkedMapOf<String, Any?>(
@@ -49,7 +49,7 @@ class LayaGateRunner(private val context: Context, private val engine: LayaEngin
       val fixture = LayaJson.asObject(LayaJson.parse(fixtureFile))
       require((fixture["window"] as Number).toInt() == window) { "Fixture window mismatch" }
       val rows = LayaJson.asArray(fixture["rows"]).map { LayaJson.asObject(it) }
-      check(rows.isNotEmpty()) { "Gate fixture has no rows" }
+      check(rows.isNotEmpty()) { "Fixture has no rows" }
       report["expected_rows"] = rows.size
       val compileStarted = System.nanoTime()
       engine.initialize(backend, window)

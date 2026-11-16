@@ -12,9 +12,9 @@
   <string name="status_running">Answering questions…</string>
   <string name="status_error">Model unavailable</string>
   <string name="status_not_installed">Model not installed</string>
-  <string name="status_gate_running">Running debug fixture gate…</string>
-  <string name="status_gate_measured">Gate measurements saved for review</string>
-  <string name="status_gate_failed">Debug fixture gate failed</string>
+  <string name="status_gate_running">Running debug fixture check…</string>
+  <string name="status_gate_measured">Check measurements saved for review</string>
+  <string name="status_gate_failed">Debug fixture check failed</string>
   <string name="gate_file">Report: %1$s</string>
   <string name="error_message">%1$s</string>
   <string name="missing_model_file">Missing %1$s. Run scripts/install_to_device.sh, then relaunch.</string>

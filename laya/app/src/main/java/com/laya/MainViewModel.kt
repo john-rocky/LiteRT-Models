@@ -41,7 +41,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
   /** State consumed by the screen with lifecycle-aware collection. */
   val uiState: StateFlow<UiState> = mutableUiState.asStateFlow()
 
-  /** Starts the debug gate or the interactive pipeline once per ViewModel lifetime. */
+  /** Starts the debug check or the interactive pipeline once per ViewModel lifetime. */
   fun start(
     gate: Boolean,
     accelerator: String?,
@@ -83,7 +83,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
           }
         } catch (failure: Exception) {
           showFailure(failure)
-          Log.e("LAYA_GATE", "Gate setup failed", failure)
+          Log.e("LAYA_GATE", "Check setup failed", failure)
         } catch (failure: LinkageError) {
           showFailure(failure)
           Log.e("LAYA_GATE", "Native runtime failed", failure)

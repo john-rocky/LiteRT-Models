@@ -57,7 +57,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
     val totalMs: Double
       get() = writeMs + enqueueMs + readbackMs
 
-    /** Emits named timing components for machine-readable gate reports. */
+    /** Emits named timing components for machine-readable reports. */
     fun toMap(): Map<String, Double> =
       linkedMapOf(
         "write_ms" to writeMs,
@@ -135,7 +135,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
   val tokenizerLoadMs: Double
   /** Metadata parsing and table mapping duration in milliseconds. */
   val embeddingLoadMs: Double
-  /** Metadata hash recorded in each device gate report. */
+  /** Metadata hash recorded in each device check report. */
   val embeddingTableSha256: String
     get() = embeddings.sha256
 
@@ -168,7 +168,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
       Unit
     }
 
-  /** The gate and interactive app use exactly the same tokenizer and prompt builder. */
+  /** The device check and interactive app use exactly the same tokenizer and prompt builder. */
   fun prepare(
     state: Any?,
     question: Map<String, Any?>,
@@ -265,7 +265,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
     val prepared = System.nanoTime()
     val raw = runRaw(sequence, backend, window)
     check(raw.finite) {
-      "Nonfinite model output on ${backend.name}; inspect the device gate report"
+      "Nonfinite model output on ${backend.name}; inspect the device check report"
     }
     val decodeStarted = System.nanoTime()
     val decoded =
@@ -378,7 +378,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
     }
 
   companion object {
-    /** Runtime pin shared with the version catalog and gate metadata. */
+    /** Runtime pin shared with the version catalog and report metadata. */
     const val LITERT_VERSION = "2.2.0"
     private const val SIGNATURE = "serving_default"
     /** Shared files required by either graph storage choice. */
