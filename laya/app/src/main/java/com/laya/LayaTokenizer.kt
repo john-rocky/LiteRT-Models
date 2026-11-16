@@ -4,7 +4,7 @@ package com.laya
 import java.io.File
 import java.util.PriorityQueue
 
-/** Encoder for the pinned multilingual Laya tokenizer; no native or Android APIs. */
+/** Encoder for the multilingual Laya checkpoint's tokenizer; no native or Android APIs. */
 class LayaTokenizer(file: File) {
   private data class AddedToken(
     val content: String,
@@ -35,7 +35,7 @@ class LayaTokenizer(file: File) {
   private val byteIds = IntArray(256)
   /** JSON parsing and index construction time, excluding encoding. */
   val loadTimeMs: Double
-  /** Number of vocabulary entries checked against the pinned multilingual tokenizer. */
+  /** Number of vocabulary entries checked against the multilingual checkpoint's tokenizer. */
   val vocabularySize: Int
     get() = vocabulary.size
 

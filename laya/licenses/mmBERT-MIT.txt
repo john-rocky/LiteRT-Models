@@ -4,7 +4,7 @@ Declaration: https://huggingface.co/jhu-clsp/mmBERT-base/blob/c5955035435e2bf121
 Attribution: Marc Marone, Orion Weller, William Fleshman, Eugene Yang,
 Dawn Lawrie, and Benjamin Van Durme.
 
-The pinned model repository does not provide a separate copyright notice or
+The model repository at c5955035 does not provide a separate copyright notice or
 LICENSE file. No copyright year or holder has been inferred. The following
 standard MIT permission and disclaimer text accompanies its declared license.
 Text reference: https://opensource.org/license/mit
