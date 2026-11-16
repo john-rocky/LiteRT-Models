@@ -65,8 +65,8 @@ an application.
 
 ## External files
 
-The selected WFP16 graph and shared assets total **679,274,525 bytes**. The optional FP32
-graph adds 500,970,372 bytes (1,180,244,897 bytes with both); only one main graph is loaded per process. The embedding table is
+The selected WFP16 graph and shared assets total **679,274,514 bytes**. The optional FP32
+graph adds 500,970,372 bytes (1,180,244,886 bytes with both); only one main graph is loaded per process. The embedding table is
 memory-mapped read-only. Hashes and exact sizes are checked by the installer manifest.
 
 | File | Bytes | Purpose |
@@ -74,7 +74,7 @@ memory-mapped read-only. Hashes and exact sizes are checked by the installer man
 | `laya_ml_s256_embeds_wfp16.tflite` | 250,889,040 | S256 main graph; FP16 fully connected weight storage |
 | `laya_ml_s256_embeds_fp32.tflite` | 500,970,372 | Optional S256 main graph; FP32 weight storage |
 | `laya_ml_act_head_fp32.tflite` | 795,816 | Shared action head |
-| `laya_ml_calibration.json` | 9,156 | Option-count temperatures and calibration provenance |
+| `laya_ml_calibration.json` | 9,145 | Option-count temperatures and calibration provenance |
 | `tokenizer.json` | 34,363,188 | Complete BPE vocabulary, added tokens, and merge ranks |
 | `tokenizer_config.json` | 524 | Checkpoint tokenizer metadata |
 | `token_embeddings_fp16.bin` | 393,216,000 | Little-endian FP16 table, shape `[256000,768]` |

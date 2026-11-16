@@ -19,8 +19,8 @@
     },
     {
       "name": "laya_ml_calibration.json",
-      "size_bytes": 9156,
-      "sha256": "80e148c68154b607e7bb66446f064b1fe5da649e1074c917b25e02551a566f2c"
+      "size_bytes": 9145,
+      "sha256": "8ffbb35ebd31fe2c726785e25d35569a63781c930498c7b57b3e1106d25d47c1"
     },
     {
       "name": "tokenizer.json",
