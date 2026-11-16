@@ -36,7 +36,7 @@ class PhocinaeGateRunner(private val context: Context, private val engine: Phoci
         "temperature" to 1.0,
         "tokenizer_load_ms" to engine.tokenizerLoadMs,
         "embedding_map_ms" to engine.embeddingLoadMs,
-        "numerical_acceptance" to "NOT_EVALUATED: supervisor supplies round-2 tolerances",
+        "numerical_acceptance" to "NOT_EVALUATED: tolerances are set separately",
         "timing_definition" to
           "main and action write + run enqueue + output readback; cold first call excluded from warm summary",
       )

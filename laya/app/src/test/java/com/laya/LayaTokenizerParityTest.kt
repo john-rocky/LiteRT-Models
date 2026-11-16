@@ -27,7 +27,7 @@ class LayaTokenizerParityTest {
     val mismatches = rows.filter { it["exact"] != true }
     val report =
       linkedMapOf<String, Any?>(
-        "device" to "Apple M4 Max (supervisor supplied)",
+        "device" to "Apple M4 Max",
         "runtime" to System.getProperty("java.runtime.version"),
         "total" to rows.size,
         "exact" to rows.count { it["exact"] == true },

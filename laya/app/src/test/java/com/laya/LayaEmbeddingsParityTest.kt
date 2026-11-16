@@ -148,7 +148,7 @@ class LayaEmbeddingsParityTest {
       "jvm_embedding_lookup.json",
       linkedMapOf(
         "status" to if (failures.isEmpty()) "PASS" else "FAIL",
-        "device" to "Apple M4 Max (supervisor supplied)",
+        "device" to "Apple M4 Max",
         "runtime" to System.getProperty("java.runtime.version"),
         "rows" to details.size,
         "rows_exact" to details.count { it["raw_float_bits_exact"] == true },
