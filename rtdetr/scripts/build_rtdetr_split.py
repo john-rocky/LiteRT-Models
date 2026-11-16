@@ -2,7 +2,7 @@
 # ⚠ DEVICE-CORRECT ENTRY POINT = build_rtdetr_fix3.py (imports this as the patch/GraphB library).
 #   The GraphA below is the ORIGINAL multi-output version; on device it hits the Mali 3D-sequence fanout
 #   bug (memory_raw/output_memory/enc_coord corrupt -> cats lost). fix3 emits only enc_class+memory_raw*2
-#   and moves enc_output+bbox_head to the host. See reference_mali_3d_sequence_fanout_bug in memory.
+#   and moves enc_output+bbox_head to the host.
 #   Graph A (GPU) = ResNet18-vd backbone + hybrid encoder + enc heads
 #                   -> enc_class[1,N,80], enc_coord[1,N,4], output_memory[1,N,256], memory[1,N,256]
 #   host = topk-300 by max class score -> gather coords(ref) + output_memory(target)

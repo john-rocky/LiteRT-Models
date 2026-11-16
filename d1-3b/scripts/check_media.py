@@ -14,7 +14,7 @@ end card; at most 15 s each):
      dropped, repeated or edited.
   3. The hold: the first and the last frame of the 3.0 s hold of each scene against the recording's last frame (the
      answers), and the first and last end-card frames against the PNG, full size in RGB (BT.709 limited range decoded
-     the same way for all): the same picture. Also printed: the largest single-pixel difference (the launch asked for
+     the same way for all): the same picture. Also printed: the largest single-pixel difference (the target was
      <= 2 / 255) next to two floors that no re-encode can go under: the recording against itself (its answers frame
      against its last frame: one capture, two of its keyframes) and the encoder alone (the picture encoded as a 1 s
      clip with the same settings).

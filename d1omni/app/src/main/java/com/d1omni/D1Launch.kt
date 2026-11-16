@@ -242,7 +242,7 @@ sealed interface D1Launch {
 
   // vision (round 3): the picture path's debug launches (D1VisionGate), parsed before the ones above.
   // Each kind of graph has its own GPU precision: `precision` the decision graphs (FP32 by default,
-  // the supervisor's ruling of 2026-10-09: fp16acc32 moved one L128 text row past the bar),
+  // since fp16acc32 moved one L128 text row past the bar),
   // `precision_vision` the vision tower and the projector (fp16acc by default: both pass there).
   /**
    * Debug build: every record of `files/<fixture>` (a picture rows file) decoded, turned into its

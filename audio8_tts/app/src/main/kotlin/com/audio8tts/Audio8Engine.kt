@@ -25,7 +25,7 @@ import kotlin.math.min
  * codes [1,10,216]). Every buffer is addressed by tensor NAME through run(Map, Map, signature): the positional
  * lists follow the subgraph's input order, not the signature's (NOTES.md trap).
  *
- * KV cache (SUPERVISOR design decision 1): two persistent sets of 48 TensorBuffers; each slow call reads one set and
+ * KV cache: two persistent sets of 48 TensorBuffers; each slow call reads one set and
  * writes the other (ping-pong), so no cache bytes cross the JNI boundary per step. The fast AR does the same with its
  * two small sets plus a write-once zero set for the first call of every frame.
  */

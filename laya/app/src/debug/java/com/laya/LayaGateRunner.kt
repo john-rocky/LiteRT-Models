@@ -8,7 +8,7 @@ import java.io.File
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-/** Debug-only device evidence collector. Numeric acceptance belongs to the supervising round. */
+/** Debug-only device evidence collector. */
 class LayaGateRunner(private val context: Context, private val engine: LayaEngine) {
   data class Report(val path: String, val status: String, val error: String? = null)
 

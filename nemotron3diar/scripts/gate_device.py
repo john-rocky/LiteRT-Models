@@ -96,12 +96,12 @@ def device_conditions(adb):
               foreground=foreground(adb), battery=[l.strip() for l in battery.splitlines() if l.strip()])
 
 
-ALLOWED_FOREGROUND = []  # extra foreground substrings the supervisor cleared for this session (--allow-foreground)
+ALLOWED_FOREGROUND = []  # extra foreground substrings allowed for this run (--allow-foreground)
 
 
 def wait_device_free(adb, wait_s):
   """Another measurement on the Mac -> wait (up to wait_s). A foreground app other than a launcher or this
-  package -> stop at once (the device belongs to someone else; the supervisor decides)."""
+  package -> stop at once (the device belongs to someone else)."""
   t0 = time.time()
   while True:
     fg = foreground(adb)
@@ -413,7 +413,7 @@ def main():
   ap.add_argument("--frontend-precision", default="fp32",
                   help="GPU precision of graph A (fp32 by default: 0.2 ms, and its rows go into the cache)")
   ap.add_argument("--allow-foreground", action="append", default=[],
-                  help="extra foreground activity substring cleared by the supervisor (e.g. a system dialog)")
+                  help="extra foreground activity substring to allow (e.g. a system dialog)")
   ap.add_argument("--mode", choices=["low_latency", "offline"], default="low_latency",
                   help="offline: the T=684 graph on chunk_io_<fixture>_offline.npz chunks (default steps 0,1,3)")
   args = ap.parse_args()

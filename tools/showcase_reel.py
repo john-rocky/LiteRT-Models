@@ -7,10 +7,10 @@ play. Frames are generated with PIL and piped straight into ffmpeg — no
 intermediate image files, and no drawtext dependency (the local ffmpeg
 build has no libfreetype).
 
-v2 lessons (user review): fill the frame (cover/contain with UPSCALING —
+v2 lessons: fill the frame (cover/contain with UPSCALING —
 thumbnail() never enlarges), wipe only true image->image transforms,
 full-res sources only.
-v3 lessons (user review): sequences move (detection on video, LLM token
+v3 lessons: sequences move (detection on video, LLM token
 stream from a real device screen recording), TTS is audible (wav mixed
 into the track at the segment offset), inpainting wipes from the REAL
 original, and demo subjects are not all the same stock model.
@@ -89,7 +89,7 @@ REEL = [
     ("BiSeNet",           "face parsing",          "pair",  ["faceparsing_in", "faceparsing_out"], "cover", None),
     ("Cloth Segmentation", "clothes parsing",      "pair",  ["clothseg_in", "clothseg_out"], "cover", None),
     # Live-count video needs an attribution-free crowd clip (Shibuya was
-    # CC BY-SA -> removed per user rule). Static pair until one is provided.
+    # CC BY-SA -> removed). Static pair until one is provided.
     ("DM-Count",          "crowd counting",        "pair",  ["crowdcount:L", "crowdcount:R"], "cover", None),
     ("UniSal",            "video saliency",        "anim",  ["saliency"],                 "cover",   3.4),
     ("TwinLiteNet",       "lane + drivable area",  "still", ["twinlite:R"],               "cover",   None),
