@@ -1,6 +1,6 @@
 # Multilingual host contract
 
-This is the Android integration summary for the pinned multilingual Laya checkpoint
+This is the Android integration summary for the multilingual Laya checkpoint
 `convaiinnovations/laya@1c5edc17a7acd8701df6fc341c0d179f1c62c982` and upstream laya 0.3.4.
 The complete Python host contract and executable reference are shipment artifacts
 `HOST_CONTRACT.md` and `laya_host.py` in [litert-community/Laya-Multilingual-LiteRT](https://huggingface.co/litert-community/Laya-Multilingual-LiteRT). The app uses the embedding-input

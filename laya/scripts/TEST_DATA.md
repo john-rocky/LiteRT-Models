@@ -56,8 +56,8 @@ raw marker logits, raw action logits, and official answer dictionary at T=1.
 
 The stress corpus covers Japanese, English, mixed scripts, emoji, URLs, digits/units, repeated
 whitespace, boundary whitespace, added tokens, accents, Korean, Chinese, Arabic, and empty text.
-The embedding reference binary is **474,218,496 bytes**; its manifest pins the source table and
-row IDs. Padded positions must gather token ID 0. Fixture generation uses the pinned tokenizer,
+The embedding reference binary is **474,218,496 bytes**; its manifest records the source table and
+row IDs. Padded positions must gather token ID 0. Fixture generation uses the checkpoint's tokenizer,
 Python serialization, and NumPy host math; generating these references does not execute a model.
 
 ## Debug device rows

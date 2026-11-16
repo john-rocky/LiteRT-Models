@@ -378,7 +378,7 @@ class LayaEngine(context: Context, val storage: Storage = Storage.WFP16) : Close
     }
 
   companion object {
-    /** Runtime pin shared with the version catalog and report metadata. */
+    /** LiteRT runtime version, shared with the version catalog and report metadata. */
     const val LITERT_VERSION = "2.2.0"
     private const val SIGNATURE = "serving_default"
     /** Shared files required by either graph storage choice. */
