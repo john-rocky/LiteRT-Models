@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Flat-I/O deployment reference = exact Kotlin spec. 4 fp16 graphs, single flat in/out each."""
-import sys, types, numpy as np
+import os, sys, types, numpy as np
 class _Dummy:
     def __getattr__(s,n):
         if n.startswith("__") and n.endswith("__"): raise AttributeError(n)
@@ -18,7 +18,7 @@ import torch, torch.nn.functional as F
 from transformers import EdgeTamVideoModel, EdgeTamVideoInferenceSession
 import transformers.models.edgetam_video.modeling_edgetam_video as MV
 from ai_edge_litert.interpreter import Interpreter
-GD="/Users/majimadaisuke/Downloads/litert-upstream/edgetam/video_spike/graphs"
+GD=os.path.expanduser("~/Downloads/litert-upstream/edgetam/video_spike/graphs")
 IE=1048576; H0=2097152; H1=1048576; NMM=7; MAXP=16; MEMCH=64; MEM=NMM*512+MAXP*4; MC=MEM*MEMCH
 NO_OBJ=-1024.0; SCALE=20.0; BIAS=-10.0
 def load(n): it=Interpreter(model_path=f"{GD}/{n}_fp16.tflite"); it.allocate_tensors(); return it
