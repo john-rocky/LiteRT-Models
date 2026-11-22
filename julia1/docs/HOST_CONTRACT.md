@@ -67,4 +67,4 @@ reference host's ids, markers and question types on 2,100 oracle requests (2,065
 35 must be rejected at S512 and accepted at S1024), the decoder with the Python arithmetic on the
 same rows, the float16 conversion on all 65,536 bit patterns, and the table lookup on three padded
 rows. Fixture layout is in [TEST_DATA.md](../scripts/TEST_DATA.md). No JVM result substitutes for
-the on-device gate.
+the on-device check.

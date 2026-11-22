@@ -55,7 +55,7 @@ class GliformerGateRunner(private val context: Context, private val intent: Inte
       val backend =
         if (backendName == "gpu") GliformerExtractor.Backend.GPU else GliformerExtractor.Backend.CPU
       val window = intent.getIntExtra("window", 128)
-      require(window == 128 || window == 256) { "Device gates support s128 or s256" }
+      require(window == 128 || window == 256) { "Device checks support s128 or s256" }
       val storageName = intent.getStringExtra("table") ?: "fp16"
       require(storageName in listOf("fp16", "fp32")) { "table must be fp16 or fp32" }
       val storage =

@@ -184,11 +184,11 @@ class MainActivity : ComponentActivity() {
     controller.hide(WindowInsetsCompat.Type.navigationBars())
   }
 
-  // vision (round 3): the picture runs (`--ez vgate true …`, `--ez vtiming true …`) first, then the launches above
+  // vision: the picture runs (`--ez vgate true …`, `--ez vtiming true …`) first, then the launches above
   private fun parse(intent: Intent): D1Launch =
     D1Launch.Vision.parse(IntentExtras(intent), BuildConfig.DEBUG)
       ?: D1Launch.parse(IntentExtras(intent), BuildConfig.DEBUG)
-  // end vision (round 3)
+  // end vision
 
   /** The extras of [intent] as [D1Launch.parse] reads them. */
   private class IntentExtras(private val intent: Intent) : D1Extras {

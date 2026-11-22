@@ -1,4 +1,4 @@
-# Gate rows (device fixture)
+# Check rows (device fixture)
 
 The debug gate (`--ez gate true`) reads `files/fixtures/gate_rows_s<window>.json`: one row per public test decision
 that fits the window, with the question, the state, the expected token ids and marker positions, and the reference

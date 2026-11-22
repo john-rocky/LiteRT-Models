@@ -157,7 +157,7 @@ one untimed call.
 
 **Weight sharing in the pair.** The two signatures can share one copy of the weights on the GPU
 (`GpuOptions(constantTensorSharing = true)`) or hold one each. Without sharing the pair is quicker
-and takes more memory; the answers are the same (identical probabilities on 132 gate questions).
+and takes more memory; the answers are the same (identical probabilities on 132 check questions).
 The app decides when it compiles the pair: without sharing when Android reports at least 6,500,000
 kB available right before the compile, with sharing below that; a compiled pair keeps its mode.
 `--es share on` or `--es share off` fixes it. On the S26:
@@ -273,7 +273,7 @@ level, which is HTP_OPTIMIZE_FOR_INFERENCE_O3 (logcat `OptimizationLevel :
 HtpOptimizeForInferenceO3(2)` without any level set). On L64: with no performance mode a question took
 157.4 ms (122.5–240.8 over a leg) against 47.6 ms with BURST; at HTP_OPTIMIZE_FOR_PREPARE the compile
 took 19.1 s instead of 64–82 s and a question 122.3 ms; O3 and PREPARE gave the default level's
-probabilities on every gate row. The debug extras `--es npu_perf` and `--es npu_opt` set them; the
+probabilities on every check row. The debug extras `--es npu_perf` and `--es npu_opt` set them; the
 app's marks record the level, not the mode, so after a mode change the status line says it loads
 while LiteRT compiles.
 
@@ -321,7 +321,7 @@ Samsung Galaxy S26 SM-S942Q (12 GB), Android 16, LiteRT 2.2.0, debug build, USB 
 on, app in the foreground (top-app), the files above, GPU `FP16_WITH_FP32_ACCUM` unless a line says
 FP32. A graph call is timed from the input writes through `run()` to the output read-back; a pair's
 state call from its input writes to the write of `state_valid`, which waits for the state. Each
-timing leg starts at thermal status 0 with no thermal cap on any CPU policy, after at least 180 s
+timed run starts at thermal status 0 with no thermal cap on any CPU policy, after at least 180 s
 of rest, and waits after the compile until the GPU clock ceiling and the GPU temperature are back
 to their values before it. A leg runs 5 untimed warm-ups, then 20 timed calls (or 20 timed
 requests). The app reads the GPU clock ceiling (`/sys/class/kgsl/kgsl-3d0/max_clock_mhz`) before
@@ -330,7 +330,7 @@ each call: the values below are the medians (numpy's) of the calls made while it
 MemAvailable and VmHWM the process's peak resident memory, in GB of 1,000,000 kB.
 
 - **One question per window** (rows of 73, 80 and 97 tokens; L64: 51, 58 and 64; L512 one
-  300-token row; L1024 one 1,000-token row; L2048 the nine long gate rows of 1,369–1,805 tokens,
+  300-token row; L1024 one 1,000-token row; L2048 the nine long check rows of 1,369–1,805 tokens,
   three requests of three questions, each after the GPU wait):
 
   | Window | Median | Min–max | n | Compile |
@@ -344,7 +344,7 @@ MemAvailable and VmHWM the process's peak resident memory, in GB of 1,000,000 kB
 
   At FP32 the same rows take 137.8 ms on L128 and 272.1 ms on L256 (n 30 and 40), measured on
   the conversion run's previous build of those two graphs; at `FP16_WITH_FP32_ACCUM` that build
-  gives the published files' probabilities on every gate row.
+  gives the published files' probabilities on every check row.
 - **When the GPU clock ceiling falls:** 3–8 s into back-to-back calls it fell from 1,300 MHz, in
   most legs to 578–902 MHz, and a call then took 1.7–2.1 times as long: L256 330.2 ms instead of
   196.3 ms (n 29), the five-question request on the pair 727.6 ms instead of 429.6 ms, and from its
@@ -436,7 +436,7 @@ answers in `app/src/test/resources/examples_oracle.json`.
 ./gradlew :app:testDebugUnitTest -Pkev.work=/path/to/kev_work
 ```
 
-The debug APK also runs a fixture gate on the device: the tokenizer on 54 probe strings, the rows
+The debug APK also runs a fixture check on the device: the tokenizer on 54 probe strings, the rows
 of all 181 bundled questions, and the graph and head on the rows that fit the graph it compiles
 (`--ei window`, `--es graph pair` with `--ei ls`; without them, the smallest installed window),
 against the oracle. Gate, timing and demo launches are described in

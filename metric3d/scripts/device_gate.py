@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pixel 8a device-gate fixtures for Metric3D v2, using a REAL image (depth structure).
+"""Pixel 8a device-check fixtures for Metric3D v2, using a REAL image (depth structure).
 Writes probe_input.bin (NCHW LE f32), torch_ref.npy (re-authored), orig_ref.npy (original Metric3D).
 Prints original-vs-reauthored and desktop-fp16-vs-reauthored corr."""
 import load_m3d, numpy as np, torch, os, glob

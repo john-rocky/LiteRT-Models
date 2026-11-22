@@ -1,9 +1,9 @@
 """litert-compat device-run records of Idol's shipped form (litert-community/Idol), one pipeline record per phone.
 
-The shape of the iris-3b pipeline records (litert-compat DECISIONS #248): model id `idol` (the repository; no card),
+The shape of the iris-3b pipeline records: model id `idol` (the repository; no card),
 `artifact` = manifest.json (the app opens it; it names the 20 graphs with their file, sha256, accelerator and GPU
-precision), the other files named in `notes`. Every number is read from this lane's files (paths relative to the
-lane dir `idol/` of LiteRT-Models); the script stops when two sources disagree.
+precision), the other files named in `notes`. Every number is read from this folder's files (paths relative to the
+folder `idol/` of LiteRT-Models); the script stops when two sources disagree.
 
   device/lc/hub_api_idol.json, device/lc/hub_api_dino.json   anonymous Hub API reads (?blobs=true) after the upload
   <stage>/manifest.json, <stage>/README.md                   the staged Hub folder that was uploaded
@@ -15,10 +15,10 @@ lane dir `idol/` of LiteRT-Models); the script stops when two sources disagree.
   SPEED_LADDER.md                                             the ship rows
 
 Run from the litert-compat checkout with its venv:
-  uv run --no-sync python <lane>/device/lc_records.py --check          compare with data/device_runs (or ABSENT)
-  uv run --no-sync python <lane>/device/lc_records.py --preview <dir>  write into a scratch snapshot root
-  uv run --no-sync python <lane>/device/lc_records.py --apply          write with litert_compat's append-only writer
-  uv run --no-sync python <lane>/device/lc_records.py --notes-preview  print each record's notes (before the upload)
+  uv run --no-sync python <LiteRT-Models>/idol/device/lc_records.py --check          compare with data/device_runs (or ABSENT)
+  uv run --no-sync python <LiteRT-Models>/idol/device/lc_records.py --preview <dir>  write into a scratch snapshot root
+  uv run --no-sync python <LiteRT-Models>/idol/device/lc_records.py --apply          write with litert_compat's append-only writer
+  uv run --no-sync python <LiteRT-Models>/idol/device/lc_records.py --notes-preview  print each record's notes (before the upload)
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from pathlib import Path
 from litert_compat.device_runs.records import device_run_errors, write_device_run
 
 LC = Path.home() / "code" / "litert-compat"
-K = Path(__file__).resolve().parents[1]                       # the lane dir idol/
+K = Path(__file__).resolve().parents[1]                       # the folder idol/
 STAGE = Path.home() / "code" / "idol_work" / "idol_hf_H" / "main"   # the staged Idol repo (the uploaded bytes)
 STAGE_DINO = STAGE.parent / "dino"                                 # the staged DINOv3 repo
 HUB_IDOL = K / "device" / "lc" / "hub_api_idol.json"
@@ -316,7 +316,7 @@ def notes(mf: dict, hub: dict, harness: str) -> str:
         "decoder (oct, 5 signatures by row count) and the Gaussian decoder (gs_0, gs_mid for graphs 1-6, gs_7). "
         "den_joint_mid and gs_mid are one graph each for blocks of the same shape: before each call the app copies that "
         "block's float32 weights from den_joint_w.f32 / gs_w.f32 into the graph's weight inputs, so each is compiled "
-        "once per photo. A pipeline record (DECISIONS #248's shape): `artifact` is manifest.json, which the app opens; "
+        "once per photo. A pipeline record: `artifact` is manifest.json, which the app opens; "
         f"it names the {len(g)} graphs with file, bytes, sha256, accelerator and GPU precision (FP16 for the "
         f"{len(mf['gpu'])} GPU graphs). Identity: every graph's sha256 in manifest.json equals its Hub LFS sha256 (the "
         f"{len(g) - 4} graphs of litert-community/Idol and the 4 DINOv3 graphs), manifest.json's git blob id and every "
@@ -346,7 +346,7 @@ def harness_s26(p: dict, s: dict) -> str:
             "succulent photo of a later device run (their PSNR is in metrics); the four photos of the next device run on the "
             "warm phone (warm_photo*_wall_s); "
             "the repo's first form (262,144 Gaussians, a graph per block, FP16 with fp32 accumulation, in its 262k/ "
-            "folder) and the other forms measured for the conversion's speed ladder.")
+            "folder) and the other forms measured for the conversion's speed comparison.")
 
 
 def harness_p11p(p: dict, s: dict) -> str:

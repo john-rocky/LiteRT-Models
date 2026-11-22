@@ -11,7 +11,7 @@ import org.json.JSONObject
 
 /**
  * Debug-asset gate, called only on the ViewModel's model dispatcher. For every (fixture, window)
- * pair of `gate_fixtures.json` (the Galaxy S26 device-gate set, 42 per window): (1) the on-device
+ * pair of `gate_fixtures.json` (the Galaxy S26 device-check set, 42 per window): (1) the on-device
  * tokenizer/schema/padding reproduce the captured Python inputs byte for byte; (2) the graph on the
  * chosen backend gives the official decisions, with max |Δlogit| / |Δprob| against the fp32 oracle
  * and max |Δlogit| against Mac LiteRT CPU on the same graph and table; (3) timing medians.
@@ -238,7 +238,7 @@ class DecideGateRunner(
     "${failure.javaClass.simpleName}: ${failure.message.orEmpty()}"
 
   companion object {
-    /** 42 fixtures per window × 3 windows (the device-gate selection in the debug asset). */
+    /** 42 fixtures per window × 3 windows (the device-check selection in the debug asset). */
     const val EXPECTED_PAIRS = 126
 
     /** Untimed full passes per (fixture, window) pair before the timed runs. */

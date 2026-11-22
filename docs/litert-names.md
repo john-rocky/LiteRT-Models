@@ -13,4 +13,4 @@ LiteRT is TensorFlow Lite renamed (2024-09-04). The `.tflite` format and the mod
 
 What moving from LiteRT 1.4.0's `Interpreter` C API to LiteRT 2.3.2's `CompiledModel` changes on a Galaxy S26 (latency and output agreement, three models, 2026-11-10): [interpreter-vs-compiledmodel/](../interpreter-vs-compiledmodel/).
 
-Two `CompiledModel` GPU rules: every op in the graph must be GPU-compatible (no CPU fallback), and tensors are rank 4 at most. Full mapping with sources: [docs/LITERT_CONVERSION_GUIDE.md § Three PyTorch → Android routes](LITERT_CONVERSION_GUIDE.md#three-pytorch--android-routes-on-one-model-measured-2026-09-05) <!-- TODO(lane B, articles): replace this in-repo anchor with the published article URL -->
+Two `CompiledModel` GPU rules: every op in the graph must be GPU-compatible (no CPU fallback), and tensors are rank 4 at most. Full mapping with sources: [docs/LITERT_CONVERSION_GUIDE.md § Three PyTorch → Android routes](LITERT_CONVERSION_GUIDE.md#three-pytorch--android-routes-on-one-model-measured-2026-09-05) <!-- TODO: replace this in-repo anchor with the published article URL -->

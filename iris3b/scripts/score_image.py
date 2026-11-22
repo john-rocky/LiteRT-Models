@@ -1,4 +1,4 @@
-"""Image parity scorer for the iris-3b lane (one definition for every round).
+"""Image comparison scorer for iris-3b (one definition for every comparison).
 
 Compares a candidate image with a reference image, both in the sampler's
 output range [-1, 1] (the clamped `clean` of the last step). Inputs may be

@@ -1,5 +1,5 @@
 {
- "source": "audio8_tts_work/out/ship/tokenizer.json (sha256 f24e0809..., HF rev e8620a9b), tokenizers add_special_tokens=False; produced by round 0 of the demo lane",
+ "source": "the model's tokenizer.json (sha256 f24e0809..., HF rev e8620a9b), tokenizers add_special_tokens=False",
  "note": "<|speaker:0|> is NOT an added token: it is plain BPE, so the Kotlin side prefixes it to the reference transcript string and BPE-encodes the whole string, exactly as audio8_tts_litert.py does. The fragments below ARE fixed and become constants.",
  "fragments": {
   "sys_open": {

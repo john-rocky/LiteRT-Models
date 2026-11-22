@@ -138,7 +138,7 @@ for an even count).
   windows and padding equal the captured Python inputs for all 552. Max |Δlogit| against the
   fp32 oracle: 9.08e-3 GPU, 9.02e-3 CPU. Both windows run whole on the GPU delegate, in one
   partition.
-- Graph (input write → readback), median over the gate requests: GPU s128 **5.86 ms**, s256
+- Graph (input write → readback), median over the check requests: GPU s128 **5.86 ms**, s256
   **8.23 ms**; CPU s128 7.83 ms, s256 15.65 ms.
 - Cold start, benchmark build, GPU, the prefilled request (61 tokens, five labels): Ready
   **0.59 s** after process start; the first request took **8.05 / 8.38 / 8.20 ms** end to end in

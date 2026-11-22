@@ -70,7 +70,7 @@ The install script's argument defaults to the download directory above. `BUCKETS
 
 The full sha256 of every file is in `contract.json`, which the app reads at startup: it checks the tokenizer's sha256 and token IDs against it and finds each bucket's graph by the name it gives. Each decision graph has one signature, `decide_<L>`: `ids` int32 `[1,L]`, `prefix` float32 `[1,L,1024]`, `media` / `pad` / `keep_right` float32 `[1,L]`, `qtype_onehot` float32 `[1,3]` → `scores` float32 `[1,L]`. Each audio graph has one signature, `audio_<T>`: `mel` float32 `[1,128,T]`, `mel_valid` float32 `[1,T]`, `v1` / `v2` / `v3` float32 `[1,T1]` / `[1,T2]` / `[1,T3]` (T1001: 501 / 251 / 126) → `prefix` float32 `[1,T3,1024]`, whose first P rows are the clip's prefix.
 
-<!-- vision (round 3) -->
+<!-- vision -->
 ### The picture path
 
 `VISION=1 ./scripts/install_to_device.sh` also copies the three files a picture needs (download them with `hf download litert-community/d1-omni-600M-LiteRT d1-omni-600M_vision_tower_fp16.tflite d1-omni-600M_projector_fp16.tflite host/vision_position_table.npy`):
@@ -93,7 +93,7 @@ picture file → BitmapFactory (a PNG without its colour chunks, as Pillow ignor
 ```
 
 Each kind of graph has its own GPU precision: the decision graphs follow `--es precision` (FP32 by default) and the tower and the projector `--es precision_vision` (`FP16_WITH_FP32_ACCUM` by default; `fp32` selects FP32). Picture files: `D1Vision.kt` (layout, resize, patches, position table, unshuffle), `D1Image.kt` (decoding), `D1Npy.kt` (the position table), `D1Graph.kt` (one single-signature graph on `CompiledModel`), `D1VisionEngine.kt` (the tower, the projector and a picture's prefix rows) and `D1VisionGate.kt` (the debug picture gate and timing, scripts/TEST_DATA.md).
-<!-- end vision (round 3) -->
+<!-- end vision -->
 
 ## How a request runs
 

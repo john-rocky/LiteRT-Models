@@ -19,7 +19,7 @@ internal object DecideGateFixtures {
   /** The official gliner2 decision of one head, labels in gliner2's order. */
   data class OfficialDecision(val task: String, val multiLabel: Boolean, val labels: List<String>)
 
-  /** One captured official request and the windows the device gate runs it at. */
+  /** One captured official request and the windows the on-device check runs it at. */
   data class Fixture(
     val id: String,
     val text: String,

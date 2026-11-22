@@ -39,7 +39,7 @@ class JuliaEngine(context: Context) : Closeable {
     val totalMs: Double
       get() = writeMs + enqueueMs + readbackMs
 
-    /** Emits named timing components for machine-readable gate reports. */
+    /** Emits named timing components for machine-readable check reports. */
     fun toMap(): Map<String, Double> =
       linkedMapOf(
         "write_ms" to writeMs,
@@ -198,7 +198,7 @@ class JuliaEngine(context: Context) : Closeable {
     val prepared = System.nanoTime()
     val raw = runRaw(sequence, backend)
     check(raw.finite) {
-      "Nonfinite model output on ${backend.name}; inspect the device gate report"
+      "Nonfinite model output on ${backend.name}; inspect the device check report"
     }
     val decodeStarted = System.nanoTime()
     val decoded = JuliaDecoder.decode(raw.markerLogits, question)

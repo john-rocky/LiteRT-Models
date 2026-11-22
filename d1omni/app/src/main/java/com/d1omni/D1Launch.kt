@@ -240,7 +240,7 @@ sealed interface D1Launch {
     }
   }
 
-  // vision (round 3): the picture path's debug launches (D1VisionGate), parsed before the ones above.
+  // vision: the picture path's debug launches (D1VisionGate), parsed before the ones above.
   // Each kind of graph has its own GPU precision: `precision` the decision graphs (FP32 by default,
   // since fp16acc32 moved one L128 text row past the bar),
   // `precision_vision` the vision tower and the projector (fp16acc by default: both pass there).
@@ -342,5 +342,5 @@ sealed interface D1Launch {
       }
     }
   }
-  // end vision (round 3)
+  // end vision
 }

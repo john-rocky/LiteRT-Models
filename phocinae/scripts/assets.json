@@ -56,13 +56,13 @@
       "name": "gate_rows_s256.json",
       "size_bytes": 2063083,
       "sha256": "fd993f7d8b7c644c18a06259619e76e7ee0b634e75703ffdc5c52b0facb547ed",
-      "role": "debug gate rows (validation data, not part of the app download)"
+      "role": "debug check rows (validation data, not part of the app download)"
     },
     {
       "name": "gate_rows_s384.json",
       "size_bytes": 7306666,
       "sha256": "ac3f3031dd03cf2ce25824e2ba55c3364a79be05c6d779655174c46d965e799f",
-      "role": "debug gate rows (validation data, not part of the app download)"
+      "role": "debug check rows (validation data, not part of the app download)"
     }
   ]
 }

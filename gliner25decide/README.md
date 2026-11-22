@@ -105,7 +105,7 @@ tasks and duplicate names are rejected.
 
 ## Check it on a device
 
-The debug APK bundles the device-gate fixtures: 84 captured official requests, 42 per window
+The debug APK bundles the device-check fixtures: 84 captured official requests, 42 per window
 (the README examples of the model card in all three, plus the longest public dev rows of
 fastino/fast-decisions that fit each window).
 

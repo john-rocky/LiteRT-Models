@@ -16,7 +16,7 @@ validation-data/
     fp16_conversion_reference.bin     # all 65,536 binary16 patterns as NumPy float32
     embedding_lookup_reference.json   # three padded rows gathered by NumPy (+ .bin)
     embedding_lookup_reference.bin
-    gate_rows_s512.json               # optional: debug device gate, 706 captured rows
+    gate_rows_s512.json               # optional: debug device check, 706 captured rows
 ```
 
 Run from the module root after supplying this bundle:
@@ -27,7 +27,7 @@ export JULIA1_TEST_DATA="$PWD/validation-data"
 ```
 
 `JULIA1_TEST_RESULTS` optionally selects a report directory. A missing or incomplete bundle must
-not be counted as a passing parity gate. The graphs are not used by the JVM tests.
+not be counted as a passing output-match check. The graphs are not used by the JVM tests.
 
 ## Captures and checks
 

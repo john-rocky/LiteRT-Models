@@ -262,7 +262,7 @@ class SoproEngine(
   /**
    * Prepares and caches the reference, samples AR tokens, solves the full acoustic utterance, then
    * emits vocoder/iSTFT chunks after removing 32 x 256 reference-context samples. Playback applies
-   * only output gain and soft limiting, with no trim or fade. The saved WAV equals the round-1
+   * only output gain and soft limiting, with no trim or fade. The saved WAV equals the first
    * contract; the played stream differs at the trimmed edges and at the saved WAV's final 80 ms
    * fade-out. Before that fade the kept samples are exact. TTFA starts at [tapNanos] and ends
    * immediately before the first chunk is handed to [sink]. Calls, cache and CompiledModels are

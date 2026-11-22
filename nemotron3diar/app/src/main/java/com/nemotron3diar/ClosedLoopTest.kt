@@ -14,7 +14,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Device gate of the whole host: streams a wav through [Nemotron3Diarizer] on the LiteRT GPU, as a microphone would
+ * Device check of the whole host: streams a wav through [Nemotron3Diarizer] on the LiteRT GPU, as a microphone would
  * ([push] samples at a time), and writes what it did for scripts/gate_closed_loop.py.
  *
  * Request (files/selftest.json):

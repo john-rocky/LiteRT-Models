@@ -174,7 +174,7 @@ One model (conv stem + `nn.MultiheadAttention` block + head, 1×3×224×224, ran
 | attention re-expressed in 4-D `(B, heads, N, head_dim)`, same weights | fully accelerated, default fp16 | 2.8e-3, argmax 9/9 |
 | same 4-D graph, `GpuOptions(enforce_f32=True)` | fully accelerated | 3.6e-7 |
 
-Android side: `org.pytorch:executorch-android:1.4.0` ships only `XnnpackBackend`; `onnxruntime-android` 1.29.0's NNAPI provider loads on an API 36 emulator but NNAPI is deprecated from Android 15; `com.google.ai.edge.litert:litert:2.2.0` gives GPU/NPU through `CompiledModel.Options`. Write-up with the emulator numbers: pending publication — until then see the naming table in [LiteRT or TensorFlow Lite? The names](litert-names.md) <!-- TODO(lane B, articles): replace this in-repo anchor with the published article URL -->
+Android side: `org.pytorch:executorch-android:1.4.0` ships only `XnnpackBackend`; `onnxruntime-android` 1.29.0's NNAPI provider loads on an API 36 emulator but NNAPI is deprecated from Android 15; `com.google.ai.edge.litert:litert:2.2.0` gives GPU/NPU through `CompiledModel.Options`. Write-up with the emulator numbers: pending publication — until then see the naming table in [LiteRT or TensorFlow Lite? The names](litert-names.md) <!-- TODO: replace this in-repo anchor with the published article URL -->
 
 ## Model-Specific Notes
 
@@ -384,7 +384,7 @@ CPU RVQ. Two walls (device-verified on Pixel 8a):
 ~0.82, reconstruction corr 1.0 vs PyTorch. Scripts: `dac/scripts/convert_dac_{encoder,deconly}.py` +
 `dac_rvq_validate_export.py` (RVQ codes match torch 100%).
 
-### Matcha-TTS (CFM acoustic model + HiFi-GAN vocoder) — the FFT-free TTS lane
+### Matcha-TTS (CFM acoustic model + HiFi-GAN vocoder) — the FFT-free TTS option
 
 Converter: litert-torch. Matcha-TTS pairs a conditional-flow-matching (CFM) acoustic model with a
 **HiFi-GAN time-domain vocoder**, so there is **no FFT/iSTFT anywhere** in the synthesis path — this is what
@@ -887,7 +887,7 @@ upstream gdrive-folder download (which `gdown` silently fails on). Load the L2CS
 `l2cs` package `__init__` pulls `face_detection`). Scripts: `gaze/scripts/build_gaze.py`. Model:
 [`litert-community/L2CS-Gaze360-LiteRT`](https://huggingface.co/litert-community/L2CS-Gaze360-LiteRT).
 
-### MI-GAN (mobile image inpainting / object removal) — the norm-free generator lane (zero re-authoring)
+### MI-GAN (mobile image inpainting / object removal) — the norm-free generator option (zero re-authoring)
 
 MI-GAN (Picsart, ICCV 2023, MIT, 5.97M) — a mobile "magic eraser". Its **inference** generator
 (`migan_inference.py`, the re-parametrized deployable model, NOT the StyleGAN training `.pkl`) converts
@@ -897,7 +897,7 @@ normalization** (no InstanceNorm/GroupNorm → none of the SafeNorm/conv-scaling
 AnimeGAN generators needed), upsampling is `nn.Upsample(nearest)` + a fixed FIR-filter grouped conv (→
 `RESIZE_NEAREST_NEIGHBOR` + `CONV_2D`, **no ConvTranspose → no ZeroStuff 0-byte risk**), convs are
 depthwise-separable, and the activation is a leaky-ReLU with gain+clamp (→ `LEAKY_RELU` + `MAXIMUM`/`MINIMUM`,
-not `SELECT`). So: **a norm-free, FFT-free, transpose-free generator is the cleanest GPU lane** — contrast the
+not `SELECT`). So: **a norm-free, FFT-free, transpose-free generator is the cleanest GPU path** — contrast the
 normalized generators (style transfer, AnimeGAN) that hit the large-activation fp16 conv-accumulation wall.
 
 **I/O contract:** input is 4ch `concat(mask−0.5, rgb·mask)` (rgb ∈ [−1,1], mask 1=keep/0=erase); output [−1,1];
@@ -1061,7 +1061,7 @@ exactly 10 s (speaker mel [1,80,1001], Whisper mel [1,80,1002] → 235 tokens, r
 AR prefill P_MAX 256 + step CAP 1024 with the packed KV on the host (dia2 / Pocket TTS pattern; a 2-signature
 merged file shares the weights: 223 MB vs 421); acoustic buckets (T,N) = (2048,512) and (4096,1024) selected
 by the actual length; vocoder offline bucket 1024 frames or streaming 64-frame chunks (start 64→37, step
-64→64, flush →27, exact vs offline: max err 3.9e-4). Mac CPU gates only so far (device run pending):
+64→64, flush →27, exact vs offline: max err 3.9e-4). Mac CPU checks only so far (device run pending):
 fp32 teacher-forced waveform corr ≥ 0.99999 (24 utterances + 4 long), AR replay 2920/2920, semantic tokens
 235/235; the free-running LiteRT pipeline with the same NumPy sampler and seed reproduces the PyTorch token
 sequences 24/24.
@@ -1075,12 +1075,12 @@ sequences 24/24.
    into phase differences, not spectral ones. Conversely an absolute tensor rule on the vocoder's phase output
    (absmax ≈ 125) is meaningless — a 0.6 rad error at a near-silent bin leaves the waveform at corr 0.99994.
    Keeping the vocoder's final FC in fp32 did NOT reduce that phase error (0.5998 → 0.5989): the error is the
-   phase channel's scale, not the head weights. Gate set that worked: encoders/AR = tensor rule
+   phase channel's scale, not the head weights. The checks that worked: encoders/AR = tensor rule
    `max|diff| ≤ max(1e-2, 2e-3·absmax) ∧ corr ≥ 0.999` + token/greedy replay with near-tie documentation;
    acoustic = solved-mel corr ≥ 0.99; vocoder = single-swap waveform corr ≥ 0.99; chain = log-mel corr ≥ 0.99
    + free-running WER / speaker cosine + HNR and 4–12 kHz band-energy within 1.0 / 1.5 dB of the fp32 chain.
-   The quality gates alone (WER, speaker cosine) are blind to phase: int8 vocoder variants with ≈ 15 phase
-   wraps of tensor error passed both — the waveform gate is what rejected them.
+   The quality checks alone (WER, speaker cosine) are blind to phase: int8 vocoder variants with ≈ 15 phase
+   wraps of tensor error passed both — the waveform check is what rejected them.
 2. **Exact zero right-padding for a causal conv stack with lookahead** (Vocos: 8 ConvNeXt blocks, lookahead 3
    each + 3 at the embed conv = 27 frames): multiply the residual stream by the runtime frame mask after the
    embed **LayerNorm** and after every block. Masking only the convolution is insufficient — the LayerNorm
@@ -1096,7 +1096,7 @@ sequences 24/24.
    the documented path — `convert_pt2e(..., fold_quantize=False)` — converts every module with per-channel int8
    weights (12/12), and `fold_quantize=True` (torchao's default) fails every module of every rank with
    `'stablehlo.uniform_dequantize' op operand #0 must be ranked tensor of per-tensor integer quantized or per-axis
-   integer quantized values` (12/12). The int8 vocoder is absent because it failed the waveform gate, not
+   integer quantized values` (12/12). The int8 vocoder is absent because it failed the waveform check, not
    because of the converter. On macOS the ai-edge-litert 2.2.0 wheel's GPU-only `CompiledModel` (Metal accelerator
    registered) SIGSEGVs after `Flatbuffer model initialized` on a trivial Linear+ReLU graph in GPU-only, GPU|CPU and
    `enforce_f32` form; the 2.1.6 wheel runs the same file and script on Metal (same Python 3.12.13), so there are no
@@ -1124,7 +1124,7 @@ Shipped as `litert-community/Laya-Multilingual-LiteRT` (windows 256/512, fp32 + 
 
 **Graph cut for a "schema in the prompt, one `[MASK]` per option" scorer.** One question row per call. Inputs `inputs_embeds [1,N,768]`, `attention_mask [1,N]` (float), `qtype_onehot [1,3]` (the type embedding becomes a matmul); outputs `token_logits [1,N]` (the scorer applied at every position) and `pooled_cls [1,768]`. No marker gather, no option count and no top-k inside the graph: the host gathers the marker positions it built, so the option count is unbounded by the graph. The act head (`cat(pooled, 4 features of the raw softmax)` → 2 logits) is a separate 1 MB graph because its features depend on the host-side softmax. `nn.TransformerEncoderLayer` takes PyTorch's fused fast path in eval mode and has to be written out explicitly (pre-norm, ReLU FFN); exact GELU, rank ≤ 4, rotary tables baked per layer type as contiguous clones, padding and sliding-window masks as float constants.
 
-**ML Drift rejects an EMBEDDING_LOOKUP on an fp16-stored table; an fp32 in-graph table and fp16 FC weights are fine.** The first wfp16 graph took `input_ids` and kept the 256000×768 table inside as fp16 + DEQUANTIZE: the S26 GPU delegate reported `EMBEDDING_LOOKUP: Empty quantization params` (and the table's DEQUANTIZE), placed 1677 of 1783 ops, and CompiledModel failed to compile. The fp32 ids graph with the table inside does compile on the same phone (1.29 GB, compile ≈ 7 s, 54.8 ms per question — measured by the typed-decisions-android lane, `~/code/hfmodels-android/tested-runtime-matrix.json`, shipped as `litert-community/laya-LiteRT`); only the wfp16 form was tried in this run before the cut was moved. With the lookup on the host the same network compiles as one partition — 1779/1779 ops with 99 `FLOAT_CASTING` fp16 FULLY_CONNECTED weights + DEQUANTIZE, 1680/1680 in fp32 — under `GpuOptions(precision = FP32)`. The host table can be float16: for this checkpoint fp32→fp16→fp32 is exact (max difference 0 over 196.6M values), and padded positions must gather the real PAD row, not zeros. On the desktop, `ai-edge-quantizer` 0.8.0 also accepts `FLOAT_CASTING` on EMBEDDING_LOOKUP (useful for CPU-only files: 1.29 GB → 644 MB).
+**ML Drift rejects an EMBEDDING_LOOKUP on an fp16-stored table; an fp32 in-graph table and fp16 FC weights are fine.** The first wfp16 graph took `input_ids` and kept the 256000×768 table inside as fp16 + DEQUANTIZE: the S26 GPU delegate reported `EMBEDDING_LOOKUP: Empty quantization params` (and the table's DEQUANTIZE), placed 1677 of 1783 ops, and CompiledModel failed to compile. The fp32 ids graph with the table inside does compile on the same phone (1.29 GB, compile ≈ 7 s, 54.8 ms per question — measured in [hfmodels-android](https://github.com/john-rocky/hfmodels-android) ([`tested-runtime-matrix.json`](https://github.com/john-rocky/hfmodels-android/blob/main/tested-runtime-matrix.json)), shipped as `litert-community/laya-LiteRT`); only the wfp16 form was tried in this run before the cut was moved. With the lookup on the host the same network compiles as one partition — 1779/1779 ops with 99 `FLOAT_CASTING` fp16 FULLY_CONNECTED weights + DEQUANTIZE, 1680/1680 in fp32 — under `GpuOptions(precision = FP32)`. The host table can be float16: for this checkpoint fp32→fp16→fp32 is exact (max difference 0 over 196.6M values), and padded positions must gather the real PAD row, not zeros. On the desktop, `ai-edge-quantizer` 0.8.0 also accepts `FLOAT_CASTING` on EMBEDDING_LOOKUP (useful for CPU-only files: 1.29 GB → 644 MB).
 
 **Gate the act logits relatively.** The act head's logits have magnitude ~2e3–5e3, where the fp32 ULP is 2.4e-4, and the unchanged upstream model moves them by 0.24 between batch paddings. An absolute 1e-4 tensor gate is below the rounding floor; use max |Δ| / max |reference| ≤ 1e-4 for such tensors and keep the decision gate at the answer level (same argmax, |Δp| ≤ 1e-3 fp32 / 1e-2 fp16 weights). The act probability was 1.0 on every fixture row upstream and in LiteRT.
 
@@ -1136,7 +1136,7 @@ Shipped as `litert-community/Laya-Multilingual-LiteRT` (windows 256/512, fp32 + 
 
 **Calibration with cleared data only.** The multilingual checkpoint ships T = 1. Temperatures per (question type, option-count bucket) were fitted by NLL on 4,415 licensed EN/JA examples with language-balanced fit splits; a bucket keeps T = 1 when a language slice (n ≥ 40) gets ECE worse by more than 0.05. Judge a dataset by the original terms of the subset, not the hub tag: an Apache-tagged sentiment aggregate wrapped SemEval tweets and Amazon reviews and was excluded.
 
-**English and typed-decisions checkpoints (ModernBERT-large) — same cut, 2026-09-22.** Shipped as `litert-community/Laya-English-LiteRT` (root = English, `typed-decisions/` = the fine-tune). Facts a port needs: (1) hidden 1024, 28 layers, vocab 50368, PAD 50283; the fp16 token table is exact for both checkpoints (max fp32→fp16→fp32 difference 0 over 51.6M values), 103 MB each. (2) The two attention layer types use **different RoPE tables** (full attention theta 160000, sliding 10000): export them as separate contiguous clones and audit the exported constants against the instantiated transformers 5.x rotary module — equal constants may be deduplicated by value, different ones must stay separate (litert-torch #1061 merges equal buffers). (3) Builder budgets differ from the graph window: English builds with max_len 512 / head 192, typed-decisions with 1024 / 256; a row is run at a window only if its built sequence fits (140/209 English rows fit 256/512, 100/175 typed-decisions rows); the graph window never replaces the builder budget. (4) Device gate without a tokenizer port: a debug copy of the sample with a separate `applicationId` (`com.laya.gate`) reads the graphs, the table and a rows file of captured ids + markers from `/data/local/tmp`, runs them with `GpuOptions(precision = FP32)` and dumps the raw marker/act logits; the Mac decodes them with the same arithmetic as the CPU parity. The shipped `com.laya` release and its files stay untouched; the gate package and the tmp files are removed afterwards. (5) S26 (LiteRT 2.2.0, GPU FP32): one partition for every graph (2223/2223 fp16-FC, 2100/2100 fp32, act 4/4); warm main+act medians 122.9 ms (English s256 wfp16), 125.9 ms (typed-decisions s256 wfp16), 616–623 ms for the s512 graphs measured after the phone had warmed to 40–44 °C (the cold first rows were 290–632 ms) — label such runs contended; compile 2.5–5.8 s; process PSS 3.9–4.7 GB with the 1.48 GB fp32 file loaded. CPU (XNNPACK, 4 threads) 583 ms warm for English s256 wfp16. (6) The typed-decisions oracle: `laya` 0.3.4 defines the four workflow question-id sets (`laya.router._TYPED_DECISION_WORKFLOWS`), not full question presets; fixtures must author wording and criteria in the upstream format and freeze `agent.predict` outputs before conversion.
+**English and typed-decisions checkpoints (ModernBERT-large) — same cut, 2026-09-22.** Shipped as `litert-community/Laya-English-LiteRT` (root = English, `typed-decisions/` = the fine-tune). Facts a port needs: (1) hidden 1024, 28 layers, vocab 50368, PAD 50283; the fp16 token table is exact for both checkpoints (max fp32→fp16→fp32 difference 0 over 51.6M values), 103 MB each. (2) The two attention layer types use **different RoPE tables** (full attention theta 160000, sliding 10000): export them as separate contiguous clones and audit the exported constants against the instantiated transformers 5.x rotary module — equal constants may be deduplicated by value, different ones must stay separate (litert-torch #1061 merges equal buffers). (3) Builder budgets differ from the graph window: English builds with max_len 512 / head 192, typed-decisions with 1024 / 256; a row is run at a window only if its built sequence fits (140/209 English rows fit 256/512, 100/175 typed-decisions rows); the graph window never replaces the builder budget. (4) On-device check without a tokenizer port: a debug copy of the sample with a separate `applicationId` (`com.laya.gate`) reads the graphs, the table and a rows file of captured ids + markers from `/data/local/tmp`, runs them with `GpuOptions(precision = FP32)` and dumps the raw marker/act logits; the Mac decodes them with the same arithmetic as the CPU comparison. The shipped `com.laya` release and its files stay untouched; the check package and the tmp files are removed afterwards. (5) S26 (LiteRT 2.2.0, GPU FP32): one partition for every graph (2223/2223 fp16-FC, 2100/2100 fp32, act 4/4); warm main+act medians 122.9 ms (English s256 wfp16), 125.9 ms (typed-decisions s256 wfp16), 616–623 ms for the s512 graphs measured after the phone had warmed to 40–44 °C (the cold first rows were 290–632 ms) — label such runs contended; compile 2.5–5.8 s; process PSS 3.9–4.7 GB with the 1.48 GB fp32 file loaded. CPU (XNNPACK, 4 threads) 583 ms warm for English s256 wfp16. (6) The typed-decisions oracle: `laya` 0.3.4 defines the four workflow question-id sets (`laya.router._TYPED_DECISION_WORKFLOWS`), not full question presets; fixtures must author wording and criteria in the upstream format and freeze `agent.predict` outputs before conversion.
 
 ## 2026-09-26 addendum — GLiFormer Large v1 (layout-DeBERTa-large, 575M) NER path on S26 GPU — and the unrolled-BiLSTM compile wall
 
@@ -1232,7 +1232,7 @@ file with identical weight values (0.0068 against 0.0115) — take the wfp16 fil
 **No integer path keeps the answers.** Post-training int8 weights change answers (per-channel 36/38, max Δp 0.089; GPTQ
 38/38 but 0.040; every projection type alone already exceeds 0.01); int4 flips 6–11 of 38. int16 activations pass
 (38/38, 5.3e-3) only with 16-bit weights and the few input columns above 16× the median column max (the neurons above)
-kept in float. Weight-only int8 / int4 does not change NPU speed anyway (NPU factor lane).
+kept in float. Weight-only int8 / int4 does not change NPU speed anyway.
 
 ## 2026-09-30 addendum — Julia-1 (mmBERT-small decision model) on the S26 GPU: an F32 checkpoint pays for fp16 storage, and fp16 arithmetic changes its answers
 
@@ -1541,7 +1541,7 @@ Shipped as `litert-community/GLiNER2.5-Multi-LiteRT` (windows 128/256/512, fp16-
 
 **Tensor-gate tolerance for prefix sums.** `content_prefix` (cumulative sum, |ref| up to 418) tripped an absolute 1e-3 gate with a 2.5e-6 relative difference (one of 1,360 input × output pairs at s512). Rule adopted: pass when max|diff| ≤ max(1e-3, 1e-4 · max|ref| of that output); spans and confidences remain the primary gate.
 
-**Process traps measured this run.** (1) The Codex workspace-write sandbox blocks Metal device creation (`SIGSEGV` in `ml_drift::metal::CreateGpuInfoFromMetalDevice` before any inference); run Metal predictor gates outside the sandbox. (2) A device driver that releases the shared S26 hold between cells is interrupted by any lane whose keeper holds continuously (we lost about 80 minutes at 1/11 cells); hold across the whole cell list or plan for the gap. (3) Under the S26 secure keyguard an `am start` gate activity needs `setShowWhenLocked(true)` + `setTurnScreenOn(true)` to be top-resumed (Decide finding, verified here). (4) s256 / s512 GPU medians rise 1.5–2.1× within one 75–80-input job (63.5 → 93.0 ms, 200.9 → 422.5 ms, thermal status 0 → 1–2); publish the cool opening value and the sustained median with their conditions.
+**Process traps measured this run.** (1) A workspace-write sandbox blocks Metal device creation (`SIGSEGV` in `ml_drift::metal::CreateGpuInfoFromMetalDevice` before any inference); run Metal predictor checks outside the sandbox. (2) Under the S26 secure keyguard an `am start` check activity needs `setShowWhenLocked(true)` + `setTurnScreenOn(true)` to be top-resumed. (3) s256 / s512 GPU medians rise 1.5–2.1× within one 75–80-input job (63.5 → 93.0 ms, 200.9 → 422.5 ms, thermal status 0 → 1–2); publish the cool opening value and the sustained median with their conditions.
 
 **Japanese.** The official `word_splitter="char"` is the caller's choice (no detector); the processor appends `.` after `。`, so a 48-slot window holds 47 Japanese characters. Upstream organization recall on ten early Japanese sentences was 4/10 — upstream behaviour, preserved by the conversion (the gate is agreement with the official implementation, not accuracy).
 
@@ -1553,7 +1553,7 @@ Reference = the author's code
 (`kev.api`, `kev.model`, transformers 5.17.0) on CPU fp32: 402 questions of 377 requests. On a desktop JVM the Kotlin
 host equals it on 402/402 rows and readout indices (`usage.input_tokens` 377/377), the head stays within max |Δp|
 2.98e-7, and `to_answers` gives the oracle's answers on 402/402. On the S26 (LiteRT 2.2.0, debug build, GPU explicit
-FP32) all 181 bundled gate questions get identical row IDs. The 172 L512 rows keep the oracle's argmax on 166/166
+FP32) all 181 bundled check questions get identical row IDs. The 172 L512 rows keep the oracle's argmax on 166/166
 rows outside near-ties (max |Δp| 0.0078), L256 gives the same on the same rows, L128 matches 147/147 on the rows of
 up to 128 tokens, the 9 L2048 rows match 9/9, and each graph runs whole on the GPU delegate in one partition.
 
@@ -1708,7 +1708,7 @@ three-question email with a 167-token state 409.1 ms on the Ls256 pair against 5
 each holds its own. On the S26 the unshared pair is quicker: the five-question request 429.6 against 623.3 ms
 (state 116.0 against 152.3 ms, step 62.0 against 92.9 ms), the Ls256 email 409.1 against 544.6 ms. It also needs
 more memory: VmHWM 6.15–6.81 GB against 3.01–3.05 GB, MemAvailable low points 2.21–3.04 GB against 5.29–5.88 GB,
-kgsl page allocation 3.1–3.2 GB against 1.7–1.8 GB. The probabilities are identical: the 132-question gate gives
+kgsl page allocation 3.1–3.2 GB against 1.7–1.8 GB. The probabilities are identical: the 132-question check gives
 the same numbers both ways. The app decides when it compiles the pair: unshared when Android reports at least
 6,500,000 kB available right before the compile, shared below that, and a compiled pair keeps its mode. Evidence:
 `device/r7_T5_timing_pair128_fiveq_fp16acc.json`, `device/r7_F1_timing_pair128_fiveq_noshare.json`,
@@ -1746,7 +1746,7 @@ shrinking it frame by frame. The editing screen's footer wrapped inside "GPU FP3
 per line and joins the words of an item with non-breaking spaces. Evidence:
 `device/s4_autoplay_done.png`, `device/u10_answers.png`.
 
-**Heat decides which timing legs count.** About 2.5 minutes of GPU FP32 at L512 (the 172-row gate) took the S26
+**Heat decides which timed runs count.** About 2.5 minutes of GPU FP32 at L512 (the 172-row check) took the S26
 from thermal status 0 to 3 (skin 37.9 → 45.0 °C, GPU clock ceiling down to 726 MHz). A launch that timed every set
 back to back met the protocol only for its opening set (five-question calls drifted from 618 to 775 ms), so each set
 now gets a launch of its own (`--es sets`, `--ez request_path`). Two cooling traps. When the app is not in the
@@ -1764,8 +1764,8 @@ The row graphs L64, L128 and L256 run on the S26's Qualcomm HTP (V81) through Li
 `CompiledModel.Options(Accelerator.NPU, Accelerator.CPU)`. The Qualcomm compiler takes every op but the int8
 embedding lookup (`LiteRT Op #4 'EmbeddingLookup' (code=7) is not supported in Qualcomm Compiler`; L64 3,911 of
 3,912 ops, L128 4,758 of 4,759, L256 6,018 of 6,019), the DispatchDelegate replaces 2 of the 3 nodes, and the lookup
-runs on the CPU; with the NPU alone the compiled model is not created (`LiteRtCreateCompiledModel failed: 504`, the
-conversion run's round 11). The app sets `QualcommOptions(htpPerformanceMode = BURST)` on every graph of a process
+runs on the CPU; with the NPU alone the compiled model is not created (`LiteRtCreateCompiledModel failed: 504`).
+The app sets `QualcommOptions(htpPerformanceMode = BURST)` on every graph of a process
 whose APK carries the libraries, the GPU and CPU graphs too; logcat shows `HtpPerformanceMode : Burst(2)` for each
 NPU graph also after GPU graphs compiled in the same process. `Environment.create(context, …)` makes
 `context.cacheDir` LiteRT's compile cache. LiteRT 2.2.0 keys an entry by the graph file's name, a hash of the whole

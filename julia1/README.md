@@ -93,7 +93,7 @@ probability, `score` is the expected zero-based rubric index (Σ i·pᵢ, shown 
 plain softmax at temperature 1. Each card shows the window used and the request's token count;
 timings cover tokenizer, builder, lookup, graph call with readback, and decode.
 
-## Reproduce host and device gates
+## Reproduce host and device checks
 
 The JVM suite uses a separate local fixture bundle and does not invoke model inference. Set
 `JULIA1_TEST_DATA` as described in [scripts/TEST_DATA.md](scripts/TEST_DATA.md), then run:
@@ -102,7 +102,7 @@ The JVM suite uses a separate local fixture bundle and does not invoke model inf
 ./gradlew --no-daemon :app:testDebugUnitTest
 ```
 
-For a device gate, install the debug APK, the model files and the fixtures (`--fixtures DIR`),
+For a device check, install the debug APK, the model files and the fixtures (`--fixtures DIR`),
 then use:
 
 ```bash

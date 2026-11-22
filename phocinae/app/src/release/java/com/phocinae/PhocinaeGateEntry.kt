@@ -3,7 +3,7 @@ package com.phocinae
 
 import android.content.Context
 
-/** Release has no fixture reader or device gate implementation. */
+/** Release has no fixture reader or device check implementation. */
 object PhocinaeGateEntry {
   /** Shared launch-interface type; no release path creates a gate result. */
   data class Result(val path: String, val status: String, val error: String? = null)

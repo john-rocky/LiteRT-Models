@@ -86,7 +86,7 @@ with the GPU clock cap at 1,300 MHz. To take such a photo:
   0 and skin at or below 34.0 °C.
 - Expect a long wait after a hot run: on the S26, 49 minutes passed between skin 44.5 °C (thermal status 3) at the end
   of one run and the first read of 34.0 °C, with the app stopped in between.
-- Write the start state next to each number. To compare two forms of one graph, time them alternately in one sitting
+- Write the start state next to each number. To compare two forms of one graph, time them alternately in one session
   (A B B A) rather than in separate runs.
 
 The card gives each form's time with its start state, and [idol/SPEED_LADDER.md](../idol/SPEED_LADDER.md) lists every

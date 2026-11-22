@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One device hold of the Idol lane: wait in the phone's queue, then install / run AutoRun plans / pull results.
+# One turn on the phone for Idol: wait in the phone's queue, then install / run AutoRun plans / pull results.
 # The keeper is this script: queue_cli.py `wait` takes the hold under this script's pid, and every step checks that
 # the hold file still names it before any adb call. Never write the hold file by hand.
 #

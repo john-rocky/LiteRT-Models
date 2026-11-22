@@ -183,7 +183,7 @@ class KevNpuTest {
 
   @Test
   fun theLogLinesTellWhetherTheHtpTookTheGraph() {
-    // The conversion lane's S26 runner logs of the same file (LiteRT 2.2.0): a first compile, then
+    // The conversion's S26 runner logs of the same file (LiteRT 2.2.0): a first compile, then
     // a load from the JIT cache.
     val first =
       KevNpuEvidence.of(

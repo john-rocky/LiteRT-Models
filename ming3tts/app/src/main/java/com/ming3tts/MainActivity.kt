@@ -48,7 +48,7 @@ class MainActivity : Activity() {
     private lateinit var fast: Switch
     private lateinit var fastHint: TextView
 
-    // `modeldir` names another folder under files/ (the device gates use it for the missing-file path).
+    // `modeldir` names another folder under files/ (the device checks use it for the missing-file path).
     private val modelDir by lazy { File(filesDir, intent.getStringExtra("modeldir") ?: "models") }
 
     /** The faster all-NPU placement, as chosen on the switch (only read where the NPU is usable). */

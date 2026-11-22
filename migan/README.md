@@ -30,7 +30,7 @@ The MI-GAN **inference** generator (`migan_inference.py`, the re-parametrized mo
 GPU-friendly: depthwise-separable `Conv2d`, `nn.Upsample(nearest)` + a fixed FIR-filter grouped conv, leaky-ReLU
 with gain/clamp (→ `MAXIMUM`/`MINIMUM`), and **no normalization layers** (StyleGAN-style). No re-authoring was
 needed: banned ops NONE, all tensors ≤4D, tflite-vs-torch corr **1.0**, device-vs-torch corr **0.99998**. (This
-is the FFT-free, norm-free generator lane — contrast the InstanceNorm/GroupNorm generators that need the
+is the FFT-free, norm-free generator option — contrast the InstanceNorm/GroupNorm generators that need the
 SafeNorm + conv-scaling fixes.)
 
 ## Build & run

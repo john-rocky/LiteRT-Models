@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The counting of the on-device gate and timing runs, with stand-in graphs: the gate core over the
+ * The counting of the on-device check and timing runs, with stand-in graphs: the gate core over the
  * bundled asset with a graph that returns the oracle's hidden states must pass with every row
  * identical, and its limit and stop file must cut the run; the timing core must make the protocol's
  * numbers of calls.

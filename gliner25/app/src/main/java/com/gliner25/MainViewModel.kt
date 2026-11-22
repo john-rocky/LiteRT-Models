@@ -80,7 +80,7 @@ class MainViewModel(private val context: Context) : ViewModel() {
                 require(model == GlinerModel.SMALL) { "The f1 set covers GLiNER2.5 Small only." }
                 GlinerF1GateRunner(context, ::helper, profileDecoder).run(requestedAccelerator)
               }
-              else -> error("Unknown gate set: $fixtureSet")
+              else -> error("Unknown fixture set: $fixtureSet")
             }
           mutableUiState.update { state ->
             state.copy(

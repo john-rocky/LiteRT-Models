@@ -2,7 +2,7 @@ package com.kev
 
 import kotlin.math.abs
 
-/** The graph a gate runs on: one row window, or the shared-state pair. */
+/** The graph a check runs on: one row window, or the shared-state pair. */
 sealed interface KevGateGraph {
   class Row(val runner: RowRunner) : KevGateGraph
 

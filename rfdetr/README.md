@@ -52,7 +52,7 @@ The model is converted with **litert-torch** (NCHW preserved — `onnx2tf` destr
    interleave → reshape (kills `POW`/`GATHER_ND`).
 4. **Two-stage topk/gather** → host (the split above).
 
-### ⭐ fp16 hardening (the on-device gate — not visible on desktop)
+### ⭐ fp16 hardening (the on-device blocker — not visible on desktop)
 
 The Mali delegate computes in fp16 regardless of model dtype, and two LayerNorm sites overflow it:
 

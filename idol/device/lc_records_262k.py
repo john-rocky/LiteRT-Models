@@ -8,7 +8,7 @@ The helpers and the Hub reads are lc_records.py's (same directory); the Pixel 11
 says "not measured"), so there is no Pixel record.
 
 Run from the litert-compat checkout with its venv, like lc_records.py:
-  uv run --no-sync python <lane>/device/lc_records_262k.py --check | --preview <dir> | --apply
+  uv run --no-sync python <LiteRT-Models>/idol/device/lc_records_262k.py --check | --preview <dir> | --apply
 """
 
 from __future__ import annotations
@@ -221,8 +221,8 @@ def doc() -> tuple[dict, str]:
         "litert-torch: BiRefNet background removal (bir, CPU), the DINOv3 ViT-H+/16 image encoder (dino_0..3, in "
         "litert-community/DINOv3-ViT-H16plus-Idol-LiteRT main " + hub["dino"]["sha"][:8] + ", gated), the FLUX.2 VAE "
         "encoder (vae_0..3, vae_attn, vae_4), the denoiser (den_ctx, den_in, den_joint_00..23: a graph per joint block), "
-        "the octree decoder (oct, 5 signatures by row count) and the Gaussian decoder (gs_0..7). A pipeline record "
-        "(DECISIONS #248's shape): `artifact` is 262k/manifest.json, which the app opens; it names the "
+        "the octree decoder (oct, 5 signatures by row count) and the Gaussian decoder (gs_0..7). A pipeline record"
+        ": `artifact` is 262k/manifest.json, which the app opens; it names the "
         f"{len(mf['graphs'])} graphs with file, bytes, sha256, accelerator and GPU precision (FP16 with fp32 "
         f"accumulation for the {len(mf['gpu'])} GPU graphs, one of them the alternative matting graph dis, which lives "
         "in litert-community/DIS-ISNet-LiteRT and this run did not use). Identity: the sha256 in 262k/manifest.json of "
@@ -249,7 +249,7 @@ def doc() -> tuple[dict, str]:
         "first release's card gives (from thermal status 1) and five photos on a phone already warm (thermal status 2: "
         "three of nb-armchair, then the succulent and fig-axolotl). Not rows here: this app's earlier photos of the "
         "same bytes (the device run named above; its first photo started at thermal status 1) and the other forms of "
-        "the conversion's speed ladder. The Pixel 11 Pro did not time this form.")
+        "the conversion's speed comparison. The Pixel 11 Pro did not time this form.")
     return ({"schema_version": "1.0", "model_id": MODEL_ID, "device": "galaxy-s26", "artifact": "262k/manifest.json",
              "artifact_sha256": mf["sha"], "quantization": QUANT, "notes": notes, "results": [rec]}, date)
 

@@ -33,7 +33,7 @@ import com.kev.view.PresentationScreen
  * - `--ez autoplay true --es fixture <files/ path> --ei delay_ms 1500 --ei gap_ms 800
  *   [--ei window 512]` (without `window`, the questions run on the plan a Decide would use)
  * - debug build: `--ez gate true --es backend gpu|npu|cpu --es report <name.json> [--ei window 512]
- *   [--ei limit n]` (with `--es graph pair`, the gate runs on the pair; `[--ei ls 128]` names the
+ *   [--ei limit n]` (with `--es graph pair`, the check runs on the pair; `[--ei ls 128]` names the
  *   pair by its state length, else the first installed one)
  * - debug and benchmark builds: `--ez timing true --es rows <files/ path> --es backend gpu|npu|cpu
  *   --es report <name.json> [--ei window 512] [--ez clear_cache true]

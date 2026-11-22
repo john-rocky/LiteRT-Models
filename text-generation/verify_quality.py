@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local quality gate for a converted .litertlm — the `verify` stage of the
+"""Local quality check for a converted .litertlm — the `verify` stage of the
 convert -> verify -> publish pipeline.
 
 Asks 8 fixed, unambiguously-checkable questions on the Mac via `litert-mac-verify`
@@ -199,7 +199,7 @@ def strip_think(text):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Local quality gate for a .litertlm")
+    ap = argparse.ArgumentParser(description="Local quality check for a .litertlm")
     ap.add_argument("model", help="path to model.litertlm")
     ap.add_argument("--min-correct", type=int, default=6,
                     help="min correct answers (of 8) to PASS (default 6)")
@@ -223,7 +223,7 @@ def main():
         return 2
 
     name = args.name or model.parent.name
-    print(f"== quality gate: {name} ==")
+    print(f"== quality check: {name} ==")
     print(f"   model: {model}\n")
 
     results, toks = [], []

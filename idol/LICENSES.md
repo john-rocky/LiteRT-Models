@@ -1,6 +1,6 @@
 # Licences of the parts of the Idol pipeline (read 2026-11-09)
 
-Copies of the texts read are in `~/code/idol_work/licenses/` (SSD work dir). Line numbers below are in those copies.
+Line numbers below are in local copies of the texts as read that day (the copies are not in this repo).
 
 | Part | Weights used here | Licence | Source read |
 |---|---|---|---|
@@ -27,7 +27,7 @@ Copies of the texts read are in `~/code/idol_work/licenses/` (SSD work dir). Lin
 
 - flux2 README line 111 (commit 50fe5162): the FLUX.2 autoencoder is released under Apache 2.0. The FLUX.2 [dev] Non-Commercial License of the FLUX.2-dev repo covers the [dev] transformer, not the autoencoder.
 - The klein-4B `vae/` dir is ungated and tagged apache-2.0; the Idol pipeline loads the VAE in bf16 (`conditioning.py` `torch_dtype=torch.bfloat16`) and klein-4B's file is bf16.
-- Verified 2026-11-09 14:04 (`~/code/idol_work/probe/vae_equal.py`): klein-4B `vae/diffusion_pytorch_model.safetensors` (sha256 ca70d220…, bf16) = the FLUX.2-dev VAE cast to bf16. The FLUX.2-dev VAE was read from Comfy-Org/Idol `vae/flux2-vae.safetensors`, whose LFS sha256 868fe7b3… equals FLUX.2-dev's `ae.safetensors` (Hub API, FLUX.2-dev @26afe3a7): the same file. All 250 float tensors match bit for bit after the bf16 cast (84,046,372 values; 8 attention projections are [512, 512] in klein and [512, 512, 1, 1] in BFL, same values). The one other tensor differs: `bn.num_batches_tracked` (int64 training counter, 0 vs 400000), unused at inference.
+- Verified 2026-11-09 14:04 (a local comparison script): klein-4B `vae/diffusion_pytorch_model.safetensors` (sha256 ca70d220…, bf16) = the FLUX.2-dev VAE cast to bf16. The FLUX.2-dev VAE was read from Comfy-Org/Idol `vae/flux2-vae.safetensors`, whose LFS sha256 868fe7b3… equals FLUX.2-dev's `ae.safetensors` (Hub API, FLUX.2-dev @26afe3a7): the same file. All 250 float tensors match bit for bit after the bf16 cast (84,046,372 values; 8 attention projections are [512, 512] in klein and [512, 512, 1, 1] in BFL, same values). The one other tensor differs: `bn.num_batches_tracked` (int64 training counter, 0 vs 400000), unused at inference.
 
 ## Hosting (decided 2026-11-09)
 

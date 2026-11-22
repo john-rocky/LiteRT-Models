@@ -39,7 +39,7 @@ import org.json.JSONObject
  * waveform colored by speaker and the eight speaker lanes growing about one step behind the audio.
  *
  * Gates: if files/selftest.json exists it is consumed (renamed to selftest.done, so a relaunch from recents never
- * repeats it) and run instead of the demo -- {"mode": "closed_loop", ...} runs [ClosedLoopTest], the round-2 form
+ * repeats it) and run instead of the demo -- {"mode": "closed_loop", ...} runs [ClosedLoopTest], the form
  * with "variants" runs [SelfTest]. For scripted screenshots, `am start -n com.nemotron3diar/.MainActivity
  * --es clip <file under files/>` runs the Pick path on that file and `--ei record_seconds N` records N seconds;
  * `--es live <file under files/>` runs Play live on it (optional `--ei push <samples>` (1600), `--ei preroll_ms <ms>`

@@ -55,7 +55,7 @@ class D1GateRow(
   }
 }
 
-/** A gate rows file: the bucket [length] every row runs on, and the rows in order. */
+/** A check rows file: the bucket [length] every row runs on, and the rows in order. */
 class D1GateRows(val length: Int, val padId: Int, val rows: List<D1GateRow>) {
   companion object {
     fun parse(bytes: ByteArray): D1GateRows {
@@ -91,7 +91,7 @@ class D1TimingSet(val name: String, val kind: String, val length: Int, val rows:
   }
 }
 
-/** The app's own encoding of a gate row's request, against the row's IDs, markers and state. */
+/** The app's own encoding of a check row's request, against the row's IDs, markers and state. */
 class D1Recheck(
   val idsMatch: Boolean?,
   val markersMatch: Boolean?,
@@ -153,7 +153,7 @@ class D1GateCore(private val tokenizer: D1Tokenizer, private val contract: D1Con
     return D1Readout.probabilities(markerScores, question, row.calibrate, contract)
   }
 
-  /** One gate row's report entry. */
+  /** One check row's report entry. */
   fun record(
     row: D1GateRow,
     call: D1Call,
@@ -395,6 +395,6 @@ object D1AudioCheck {
     )
   }
 
-  /** The element bar of the mel comparison (the conversion lane's `bar_elementwise`). */
+  /** The element bar of the mel comparison (the conversion scripts' `bar_elementwise`). */
   const val MEL_ELEMENT_BAR = 1e-3
 }

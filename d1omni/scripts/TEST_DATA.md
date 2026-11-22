@@ -19,7 +19,7 @@ demo/
                                    # clip samples.i16, waveform.f32, mel_f32.f32 / mel_f64.f32 (the host's two forms),
                                    # stages_f64/ (pre, power, lin, log, mean, std), inputs/ (mel, mel_valid, v1-v3),
                                    # prefix.f32 / prefix_melf64.f32 (desktop CPU), info.json (n, frames, T, T_b, L, P)
-  device/r1/rows_L128.json         # the device gate's rows (210 + 43) and timing sets, made by the Python host
+  device/r1/rows_L128.json         # the on-device check's rows (210 + 43) and timing sets, made by the Python host
   device/r1/rows_L256.json
   device/r1/timing_rows.json
   device/r2/rows_audio.json        # the audio gate's clips (6) and rows (18), the audio timing set (food3)
@@ -75,7 +75,7 @@ adb shell am start -n com.d1omni/.MainActivity --ez timing true --es rows timing
   --es report atiming.json --es precision_audio fp16acc --ei warmup 5 --ei reps 20 --ei cool_ms 120000
 ```
 
-<!-- vision (round 3) -->
+<!-- vision -->
 ## The picture path
 
 The picture tests read the Python host's dumps under `d1omni.demo` (made by the conversion run's `demo/scripts/vision_dump_v.py` from the repository's `host/d1_vision_host.py`, the five check-set PNGs, the vision tower and the projector on a desktop CPU) and the picture rows files:
@@ -116,9 +116,9 @@ adb shell am start -n com.d1omni/.MainActivity --ez vtiming true --es rows timin
 ```
 
 A picture record's `reference` names `files/` copies of the Python host's RGB and prefix rows (`vref_<id>_rgb.u8`, `vref_<id>_prefix.f32`); without them the report keeps the sha256 checks only.
-<!-- end vision (round 3) -->
+<!-- end vision -->
 
-<!-- the app (round 7) -->
+<!-- the app -->
 ## The app: your own input, the bundled sample
 
 The app's tests read the conversion run's sample and expected file under `d1omni.demo` (made by `demo/scripts/kokoro_story_r7.py` = the Kokoro voice-note candidates, `demo/scripts/provider_story_r7.py` = the provider's own float32 code on the candidate requests, `demo/scripts/mac_host_story_r7.py` = the model repository's Python host on the desktop CPU, `demo/scripts/voice_robustness_r7.py` = the clips through simulated room paths, and `demo/scripts/expected_story_r7.py` = the adopted questions and the sample file):
@@ -148,4 +148,4 @@ adb shell am start -n com.d1omni/.MainActivity --ez autoplay true --ei gap_ms 15
 adb exec-out run-as com.d1omni cat files/d1omni-run-<ms>.json > run.json
 python3 demo/check_take.py run.json --logcat app_logcat.txt        # in the conversion run's directory
 ```
-<!-- end the app (round 7) -->
+<!-- end the app -->

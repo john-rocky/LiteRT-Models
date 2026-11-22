@@ -63,7 +63,7 @@ class PhocinaeEngine(context: Context, val storage: Storage = Storage.WFP16) : C
     val totalMs: Double
       get() = writeMs + enqueueMs + readbackMs
 
-    /** Emits named timing components for machine-readable gate reports. */
+    /** Emits named timing components for machine-readable check reports. */
     fun toMap(): Map<String, Double> =
       linkedMapOf(
         "write_ms" to writeMs,
@@ -141,7 +141,7 @@ class PhocinaeEngine(context: Context, val storage: Storage = Storage.WFP16) : C
   val tokenizerLoadMs: Double
   /** Metadata parsing and table mapping duration in milliseconds. */
   val embeddingLoadMs: Double
-  /** Metadata hash recorded in each device gate report. */
+  /** Metadata hash recorded in each device check report. */
   val embeddingTableSha256: String
     get() = embeddings.sha256
 
@@ -271,7 +271,7 @@ class PhocinaeEngine(context: Context, val storage: Storage = Storage.WFP16) : C
     val prepared = System.nanoTime()
     val raw = runRaw(sequence, backend, window)
     check(raw.finite) {
-      "Nonfinite model output on ${backend.name}; inspect the device gate report"
+      "Nonfinite model output on ${backend.name}; inspect the device check report"
     }
     val decodeStarted = System.nanoTime()
     val decoded =

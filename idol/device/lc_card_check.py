@@ -1,4 +1,4 @@
-"""Card vs records: every number of litert-community/Idol's card that a litert-compat record of this lane carries, read
+"""Card vs records: every number of litert-community/Idol's card that a litert-compat record of this conversion carries, read
 from the live card at the Hub main that device/lc/hub_api_idol.json names, against the two records
 (idol__galaxy-s26.json, idol__pixel-11-pro.json) under a snapshot root. Each number is formatted the way the card
 prints it and compared as text. Numbers of the card that no record carries (the 262k/ form, kgsl GPU memory, the warm

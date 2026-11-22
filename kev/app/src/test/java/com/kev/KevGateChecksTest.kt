@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The Android-free parts of the on-device gate and timing runs: the bundled assets they read, the
+ * The Android-free parts of the on-device check and timing runs: the bundled assets they read, the
  * oracle's near-tie gap recomputed in float32, the median definition, and the conversion run's
  * timing rows.
  */
@@ -22,7 +22,7 @@ class KevGateChecksTest {
     assertTrue(items.any { it.id == KevTimingCore.REQUEST_PATH_RECORD && it.questions.size == 5 })
     val asset =
       ExternalTestData.moduleFile("app/src/debug/assets/tokenizer_probes.json").readBytes()
-    // The device gate's probes are the JVM test's probes, byte for byte.
+    // The on-device check's probes are the JVM test's probes, byte for byte.
     assertArrayEquals(ExternalTestData.resource("tokenizer_probes.json").readBytes(), asset)
     assertEquals(54, KevGateChecks.parseProbes(asset).size)
   }

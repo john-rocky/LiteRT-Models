@@ -11,7 +11,7 @@ code; the converted graphs and the full model card live on Hugging Face.
 | Converted | [litert-community/sopro-v2-turbo](https://huggingface.co/litert-community/sopro-v2-turbo) |
 | Params | 121.6M core (AR LM + acoustic DiT) + 36M (speaker encoder, semantic encoder, vocoder) |
 | Pipeline | reference → speaker encoder + semantic encoder (16 kHz) + reference mel → 12-layer **semantic AR LM** (FSQ tokens, 1 token = 1024 samples) → 8-layer **flow-matching DiT** (2 Euler steps, sway grid) → **Vocos** vocoder (causal ConvNeXt → log-mag/phase → host iSTFT) |
-| Status | Mac CPU gates and Galaxy S26 Android measurements complete. Pixel 8a: pending |
+| Status | Mac CPU checks and Galaxy S26 Android measurements complete. Pixel 8a: pending |
 
 ## Graphs
 
@@ -111,7 +111,7 @@ Kotlin 2.2.21, compile/target SDK 35, and LiteRT 2.2.0.
 Kotlin decodes and downmixes a reference, resamples it with a windowed-sinc kernel, normalizes
 its level, and crops or pads it to ten seconds. It computes fp32 FFT speaker/Whisper/acoustic
 mel front ends and caches the prepared reference. Short-reference padding has not received
-the full reference-quality gate. SentencePiece adds the language tag; the host assembles the
+the full reference-quality check. SentencePiece adds the language tag; the host assembles the
 style/text/prompt prefix, samples semantic tokens, updates packed KV rows, and builds one-hot
 index inputs. FSQ digit-to-token indexing runs on the host. The two-step acoustic Euler solve
 finishes for the whole utterance before streaming vocoder start/step/flush, reference-context
@@ -214,9 +214,9 @@ Warm synchronized ms is median `run + read`, excluding the first call of each gr
 | ar_merged / step | int8 | CPU | float compute | CPU ship chain PASS | 9.478 |
 | acoustic_condition (T2048) | wfp16 | GPU | default | PASS, mel-domain group gate | 32.530 |
 | acoustic_velocity (T2048) | wfp16 | GPU | default | PASS, mel-domain group gate | 177.214 |
-| vocoder_stream_start | wfp16 | CPU | float compute | CPU PASS; GPU waveform gate failed | 7.542 |
-| vocoder_stream_step | wfp16 | CPU | float compute | CPU PASS; GPU waveform gate failed | 7.422 |
-| vocoder_stream_flush | wfp16 | CPU | float compute | CPU PASS; GPU waveform gate failed | 4.064 |
+| vocoder_stream_start | wfp16 | CPU | float compute | CPU PASS; GPU waveform check failed | 7.542 |
+| vocoder_stream_step | wfp16 | CPU | float compute | CPU PASS; GPU waveform check failed | 7.422 |
+| vocoder_stream_flush | wfp16 | CPU | float compute | CPU PASS; GPU waveform check failed | 4.064 |
 | acoustic_condition_t4096 (T4096) | wfp16 | GPU | default | Compile passed; no long GPU chain measurement | not measured |
 | acoustic_velocity_t4096 (T4096) | wfp16 | GPU | default | Compile passed; no long GPU chain measurement | not measured |
 

@@ -44,7 +44,7 @@ after TSCB4 0.989) — task metric stays strong (+7.2 dB SI-SNR).
 ## Build & run
 
 ```bash
-python scripts/build_cmgan.py        # -> cmgan_fp16.tflite (+ parity gates)
+python scripts/build_cmgan.py        # -> cmgan_fp16.tflite (+ output-match checks)
 ./gradlew :app:installDebug
 ./scripts/install_to_device.sh <dir-with-cmgan_fp16.tflite>
 ```

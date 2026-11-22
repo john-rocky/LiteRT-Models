@@ -18,7 +18,7 @@ data/
   host_assets/tokenizer.json           # or cache/hf/hub/models--fastino--GLiNER2.5-Decide/
   host_assets/word_embeddings_fp16.bin #    snapshots/7ee5da4c…/tokenizer.json and
                                        #    exports/host_assets/word_embeddings_fp16.bin
-  results/device/inputs_s128/          # optional: device-gate input files + manifest.json
+  results/device/inputs_s128/          # optional: device-check input files + manifest.json
   results/device/inputs_s256/          #   (inputs_embeds / attention_mask / label_routing,
   results/device/inputs_s512/          #   little-endian float32), for DeviceInputsTest
 ```
@@ -30,7 +30,7 @@ data/
 | `SchemaTest` | oracle, tokenizer | schema token strings and IDs of the `prompt` (readme_18) and `{label: description}` (readme_20) examples |
 | `EmbeddingTableTest` | float16 table | rows 0 and 128010 bit-identical to numpy's upcast; every float16 bit pattern |
 | `TokenizerProbeTest` | tokenizer | edge strings (normalized `[UNK]`, whitespace, NFC, added tokens inside strings) against Python |
-| `DeviceInputsTest` | oracle, tokenizer, table, device inputs | graph inputs byte-identical to the files the S26 gate consumed |
+| `DeviceInputsTest` | oracle, tokenizer, table, device inputs | graph inputs byte-identical to the files the S26 check consumed |
 | `GateFixturesTest` | oracle, tokenizer | debug asset equals the oracle; every (fixture, window) input identical |
 | `TaskEditorTest` | tokenizer (last case) | editor format, validation, bundled example fits s128 |
 

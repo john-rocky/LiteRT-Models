@@ -2,7 +2,7 @@
 
 Form H = 2,048 anchors (65,536 Gaussians), every GPU graph at FP16, one shared graph for the denoiser's middle blocks
 (den_joint_mid, attention query chunk 1,024) and one for the Gaussian decoder's middle graphs (gs_mid). The template is
-card/README.md; the round-1 helpers of fill_card.py and card_facts.py are reused with form H's files:
+card/README.md; the helpers of fill_card.py and card_facts.py (written for the first card) are reused with form H's files:
 
   line (a), Mac     contract/a_v3_<input>_mac.json over a_<input>_mac.json (DINOv3, VAE, matting: the same graph bytes),
                     then a_H_den_<input>_mac.json (denoiser) and a_H_gs_<input>_mac.json (octree and Gaussian decoder

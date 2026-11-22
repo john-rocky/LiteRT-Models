@@ -13,7 +13,7 @@ invented demo requests. It never writes the transfer-v4 rows (tv4, tv4x, tv4s) i
 
     /path/to/venv/bin/python scripts/make_test_data.py --kev-work /path/to/kev_work --probes
         also app/src/test/resources/tokenizer_probes.json (and the same file as
-        app/src/debug/assets/tokenizer_probes.json for the on-device gate), render_cases.json and
+        app/src/debug/assets/tokenizer_probes.json for the on-device check), render_cases.json and
         python_numbers.json. Needs Python 3.12, transformers 5.17, tokenizers, pydantic and the
         author's kev package (kev_work/kev, added to sys.path here).
 

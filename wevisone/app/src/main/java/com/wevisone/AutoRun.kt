@@ -13,7 +13,7 @@ import java.util.concurrent.CountDownLatch
 
 /**
  * Debug builds only: runs a plan of requests through the same path as the Run button (photo decode, [MainActivity.run],
- * the screen) and writes what each produced, for the device gate, the timing and the failure-path checks. Recording a
+ * the screen) and writes what each produced, for the device check, the timing and the failure-path checks. Recording a
  * take uses the same plan form.
  *
  *   adb shell am start -n com.wevisone/.MainActivity --es autorun plans/<plan>.json --es out runs/<name>

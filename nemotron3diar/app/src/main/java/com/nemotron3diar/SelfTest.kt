@@ -70,7 +70,7 @@ data class Spec(
 }
 
 /**
- * Runs the Nemotron-3-Diarization graphs on the LiteRT CompiledModel GPU for the round-2 device gate.
+ * Runs the Nemotron-3-Diarization graphs on the LiteRT CompiledModel GPU for the on-device check.
  *
  * graph A  mel [1,104,128] -> chunk_embeds [1,13,512]
  * graph B  packed_embeds [1,541,512], attn_bias [1,1,1,541], rope_cos / rope_sin [1,1,541,64] -> logits [1,4328,8]

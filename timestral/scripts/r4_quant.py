@@ -174,7 +174,7 @@ def cmd_a16w8(a):
     if a.float_io:
         # the same static recipe, with the graph's inputs and outputs (the quantizer's virtual INPUT / OUTPUT ops) left
         # float32: the converter puts QUANTIZE after each input and DEQUANTIZE before the output, so a runner that writes
-        # and reads float32 (the lane's C-API runner, the app) can feed the file
+        # and reads float32 (the C-API runner, the app) can feed the file
         rm = recipe_manager.RecipeManager()
         rm.add_static_config(regex=".*", operation_name=qtyping.TFLOperationName.ALL_SUPPORTED, activation_num_bits=16,
                              weight_num_bits=8)

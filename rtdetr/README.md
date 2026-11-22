@@ -49,7 +49,7 @@ Converted with **litert-torch** (NCHW preserved — `onnx2tf` destroys ViT atten
    `inverse_sigmoid`'s redundant `clamp(0,1)` dropped (lowers to Mali-rejected `RELU_0_TO_1`); the baked
    anchors' `finfo.max` invalid-border values clamped to ±1e4 (else fp16 `Inf`).
 
-### ⭐ fp16 hardening — the on-device gate (a Mali 3D-sequence fan-out bug)
+### ⭐ fp16 hardening — the on-device blocker (a Mali 3D-sequence fan-out bug)
 
 Both graphs convert GPU-clean and are fully `LITERT_CL`-resident, but the naïve Graph A (emitting
 `enc_class`, `enc_coord`, `output_memory`, `memory_raw` all at once) **silently produced wrong boxes on

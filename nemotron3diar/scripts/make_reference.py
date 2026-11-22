@@ -1,4 +1,4 @@
-"""Transformers fp32 reference for nvidia/Nemotron-3-Diarization (the round-1 gate source).
+"""Transformers fp32 reference for nvidia/Nemotron-3-Diarization (the reference of the first device check).
 
 Runs the transformers implementation (git main) in fp32 on CPU over each fixture wav:
   (a) offline      - the whole recording in one forward (chunk 340 + look-ahead 40, FIFO 40)

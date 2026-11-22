@@ -1,7 +1,7 @@
 # Matcha-TTS on LiteRT CompiledModel GPU
 
 On-device English text-to-speech. Type text, synthesize it on the **GPU**, play it back —
-no network, no espeak. This is the **FFT-free** TTS lane: Matcha-TTS pairs a conditional
+no network, no espeak. This is the **FFT-free** TTS option: Matcha-TTS pairs a conditional
 flow-matching (CFM) acoustic model with a **HiFi-GAN time-domain vocoder**, so there is **no
 FFT/iSTFT anywhere** in the synthesis path and the whole thing rides the LiteRT `CompiledModel`
 GPU (ML Drift) delegate. (Spectral vocoders — Kokoro/iSTFTNet/Vocos — are blocked on the missing

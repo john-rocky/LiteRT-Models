@@ -318,7 +318,7 @@ class MainActivity : Activity() {
             .put("slow_decode_total", dist(r.decodeTotal)).put("slow_decode_run_only", dist(r.decodeRun))
             .put("fast_step_total", dist(r.fastTotal)).put("fast_step_run_only", dist(r.fastRun))
             .put("reference_rows", JSONObject().put("slow_decode_ms", 12.3).put("fast_step_ms", 0.97)
-                .put("source", "benchmark_model S26 CPU 4t (NOTES.md clean legs)"))
+                .put("source", "benchmark_model, S26 CPU, 4 threads, rested runs"))
             .put("vm", vm())
         report.put("kv_probe", o)
         writeReport()

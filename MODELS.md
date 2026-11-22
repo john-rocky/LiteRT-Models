@@ -225,7 +225,7 @@ applies sigmoid + score threshold + cxcywh→xyxy + per-class NMS.
 RT-DETRv2 (Baidu 2024, `PekingU/rtdetr_v2_r18vd`): a real-time **transformer** detector (ResNet18-vd
 backbone + hybrid AIFI/CCFM encoder + plain deformable-attention DETR decoder) running **fully on
 CompiledModel GPU**. Converted with **litert-torch** + a **2-graph split** (two-stage `TOPK`/`GATHER` on
-the host). The on-device gate here was **not** an fp16 wall but a Mali bug where a 3D *token* tensor
+the host). The on-device blocker here was **not** an fp16 wall but a Mali bug where a 3D *token* tensor
 `[1,N,256]` that fans out inside the graph is silently corrupted — fixed by emitting only the two clean
 leaves (`enc_class` + `memory_raw`) and moving the per-token tail (`enc_output` + box head) to the host
 on the 300 selected tokens (exact, since per-token ops commute with gather). Device-verified on Pixel 8a:
@@ -769,7 +769,7 @@ Pre-converted TFLite from [Qualcomm AI Hub](https://aihub.qualcomm.com/models/la
 
 [MI-GAN](https://github.com/Picsart-AI-Research/MI-GAN) (Picsart AI Research, **ICCV 2023**, MIT): a "magic eraser" — paint over an object and it is removed and inpainted. A mobile-designed StyleGAN-style generator (separable convs, nearest-upsample, **no norm**) — far smaller/faster than LaMa above. Verified **fully on the GPU** (`509/509` LITERT_CL on a Pixel 8a, **~6 ms** at 512×512, device-vs-PyTorch corr **0.99998**, **16.3 MB** fp16).
 
-Converted via **litert-torch** with **no re-authoring** — the inference generator is already GPU-clean (depthwise-separable conv, `nn.Upsample(nearest)` + FIR-filter grouped conv, leaky-ReLU clamp → `MAXIMUM`/`MINIMUM`, no normalization). The FFT-free, norm-free generator lane.
+Converted via **litert-torch** with **no re-authoring** — the inference generator is already GPU-clean (depthwise-separable conv, `nn.Upsample(nearest)` + FIR-filter grouped conv, leaky-ReLU clamp → `MAXIMUM`/`MINIMUM`, no normalization). The FFT-free, norm-free generator option.
 
 | Download Link | Size | Input | Output | Original Project | License | Sample App |
 | ------------- | ---- | ----- | ------ | ---------------- | ------- | ---------- |
@@ -925,7 +925,7 @@ Runs on **ONNX Runtime with NNAPI EP fallback to XNNPACK CPU**. Phonemization is
 
 ### Matcha-TTS
 
-Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN time-domain vocoder**. This is the **FFT-free** TTS lane — there is **no FFT/iSTFT anywhere** in the synthesis path (spectral vocoders like Kokoro/Vocos are blocked on the missing ML Drift FFT kernel). 22.05 kHz output. All three graphs convert **GPU-clean** (parity 1.0); on the Pixel 8a the text encoder + vocoder run on the GPU and the CFM decoder runs on the **CPU** (a Mali ML Drift transformer-fusion bug — see the matcha/ README), keeping the pipeline realtime (RTF ~0.8). The Euler ODE loop, duration/length-regulator and embedding run host-side.
+Matcha-TTS (LJSpeech): conditional flow-matching acoustic model + **HiFi-GAN time-domain vocoder**. This is the **FFT-free** TTS option — there is **no FFT/iSTFT anywhere** in the synthesis path (spectral vocoders like Kokoro/Vocos are blocked on the missing ML Drift FFT kernel). 22.05 kHz output. All three graphs convert **GPU-clean** (parity 1.0); on the Pixel 8a the text encoder + vocoder run on the GPU and the CFM decoder runs on the **CPU** (a Mali ML Drift transformer-fusion bug — see the matcha/ README), keeping the pipeline realtime (RTF ~0.8). The Euler ODE loop, duration/length-regulator and embedding run host-side.
 
 | Model | Download Link | Size | Input | Output | API |
 | ----- | ------------- | ---- | ----- | ------ | --- |
@@ -955,7 +955,7 @@ EMA Lightning: a 5.6M flow-matching DiT distilled to **four steps** + a 3.0M **H
 | DiT step (×4) | [ema_step_multi_fp32.tflite](https://huggingface.co/litert-community/EMA-Lightning-LiteRT) | 15.3 MB | x [1,T,64] + cond + step vectors, T ∈ {48,…,512} | v [1,T,64] | CompiledModel CPU |
 | HiFi-GAN decoder | [ema_decoder_multi_fp16.tflite](https://huggingface.co/litert-community/EMA-Lightning-LiteRT) | 6.4 MB | z [1,64,P] + 7 length masks, P ∈ {48,120} | wav [1,P·1920] | CompiledModel GPU (fp16) |
 
-**Measured** (Galaxy S26, LiteRT 2.2.0, 2026-10-11, rested timing legs): text 0.7 ms · aligner 0.2 ms · one DiT step 2.5 ms (CPU) · decoder 14.6 ms per 1.9 s window, 31 ms per 4.8 s window (GPU fp16). One 3.5 s sentence: 56.5 ms, first audio 25.5 ms; the sample's own screen for a 2.4 s sentence: 49 ms, first audio 33 ms.
+**Measured** (Galaxy S26, LiteRT 2.2.0, 2026-10-11, rested timed runs): text 0.7 ms · aligner 0.2 ms · one DiT step 2.5 ms (CPU) · decoder 14.6 ms per 1.9 s window, 31 ms per 4.8 s window (GPU fp16). One 3.5 s sentence: 56.5 ms, first audio 25.5 ms; the sample's own screen for a 2.4 s sentence: 49 ms, first audio 33 ms.
 
 **Conversion** (litert-torch 0.9.4): `ConvTranspose1d(k 10, s 5, p 2)` as VALID + crop; the aligner's `expand` replaced by a broadcast through the RoPE multiply; the ConvNeXt layer scale folded into the following linear; one DiT step per graph (an unrolled 4-step graph duplicates the weights in the file). Dynamic int8 fails parity on the distilled DiT (the whole set stays fp32 / fp16).
 
@@ -2282,7 +2282,7 @@ Recipe notes: [docs/LITERT_CONVERSION_GUIDE.md](docs/LITERT_CONVERSION_GUIDE.md)
 
 [Phocinae/Phocinae-Largha-150M-v1](https://huggingface.co/Phocinae/Phocinae-Largha-150M-v1) (v1.1, 144.3M, Apache-2.0, the Phocinae project: **mmBERT-small** encoder + the laya decision head) reads a state (text or JSON) and typed questions and returns calibrated answers from one forward pass per question: `choice` picks one of your options, `score` picks a level on your rubric, `noul` gives P(true); an act head gives the publisher's escalation probability. The author's words: "Tiny model. Big decisions." — not a chat model, no generated text, robust to option reordering. Same graph cut as Laya (one question row per call, `CLS <type> question: … SEP [MASK] option … SEP state SEP`, head budget 192 tokens; the host tokenizes, looks the ids up in a float16 table, reads the logits at the `[MASK]` markers and applies the publisher's temperatures). The LayerNorms of encoder layers 12–21 and the final norm are computed on their input scaled by 2⁻⁶ (exact in fp32), which is what lets the fp16 paths (GPU FP16, NPU) pass the bar.
 
-**On-device (Galaxy S26, LiteRT 2.2.0 — verified 2026-10-11 with this sample's debug gate):** NPU (Qualcomm Hexagon, LiteRT JIT, the whole graph in one partition): 1,552/1,552 non-near-tie public test decisions identical to the publisher's fp32 PyTorch runtime (43/45 near ties), max probability difference 0.0032, **19.8 ms per question at 384 tokens** (warm median, write + run + readback, 1,597-row leg); GPU FP16: 1,552/1,552 (42/45), max 0.0158, 22.9 ms; GPU FP32: 1,552/1,552 (45/45), max 0.0008, 68.8 ms in the heated leg (minimum 40.8). On the lane's rested timing legs (one question's row, median of 20 after 5 warm-ups) the NPU runs 16.8 / 19.7 / 26.9 ms at 256 / 384 / 512 tokens and GPU FP16 15.3 / 22.4 / 30.7 ms; the model card holds every row.
+**On-device (Galaxy S26, LiteRT 2.2.0 — verified 2026-10-11 with this sample's debug check):** NPU (Qualcomm Hexagon, LiteRT JIT, the whole graph in one partition): 1,552/1,552 non-near-tie public test decisions identical to the publisher's fp32 PyTorch runtime (43/45 near ties), max probability difference 0.0032, **19.8 ms per question at 384 tokens** (warm median, write + run + readback, 1,597-row run); GPU FP16: 1,552/1,552 (42/45), max 0.0158, 22.9 ms; GPU FP32: 1,552/1,552 (45/45), max 0.0008, 68.8 ms in the heated run (minimum 40.8). On rested timed runs (one question's row, median of 20 after 5 warm-ups) the NPU runs 16.8 / 19.7 / 26.9 ms at 256 / 384 / 512 tokens and GPU FP16 15.3 / 22.4 / 30.7 ms; the model card holds every row.
 
 | Model | Download | Size | Input → Output | Placement |
 | ----- | -------- | ---- | -------------- | --------- |

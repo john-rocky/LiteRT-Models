@@ -1,4 +1,4 @@
-"""Device gate: the Nemotron-3-Diarization graphs on the S26 LiteRT CompiledModel GPU vs transformers.
+"""Device check: the Nemotron-3-Diarization graphs on the S26 LiteRT CompiledModel GPU vs transformers.
 
 For each run (<variant>:<precision>, one app launch each so a native crash only loses that run):
   1. writes the chunk_io steps (default 0,30,55,60,100,128,135 of diarization_example_16k) as float32 LE bins

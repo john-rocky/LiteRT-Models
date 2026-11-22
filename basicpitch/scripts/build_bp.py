@@ -55,7 +55,7 @@ from build_cmgan import opcheck, to_fp16
 
 ok = all(np.corrcoef(m.numpy().ravel(), r.ravel())[0, 1] > 0.9999
          for m, r in zip(mine, [ref[2], ref[1], ref[0]]))
-print("parity gate:", ok)
+print("output match:", ok)
 if ok:
     import litert_torch
     fp32 = os.path.join(HERE, "basicpitch.tflite")

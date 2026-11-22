@@ -1,4 +1,4 @@
-"""Device gate: the whole streaming host (Kotlin mel + graph A + graph B + speaker cache) on the S26 LiteRT GPU,
+"""Device check: the whole streaming host (Kotlin mel + graph A + graph B + speaker cache) on the S26 LiteRT GPU,
 closed loop, vs the transformers streaming reference.
 
 For each run (<b_precision>:<fixture>, one app launch each): pushes the wav to the app's files/wav (once), pushes

@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The device gate's work without a device: the phone's rows files (`device/r1/rows_L128.json`
+ * The on-device check's work without a device: the phone's rows files (`device/r1/rows_L128.json`
  * 210 rows, `rows_L256.json` 43, `timing_rows.json`) parse, each row's request encodes again to
  * its ids and markers and its state serializes to its hash (what `ids_match` / `state_match`
  * report on the phone), the inputs are the row's layout, and a stand-in graph that returns the

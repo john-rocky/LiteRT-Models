@@ -101,9 +101,9 @@ On an NPU run the main graph runs on the NPU and the act head stays on the CPU. 
 `run()` and output readback for the main and act graphs; the embedding lookup is measured separately; the per-question
 time on a card also includes host preparation and decoding.
 
-## Reproduce the device gate
+## Reproduce the device check
 
-Install the debug APK, the models and the gate rows, then:
+Install the debug APK, the models and the check rows, then:
 
 ```bash
 export ANDROID_SERIAL=your-device-serial
@@ -116,7 +116,7 @@ adb -s "$ANDROID_SERIAL" exec-out run-as com.phocinae cat files/phocinae_gate_np
 `--es accel gpu`, `gpu_fp16`, `npu` or `cpu`; force-stop the app between configurations. The report holds, per row, the
 on-device token ids and marker positions (compared with the fixture's), the raw logits and their difference from the
 reference, and the timings; completion is logged under `PHOCINAE_GATE`. The gate entry is debug-only; release launches
-the UI. `app_gate_score.py` in the model repository's `conversion/` scores a report with the lane's bar.
+the UI. `app_gate_score.py` in the model repository's `conversion/` scores a report with the conversion's bar.
 
 ## Verified on
 
@@ -134,9 +134,9 @@ post-temperature probabilities) equal on every row whose reference top-2 gap is 
 | GPU FP32 | 1,552 / 1,552 | 45 / 45 | 0.0008 | 0.00005 | 68.8 ms (min 40.8, max 88.9) | 0.9 s |
 
 All three pass the bar (the NPU report's own `status` reads `PASS`; `app_gate_score.py` in the model repository's
-`conversion/` gives the same counts). The per-question medians are from these 1,597-row legs: the GPU legs heat the
-phone and the GPU clock drops inside the leg (the FP32 leg's minimum, 40.8 ms, is the rested value; the model card's
-timing legs on a rested phone give 42.1 ms FP32, 22.4 ms FP16 and 19.7 ms NPU at this window). The editor's own run
+`conversion/` gives the same counts). The per-question medians are from these 1,597-row runs: the GPU runs heat the
+phone and the GPU clock drops inside the run (the FP32 run's minimum, 40.8 ms, is the rested value; the model card's
+timed runs on a rested phone give 42.1 ms FP32, 22.4 ms FP16 and 19.7 ms NPU at this window). The editor's own run
 on the NPU, the bundled support ticket (three questions, 430 tokens across the rows), reported 114 ms end to end in the
 header, including tokenization, embedding lookup and decoding.
 

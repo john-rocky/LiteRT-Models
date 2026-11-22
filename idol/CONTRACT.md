@@ -36,9 +36,9 @@ to both pipelines.
 | 1 | `nb-armchair.webp` (768², RGB) | 78e92542fe244d0e174802102446addfab7eef9b14e652d97ec1151deb24ff09 | idol-sdk `demo/examples` (author's gallery, Apache-2.0 repo) | synthetic (1.2) | 7 (author's preset) |
 | 2 | `fig-axolotl.webp` (768², RGB) | 298980bf091a6457ea4369368784fa53ece4b301d79db60d236857f3e2c17f09 | idol-sdk `demo/examples` (author's gallery) | synthetic (1.2) | 42 (author's preset) |
 | 3 | `pexels_20324601.jpg` (4500², RGB): a succulent in a metal pot on a table | 527d8f87e0eee7c94d652e9f581991c3e860966e1f8eeb0228e19551e52d0255 | https://www.pexels.com/photo/plant-in-silver-flowerpot-20324601/ (Komet Flicker, Pexels License) | real (1.7) | 42 |
-| 4 | one photo of a desk object shot with the Galaxy S26 rear camera through the app's camera path, in the first device hold after the go | added here (sha256, time) before any line runs on it | ours | real (1.7) | 42 |
+| 4 | one photo of a desk object shot with the Galaxy S26 rear camera through the app's camera path, in the first turn on the phone after approval | added here (sha256, time) before any line runs on it | ours | real (1.7) | 42 |
 
-Input 3 stands in for "a photo we shot" until input 4 exists (the phone is not ours before the go); input 4 runs
+Input 3 stands in for "a photo we shot" until input 4 exists (the phone is not ours before approval); input 4 runs
 every line that inputs 1–3 run.
 
 ## Lines
@@ -130,8 +130,8 @@ kept as side matmuls with a phase input (one set), decided by measurement; the l
   to it (count and seconds). The e2e plans keep a 2.5 GB reserve (a 1 GB reserve let lmkd kill the app during a
   preload, measured 2026-11-09 17:11).
 
-- 2026-11-09 17:00: input 4 is shot in the first device hold that runs the app, before any app run of inputs 1–3
-  (the table's "first device hold after the go" was round g1, and round g2 followed it: both ran the graph runner,
+- 2026-11-09 17:00: input 4 is shot in the first turn on the phone that runs the app, before any app run of inputs 1–3
+  (the table's "first turn on the phone after approval" was round g1, and round g2 followed it: both ran the graph runner,
   no app). Its sha256 and time go into the table before any line runs on it.
 - 2026-11-09 17:00: the graph set becomes v3 = v2 with two graphs rebuilt after the first S26 sweep (device round g1,
   `device/plan_g1.tsv`); same arithmetic, no line changed.
@@ -178,3 +178,8 @@ kept as side matmuls with a phase input (one set), decided by measurement; the l
   armchair reference (no comparison, no PSNR) showed the object upside down. idol's `save_ply` writes the y-down frame
   3DGS viewers use (its comment says y-up, the files are not), so the cameras now sit above the object at −y with
   image up −y. Same 4 azimuths, elevation, distance, field of view and size.
+
+## Wording edits after the first numbers
+
+- 2026-11-22: wording only, in input 4's row, the note under that table and the 2026-11-09 17:00 entry:
+  the phone's first turn for this work is named in plain words. No line, input or number changed.
