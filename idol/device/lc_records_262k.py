@@ -260,9 +260,8 @@ def main() -> None:
     errors = L.device_run_errors(d)
     L.check(not errors, f"schema errors: {errors}")
     text = json.dumps(d)
-    for word in ("session", "supervisor", "claude", "cmux", "portal", "team", "scratchpad", "fable",
-                 "opus", "/Users/", "idol_work"):
-        L.check(word.lower() not in text.lower(), f"the record carries '{word}'")
+    for word in L.refused_words(text):
+        L.fail(f"the record carries '{word}'")
     L.check(not re.search(r"\bD-\d{3}\b", text), "the record carries a decision id")
     root = L.LC / "data" / "device_runs"
     target = root / L.RUNTIME / date / f"{MODEL_ID}__galaxy-s26.json"

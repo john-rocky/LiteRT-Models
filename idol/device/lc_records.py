@@ -42,6 +42,23 @@ MODEL_ID = "idol"
 RUNTIME = "2.3.0"
 INPUTS = ("armchair", "axolotl", "succulent")
 DELEGATE_RE = re.compile(r"Replacing (\d+) out of (\d+) node\(s\) with delegate \((\w+)\) node, yielding (\d+) partitions")
+# SHA-256 (hex) of each lowercased word a record must not carry, in the order the words are checked. A word counts
+# wherever it appears in the lowercased record text, also inside a longer word, so refused_words() hashes every piece
+# of that text up to REFUSED_MAX characters long and looks each one up here.
+REFUSED = (
+    "3f3af1ecebbd1410ab417ec0d27bbfcb5d340e177ae159b59fc8626c2dfd9175",
+    "0834c2d60725ac5902257b3b78dd161ad26d1c0290dbf1e47cc14add5b8c8142",
+    "c857d09db23e6822e3600bc06ad8d58f92ed62bc8efd81c753f77048662cb97d",
+    "548d4fabc56e7b556bbd7d01c3bcb6288fc8de3078dcb38fc3698fb3c26508c9",
+    "d0960501f8971be812f2e5494426e08cdbb2cbc3b3190ba60075f14b8da7178a",
+    "ca8b22d0db83a22db163b560b3e4e51527e533d31d067b614a0c33c4d2df8432",
+    "5417dcf3515cce99d317b6d1e22915f647f195e0f1cd9578534cf18a6d353895",
+    "09cf980b5ff304ac11b7f6d2c5c263da2a867425798ef5cc5d2ebcf55c4fcd23",
+    "e12ce8285efc67c6d93d3a122e2589ed95089bcbb775ba5634d94e2b8385db07",
+    "3e44fb009899c0f900c1e74cd803b171d70a5d799d2cc933898d78e8d5fc17ca",
+    "04b0e5ef75adc1ccb6a6e0e71ef989d5c37bddb99877da50fe5ebf92f2ae7007",
+)
+REFUSED_MAX = 16  # longer than every word in REFUSED
 
 
 def fail(msg: str) -> None:
@@ -51,6 +68,18 @@ def fail(msg: str) -> None:
 def check(cond: bool, msg: str) -> None:
     if not cond:
         fail(msg)
+
+
+def refused_words(text: str) -> list[str]:
+    """The words of REFUSED that the text carries, lowercased, in REFUSED's order."""
+    low, wanted, found = text.lower(), set(REFUSED), {}
+    for n in range(1, REFUSED_MAX + 1):
+        for i in range(len(low) - n + 1):
+            piece = low[i:i + n]
+            digest = hashlib.sha256(piece.encode("utf-8")).hexdigest()
+            if digest in wanted:
+                found.setdefault(digest, piece)
+    return [found[d] for d in REFUSED if d in found]
 
 
 def J(p: Path) -> dict:
@@ -411,9 +440,8 @@ def main() -> None:
         errors = device_run_errors(doc)
         check(not errors, f"schema errors: {errors}")
         text = json.dumps(doc)
-        for word in ("session", "supervisor", "claude", "cmux", "portal", "team", "scratchpad", "fable",
-                     "opus", "/Users/", "idol_work"):
-            check(word.lower() not in text.lower(), f"{p['slug']}: the record carries '{word}'")
+        for word in refused_words(text):
+            fail(f"{p['slug']}: the record carries '{word}'")
         check(not re.search(r"\bD-\d{3}\b", text), f"{p['slug']}: the record carries a decision id")
         target = root / RUNTIME / date / f"{doc['model_id']}__{doc['device']}.json"
         if mode == "--preview":
