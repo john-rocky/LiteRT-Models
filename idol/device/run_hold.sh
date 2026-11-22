@@ -16,7 +16,7 @@
 #   state           log the screen and keyguard state and the activity in front
 #   wait:<s>        keep the hold for GUI work done by hand, until device/results/<device>/CONTINUE exists or s seconds
 # The sampler's cpu_ticks (utime + stime, 1/100 s) and threads show whether the CPU graph (BiRefNet) runs on several
-# threads: the C-API runner's CPU options do not reach LiteRT 2.3.0 (r3_rt_runner d815-1), the app's must.
+# threads: the C-API runner's CPU options do not reach LiteRT 2.3.0 (r3_rt_runner), the app's must.
 # DRY=1: no queue, no hold; adb on PATH must be the fake (device/fake_adb/adb), checked before anything runs.
 set -euo pipefail
 
